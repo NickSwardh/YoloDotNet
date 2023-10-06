@@ -20,8 +20,8 @@ using SixLabors.ImageSharp;
 using YoloDotNet;
 using YoloDotNet.Extensions;
 
-// Instantiate a new Yolov8 object with your ONNX-model and CUDA
-using var yolo = new Yolov8(@"path\to\model.onnx");
+// Instantiate a new Yolo object with your ONNX-model and CUDA
+using var yolo = new Yolo(@"path\to\model.onnx");
 
 // Load image
 using var image = Image.Load(@"path\to\image.jpg");
@@ -30,7 +30,7 @@ using var image = Image.Load(@"path\to\image.jpg");
 var results = yolo.RunInference(image);
 
 // Draw boxes
-image.DrawBoxes(results);
+image.DrawBoundingBoxes(results);
 
 // Save image
 image.Save(@"save\image.jpg");
