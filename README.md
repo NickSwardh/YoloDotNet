@@ -24,7 +24,7 @@ using YoloDotNet.Extensions;
 using var yolo = new Yolo(@"path\to\model.onnx");
 
 // Load image
-using var image = Image.Load(@"path\to\image.jpg");
+using var image = Image.Load<Rgb32>(@"path\to\image.jpg");
 
 // Run inference
 var results = yolo.RunInference(image);
