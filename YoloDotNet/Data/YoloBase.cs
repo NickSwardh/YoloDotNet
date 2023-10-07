@@ -11,7 +11,8 @@ namespace YoloDotNet.Data
     public abstract class YoloBase : IDisposable
     {
         private readonly InferenceSession _session;
-        public abstract IEnumerable<ResultModel> RunInference(Image img, double threshold);
+        public abstract List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold);
+
         public OnnxModel OnnxModel { get; init; }
 
         /// <summary>
@@ -27,6 +28,23 @@ namespace YoloDotNet.Data
                 : new InferenceSession(onnxModel);
 
             OnnxModel = _session.GetOnnxProperties();
+        }
+
+        // <summary>
+        /// Runs object detection inference on an input image.
+        /// </summary>
+        /// <param name="img">The input image to perform object detection on.</param>
+        /// <param name="threshold">Optional. The confidence threshold for accepting object detections (default is 0.25).</param>
+        /// <returns>A list of result models representing detected objects.</returns>
+        /// <remarks>
+        public List<ResultModel> RunInference(Image img, double threshold = 0.25)
+        {
+            // Keep each session thread-safe
+            lock (_session)
+            {
+                var tensors = GetTensors(img);
+                return DetectObjectsInTensor(tensors, img, threshold);
+            }
         }
 
         /// <summary>

@@ -22,27 +22,13 @@ namespace YoloDotNet
             : base(onnxModel, cuda, gpuId) { }
 
         /// <summary>
-        /// Runs object detection inference on an input image.
-        /// </summary>
-        /// <param name="img">The input image to perform object detection on.</param>
-        /// <param name="threshold">Optional. The confidence threshold for accepting object detections (default is 0.25).</param>
-        /// <returns>A list of result models representing detected objects.</returns>
-        /// <remarks>
-        public override List<ResultModel> RunInference(Image img, double threshold = 0.25)
-        {
-            var tensor = GetTensors(img);
-            var results = DetectObjectsInTensor(tensor, img, threshold);
-            return RemoveOverlappingBoxes(results);
-        }
-
-        /// <summary>
         /// Detects objects in a tensor and returns a list of result models.
         /// </summary>
         /// <param name="tensor">The input tensor containing object detection data.</param>
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="threshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        private List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
+        public override List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
         {
             var result = new ConcurrentBag<ResultModel>();
 
