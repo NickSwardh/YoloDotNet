@@ -30,7 +30,7 @@ namespace YoloDotNet.Data
             OnnxModel = _session.GetOnnxProperties();
         }
 
-        // <summary>
+        /// <summary>
         /// Runs object detection inference on an input image.
         /// </summary>
         /// <param name="img">The input image to perform object detection on.</param>
@@ -42,17 +42,19 @@ namespace YoloDotNet.Data
             // Keep each session thread-safe
             lock (_session)
             {
-                var tensors = GetTensors(img);
-                return DetectObjectsInTensor(tensors, img, threshold);
+                var tensor = GetTensor(img);
+                var results = DetectObjectsInTensor(tensor, img, threshold);
+
+                return RemoveOverlappingBoxes(results);
             }
         }
 
         /// <summary>
-        /// Get tensors from an input image for object detection.
+        /// Get tensor from an input image for object detection.
         /// </summary>
         /// <param name="img">The input image to extract tensors from.</param>
         /// <returns>A tensor containing pixel values extracted from the input image.</returns>
-        public Tensor<float> GetTensors(Image img)
+        public Tensor<float> GetTensor(Image img)
         {
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 

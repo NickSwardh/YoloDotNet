@@ -72,7 +72,7 @@ namespace YoloDotNet
                 });
             }
 
-            return RemoveOverlappingBoxes(result.ToList());
+            return result.ToList();
         }
     }
 }
