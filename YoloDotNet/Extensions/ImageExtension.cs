@@ -52,7 +52,7 @@ namespace YoloDotNet.Extensions
         /// </summary>
         /// <param name="image">The image on which to draw the boxes and labels.</param>
         /// <param name="predictions">The collection of prediction results containing bounding boxes and labels.</param>
-        public static void DrawBoundingBoxes(this Image image, IEnumerable<ResultModel> predictions)
+        public static void DrawBoundingBoxes(this Image image, IEnumerable<ResultModel> predictions, bool drawConfidence = true)
         {
             // Define constants for readability
             const int fontSize = 16;
@@ -73,8 +73,13 @@ namespace YoloDotNet.Extensions
                     var labelColor = HexToRgba(pred.Label.Color, 128);
 
                     // Text with label name and confidence in percent
-                    var confidencePercent = (pred!.Confidence * 100).ToString("0.##", CultureInfo.InvariantCulture);
-                    var text = $"{pred.Label.Name} ({confidencePercent}%)";
+                    var text = pred.Label.Name;
+
+                    if (drawConfidence)
+                    {
+                        var confidencePercent = (pred!.Confidence * 100).ToString("0.##", CultureInfo.InvariantCulture);
+                        text += $" ({confidencePercent}%)";
+                    }
 
                     // Calculate text width and height
                     var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
