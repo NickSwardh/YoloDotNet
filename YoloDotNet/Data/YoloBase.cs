@@ -11,6 +11,7 @@ namespace YoloDotNet.Data
     public abstract class YoloBase : IDisposable
     {
         private readonly InferenceSession _session;
+        private object _progressLock = new();
         public abstract List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold);
 
         public OnnxModel OnnxModel { get; init; }
@@ -36,16 +37,22 @@ namespace YoloDotNet.Data
         /// <param name="img">The input image to perform object detection on.</param>
         /// <param name="threshold">Optional. The confidence threshold for accepting object detections (default is 0.25).</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        /// <remarks>
         public List<ResultModel> RunInference(Image img, double threshold = 0.25)
         {
-            // Keep each session thread-safe
-            lock (_session)
-            {
-                var tensor = GetTensor(img);
-                var results = DetectObjectsInTensor(tensor, img, threshold);
+            using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 
-                return RemoveOverlappingBoxes(results);
+            var tensorPixels = resizedImg.ExtractPixelsFromImage(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
+
+            lock (_progressLock)
+            {
+                using var result = _session.Run(new List<NamedOnnxValue>()
+                {
+                    NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels)
+                });
+
+                var tensor = result.FirstOrDefault(x => x.Name == OnnxModel.OutputName)!.AsTensor<float>();
+
+                return RemoveOverlappingBoxes(DetectObjectsInTensor(tensor, img, threshold));
             }
         }
 
