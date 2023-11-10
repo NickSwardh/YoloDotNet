@@ -127,17 +127,6 @@ namespace YoloDotNet.Data
         }
 
         /// <summary>
-        /// Clamps a value within a specified range.
-        /// </summary>
-        /// <param name="value">The value to be clamped.</param>
-        /// <param name="min">The minimum value in the range.</param>
-        /// <param name="max">The maximum value in the range.</param>
-        public static float Clamp(float value, float min, float max)
-        {
-            return value < min ? min : value > max ? max : value;
-        }
-
-        /// <summary>
         /// Releases resources and suppresses the finalizer for the current object.
         /// </summary>
         public void Dispose()
