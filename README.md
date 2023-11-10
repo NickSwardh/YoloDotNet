@@ -2,7 +2,7 @@
 
 ### YoloDotNet is a C# .NET 7.0 implementation of Yolov8 and ONNX runtime with CUDA
 
-Yolov8 is a real-time object detection tool by Ultralytics. YoloDotNet is a .NET 7 implementation of Yolov8 for detecting objects in images using ML.NET and the ONNX runtime with GPU acceleration using CUDA.
+Yolov8 is a real-time object detection tool by Ultralytics. YoloDotNet is a .NET 7 implementation of Yolov8 for detecting objects in images and videos using ML.NET and the ONNX runtime with GPU acceleration using CUDA.
 
 ![result](https://github.com/NickSwardh/YoloDotNet/assets/35733515/626b3c97-fdc6-47b8-bfaf-c3a7701721da)
 
@@ -17,7 +17,11 @@ When using YoloDotNet with GPU-acceleration, you need CUDA and cuDNN.
 - Download [cuDNN](https://developer.nvidia.com/cudnn) and follow the [installation instructions](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html#install-windows)
 - Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)
 
-# Example
+:information_source: For Video, you need FFmpeg and FFProbe
+- Download [FFMPEG](https://ffmpeg.org/download.html) and add to your Path
+- Add FFmpeg to the Path-variable in your Environment Variables
+  
+# Example - Image
 
 ```csharp
 using SixLabors.ImageSharp;
@@ -38,6 +42,24 @@ image.DrawBoundingBoxes(results);
 
 // Save image
 image.Save(@"save\image.jpg");
+```
+
+# Example - Video
+
+```csharp
+using SixLabors.ImageSharp;
+using YoloDotNet;
+using YoloDotNet.Extensions;
+
+// Instantiate a new Yolo object with your ONNX-model and CUDA
+using var yolo = new Yolo(@"path\to\model.onnx");
+
+// Run inference
+RunInferenceOnVideo(yolo, new VideoOptions
+{
+    VideoFile = @"path\to\video.mp4",
+    OutputDir = @"path\to\outputfolder"
+});
 ```
 
 # GPU
