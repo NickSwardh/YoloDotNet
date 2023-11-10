@@ -18,7 +18,7 @@ image.DrawBoundingBoxes(detections);
 // Save image
 image.Save(@"save\image.jpg");
 
-
+// Optional - displaying ONNX metadata...
 #region Display internal ONNX parameters
 {
     Console.WriteLine();
