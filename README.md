@@ -4,6 +4,10 @@
 
 Yolov8 is a real-time object detection tool by Ultralytics. YoloDotNet is a .NET 7 implementation of Yolov8 for detecting objects in images using ML.NET and the ONNX runtime with GPU acceleration using CUDA.
 
+![result](https://github.com/NickSwardh/YoloDotNet/assets/35733515/626b3c97-fdc6-47b8-bfaf-c3a7701721da)
+
+<sup>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sup>
+
 # Requirements
 When using YoloDotNet with GPU-acceleration, you need CUDA and cuDNN.
 
