@@ -1,5 +1,4 @@
 ﻿using Microsoft.ML.OnnxRuntime.Tensors;
-using System.Collections.Concurrent;
 using YoloDotNet.Data;
 using YoloDotNet.Models;
 
@@ -30,36 +29,36 @@ namespace YoloDotNet
         /// <returns>A list of result models representing detected objects.</returns>
         public override List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
         {
-            var result = new ConcurrentBag<ResultModel>();
+            var result = new List<ResultModel>();
 
-            var (w, h) = (image.Width, image.Height); // image w and h
-            var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h); // x, y gains
-            var (xPad, yPad) = ((OnnxModel.Input.Width - w * xGain) / 2, (OnnxModel.Input.Height - h * yGain) / 2); // left, right pads
+            var (w, h) = (image.Width, image.Height);
+            var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h);
+            var (xPad, yPad) = ((OnnxModel.Input.Width - w * xGain) / 2, (OnnxModel.Input.Height - h * yGain) / 2);
 
             var dimensions = OnnxModel.Output.Dimensions - 4;
             var batchSize = tensor.Dimensions[0];
             var elementsPerPrediction = (int)(tensor.Length / tensor.Dimensions[1]); //divide total length by the elements per prediction
 
-            //for each batch
-            for (var i = 0; i < batchSize; i++)
+            Parallel.For(0, batchSize, i =>
             {
-                Parallel.For(0, elementsPerPrediction, j =>
+                for (var j = 0; j < elementsPerPrediction; j++)
                 {
-                    float xMin = ((tensor[i, 0, j] - tensor[i, 2, j] / 2) - xPad) / xGain; // unpad bbox tlx to original
-                    float yMin = ((tensor[i, 1, j] - tensor[i, 3, j] / 2) - yPad) / yGain; // unpad bbox tly to original
-                    float xMax = ((tensor[i, 0, j] + tensor[i, 2, j] / 2) - xPad) / xGain; // unpad bbox brx to original
-                    float yMax = ((tensor[i, 1, j] + tensor[i, 3, j] / 2) - yPad) / yGain; // unpad bbox bry to original
+                    // Calculate coordinates of the bounding box in the original image
+                    var xMin = ((tensor[i, 0, j] - tensor[i, 2, j] / 2) - xPad) / xGain;
+                    var yMin = ((tensor[i, 1, j] - tensor[i, 3, j] / 2) - yPad) / yGain;
+                    var xMax = ((tensor[i, 0, j] + tensor[i, 2, j] / 2) - xPad) / xGain;
+                    var yMax = ((tensor[i, 1, j] + tensor[i, 3, j] / 2) - yPad) / yGain;
 
-                    xMin = Clamp(xMin, 0, w - 0); // clip bbox tlx to boundaries
-                    yMin = Clamp(yMin, 0, h - 0); // clip bbox tly to boundaries
-                    xMax = Clamp(xMax, 0, w - 1); // clip bbox brx to boundaries
-                    yMax = Clamp(yMax, 0, h - 1); // clip bbox bry to boundaries
+                    // Keep bounding box coordinates within the image boundaries
+                    xMin = Math.Max(xMin, 0);
+                    yMin = Math.Max(yMin, 0);
+                    xMax = Math.Min(xMax, w - 1);
+                    yMax = Math.Min(yMax, h - 1);
 
                     for (int l = 0; l < dimensions; l++)
                     {
                         var confidence = tensor[i, 4 + l, j];
 
-                        //skip low confidence values
                         if (confidence < threshold) continue;
 
                         result.Add(new ResultModel()
@@ -69,10 +68,10 @@ namespace YoloDotNet
                             Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
                         });
                     }
-                });
-            }
+                }
+            });
 
-            return result.ToList();
+            return result;
         }
     }
 }
