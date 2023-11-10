@@ -113,7 +113,7 @@ namespace YoloDotNet.Data
                 lock (_progressLock)
                 {
                     VideoProgressEvent?.Invoke((int)progress, null!);
-        }
+                }
             });
         }
 
@@ -126,38 +126,31 @@ namespace YoloDotNet.Data
         {
             var result = new List<ResultModel>();
 
-            for (int i = 0; i < predictions.Count; i++)
+            foreach (var item in predictions)
             {
-                bool keep = true;
-                var item = predictions[i];
                 var rect1 = item.Rectangle;
-
-                for (int j = 0; j < result.Count; j++)
+                var overlappingItem = result.FirstOrDefault(current =>
                 {
-                    var current = result[j];
                     var rect2 = current.Rectangle;
-
-                    RectangleF intersection = RectangleF.Intersect(rect1, rect2);
+                    var intersection = RectangleF.Intersect(rect1, rect2);
 
                     float intArea = intersection.Width * intersection.Height; // intersection area
                     float unionArea = rect1.Width * rect1.Height + rect2.Width * rect2.Height - intArea; // union area
                     float overlap = intArea / unionArea; // overlap ratio
 
-                    if (overlap >= 0.45f)
+                    return overlap >= 0.45f;
+                });
+
+                if (overlappingItem is not null)
+                {
+                    if (item.Confidence >= overlappingItem.Confidence)
                     {
-                        if (item.Confidence >= current.Confidence)
-                            result[j] = item; // Replace the current overlapping box with the higher confidence one
-
-                        keep = false;
-
-                        break; // No need to check further, as this item overlaps with one already in the result list.
+                        result.Remove(overlappingItem);
+                        result.Add(item); // Replace the current overlapping box with the higher confidence one
                     }
                 }
-
-                if (keep)
-                {
+                else
                     result.Add(item);
-                }
             }
 
             return result;
