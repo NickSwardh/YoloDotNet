@@ -3,7 +3,6 @@
     /// <summary>
     /// Represents the result of object detection, including label information, confidence score, and bounding box.
     /// </summary>
-    /// <remarks>
     public record ResultModel
     {
         /// <summary>

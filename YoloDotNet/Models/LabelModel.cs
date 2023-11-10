@@ -3,7 +3,6 @@
     /// <summary>
     /// Represents a label with its associated color in hexadecimal format.
     /// </summary>
-    /// <remarks>
     public record LabelModel
     {
         /// <summary>
