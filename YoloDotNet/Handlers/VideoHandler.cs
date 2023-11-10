@@ -217,7 +217,7 @@ namespace YoloDotNet.VideoHandler
         private static partial Regex FrameNumberRegex();
         public void Dispose()
         {
-            if (_videoOptions.KeepFrames is false)
+            if (_videoOptions.KeepFrames is false && VideoMetaData.TempFolder is not null)
                 VideoMetaData.TempFolder.Delete(true);
 
             _handler.ProcessStopped -= OnProcessCompleteEvent;
