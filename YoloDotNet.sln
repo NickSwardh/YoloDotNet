@@ -5,7 +5,7 @@ VisualStudioVersion = 17.7.34024.191
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YoloDotNet", "YoloDotNet\YoloDotNet.csproj", "{6BE4C546-9391-49F6-A635-7BD715CD9D14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console", "Console\Console.csproj", "{9FAD402E-E86D-4BF9-BE07-2AFC10A1B036}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console", "Console\Console.csproj", "{9FAD402E-E86D-4BF9-BE07-2AFC10A1B036}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

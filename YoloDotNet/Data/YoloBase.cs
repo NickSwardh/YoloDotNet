@@ -1,5 +1,7 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using Microsoft.ML.OnnxRuntime.Tensors;
+using System.Collections.Concurrent;
+using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
@@ -10,8 +12,16 @@ namespace YoloDotNet.Data
     /// </summary>
     public abstract class YoloBase : IDisposable
     {
+        public event EventHandler VideoStatusEvent = delegate { };
+        public event EventHandler VideoProgressEvent = delegate { };
+        public event EventHandler VideoCompleteEvent = delegate { };
+
         private readonly InferenceSession _session;
+        private readonly ParallelOptions _parallelOptions;
+        private readonly bool _useCuda;
+
         private object _progressLock = new();
+
         public abstract List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold);
 
         public OnnxModel OnnxModel { get; init; }
@@ -29,6 +39,9 @@ namespace YoloDotNet.Data
                 : new InferenceSession(onnxModel);
 
             OnnxModel = _session.GetOnnxProperties();
+
+            _parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            _useCuda = useCuda;
         }
 
         /// <summary>
@@ -57,27 +70,51 @@ namespace YoloDotNet.Data
         }
 
         /// <summary>
-        /// Get tensor from an input image for object detection.
+        /// Runs inference on video data using the specified options and optional confidence threshold.
+        /// Trigger events for progress, completion, and status changes during video processing.
         /// </summary>
-        /// <param name="img">The input image to extract tensors from.</param>
-        /// <returns>A tensor containing pixel values extracted from the input image.</returns>
-        public Tensor<float> GetTensor(Image img)
+        /// <param name="options">Options for configuring video processing.</param>
+        /// <param name="threshold">Optional. The confidence threshold for inference (default is 0.25).</param>
+        public void RunInference(VideoOptions options, double threshold = 0.25)
         {
-            using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
+            using var _videoHandler = new VideoHandler.VideoHandler(options, _useCuda);
 
-            var tensorPixels = resizedImg.ExtractPixelsFromImage(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
-
-            var inputs = new List<NamedOnnxValue>
+            _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            _videoHandler.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
+            _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+            _videoHandler.FramesExtractedEvent += (sender, e) =>
             {
-                NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels)
+                RunBatchInferenceOnVideoFrames(_videoHandler, options, threshold);
+                _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
             };
 
-            using var output = _session.Run(inputs);
+            _videoHandler.ProcessVideoPipeline();
+        }
 
-            // Get first sequence of maps
-            var tensors = output.FirstOrDefault(x => x.Name == OnnxModel.OutputName)!.AsTensor<float>();
+        /// <summary>
+        /// Runs batch inference on the extracted video frames.
+        /// </summary>
+        private void RunBatchInferenceOnVideoFrames(VideoHandler.VideoHandler _videoHandler, VideoOptions options, double threshold)
+        {
+            var frames = new ConcurrentBag<string>(_videoHandler.GetExtractedFrames());
+            int progressCounter = 0;
+            int totalFrames = frames.Count;
 
-            return tensors ?? throw new Exception("No tensors found.");
+            Parallel.ForEach(frames, _parallelOptions, (frame, token) =>
+            {
+                using var img = Image.Load<Rgba32>(frame);
+
+                img.DrawBoundingBoxes(RunInference(img, threshold), options.DrawConfidence);
+                img.Save(frame);
+
+                Interlocked.Increment(ref progressCounter);
+                var progress = ((double)progressCounter / totalFrames) * 100;
+
+                lock (_progressLock)
+                {
+                    VideoProgressEvent?.Invoke((int)progress, null!);
+        }
+            });
         }
 
         /// <summary>
