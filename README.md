@@ -55,7 +55,7 @@ using YoloDotNet.Extensions;
 using var yolo = new Yolo(@"path\to\model.onnx");
 
 // Run inference
-RunInferenceOnVideo(yolo, new VideoOptions
+yolo.RunInference(new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
     OutputDir = @"path\to\outputfolder"
