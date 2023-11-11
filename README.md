@@ -19,7 +19,7 @@ When using YoloDotNet with GPU-acceleration, you need CUDA and cuDNN.
 
 :information_source: For Video, you need FFmpeg and FFProbe
 - Download [FFMPEG](https://ffmpeg.org/download.html)
-- Add FFmpeg to the Path-variable in your Environment Variables
+- Add FFmpeg and ffprobe to the Path-variable in your Environment Variables
   
 # Example - Image
 
