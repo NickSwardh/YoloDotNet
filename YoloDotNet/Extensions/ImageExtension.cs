@@ -30,7 +30,7 @@ namespace YoloDotNet.Extensions
         {
             var (width, height) = (img.Width, img.Height);
 
-            var tensor = new DenseTensor<float>(new[] { inputBatchSize, inputChannels, height, width });
+            var tensor = new DenseTensor<float>(new[] { inputBatchSize, inputChannels, width, height });
 
             Parallel.For(0, height, y =>
             {
