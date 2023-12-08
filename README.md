@@ -1,8 +1,8 @@
 # YoloDotNet
 
-### YoloDotNet is a C# .NET 7.0 implementation of Yolov8 and ONNX runtime with CUDA
+### YoloDotNet is a C# .NET 8.0 implementation of Yolov8 and ONNX runtime with CUDA
 
-Yolov8 is a real-time object detection tool by Ultralytics. YoloDotNet is a .NET 7 implementation of Yolov8 for detecting objects in images and videos using ML.NET and the ONNX runtime with GPU acceleration using CUDA.
+Yolov8 is a real-time object detection tool by Ultralytics. YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and the ONNX runtime with GPU acceleration using CUDA.
 
 ![result](https://github.com/NickSwardh/YoloDotNet/assets/35733515/626b3c97-fdc6-47b8-bfaf-c3a7701721da)
 
