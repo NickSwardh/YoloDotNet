@@ -1,4 +1,5 @@
 ﻿using Microsoft.ML.OnnxRuntime.Tensors;
+using SixLabors.ImageSharp;
 using YoloDotNet.Data;
 using YoloDotNet.Models;
 

@@ -1,8 +1,11 @@
 ﻿using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.Fonts;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using System.Globalization;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;

@@ -1,5 +1,6 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using Newtonsoft.Json;
+using SixLabors.ImageSharp;
 using YoloDotNet.Data;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;

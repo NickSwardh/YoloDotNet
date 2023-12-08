@@ -1,4 +1,6 @@
-﻿namespace YoloDotNet.Models
+﻿using SixLabors.ImageSharp;
+
+namespace YoloDotNet.Models
 {
     /// <summary>
     /// Represents the configuration and metadata of an ONNX model for object detection.
