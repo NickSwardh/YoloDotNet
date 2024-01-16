@@ -40,11 +40,7 @@ namespace YoloDotNet.Extensions
                     inputMetaData.Dimensions[3]
                     ),
                 Output = outputShape, 
-                    session.OutputMetadata[outputName].Dimensions[0],
-                    session.OutputMetadata[outputName].Dimensions[1],
-                    session.OutputMetadata[outputName].Dimensions[2]
-                    ),
-                Labels = MapLabelsAndColors(session.ModelMetadata.CustomMetadataMap[NameOf(MetaData.Names)])
+                Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], outputShape)
             };
 
             return model;
@@ -55,11 +51,13 @@ namespace YoloDotNet.Extensions
         /// </summary>
         /// <param name="onnxLabelData">The JSON-encoded ONNX label data.</param>
         /// <returns>An array of LabelModel objects with names and associated colors.</returns>
-        private static LabelModel[] MapLabelsAndColors(string onnxLabelData)
+        private static LabelModel[] MapLabelsAndColors(string onnxLabelData, IOutputShape outputShape)
         {
             var onnxLabels = JsonConvert.DeserializeObject<Dictionary<int, string>>(onnxLabelData);
 
-            var colors = YoloDotNetColors.Get();
+            var colors = outputShape is ClassificationShape
+                ? Enumerable.Repeat(YoloDotNetColors.Default(), onnxLabels!.Count).ToArray()
+                : YoloDotNetColors.Get();
 
             if (onnxLabels!.Count > colors.Length)
                 throw new("There are more labels than available colors.");

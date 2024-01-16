@@ -3,6 +3,12 @@
     public static class YoloDotNetColors
     {
         /// <summary>
+        /// Default color in hexadecimal format
+        /// </summary>
+        public static string Default()
+            => "#FFFFFF";
+
+        /// <summary>
         /// 100 unique awesome colors in hexadecimal format ;)
         /// </summary>
         public static string[] Get()
