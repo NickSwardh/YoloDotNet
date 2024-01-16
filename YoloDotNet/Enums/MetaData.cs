@@ -5,14 +5,6 @@
     /// </summary>
     public enum MetaData
     {
-        Date,
-        Description,
-        Author,
-        Version,
-        License,
-        Stride,
-        Task,
-        Batch,
         Names,
     }
 }
