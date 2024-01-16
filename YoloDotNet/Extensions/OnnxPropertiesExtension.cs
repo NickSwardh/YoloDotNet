@@ -20,30 +20,26 @@ namespace YoloDotNet.Extensions
 
             var inputName = session.InputNames[0];
             var outputName = session.OutputNames[0];
+            var inputMetaData = session.InputMetadata[inputName];
+            var (modelType, outputShape) = GetModelOutputShape(session.OutputMetadata[outputName].Dimensions);
 
             var model = new OnnxModel()
             {
+                ModelType = modelType,
                 InputName = inputName,
                 OutputName = outputName,
-                Date = DateTime.Parse(metaData[NameOf(MetaData.Date)]),
-                Description = metaData[NameOf(MetaData.Description)],
-                Author = metaData[NameOf(MetaData.Author)],
-                Version = metaData[NameOf(MetaData.Version)],
-                License = metaData[NameOf(MetaData.License)],
-                Stride = int.Parse(metaData[NameOf(MetaData.Stride)]),
-                Task = metaData[NameOf(MetaData.Task)],
-                BatchSize = int.Parse(metaData[NameOf(MetaData.Batch)]),
+                CustomMetaData = metaData,
                 ImageSize = new Size(
-                    session.InputMetadata[inputName].Dimensions[2],
-                    session.InputMetadata[inputName].Dimensions[3]
+                    inputMetaData.Dimensions[2],
+                    inputMetaData.Dimensions[3]
                     ),
                 Input = new(
-                    session.InputMetadata[inputName].Dimensions[0],
-                    session.InputMetadata[inputName].Dimensions[1],
-                    session.InputMetadata[inputName].Dimensions[2],
-                    session.InputMetadata[inputName].Dimensions[3]
+                    inputMetaData.Dimensions[0],
+                    inputMetaData.Dimensions[1],
+                    inputMetaData.Dimensions[2],
+                    inputMetaData.Dimensions[3]
                     ),
-                Output = new(
+                Output = outputShape, 
                     session.OutputMetadata[outputName].Dimensions[0],
                     session.OutputMetadata[outputName].Dimensions[1],
                     session.OutputMetadata[outputName].Dimensions[2]
@@ -79,5 +75,28 @@ namespace YoloDotNet.Extensions
 
         private static string NameOf(dynamic metadata)
             => metadata.ToString().ToLower();
+
+        private static (ModelType, IOutputShape) GetModelOutputShape(int[] outputDimensions)
+        {
+            var modelType = (ModelType)outputDimensions.Length;
+
+            IOutputShape outputShape = modelType switch
+            {
+                ModelType.Classification => new ClassificationShape(
+                    outputDimensions[0],
+                    outputDimensions[1]
+                    ),
+                ModelType.ObjectDetection => new ObjectDetectionShape(
+                    outputDimensions[0],
+                    outputDimensions[1],
+                    outputDimensions[2]
+                    ),
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(outputDimensions),
+                    $"Unknown ONNX model. Please provide a model for classification or Object Detection.")
+            };
+
+            return (modelType, outputShape);
+        }
     }
 }

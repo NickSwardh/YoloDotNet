@@ -28,9 +28,9 @@ namespace YoloDotNet
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="threshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public override List<ResultModel> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
+        public override List<ObjectDetection> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
         {
-            var result = new List<ResultModel>();
+            var result = new List<ObjectDetection>();
 
             var (w, h) = (image.Width, image.Height);
             var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h);
@@ -62,7 +62,7 @@ namespace YoloDotNet
 
                         if (confidence < threshold) continue;
 
-                        result.Add(new ResultModel()
+                        result.Add(new ObjectDetection()
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = confidence,

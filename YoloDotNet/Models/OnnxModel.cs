@@ -1,4 +1,5 @@
 ﻿using SixLabors.ImageSharp;
+using YoloDotNet.Enums;
 
 namespace YoloDotNet.Models
 {
@@ -7,6 +8,8 @@ namespace YoloDotNet.Models
     /// </summary>
     public record OnnxModel
     {
+        public ModelType ModelType { get; init; }
+
         /// <summary>
         /// Name of the input tensor in the ONNX model.
         /// </summary>
@@ -17,45 +20,7 @@ namespace YoloDotNet.Models
         /// </summary>
         public string OutputName { get; init; } = default!;
 
-        /// <summary>
-        /// Creation date of the ONNX model.
-        /// </summary>
-        public DateTime Date { get; init; }
-
-        /// <summary>
-        /// Description of the ONNX model.
-        /// </summary>
-        public string Description { get; init; } = default!;
-
-        /// <summary>
-        /// Author of the ONNX model.
-        /// </summary>
-        public string Author { get; init; } = default!;
-
-        /// <summary>
-        /// Task or purpose of the ONNX model.
-        /// </summary>
-        public string Task { get; init; } = default!;
-
-        /// <summary>
-        /// License information associated with the ONNX model.
-        /// </summary>
-        public string License { get; init; } = default!;
-
-        /// <summary>
-        /// Version of the ONNX model.
-        /// </summary>
-        public string Version { get; init; } = default!;
-
-        /// <summary>
-        /// Stride value used in object detection.
-        /// </summary>
-        public int Stride { get; init; }
-
-        /// <summary>
-        /// Batch size used in object detection.
-        /// </summary>
-        public int BatchSize { get; init; }
+        public Dictionary<string, string> CustomMetaData { get; set; } = new();
 
         /// <summary>
         /// Size of input images expected by the ONNX model.
@@ -70,7 +35,7 @@ namespace YoloDotNet.Models
         /// <summary>
         /// Output tensor configuration of the ONNX model.
         /// </summary>
-        public Output Output { get; init; } = default!;
+        public IOutputShape Output { get; init; } = default!;
 
         /// <summary>
         /// Array of label models for object detection.
@@ -91,7 +56,14 @@ namespace YoloDotNet.Models
     /// Represents the configuration of output data from the ONNX model.
     /// </summary>
     /// <param name="BatchSize">The batch size of output data.</param>
-    /// <param name="Dimensions">The number of dimensions in the output data.</param>
+    /// <param name="Elements">The number of dimensions in the output data.</param>
+    public record ClassificationShape(int BatchSize, int Elements) : IOutputShape;
+
+    /// <summary>
+    /// Represents the configuration of output data from the ONNX model.
+    /// </summary>
+    /// <param name="BatchSize">The batch size of output data.</param>
+    /// <param name="Elements">The number of dimensions in the output data.</param>
     /// <param name="Channels">The number of output channels.</param>
-    public record Output(int BatchSize, int Dimensions, int Channels);
+    public record ObjectDetectionShape(int BatchSize, int Elements, int Channels) : IOutputShape;
 }

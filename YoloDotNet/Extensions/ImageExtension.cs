@@ -7,6 +7,7 @@ using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Globalization;
+using System.Text;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;
 
@@ -55,7 +56,7 @@ namespace YoloDotNet.Extensions
         /// </summary>
         /// <param name="image">The image on which to draw the boxes and labels.</param>
         /// <param name="predictions">The collection of prediction results containing bounding boxes and labels.</param>
-        public static void DrawBoundingBoxes(this Image image, IEnumerable<ResultModel> predictions, bool drawConfidence = true)
+        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> labels, bool drawConfidence = true)
         {
             // Define constants for readability
             const int fontSize = 16;
@@ -71,12 +72,12 @@ namespace YoloDotNet.Extensions
 
             image.Mutate(context =>
             {
-                foreach (var pred in predictions)
+                foreach (var label in labels!)
                 {
-                    var labelColor = HexToRgba(pred.Label.Color, 128);
+                    var labelColor = HexToRgba(label.Label.Color, 128);
 
                     // Text with label name and confidence in percent
-                    var text = pred.Label.Name;
+                    var text = label.Label.Name;
 
                     if (drawConfidence)
                     {
@@ -88,10 +89,10 @@ namespace YoloDotNet.Extensions
                     var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
 
                     // Label x, y coordinates
-                    var (x, y) = (pred.Rectangle.X, pred.Rectangle.Y - (textSize.Height * 2));
+                    var (x, y) = (label.Rectangle.X, label.Rectangle.Y - (textSize.Height * 2));
 
                     // Draw box
-                    context.Draw(Pens.Solid(labelColor, borderWidth), pred.Rectangle);
+                    context.Draw(Pens.Solid(labelColor, borderWidth), label.Rectangle);
 
                     // Draw text background
                     context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));
@@ -104,6 +105,52 @@ namespace YoloDotNet.Extensions
                 }
             });
         }
+
+        public static void DrawClassificationLabels(this Image image, IEnumerable<Classification>? labels, bool drawConfidence = true)
+        {
+            // Define constants for readability
+            const int fontSize = 16;
+            const int x = fontSize;
+            const int y = fontSize;
+            const int margin = fontSize / 2;
+            const float lineSpace = 1.5f;
+
+            // Define fonts and colors
+            var font = GetFont(fontSize);
+            var shadowColor = new Rgba32(0, 0, 0, 60);
+            var foregroundColor = new Rgba32(255, 255, 255);
+
+            var options = new RichTextOptions(font)
+            {
+                LineSpacing = lineSpace,
+                Origin = new PointF(x + margin, y + margin)
+            };
+
+            // Gather labels and confidence score
+            var sb = new StringBuilder();
+            foreach (var label in labels!)
+            {
+                var text = label.Label;
+
+                sb.AppendLine(text);
+            }
+
+            image.Mutate(context =>
+            {
+                // Calculate text width and height
+                var textSize = TextMeasurer.MeasureSize(sb.ToString(), options);
+
+                // Draw background
+                context.Fill(shadowColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height + fontSize));
+
+                // Draw labels
+                context.DrawText(options, sb.ToString(), foregroundColor);
+            });
+        }
+
+        private static Font GetFont(int size)
+            => SystemFonts.Get(nameof(FontType.Arial))
+                .CreateFont(size, FontStyle.Bold);
 
         /// <summary>
         /// Converts a hexadecimal color representation to an Rgba32 color.
