@@ -1,12 +1,10 @@
 ﻿using SixLabors.ImageSharp;
-using YoloDotNet.Attributes;
 
 namespace YoloDotNet.Models
 {
     /// <summary>
     /// Represents the result of object detection, including label information, confidence score, and bounding box.
     /// </summary>
-    [OutputShape]
     public class ObjectDetection
     {
         /// <summary>
