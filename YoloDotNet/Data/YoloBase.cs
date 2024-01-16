@@ -84,6 +84,9 @@ namespace YoloDotNet.Data
 
         private List<T> Run<T>(Image img, double limit, ModelType modelType)
         {
+            if (OnnxModel.ModelType != modelType)
+                ThrowInvalidOperationException(modelType);
+
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 
             var tensorPixels = resizedImg.ExtractPixelsFromImage(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
@@ -127,6 +130,9 @@ namespace YoloDotNet.Data
         /// <param name="threshold">Optional. The confidence threshold for inference.</param>
         private void RunVideo(VideoOptions options, double threshold, ModelType modelType)
         {
+            if (OnnxModel.ModelType != modelType)
+                ThrowInvalidOperationException(modelType);
+
             using var _videoHandler = new VideoHandler.VideoHandler(options, _useCuda);
 
             _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
@@ -215,6 +221,9 @@ namespace YoloDotNet.Data
 
             return result;
         }
+
+        private void ThrowInvalidOperationException(ModelType expectedModellType)
+            => throw new InvalidOperationException($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModellType}.");
 
         /// <summary>
         /// Releases resources and suppresses the finalizer for the current object.
