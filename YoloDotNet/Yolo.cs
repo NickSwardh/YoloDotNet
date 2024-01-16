@@ -22,7 +22,22 @@ namespace YoloDotNet
             : base(onnxModel, cuda, gpuId) { }
 
         /// <summary>
-        /// Detects objects in a tensor and returns a list of result models.
+        /// Classifies a tensor abd returnbs a Classification list 
+        /// </summary>
+        /// <param name="tensor"></param>
+        /// <param name="numberOfClasses"></param>
+        /// <returns></returns>
+        public override List<Classification> ClassifyTensor(Tensor<float> tensor, int numberOfClasses) => tensor.Select((score, index) => new Classification
+        {
+            Confidence = score,
+            Label = OnnxModel.Labels[index].Name
+        })
+            .OrderByDescending(x => x.Confidence)
+            .Take(numberOfClasses)
+            .ToList();
+
+        /// <summary>
+        /// Detects objects in a tensor and returns a ObjectDetection list.
         /// </summary>
         /// <param name="tensor">The input tensor containing object detection data.</param>
         /// <param name="image">The image associated with the tensor data.</param>
@@ -36,7 +51,7 @@ namespace YoloDotNet
             var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h);
             var (xPad, yPad) = ((OnnxModel.Input.Width - w * xGain) / 2, (OnnxModel.Input.Height - h * yGain) / 2);
 
-            var dimensions = OnnxModel.Output.Dimensions - 4;
+            var elements = (OnnxModel.Output as ObjectDetectionShape)!.Elements - 4;
             var batchSize = tensor.Dimensions[0];
             var elementsPerPrediction = (int)(tensor.Length / tensor.Dimensions[1]); //divide total length by the elements per prediction
 
@@ -56,7 +71,7 @@ namespace YoloDotNet
                     xMax = Math.Min(xMax, w - 1);
                     yMax = Math.Min(yMax, h - 1);
 
-                    for (int l = 0; l < dimensions; l++)
+                    for (int l = 0; l < elements; l++)
                     {
                         var confidence = tensor[i, 4 + l, j];
 
