@@ -80,10 +80,7 @@ namespace YoloDotNet.Extensions
                     var text = label.Label.Name;
 
                     if (drawConfidence)
-                    {
-                        var confidencePercent = (pred!.Confidence * 100).ToString("0.##", CultureInfo.InvariantCulture);
-                        text += $" ({confidencePercent}%)";
-                    }
+                        text += $" ({label!.Confidence.ToPercent()}%)";
 
                     // Calculate text width and height
                     var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
@@ -131,6 +128,9 @@ namespace YoloDotNet.Extensions
             foreach (var label in labels!)
             {
                 var text = label.Label;
+
+                if (drawConfidence)
+                    text += $" ({label!.Confidence.ToPercent()}%)";
 
                 sb.AppendLine(text);
             }
