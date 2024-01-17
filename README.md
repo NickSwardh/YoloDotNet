@@ -3,7 +3,7 @@
 ### YoloDotNet is a C# .NET 8.0 implementation of Yolov8 and ONNX runtime with CUDA
 
 YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
-YoloDotNet currently supports supports `Classification` and `Object Detection` on both images and videos.
+YoloDotNet currently supports `Classification` and `Object Detection` in both images and videos.
 
 Classification<br> | Object Detection
 :---:|:---:
@@ -12,14 +12,26 @@ Categorize an image or video frame | Detect multiple objects in a single image o
 
 # Requirements
 
-YoloDotNet with GPU-acceleration requires CUDA and cuDNN to be installed.
+YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 
 :information_source: Before installing CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
 
 - Download and install [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Download [cuDNN](https://developer.nvidia.com/cudnn) and follow the [installation instructions](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html#install-windows)
-- Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)
+- Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)<br>
   Currently, YoloDotNet supports `Classification` and `ObjectDetection` on both images and videos
+  
+  ## Verify your model
+  
+  ```csharp
+  using YoloDotNet;
+  
+  // Instantiate a new Yolo object with your ONNX-model
+  using var yolo = new Yolo(@"path\to\model.onnx");
+  
+  Console.WriteLine(yolo.OnnxModel.ModelType); // Output if valid: Classification or ObjectDetection
+  ```
+  
 
 > [!NOTE]
 > For Video, you need FFmpeg and FFProbe
@@ -39,7 +51,7 @@ using var yolo = new Yolo(@"path\to\model_for_classification.onnx");
 // Load image
 using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
 
-// Run classification, draw labels, Save image
+// Run classification, draw labels and save image
 var results = yolo.RunClassification(image, 5); // Get top 5 classifications, default = 1
 image.DrawClassificationLabels(results);
 image.Save(@"path\to\save\image.jpg");
@@ -148,6 +160,10 @@ foreach (var property in yolo.OnnxModel.GetType().GetProperties())
 {
     var value = property.GetValue(yolo.OnnxModel);
     Console.WriteLine($"{property.Name,-20}{value!}");
+
+    if (property.Name == nameof(yolo.OnnxModel.CustomMetaData))
+        foreach (var data in (Dictionary<string, string>)value!)
+            Console.WriteLine($"{"",-20}{data.Key,-20}{data.Value}");
 }
 
 // Get ONNX labels
@@ -163,19 +179,24 @@ for (var i = 0; i < labels.Length; i++)
 
 // Output:
 
-// InputName            = images
-// OutputName           = output0
-// Date                 = 2023-10-03 11:32:15
-// Description          = Ultralytics YOLOv8m model trained on coco.yaml
-// Author               = Ultralytics
-// Task                 = detect
-// License              = AGPL-3.0 https://ultralytics.com/license
-// Version              = 8.0.181
-// Stride               = 32
-// BatchSize            = 1
-// ImageSize            = Size[Width = 640, Height = 640]
-// Input                = Input { BatchSize = 1, Channels = 3, Width = 640, Height = 640 }
-// Output               = Output { BatchSize = 1, Dimensions = 84, Channels = 8400 }
+// ModelType           ObjectDetection
+// InputName           images
+// OutputName          output0
+// CustomMetaData      System.Collections.Generic.Dictionary`2[System.String,System.String]
+//                     date                2023-11-07T13:33:33.565196
+//                     description         Ultralytics YOLOv8n model trained on coco.yaml
+//                     author              Ultralytics
+//                     task                detect
+//                     license             AGPL-3.0 https://ultralytics.com/license
+//                     version             8.0.202
+//                     stride              32
+//                     batch               1
+//                     imgsz               [640, 640]
+//                     names               {0: 'person', 1: 'bicycle', 2: 'car' ... }
+// ImageSize           Size [ Width=640, Height=640 ]
+// Input               Input { BatchSize = 1, Channels = 3, Width = 640, Height = 640 }
+// Output              ObjectDetectionShape { BatchSize = 1, Elements = 84, Channels = 8400 }
+// Labels              YoloDotNet.Models.LabelModel[]
 //
 // Labels (80):
 // ---------------------------------------------------------
@@ -185,6 +206,9 @@ for (var i = 0; i < labels.Length; i++)
 // index: 3        label: motorcycle          color: #efdecd
 // ...
 ```
+
+# Donate
+[https://paypal.me/nickswardh](https://paypal.me/nickswardh?country.x=SE&locale.x=en_US)
 
 # References & Acknowledgements
 
