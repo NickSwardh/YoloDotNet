@@ -25,7 +25,13 @@ InferenceOnVideo(yolo, new VideoOptions
 #region Methods
 static void InferenceOnImage(Yolo yolo, string imgPath)
 {
-    Console.WriteLine("Running inference on {0}\r\n", imgPath);
+    if (File.Exists(imgPath) is false)
+    {
+        Console.WriteLine($"{imgPath} not found.");
+        return;
+    }
+
+    Console.WriteLine($"Running inference on {imgPath}\r\n");
 
     // Load image
     using var image = Image.Load<Rgba32>(imgPath);
@@ -60,7 +66,12 @@ static void InferenceOnImage(Yolo yolo, string imgPath)
 
 static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
 {
+    if (File.Exists(videoOptions.VideoFile) is false)
 {
+        Console.WriteLine($"{videoOptions.VideoFile} not found.");
+        return;
+    }
+
     int currentLineCursor = 0;
     Console.WriteLine();
     Console.WriteLine(@"Running inference on {0}", videoOptions.VideoFile);
