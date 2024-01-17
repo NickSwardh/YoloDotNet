@@ -22,7 +22,7 @@ namespace YoloDotNet.Data
         private readonly ParallelOptions _parallelOptions;
         private readonly bool _useCuda;
 
-        private object _progressLock = new();
+        private readonly object _progressLock = new();
 
         public abstract List<Classification> ClassifyTensor(Tensor<float> tensor, int numberOfClasses);
         public abstract List<ObjectDetection> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold);
