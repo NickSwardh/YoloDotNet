@@ -137,6 +137,14 @@ static void DisplayOnnxMetaData(Yolo yolo)
     {
         var value = property.GetValue(yolo.OnnxModel);
         Console.WriteLine($"{property.Name,-20}{value!}");
+
+        if (property.Name == nameof(yolo.OnnxModel.CustomMetaData))
+        {
+            var customMetaData = (Dictionary<string, string>)value!;
+
+            foreach (var data in customMetaData)
+                Console.WriteLine($"{"",-20}{data.Key, -20}{data.Value}");
+        }
     }
 
     var labels = yolo.OnnxModel.Labels;
