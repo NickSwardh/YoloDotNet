@@ -14,10 +14,11 @@
     <PackageReadmeFile></PackageReadmeFile>
     <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for object detection in images and videos. For object detection in videos, FFMPEG is requred and added to your system PATH environment variables.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.0</Version>
+	<Version>1.1</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <PackageReleaseNotes>Added option to classify images and video frames.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
