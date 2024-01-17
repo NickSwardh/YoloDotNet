@@ -1,49 +1,65 @@
 ﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Globalization;
 using YoloDotNet;
+using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
 // Instantiate a new Yolo object
 using var yolo = new Yolo(@"path\to\model.onnx");
 
+// Display ONNX metadata
+DisplayOnnxMetaData(yolo);
+
 // Run inference on image
-RunInferenceOnImage(yolo, @"path\to\image.jpg");
+InferenceOnImage(yolo, @"path\to\image.jpg");
 
 // Run inference on video
-RunInferenceOnVideo(yolo, new VideoOptions
+InferenceOnVideo(yolo, new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
     OutputDir = @"path\to\outputfolder"
 });
 
-// Display ONNX metadata
-DisplayOnnxMetaData(yolo);
-
 #region Methods
-static void RunInferenceOnImage(Yolo yolo, string imgPath)
+static void InferenceOnImage(Yolo yolo, string imgPath)
 {
     Console.WriteLine("Running inference on {0}\r\n", imgPath);
 
     // Load image
     using var image = Image.Load<Rgba32>(imgPath);
 
-    // Run inference
-    var detections = yolo.RunInference(image);
+    // Run Classification or ObjectDetection depending on ONNX-modeltype
+    if (yolo.OnnxModel.ModelType == ModelType.Classification)
+    {
+        var detections = yolo.RunClassification(image, 5); // default classes = 1
 
-    // Draw boxes
+        Console.WriteLine("Classification result:");
+        foreach (var label in detections)
+        {
+            Console.WriteLine($"{label.Confidence.ToString("0.00", CultureInfo.InvariantCulture)}% {label.Label}");
+        }
+
+        Console.WriteLine();
+        image.DrawClassificationLabels(detections);
+    }
+    else if (yolo.OnnxModel.ModelType == ModelType.ObjectDetection)
+    {
+        var detections = yolo.RunObjectDetection(image, 0.25); // default threshold = 0.25
     image.DrawBoundingBoxes(detections);
-
-    var filename = Path.GetDirectoryName(imgPath) + @"\result.jpg";
+    }
 
     // Save image
+    var filename = Path.GetDirectoryName(imgPath) + @"\result.jpg";
     image.Save(filename);
 
     Console.WriteLine("Done!");
     Console.WriteLine("Saved as {0}", filename);
 }
 
-static void RunInferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
+static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
+{
 {
     int currentLineCursor = 0;
     Console.WriteLine();
@@ -58,7 +74,10 @@ static void RunInferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
     // Run inference on video
     try
     {
-        yolo.RunInference(videoOptions);
+        if (yolo.OnnxModel.ModelType == ModelType.Classification)
+            yolo.RunClassification(videoOptions, 5); // default classes = 1
+        else if (yolo.OnnxModel.ModelType == ModelType.ObjectDetection)
+            yolo.RunObjectDetection(videoOptions, 0.3); // default threshold = 0.25
     }
     catch (Exception ex)
     {
