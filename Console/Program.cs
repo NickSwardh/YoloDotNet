@@ -19,7 +19,12 @@ InferenceOnImage(yolo, @"path\to\image.jpg");
 InferenceOnVideo(yolo, new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
-    OutputDir = @"path\to\outputfolder"
+    OutputDir = @"path\to\outputfolder",
+    //FPS = 30,
+    //Width = 1280,
+    //Height = 720,
+    //DrawConfidence = true,
+    //KeepAudio = true
 });
 
 #region Methods
@@ -53,7 +58,7 @@ static void InferenceOnImage(Yolo yolo, string imgPath)
     else if (yolo.OnnxModel.ModelType == ModelType.ObjectDetection)
     {
         var detections = yolo.RunObjectDetection(image, 0.25); // default threshold = 0.25
-    image.DrawBoundingBoxes(detections);
+        image.DrawBoundingBoxes(detections);
     }
 
     // Save image
@@ -67,7 +72,7 @@ static void InferenceOnImage(Yolo yolo, string imgPath)
 static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
 {
     if (File.Exists(videoOptions.VideoFile) is false)
-{
+    {
         Console.WriteLine($"{videoOptions.VideoFile} not found.");
         return;
     }
