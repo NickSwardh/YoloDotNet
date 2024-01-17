@@ -33,7 +33,7 @@ static void InferenceOnImage(Yolo yolo, string imgPath)
 
     Console.WriteLine($"Running inference on {imgPath}\r\n");
 
-    // Load image
+    // Load image as RGBA
     using var image = Image.Load<Rgba32>(imgPath);
 
     // Run Classification or ObjectDetection depending on ONNX-modeltype
