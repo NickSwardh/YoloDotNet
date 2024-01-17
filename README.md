@@ -2,49 +2,69 @@
 
 ### YoloDotNet is a C# .NET 8.0 implementation of Yolov8 and ONNX runtime with CUDA
 
-Yolov8 is a real-time object detection tool by Ultralytics. YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and the ONNX runtime with GPU acceleration using CUDA.
+YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
+YoloDotNet currently supports supports `Classification` and `Object Detection` on both images and videos.
 
-![result](https://github.com/NickSwardh/YoloDotNet/assets/35733515/626b3c97-fdc6-47b8-bfaf-c3a7701721da)
-
-<sup>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sup>
+Classification<br> | Object Detection
+:---:|:---:
+Categorize an image or video frame | Detect multiple objects in a single image or video frame
+![hummingbird](https://github.com/NickSwardh/YoloDotNet/assets/35733515/c8539bff-0a71-48be-b316-f2611c3836a3)<br><sup>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sup> | ![result](https://github.com/NickSwardh/YoloDotNet/assets/35733515/626b3c97-fdc6-47b8-bfaf-c3a7701721da)<br><sup>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sup>
 
 # Requirements
-When using YoloDotNet with GPU-acceleration, you need CUDA and cuDNN.
 
-:information_source: Before you install CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
+YoloDotNet with GPU-acceleration requires CUDA and cuDNN to be installed.
+
+:information_source: Before installing CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
 
 - Download and install [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Download [cuDNN](https://developer.nvidia.com/cudnn) and follow the [installation instructions](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html#install-windows)
 - Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)
+  Currently, YoloDotNet supports `Classification` and `ObjectDetection` on both images and videos
 
-:information_source: For Video, you need FFmpeg and FFProbe
-- Download [FFMPEG](https://ffmpeg.org/download.html)
-- Add FFmpeg and ffprobe to the Path-variable in your Environment Variables
-  
-# Example - Image
+> [!NOTE]
+> For Video, you need FFmpeg and FFProbe
+> - Download [FFMPEG](https://ffmpeg.org/download.html)
+> - Add FFmpeg and ffprobe to the Path-variable in your Environment Variables
+
+# Example - Image Classification
 
 ```csharp
 using SixLabors.ImageSharp;
 using YoloDotNet;
 using YoloDotNet.Extensions;
 
-// Instantiate a new Yolo object with your ONNX-model and CUDA
-using var yolo = new Yolo(@"path\to\model.onnx");
+// Instantiate a new Yolo object with your ONNX-model and CUDA (default)
+using var yolo = new Yolo(@"path\to\model_for_classification.onnx");
 
 // Load image
-using var image = Image.Load<Rgb32>(@"path\to\image.jpg");
+using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
 
-// Run inference
-var results = yolo.RunInference(image);
-
-// Draw boxes
-image.DrawBoundingBoxes(results);
-
-// Save image
-image.Save(@"save\image.jpg");
+// Run classification, draw labels, Save image
+var results = yolo.RunClassification(image, 5); // Get top 5 classifications, default = 1
+image.DrawClassificationLabels(results);
+image.Save(@"path\to\save\image.jpg");
 ```
 
-# Example - Video
+# Example - Image Object Detection
+
+```csharp
+using SixLabors.ImageSharp;
+using YoloDotNet;
+using YoloDotNet.Extensions;
+
+// Instantiate a new Yolo object with your ONNX-model and CUDA (default)
+using var yolo = new Yolo(@"path\to\model_for_object_detection.onnx");
+
+// Load image
+using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
+
+// Run object detection, draw boxes and save image
+var results = yolo.RunObjectDetection(image, 0.5); // Default threshold = 0.25
+image.DrawBoundingBoxes(results);
+image.Save(@"path\to\save\image.jpg");
+```
+
+# Example - Video Classification on frames
 
 ```csharp
 using SixLabors.ImageSharp;
@@ -52,14 +72,32 @@ using YoloDotNet;
 using YoloDotNet.Extensions;
 
 // Instantiate a new Yolo object with your ONNX-model and CUDA
-using var yolo = new Yolo(@"path\to\model.onnx");
+using var yolo = new Yolo(@"path\to\model_for_classification.onnx");
 
-// Run inference
-yolo.RunInference(new VideoOptions
+// Run classification and save video to output folder
+yolo.RunClassification(new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
     OutputDir = @"path\to\outputfolder"
-});
+}, 5); // Get top 5 classifications for each frame, default = 1
+```
+
+# Example - Video Object Detection on frames
+
+```csharp
+using SixLabors.ImageSharp;
+using YoloDotNet;
+using YoloDotNet.Extensions;
+
+// Instantiate a new Yolo object with your ONNX-model and CUDA
+using var yolo = new Yolo(@"path\to\model_for_classification.onnx");
+
+// Run object detection and save video to output folder
+yolo.RunObjectDetection(new VideoOptions
+{
+    VideoFile = @"path\to\video.mp4",
+    OutputDir = @"path\to\outputfolder"
+}, 0.3); // Default threshold = 0.25
 ```
 
 # GPU
