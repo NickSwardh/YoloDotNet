@@ -130,11 +130,14 @@ static void DisplayOnnxMetaData(Yolo yolo)
     Console.WriteLine(new string('-', 58));
 
     // Display labels and its corresponding color
-    for (var i = 0; i < labels.Length; i++)
+    for (var i = 0; i < 3; i++)
     {
         // Capitalize first letter in label
         var label = string.Concat(labels[i].Name[0].ToString().ToUpper(), labels[i].Name.AsSpan(1));
         Console.WriteLine($"index: {i,-8} label: {label,-20} color: {labels[i].Color}");
     }
+
+    Console.WriteLine("...");
+    Console.WriteLine();
 }
 #endregion
