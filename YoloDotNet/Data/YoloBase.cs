@@ -48,37 +48,36 @@ namespace YoloDotNet.Data
         }
 
         /// <summary>
-        /// Run classificationo on image
+        /// Run image classification on an Image.
         /// </summary>
-        /// <param name="img"></param>
-        /// <param name="classes"></param>
-        /// <returns></returns>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of classification results.</returns>
         public List<Classification> RunClassification(Image img, int classes = 1)
             => Run<Classification>(img, classes, ModelType.Classification);
 
         /// <summary>
-        /// Run object detection on image
+        /// Run object detection on an image.
         /// </summary>
-        /// <param name="img"></param>
-        /// <param name="threshold"></param>
-        /// <returns></returns>
+        /// <param name="img">The image for object detection.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <returns>A list of detected objects.</returns>
         public List<ObjectDetection> RunObjectDetection(Image img, double threshold = 0.25)
             => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
 
         /// <summary>
-        /// Run classification on video
+        /// Run image classification on a video file.
         /// </summary>
-        /// <param name="options"></param>
-        /// <param name="classes"></param>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
         public void RunClassification(VideoOptions options, int classes = 1)
             => RunVideo(options, classes, ModelType.Classification);
 
         /// <summary>
-        /// Run object detection on video
+        /// Run object detection on a video file.
         /// </summary>
-        /// <param name="img"></param>
-        /// <param name="threshold"></param>
-        /// <returns></returns>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
         public void RunObjectDetection(VideoOptions options, double threshold = 0.25)
             => RunVideo(options, threshold, ModelType.ObjectDetection);
 
@@ -106,6 +105,9 @@ namespace YoloDotNet.Data
             }
         }
 
+        /// <summary>
+        /// Invokes inference based on the ONNX model type, processing the input tensor and image data.
+        /// </summary>
         private object InvokeInferenceType(Tensor<float> tensor, Image img, double limit) => OnnxModel.ModelType switch
         {
             ModelType.Classification => ClassifyTensor(tensor, (int)limit),
