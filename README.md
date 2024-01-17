@@ -5,10 +5,10 @@
 YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
 YoloDotNet currently supports `Classification` and `Object Detection` in both images and videos.
 
-Classification<br> | Object Detection
+Classification|Object Detection
 :---:|:---:
 Categorize an image or video frame | Detect multiple objects in a single image or video frame
-![hummingbird](https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg)<br><sup>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sup> | ![result](https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg)<br><sup>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sup>
+![hummingbird](https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg)[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/) | ![result](https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg)[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)
 
 # Requirements
 
@@ -32,11 +32,15 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
   Console.WriteLine(yolo.OnnxModel.ModelType); // Output if valid: Classification or ObjectDetection
   ```
   
-
 > [!NOTE]
 > For Video, you need FFmpeg and FFProbe
 > - Download [FFMPEG](https://ffmpeg.org/download.html)
 > - Add FFmpeg and ffprobe to the Path-variable in your Environment Variables
+
+# Nuget
+```
+> dotnet add package YoloDotNet
+```
 
 # Example - Image Classification
 
