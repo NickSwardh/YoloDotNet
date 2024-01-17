@@ -165,7 +165,7 @@ namespace YoloDotNet.Data
                 switch (OnnxModel.ModelType)
                 {
                     case ModelType.Classification:
-                        img.DrawClassificationLabels(RunClassification(img, (int)limit)!, options.DrawConfidence);
+                        img.DrawClassificationLabels(RunClassification(img, (int)limit), options.DrawConfidence);
                         break;
                     case ModelType.ObjectDetection:
                         img.DrawBoundingBoxes(RunObjectDetection(img, limit), options.DrawConfidence);
