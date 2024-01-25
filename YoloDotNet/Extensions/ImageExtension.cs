@@ -154,6 +154,30 @@ namespace YoloDotNet.Extensions
             });
         }
 
+        /// <summary>
+        /// Resize segmented image to original image size and crop selected area
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="cropRectangle"></param>
+        /// <param name="resizeWidth"></param>
+        /// <param name="resizeHeight"></param>
+        public static void CropSegmentedArea(this Image image, Image originalImage, Rectangle rectangle)
+        {
+            var gain = Math.Min(image.Width / (float)originalImage.Width, image.Height / (float)originalImage.Height);
+
+            var x = (int)((image.Width - originalImage.Width * gain) / 2);
+            var y = (int)((image.Height - originalImage.Height * gain) / 2);
+            var w = image.Width - x * 2;
+            var h = image.Height - y * 2;
+
+            image.Mutate(img =>
+            {
+                img.Crop(new Rectangle(x, y, w, h));
+                img.Resize(originalImage.Width, originalImage.Height);
+                img.Crop(rectangle);
+            });
+        }
+
         private static Font GetFont(int size)
             => SystemFonts.Get(nameof(FontType.Arial))
                 .CreateFont(size, FontStyle.Bold);

@@ -26,6 +26,7 @@ namespace YoloDotNet.Data
 
         public abstract List<Classification> ClassifyImage(int numberOfClasses);
         public abstract List<ObjectResult> ObjectDetectImage(Image image, double threshold);
+        public abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
 
         protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
 
@@ -228,6 +229,21 @@ namespace YoloDotNet.Data
 
         private void ThrowInvalidOperationException(ModelType expectedModellType)
             => throw new InvalidOperationException($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModellType}.");
+
+        /// <summary>
+        /// Squash value to a number between 0 and 1
+        /// </summary>
+        protected static float Sigmoid(float value) => 1 / (1 + MathF.Exp(-value));
+
+        /// <summary>
+        /// Calculate pixel luminance
+        /// </summary>
+        protected static byte CalculatePixelLuminance(float value) => (byte)(255 - value * 255);
+
+        /// <summary>
+        /// Calculate
+        /// </summary>
+        protected static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
 
         /// <summary>
         /// Releases resources and suppresses the finalizer for the current object.

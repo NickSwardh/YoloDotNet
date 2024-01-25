@@ -1,6 +1,9 @@
 ﻿using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using System.Collections.Concurrent;
 using YoloDotNet.Data;
+using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
 namespace YoloDotNet
@@ -88,10 +91,51 @@ namespace YoloDotNet
                     }
                         });
                     }
+        }
+
+        /// <summary>
+        /// Performs segmentation on the input image
+        /// </summary>
+        /// <param name="image">The input image for segmentation.</param>
+        /// <param name="boundingBoxes">List of bounding boxes for segmentation.</param>
+        /// <returns>List of Segmentation objects corresponding to the input bounding boxes.</returns>
+        public override List<Segmentation> SegmentImage(Image image, List<ObjectResult> boundingBoxes)
+        {
+            var output = OnnxModel.Outputs[1]; // Segmentation output
+            var tensor0 = Tensors[OnnxModel.OutputNames[0]];
+            var tensor1 = Tensors[OnnxModel.OutputNames[1]];
+
+            var elements = OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
+
+            Parallel.ForEach(boundingBoxes, _parallelOptions, box =>
+            //foreach (var box in boundingBoxes)
+            {
+                // Collect mask weights from the first tensor based on the bounding box index
+                var maskWeights = Enumerable.Range(0, output.Channels)
+                    .Select(i => tensor0[0, elements + i, box.BoundingBoxIndex])
+                    .ToArray();
+
+                // Create an empty image with the same size as the output shape
+                using var segmentedImage = new Image<L8>(output.Width, output.Height);
+
+                // Iterate over each empty pixel...
+                for (int y = 0; y < output.Height; y++)
+                    for (int x = 0; x < output.Width; x++)
+                    {
+                        // Iterate over each channel, calculate the pixel location (x, y) with its maskweight collected from first tensor.
+                        var value = Enumerable.Range(0, output.Channels)
+                                      .Sum(i => tensor1[0, i, y, x] * maskWeights[i]);
+
+                        // Calculate and update the pixel luminance value
+                        var pixelLuminance = CalculatePixelLuminance(Sigmoid(value));
+                        segmentedImage[x, y] = new L8(pixelLuminance);
                 }
+
+                segmentedImage.CropSegmentedArea(image, box.Rectangle);
+                box.SegmentationMask = segmentedImage.GetPixels(p => CalculatePixelConfidence(p.PackedValue));
             });
 
-            return result;
+            return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
     }
 }
