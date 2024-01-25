@@ -2,6 +2,7 @@
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using YoloDotNet.Data;
+using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
@@ -19,12 +20,64 @@ namespace YoloDotNet
     public class Yolo(string onnxModel, bool cuda = true, int gpuId = 0) : YoloBase(onnxModel, cuda, gpuId)
     {
         /// <summary>
-        /// Classifies a tensor abd returnbs a Classification list 
+        /// Run image classification on an Image.
+        /// </summary>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of classification results.</returns>
+        public override List<Classification> RunClassification(Image img, int classes = 1)
+            => Run<Classification>(img, classes, ModelType.Classification);
+
+        /// <summary>
+        /// Run object detection on an image.
+        /// </summary>
+        /// <param name="img">The image for object detection.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <returns>A list of detected objects.</returns>
+        public override List<ObjectDetection> RunObjectDetection(Image img, double threshold = 0.25)
+            => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
+
+        /// <summary>
+        /// Run segmentation on an image.
+        /// </summary>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of classification results.</returns>
+        public override List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
+            => Run<Segmentation>(img, threshold, ModelType.Segmentation);
+
+        /// <summary>
+        /// Run image classification on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
+        public override void RunClassification(VideoOptions options, int classes = 1)
+            => RunVideo(options, classes, ModelType.Classification);
+
+        /// <summary>
+        /// Run object detection on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public override void RunObjectDetection(VideoOptions options, double threshold = 0.25)
+            => RunVideo(options, threshold, ModelType.ObjectDetection);
+
+        /// <summary>
+        /// Run object detection on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public override void RunSegmentation(VideoOptions options, double threshold = 0.25)
+            => RunVideo(options, threshold, ModelType.Segmentation);
+
+        #region Tensor methods
+        /// <summary>
+        /// Classifies a tensor and returns a Classification list 
         /// </summary>
         /// <param name="tensor"></param>
         /// <param name="numberOfClasses"></param>
         /// <returns></returns>
-        public override List<Classification> ClassifyImage(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]].Select((score, index) => new Classification
+        protected override List<Classification> ClassifyTensor(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]].Select((score, index) => new Classification
         {
             Confidence = score,
             Label = OnnxModel.Labels[index].Name
@@ -40,7 +93,7 @@ namespace YoloDotNet
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="threshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public override List<ObjectResult> ObjectDetectImage(Image image, double threshold)
+        protected override List<ObjectResult> ObjectDetectImage(Image image, double threshold)
         {
             var result = new ConcurrentBag<ObjectResult>();
 
@@ -98,7 +151,7 @@ namespace YoloDotNet
         /// <param name="image">The input image for segmentation.</param>
         /// <param name="boundingBoxes">List of bounding boxes for segmentation.</param>
         /// <returns>List of Segmentation objects corresponding to the input bounding boxes.</returns>
-        public override List<Segmentation> SegmentImage(Image image, List<ObjectResult> boundingBoxes)
+        protected override List<Segmentation> SegmentImage(Image image, List<ObjectResult> boundingBoxes)
         {
             var output = OnnxModel.Outputs[1]; // Segmentation output
             var tensor0 = Tensors[OnnxModel.OutputNames[0]];
@@ -107,7 +160,6 @@ namespace YoloDotNet
             var elements = OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
 
             Parallel.ForEach(boundingBoxes, _parallelOptions, box =>
-            //foreach (var box in boundingBoxes)
             {
                 // Collect mask weights from the first tensor based on the bounding box index
                 var maskWeights = Enumerable.Range(0, output.Channels)
@@ -136,5 +188,6 @@ namespace YoloDotNet
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
+        #endregion
     }
 }

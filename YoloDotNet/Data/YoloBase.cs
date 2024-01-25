@@ -24,9 +24,17 @@ namespace YoloDotNet.Data
 
         private readonly object _progressLock = new();
 
-        public abstract List<Classification> ClassifyImage(int numberOfClasses);
-        public abstract List<ObjectResult> ObjectDetectImage(Image image, double threshold);
-        public abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
+        #region Contracts
+        public abstract List<Classification> RunClassification(Image img, int classes);
+        public abstract List<ObjectDetection> RunObjectDetection(Image img, double threshold);
+        public abstract List<Segmentation> RunSegmentation(Image img, double threshold);
+        public abstract void RunClassification(VideoOptions options, int classes);
+        public abstract void RunObjectDetection(VideoOptions options, double threshold);
+        public abstract void RunSegmentation(VideoOptions options, double threshold);
+        protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
+        protected abstract List<ObjectResult> ObjectDetectImage(Image image, double threshold);
+        protected abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
+        #endregion
 
         protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
 
@@ -49,57 +57,6 @@ namespace YoloDotNet.Data
             _parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
             _useCuda = useCuda;
         }
-
-        /// <summary>
-        /// Run image classification on an Image.
-        /// </summary>
-        /// <param name="img">The image to classify.</param>
-        /// <param name="classes">The number of classes to return (default is 1).</param>
-        /// <returns>A list of classification results.</returns>
-        public List<Classification> RunClassification(Image img, int classes = 1)
-            => Run<Classification>(img, classes, ModelType.Classification);
-
-        /// <summary>
-        /// Run object detection on an image.
-        /// </summary>
-        /// <param name="img">The image for object detection.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <returns>A list of detected objects.</returns>
-        public List<ObjectDetection> RunObjectDetection(Image img, double threshold = 0.25)
-            => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
-
-        /// <summary>
-        /// Run segmentation on an image.
-        /// </summary>
-        /// <param name="img">The image to classify.</param>
-        /// <param name="classes">The number of classes to return (default is 1).</param>
-        /// <returns>A list of classification results.</returns>
-        public List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
-            => Run<Segmentation>(img, threshold, ModelType.Segmentation);
-
-        /// <summary>
-        /// Run image classification on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
-        public void RunClassification(VideoOptions options, int classes = 1)
-            => RunVideo(options, classes, ModelType.Classification);
-
-        /// <summary>
-        /// Run object detection on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public void RunObjectDetection(VideoOptions options, double threshold = 0.25)
-            => RunVideo(options, threshold, ModelType.ObjectDetection);
-
-        /// <summary>
-        /// Run object detection on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public void RunSegmentation(VideoOptions options, double threshold = 0.25)
-            => RunVideo(options, threshold, ModelType.Segmentation);
 
         protected List<T> Run<T>(Image img, double limit, ModelType modelType)
         {
@@ -127,7 +84,7 @@ namespace YoloDotNet.Data
         /// </summary>
         private object InvokeInferenceType(Image img, double limit) => OnnxModel.ModelType switch
         {
-            ModelType.Classification => ClassifyImage((int)limit),
+            ModelType.Classification => ClassifyTensor((int)limit),
             ModelType.ObjectDetection => ObjectDetectImage(img, limit).Select(x => (ObjectDetection)x).ToList(),
             ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, limit)),
             _ => throw new NotSupportedException($"Unknown ONNX model")
@@ -141,9 +98,6 @@ namespace YoloDotNet.Data
         /// <param name="threshold">Optional. The confidence threshold for inference.</param>
         protected void RunVideo(VideoOptions options, double threshold, ModelType modelType)
         {
-            if (OnnxModel.ModelType != modelType)
-                ThrowInvalidOperationException(modelType);
-
             using var _videoHandler = new VideoHandler.VideoHandler(options, _useCuda);
 
             _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
@@ -235,9 +189,6 @@ namespace YoloDotNet.Data
 
             return result;
         }
-
-        private void ThrowInvalidOperationException(ModelType expectedModellType)
-            => throw new InvalidOperationException($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModellType}.");
 
         /// <summary>
         /// Squash value to a number between 0 and 1
