@@ -83,6 +83,9 @@ namespace YoloDotNet
                             Label = OnnxModel.Labels[l],
                             Confidence = confidence,
                             Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
+                            BoundingBoxIndex = j,
+                        }); ;
+                    }
                         });
                     }
                 }
