@@ -1,6 +1,7 @@
 ﻿using Microsoft.ML.OnnxRuntime;
 using Newtonsoft.Json;
 using SixLabors.ImageSharp;
+using System.Runtime.Serialization;
 using YoloDotNet.Data;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;
@@ -18,83 +19,80 @@ namespace YoloDotNet.Extensions
         {
             var metaData = session.ModelMetadata.CustomMetadataMap;
 
-            var inputName = session.InputNames[0];
-            var outputName = session.OutputNames[0];
-            var inputMetaData = session.InputMetadata[inputName];
-            var (modelType, outputShape) = GetModelOutputShape(session.OutputMetadata[outputName].Dimensions);
+            var modelType = GetModelType(metaData[NameOf(MetaData.Task)]);
 
-            var model = new OnnxModel()
+            var inputName = session.InputNames[0];
+            var outputNames = session.OutputNames.ToList();
+
+            return new OnnxModel()
             {
                 ModelType = modelType,
                 InputName = inputName,
-                OutputName = outputName,
+                OutputNames = outputNames,
                 CustomMetaData = metaData,
-                ImageSize = new Size(
-                    inputMetaData.Dimensions[2],
-                    inputMetaData.Dimensions[3]
-                    ),
-                Input = new(
-                    inputMetaData.Dimensions[0],
-                    inputMetaData.Dimensions[1],
-                    inputMetaData.Dimensions[2],
-                    inputMetaData.Dimensions[3]
-                    ),
-                Output = outputShape, 
-                Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], outputShape)
+                Input = GetModelInputShape(session.InputMetadata[inputName]),
+                Outputs = GetOutputShapes(session.OutputMetadata, modelType),
+                Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], modelType)
             };
-
-            return model;
         }
 
+        #region Helper methods
         /// <summary>
         /// Maps ONNX labels to corresponding colors for visualization.
         /// </summary>
-        /// <param name="onnxLabelData">The JSON-encoded ONNX label data.</param>
-        /// <returns>An array of LabelModel objects with names and associated colors.</returns>
-        private static LabelModel[] MapLabelsAndColors(string onnxLabelData, IOutputShape outputShape)
+        private static LabelModel[] MapLabelsAndColors(string onnxLabelData, ModelType modelType)
         {
             var onnxLabels = JsonConvert.DeserializeObject<Dictionary<int, string>>(onnxLabelData);
 
-            var colors = outputShape is ClassificationShape
+            var colors = modelType == ModelType.Classification
                 ? Enumerable.Repeat(YoloDotNetColors.Default(), onnxLabels!.Count).ToArray()
                 : YoloDotNetColors.Get();
 
             if (onnxLabels!.Count > colors.Length)
                 throw new("There are more labels than available colors.");
 
-            // Map ONNX labels to corresponding colors
-            return onnxLabels.Zip(colors, (label, color)
-                => new LabelModel
-                {
-                    Name = label.Value,
-                    Color = color
-                }).ToArray();
+            return onnxLabels.Zip(colors, (label, color) => new LabelModel
+            {
+                Name = label.Value,
+                Color = color
+            }).ToArray();
         }
 
         private static string NameOf(dynamic metadata)
             => metadata.ToString().ToLower();
 
-        private static (ModelType, IOutputShape) GetModelOutputShape(int[] outputDimensions)
-        {
-            var modelType = (ModelType)outputDimensions.Length;
+        /// <summary>
+        /// Retrieves the input shape of a model based on metadata
+        /// </summary>
+        private static Input GetModelInputShape(NodeMetadata metaData)
+            => Input.Shape(metaData.Dimensions);
 
-            IOutputShape outputShape = modelType switch
+        /// <summary>
+        /// Retrieves the output shapes of a model based on metadata and model type.
+        /// </summary>
+        private static List<Output> GetOutputShapes(IReadOnlyDictionary<string, NodeMetadata> metaData, ModelType modelType)
+        {
+            var dimensions = metaData.Values.Select(x => x.Dimensions).ToArray();
+
+            var (output0, output1) = modelType switch
             {
-                ModelType.Classification => new ClassificationShape(
-                    outputDimensions[0],
-                    outputDimensions[1]
-                    ),
-                ModelType.ObjectDetection => new ObjectDetectionShape(
-                    outputDimensions[0],
-                    outputDimensions[1],
-                    outputDimensions[2]
-                    ),
-                _ => throw new ArgumentOutOfRangeException(
-                    nameof(outputDimensions),
-                    $"Unknown ONNX model. Please provide a model for classification or Object Detection.")
+                ModelType.Classification => (Output.Classification(dimensions[0]), Output.Empty()),
+                ModelType.ObjectDetection => (Output.Detection(dimensions[0]), Output.Empty()),
+                ModelType.Segmentation => (Output.Detection(dimensions[0]), Output.Segmentation(dimensions[1])),
+                _ => throw new ArgumentException($"Error getting output shapes. Unknown ONNX model type.", nameof(modelType))
             };
 
-            return (modelType, outputShape);
+            return [output0, output1];
         }
+
+        /// <summary>
+        /// Get ONNX model type
+        /// </summary>
+        private static ModelType GetModelType(string modelType) => (ModelType)(typeof(ModelType)
+            .GetFields()
+            .FirstOrDefault((x => Attribute.GetCustomAttribute(x, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute && attribute.Value == modelType)))!
+            .GetValue(null)!;
+
+        #endregion
     }
 }

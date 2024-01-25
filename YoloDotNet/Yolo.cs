@@ -27,7 +27,7 @@ namespace YoloDotNet
         /// <param name="tensor"></param>
         /// <param name="numberOfClasses"></param>
         /// <returns></returns>
-        public override List<Classification> ClassifyTensor(Tensor<float> tensor, int numberOfClasses) => tensor.Select((score, index) => new Classification
+        public override List<Classification> ClassifyImage(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]].Select((score, index) => new Classification
         {
             Confidence = score,
             Label = OnnxModel.Labels[index].Name
@@ -43,9 +43,9 @@ namespace YoloDotNet
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="threshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public override List<ObjectDetection> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
+        public override List<ObjectResult> ObjectDetectImage(Image image, double threshold)
         {
-            var result = new List<ObjectDetection>();
+            var result = new ConcurrentBag<ObjectResult>();
 
             var (w, h) = (image.Width, image.Height);
             var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h);
@@ -56,6 +56,7 @@ namespace YoloDotNet
             var elementsPerPrediction = (int)(tensor.Length / tensor.Dimensions[1]); //divide total length by the elements per prediction
 
             Parallel.For(0, batchSize, i =>
+            for (var i = 0; i < batchSize; i++)
             {
                 for (var j = 0; j < elementsPerPrediction; j++)
                 {
@@ -77,7 +78,7 @@ namespace YoloDotNet
 
                         if (confidence < threshold) continue;
 
-                        result.Add(new ObjectDetection()
+                        result.Add(new ObjectResult
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = confidence,

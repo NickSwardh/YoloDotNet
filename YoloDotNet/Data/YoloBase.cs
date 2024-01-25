@@ -24,8 +24,10 @@ namespace YoloDotNet.Data
 
         private readonly object _progressLock = new();
 
-        public abstract List<Classification> ClassifyTensor(Tensor<float> tensor, int numberOfClasses);
-        public abstract List<ObjectDetection> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold);
+        public abstract List<Classification> ClassifyImage(int numberOfClasses);
+        public abstract List<ObjectResult> ObjectDetectImage(Image image, double threshold);
+
+        protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
 
         public OnnxModel OnnxModel { get; init; }
 
@@ -110,8 +112,8 @@ namespace YoloDotNet.Data
         /// </summary>
         private object InvokeInferenceType(Tensor<float> tensor, Image img, double limit) => OnnxModel.ModelType switch
         {
-            ModelType.Classification => ClassifyTensor(tensor, (int)limit),
-            ModelType.ObjectDetection => ObjectDetectImage(tensor, img, limit),
+            ModelType.Classification => ClassifyImage((int)limit),
+            ModelType.ObjectDetection => ObjectDetectImage(img, limit).Select(x => (ObjectDetection)x).ToList(),
             _ => throw new NotSupportedException($"Unknown ONNX model")
         };
 

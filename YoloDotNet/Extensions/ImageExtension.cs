@@ -57,6 +57,12 @@ namespace YoloDotNet.Extensions
         /// <param name="image">The image on which to draw the boxes and labels.</param>
         /// <param name="predictions">The collection of prediction results containing bounding boxes and labels.</param>
         public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> labels, bool drawConfidence = true)
+        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> detections, bool drawConfidence = true)
+        {
+            BoundingBox(image, detections, drawConfidence);
+        }
+
+        private static void BoundingBox(Image image, IEnumerable<IDetection> detections, bool drawConfidence)
         {
             // Define constants for readability
             const int fontSize = 16;
@@ -72,7 +78,7 @@ namespace YoloDotNet.Extensions
 
             image.Mutate(context =>
             {
-                foreach (var label in labels!)
+                foreach (var label in detections!)
                 {
                     var labelColor = HexToRgba(label.Label.Color, 128);
 

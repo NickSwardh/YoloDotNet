@@ -5,6 +5,7 @@
     /// </summary>
     public enum MetaData
     {
+        Task,
         Names,
     }
 }
