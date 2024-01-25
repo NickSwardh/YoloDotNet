@@ -19,7 +19,7 @@ namespace YoloDotNet.Data
         public event EventHandler VideoCompleteEvent = delegate { };
 
         private readonly InferenceSession _session;
-        private readonly ParallelOptions _parallelOptions;
+        protected readonly ParallelOptions _parallelOptions;
         private readonly bool _useCuda;
 
         private readonly object _progressLock = new();
@@ -69,6 +69,15 @@ namespace YoloDotNet.Data
             => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
 
         /// <summary>
+        /// Run segmentation on an image.
+        /// </summary>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of classification results.</returns>
+        public List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
+            => Run<Segmentation>(img, threshold, ModelType.Segmentation);
+
+        /// <summary>
         /// Run image classification on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
@@ -84,11 +93,16 @@ namespace YoloDotNet.Data
         public void RunObjectDetection(VideoOptions options, double threshold = 0.25)
             => RunVideo(options, threshold, ModelType.ObjectDetection);
 
-        private List<T> Run<T>(Image img, double limit, ModelType modelType)
-        {
-            if (OnnxModel.ModelType != modelType)
-                ThrowInvalidOperationException(modelType);
+        /// <summary>
+        /// Run object detection on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public void RunSegmentation(VideoOptions options, double threshold = 0.25)
+            => RunVideo(options, threshold, ModelType.Segmentation);
 
+        protected List<T> Run<T>(Image img, double limit, ModelType modelType)
+        {
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 
             var tensorPixels = resizedImg.ExtractPixelsFromImage(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
@@ -97,12 +111,12 @@ namespace YoloDotNet.Data
             {
                 using var result = _session.Run(new List<NamedOnnxValue>()
                 {
-                    NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels)
+                    NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels),
                 });
 
-                var tensor = result.FirstOrDefault(x => x.Name == OnnxModel.OutputName)!.AsTensor<float>();
+                Tensors = result.ToDictionary(x => x.Name, x => x.AsTensor<float>());
 
-                return InvokeInferenceType(tensor, img, limit) is List<T> results
+                return InvokeInferenceType(img, limit) is List<T> results
                     ? results
                     : [];
             }
@@ -111,21 +125,13 @@ namespace YoloDotNet.Data
         /// <summary>
         /// Invokes inference based on the ONNX model type, processing the input tensor and image data.
         /// </summary>
-        private object InvokeInferenceType(Tensor<float> tensor, Image img, double limit) => OnnxModel.ModelType switch
+        private object InvokeInferenceType(Image img, double limit) => OnnxModel.ModelType switch
         {
             ModelType.Classification => ClassifyImage((int)limit),
             ModelType.ObjectDetection => ObjectDetectImage(img, limit).Select(x => (ObjectDetection)x).ToList(),
+            ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, limit)),
             _ => throw new NotSupportedException($"Unknown ONNX model")
         };
-
-        /// <summary>
-        /// Runs object detection inference on an input image.
-        /// </summary>
-        /// <param name="img">The input image to perform object detection on.</param>
-        /// <param name="threshold">Optional. The confidence threshold for accepting object detections.</param>
-        /// <returns>A list of result models representing detected objects.</returns>
-        private List<ObjectDetection> ObjectDetectImage(Tensor<float> tensor, Image img, double threshold)
-            => [.. RemoveOverlappingBoxes(DetectObjectsInTensor(tensor, img, threshold))];
 
         /// <summary>
         /// Runs inference on video data using the specified options and optional confidence threshold.
@@ -133,7 +139,7 @@ namespace YoloDotNet.Data
         /// </summary>
         /// <param name="options">Options for configuring video processing.</param>
         /// <param name="threshold">Optional. The confidence threshold for inference.</param>
-        private void RunVideo(VideoOptions options, double threshold, ModelType modelType)
+        protected void RunVideo(VideoOptions options, double threshold, ModelType modelType)
         {
             if (OnnxModel.ModelType != modelType)
                 ThrowInvalidOperationException(modelType);
@@ -173,10 +179,13 @@ namespace YoloDotNet.Data
                     case ModelType.ObjectDetection:
                         img.DrawBoundingBoxes(RunObjectDetection(img, limit), options.DrawConfidence);
                         break;
+                    case ModelType.Segmentation:
+                        img.DrawSegmentation(RunSegmentation(img, limit), options.DrawConfidence);
+                        break;
                     default: throw new NotSupportedException("Unknown ONNX model.");
                 };
 
-                img.Save(frame);
+                img.SaveAsync(frame).ConfigureAwait(false);
 
                 Interlocked.Increment(ref progressCounter);
                 var progress = ((double)progressCounter / totalFrames) * 100;
@@ -193,9 +202,9 @@ namespace YoloDotNet.Data
         /// </summary>
         /// <param name="predictions">The list of object detection results to process.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        private static List<ObjectDetection> RemoveOverlappingBoxes(List<ObjectDetection> predictions)
+        protected static List<ObjectResult> RemoveOverlappingBoxes(List<ObjectResult> predictions)
         {
-            var result = new List<ObjectDetection>();
+            var result = new List<ObjectResult>();
 
             foreach (var item in predictions)
             {
@@ -209,7 +218,7 @@ namespace YoloDotNet.Data
                     float unionArea = rect1.Width * rect1.Height + rect2.Width * rect2.Height - intArea; // union area
                     float overlap = intArea / unionArea; // overlap ratio
 
-                    return overlap >= 0.45f;
+                    return overlap > 0.45f;
                 });
 
                 if (overlappingItem is not null)

@@ -16,14 +16,23 @@ namespace YoloDotNet.Extensions
     public static class ImageExtension
     {
         /// <summary>
-        /// Creates a resized clone of the input image with new width and height.
+        /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
         /// </summary>
         /// <param name="image">The original image to be resized.</param>
         /// <param name="w">The desired width for the resized image.</param>
         /// <param name="h">The desired height for the resized image.</param>
         /// <returns>A new image with the specified dimensions.</returns>
         public static Image<Rgb24> ResizeImage(this Image image, int w, int h)
-            => image.Clone(x => x.Resize(w, h)).CloneAs<Rgb24>();
+        {
+            var options = new ResizeOptions
+            {
+                Size = new Size(w, h),
+                Mode = ResizeMode.Pad,
+                PadColor = new Color(new Rgb24(0, 0, 0))
+            };
+
+            return image.Clone(x => x.Resize(options)).CloneAs<Rgb24>();
+        }
 
         /// <summary>
         /// Extracts pixel values from an RGB image and converts them into a tensor.
@@ -33,7 +42,6 @@ namespace YoloDotNet.Extensions
         public static Tensor<float> ExtractPixelsFromImage(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
         {
             var (width, height) = (img.Width, img.Height);
-
             var tensor = new DenseTensor<float>(new[] { inputBatchSize, inputChannels, width, height });
 
             Parallel.For(0, height, y =>
@@ -52,11 +60,53 @@ namespace YoloDotNet.Extensions
         }
 
         /// <summary>
-        /// Draws bounding boxes and associated labels on the image.
+        /// Iterates over each pixel and invokes the provided method.
         /// </summary>
-        /// <param name="image">The image on which to draw the boxes and labels.</param>
-        /// <param name="predictions">The collection of prediction results containing bounding boxes and labels.</param>
-        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> labels, bool drawConfidence = true)
+        public static double[,] GetPixels<TPixel>(this Image<TPixel> image, Func<TPixel, float> func) where TPixel : unmanaged, IPixel<TPixel>
+        {
+            var width = image.Width;
+            var height = image.Height;
+
+            var pixels = new double[width, height];
+
+            Parallel.For(0, height, y =>
+            {
+                var row = image.DangerousGetPixelRowMemory(y).Span;
+
+                for (int x = 0; x < width; x++)
+                    pixels[x, y] = func(row[x]);
+            });
+
+            return pixels;
+        }
+
+        /// <summary>
+        /// Draws the specified segmentations on the image.
+        /// </summary>
+        public static void DrawSegmentation(this Image image, List<Segmentation> segmentations, bool drawConfidence = true)
+        {
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            Parallel.ForEach(segmentations, options, segmentation =>
+            {
+                var rect = Rectangle.Ceiling(segmentation.Rectangle);
+
+                // Create a new transparent image and draw segmented pixel
+                using var mask = new Image<Rgba32>(rect.Width, rect.Height);
+                for (int x = 0; x < rect.Width; x++)
+                    for (int y = 0; y < rect.Height; y++)
+                    {
+                        var value = segmentation.SegmentationMask[x, y];
+
+                        if (value > 0.68f)
+                            mask[x, y] = Color.ParseHex(segmentation.Label.Color); // color;
+                    }
+
+                image.Mutate(x => x.DrawImage(mask, rect.Location, .28f));
+            });
+
+            BoundingBox(image, segmentations, drawConfidence);
+        }
+
         public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> detections, bool drawConfidence = true)
         {
             BoundingBox(image, detections, drawConfidence);
@@ -198,7 +248,7 @@ namespace YoloDotNet.Extensions
                 throw new ArgumentException("Invalid hexadecimal color format.");
 
             if (alpha < 0 || alpha > 255)
-                throw new ArgumentOutOfRangeException("Alfa value must be between 0-255.");
+                throw new ArgumentOutOfRangeException(nameof(alpha), "Alfa value must be between 0-255.");
 
             byte r = byte.Parse(hexColor.Substring(1, 2), NumberStyles.HexNumber);
             byte g = byte.Parse(hexColor.Substring(3, 2), NumberStyles.HexNumber);

@@ -1,5 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntime.Tensors;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using YoloDotNet.Data;
@@ -12,18 +11,13 @@ namespace YoloDotNet
     /// Detects objects in an image based on ONNX model.
     /// </summary>
     /// <remarks>
-    public class Yolo : YoloBase
+    /// Initializes a new instance of the Yolo object detection model.
+    /// </remarks>
+    /// <param name="onnxModel">The path to the ONNX model.</param>
+    /// <param name="cuda">Optional. Indicates whether to use CUDA for GPU acceleration (default is true).</param>
+    /// <param name="gpuId">Optional. The GPU device ID to use when CUDA is enabled (default is 0).</param>
+    public class Yolo(string onnxModel, bool cuda = true, int gpuId = 0) : YoloBase(onnxModel, cuda, gpuId)
     {
-        /// <summary>
-        /// Initializes a new instance of the Yolo object detection model.
-        /// </summary>
-        /// <param name="onnxModel">The path to the ONNX model.</param>
-        /// <param name="cuda">Optional. Indicates whether to use CUDA for GPU acceleration (default is true).</param>
-        /// <param name="gpuId">Optional. The GPU device ID to use when CUDA is enabled (default is 0).</param>
-        /// <remarks>
-        public Yolo(string onnxModel, bool cuda = true, int gpuId = 0)
-            : base(onnxModel, cuda, gpuId) { }
-
         /// <summary>
         /// Classifies a tensor abd returnbs a Classification list 
         /// </summary>
@@ -51,29 +45,32 @@ namespace YoloDotNet
             var result = new ConcurrentBag<ObjectResult>();
 
             var (w, h) = (image.Width, image.Height);
-            var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h);
-            var (xPad, yPad) = ((OnnxModel.Input.Width - w * xGain) / 2, (OnnxModel.Input.Height - h * yGain) / 2);
 
-            var elements = (OnnxModel.Output as ObjectDetectionShape)!.Elements - 4;
-            var batchSize = tensor.Dimensions[0];
-            var elementsPerPrediction = (int)(tensor.Length / tensor.Dimensions[1]); //divide total length by the elements per prediction
+            var gain = Math.Max((float)w / OnnxModel.Input.Width, (float)h / OnnxModel.Input.Height);
+            var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
+            var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
 
-            Parallel.For(0, batchSize, i =>
+            var elements = OnnxModel.Labels.Length;
+            var batchSize = OnnxModel.Outputs[0].BatchSize;
+            var channels = OnnxModel.Outputs[0].Channels;
+
+            var tensor = Tensors[OnnxModel.OutputNames[0]];
+
             for (var i = 0; i < batchSize; i++)
             {
-                for (var j = 0; j < elementsPerPrediction; j++)
+                Parallel.For(0, channels, j =>
                 {
                     // Calculate coordinates of the bounding box in the original image
-                    var xMin = ((tensor[i, 0, j] - tensor[i, 2, j] / 2) - xPad) / xGain;
-                    var yMin = ((tensor[i, 1, j] - tensor[i, 3, j] / 2) - yPad) / yGain;
-                    var xMax = ((tensor[i, 0, j] + tensor[i, 2, j] / 2) - xPad) / xGain;
-                    var yMax = ((tensor[i, 1, j] + tensor[i, 3, j] / 2) - yPad) / yGain;
+                    var xMin = (int)((tensor[i, 0, j] - tensor[i, 2, j] / 2 - xPad) * gain);
+                    var yMin = (int)((tensor[i, 1, j] - tensor[i, 3, j] / 2 - yPad) * gain);
+                    var xMax = (int)((tensor[i, 0, j] + tensor[i, 2, j] / 2 - xPad) * gain);
+                    var yMax = (int)((tensor[i, 1, j] + tensor[i, 3, j] / 2 - yPad) * gain);
 
                     // Keep bounding box coordinates within the image boundaries
-                    xMin = Math.Max(xMin, 0);
-                    yMin = Math.Max(yMin, 0);
-                    xMax = Math.Min(xMax, w - 1);
-                    yMax = Math.Min(yMax, h - 1);
+                    xMin = Math.Clamp(xMin, 0, w);
+                    yMin = Math.Clamp(yMin, 0, h);
+                    xMax = Math.Clamp(xMax, 0, w);
+                    yMax = Math.Clamp(yMax, 0, h);
 
                     for (int l = 0; l < elements; l++)
                     {
@@ -85,12 +82,14 @@ namespace YoloDotNet
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = confidence,
-                            Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
+                            Rectangle = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
                             BoundingBoxIndex = j,
                         }); ;
                     }
-                        });
-                    }
+                });
+            }
+
+            return RemoveOverlappingBoxes([.. result]);
         }
 
         /// <summary>
@@ -129,7 +128,7 @@ namespace YoloDotNet
                         // Calculate and update the pixel luminance value
                         var pixelLuminance = CalculatePixelLuminance(Sigmoid(value));
                         segmentedImage[x, y] = new L8(pixelLuminance);
-                }
+                    }
 
                 segmentedImage.CropSegmentedArea(image, box.Rectangle);
                 box.SegmentationMask = segmentedImage.GetPixels(p => CalculatePixelConfidence(p.PackedValue));

@@ -5,12 +5,12 @@ namespace YoloDotNet.Models
     /// <summary>
     /// Represents the result of object detection, including label information, confidence score, and bounding box.
     /// </summary>
-    public class ObjectDetection
+    public class ObjectDetection : IDetection
     {
         /// <summary>
         /// Label information associated with the detected object.
         /// </summary>
-        public LabelModel Label { get; init; } = default!;
+        public LabelModel Label { get; init; } = new();
 
         /// <summary>
         /// Confidence score of the detected object.
@@ -20,6 +20,10 @@ namespace YoloDotNet.Models
         /// <summary>
         /// Rectangle defining the region of interest (bounding box) of the detected object.
         /// </summary>
-        public RectangleF Rectangle { get; init; }
+        public Rectangle Rectangle { get; init; }
+
+        //public int BoxIndex { get; init; }
+
+        //public double[,] SegmentationMask { get; set; } = default!;
     }
 }
