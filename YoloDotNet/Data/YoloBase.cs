@@ -10,7 +10,7 @@ using YoloDotNet.Models;
 namespace YoloDotNet.Data
 {
     /// <summary>
-    /// Abstract base class for performing object detection using a YOLOv8 model in ONNX format.
+    /// Abstract base class for performing image vision tasks using a YOLOv8 model in ONNX format.
     /// </summary>
     public abstract class YoloBase : IDisposable
     {
@@ -37,7 +37,6 @@ namespace YoloDotNet.Data
         #endregion
 
         protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
-
         public OnnxModel OnnxModel { get; init; }
 
         /// <summary>

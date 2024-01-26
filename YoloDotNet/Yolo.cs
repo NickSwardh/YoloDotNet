@@ -42,7 +42,7 @@ namespace YoloDotNet
         /// </summary>
         /// <param name="img">The image to classify.</param>
         /// <param name="classes">The number of classes to return (default is 1).</param>
-        /// <returns>A list of classification results.</returns>
+        /// <returns>A list of Segmentation results.</returns>
         public override List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
             => Run<Segmentation>(img, threshold, ModelType.Segmentation);
 
