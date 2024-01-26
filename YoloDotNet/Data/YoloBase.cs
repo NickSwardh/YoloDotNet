@@ -61,7 +61,7 @@ namespace YoloDotNet.Data
         {
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 
-            var tensorPixels = resizedImg.ExtractPixelsFromImage(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
+            var tensorPixels = resizedImg.PixelsToTensor(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
 
             lock (_progressLock)
             {

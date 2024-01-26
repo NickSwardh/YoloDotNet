@@ -182,8 +182,8 @@ namespace YoloDotNet
                         segmentedImage[x, y] = new L8(pixelLuminance);
                     }
 
-                segmentedImage.CropSegmentedArea(image, box.Rectangle);
-                box.SegmentedPixels = segmentedImage.GetPixels(p => CalculatePixelConfidence(p.PackedValue));
+                segmentedImage.CropResizedSegmentedArea(image, box.Rectangle);
+                box.SegmentedPixels = segmentedImage.GetSegmentedPixels(p => CalculatePixelConfidence(p.PackedValue));
             });
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
