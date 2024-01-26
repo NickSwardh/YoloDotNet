@@ -67,7 +67,7 @@ namespace YoloDotNet.Extensions
         /// <param name="image">The image from which to retrieve segmented pixels.</param>
         /// <param name="func">A function that computes confidence values for pixels.</param>
         /// <returns>An array of <see cref="Pixel"/> representing the segmented pixels.</returns>
-        public static Pixel[] GetSegmentedPixels<TPixel>(this Image<TPixel> image, Func<TPixel, float> func) where TPixel : unmanaged, IPixel<TPixel>
+        public static Pixel[] GetSegmentedPixels(this Image<L8> image, Func<L8, float> func)// where L8 : unmanaged, IPixel<L8>
         {
             var width = image.Width;
             var height = image.Height;
