@@ -173,7 +173,7 @@ namespace YoloDotNet
                 for (int y = 0; y < output.Height; y++)
                     for (int x = 0; x < output.Width; x++)
                     {
-                        // Iterate over each channel, calculate the pixel location (x, y) with its maskweight collected from first tensor.
+                        // Iterate over each channel and calculate pixel location (x, y) with its maskweight, collected from first tensor.
                         var value = Enumerable.Range(0, output.Channels)
                                       .Sum(i => tensor1[0, i, y, x] * maskWeights[i]);
 
@@ -183,7 +183,7 @@ namespace YoloDotNet
                     }
 
                 segmentedImage.CropSegmentedArea(image, box.Rectangle);
-                box.SegmentationMask = segmentedImage.GetPixels(p => CalculatePixelConfidence(p.PackedValue));
+                box.SegmentedPixels = segmentedImage.GetPixels(p => CalculatePixelConfidence(p.PackedValue));
             });
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();

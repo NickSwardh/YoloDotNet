@@ -8,8 +8,10 @@ using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using System.Globalization;
 using System.Text;
+using System.Linq;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;
+using System.Collections.Concurrent;
 
 namespace YoloDotNet.Extensions
 {
@@ -62,22 +64,27 @@ namespace YoloDotNet.Extensions
         /// <summary>
         /// Iterates over each pixel and invokes the provided method.
         /// </summary>
-        public static double[,] GetPixels<TPixel>(this Image<TPixel> image, Func<TPixel, float> func) where TPixel : unmanaged, IPixel<TPixel>
+        public static Pixel[] GetPixels<TPixel>(this Image<TPixel> image, Func<TPixel, float> func) where TPixel : unmanaged, IPixel<TPixel>
         {
             var width = image.Width;
             var height = image.Height;
 
-            var pixels = new double[width, height];
+            var pixels = new ConcurrentBag<Pixel>();
 
             Parallel.For(0, height, y =>
             {
                 var row = image.DangerousGetPixelRowMemory(y).Span;
 
                 for (int x = 0; x < width; x++)
-                    pixels[x, y] = func(row[x]);
+                {
+                    var confidence = func(row[x]);
+
+                    if (confidence > 0.75f)
+                        pixels.Add(new Pixel(x, y, confidence));
+                }
             });
 
-            return pixels;
+            return pixels.ToArray();
         }
 
         /// <summary>
@@ -86,22 +93,18 @@ namespace YoloDotNet.Extensions
         public static void DrawSegmentation(this Image image, List<Segmentation> segmentations, bool drawConfidence = true)
         {
             var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
             Parallel.ForEach(segmentations, options, segmentation =>
             {
-                var rect = Rectangle.Ceiling(segmentation.Rectangle);
-
                 // Create a new transparent image and draw segmented pixel
-                using var mask = new Image<Rgba32>(rect.Width, rect.Height);
-                for (int x = 0; x < rect.Width; x++)
-                    for (int y = 0; y < rect.Height; y++)
-                    {
-                        var value = segmentation.SegmentationMask[x, y];
+                using var mask = new Image<Rgba32>(segmentation.Rectangle.Width, segmentation.Rectangle.Height);
 
-                        if (value > 0.68f)
-                            mask[x, y] = Color.ParseHex(segmentation.Label.Color); // color;
-                    }
+                var color = Color.ParseHex(segmentation.Label.Color);
 
-                image.Mutate(x => x.DrawImage(mask, rect.Location, .28f));
+                foreach (var pixel in segmentation.SegmentedPixels)
+                    mask[pixel.X, pixel.Y] = color;
+
+                image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .28f));
             });
 
             BoundingBox(image, segmentations, drawConfidence);

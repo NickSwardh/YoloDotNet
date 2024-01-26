@@ -22,6 +22,6 @@ namespace YoloDotNet.Models
         /// <summary>
         /// Segmentated pixels (x,y) with the pixel confidence value
         /// </summary>
-        public double[,] SegmentationMask { get; set; } = default!;
+        public Pixel[] SegmentedPixels { get; set; } = [];
     }
 }

@@ -27,7 +27,7 @@ namespace YoloDotNet.Models
         /// <summary>
         /// Segmented pixels coordinates (x,y) and pixel confidence value
         /// </summary>
-        public double[,] SegmentationMask { get; set; } = default!;
+        public Pixel[] SegmentedPixels { get; set; } = [];
 
         #region Mapping methods
         public static explicit operator ObjectDetection(ObjectResult result) => new()
@@ -42,7 +42,7 @@ namespace YoloDotNet.Models
             Label = result.Label,
             Confidence = result.Confidence,
             Rectangle = result.Rectangle,
-            SegmentationMask = result.SegmentationMask
+            SegmentedPixels = result.SegmentedPixels
         };
         #endregion
     }
