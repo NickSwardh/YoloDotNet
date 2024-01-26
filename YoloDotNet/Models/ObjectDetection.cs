@@ -21,9 +21,5 @@ namespace YoloDotNet.Models
         /// Rectangle defining the region of interest (bounding box) of the detected object.
         /// </summary>
         public Rectangle Rectangle { get; init; }
-
-        //public int BoxIndex { get; init; }
-
-        //public double[,] SegmentationMask { get; set; } = default!;
     }
 }
