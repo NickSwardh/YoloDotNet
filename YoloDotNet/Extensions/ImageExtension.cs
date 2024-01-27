@@ -203,7 +203,7 @@ namespace YoloDotNet.Extensions
         #region Helper methods
 
         /// <summary>
-        /// Helpermethod for drawing bounding boxes around detected objects on the specified image.
+        /// Helper method for drawing bounding boxes around detected objects on the specified image.
         /// </summary>
         /// <param name="image">The image on which to draw bounding boxes.</param>
         /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
@@ -211,11 +211,11 @@ namespace YoloDotNet.Extensions
         private static void DrawBoundingBoxesHelper(Image image, IEnumerable<IDetection> detections, bool drawConfidence)
         {
             // Define constants for readability
-            const int fontSize = 16;
-            const int borderWidth = 2;
+            const int borderThickness = 2;
             const int shadowOffset = 1;
 
             // Define fonts and colors
+            var fontSize = image.CalculateFontSizeByDpi(16f);
             var font = SystemFonts.Get(nameof(FontType.Arial))
                 .CreateFont(fontSize, FontStyle.Bold);
 
@@ -241,7 +241,7 @@ namespace YoloDotNet.Extensions
                     var (x, y) = (label.Rectangle.X, label.Rectangle.Y - (textSize.Height * 2));
 
                     // Draw box
-                    context.Draw(Pens.Solid(labelColor, borderWidth), label.Rectangle);
+                    context.Draw(Pens.Solid(labelColor, borderThickness), label.Rectangle);
 
                     // Draw text background
                     context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));
