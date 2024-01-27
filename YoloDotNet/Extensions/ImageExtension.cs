@@ -98,12 +98,11 @@ namespace YoloDotNet.Extensions
         /// <param name="drawConfidence">A flag indicating whether to include confidence scores in the labels.</param>
         public static void DrawClassificationLabels(this Image image, IEnumerable<Classification>? labels, bool drawConfidence = true)
         {
-            // Define constants for readability
-            const int fontSize = 16;
-            const int x = fontSize;
-            const int y = fontSize;
-            const int margin = fontSize / 2;
-            const float lineSpace = 1.5f;
+            var fontSize = image.CalculateFontSizeByDpi(16f);
+            var x = (int)fontSize;
+            var y = (int)fontSize;
+            var margin = fontSize / 2;
+            var lineSpace = 1.5f;
 
             // Define fonts and colors
             var font = GetFont(fontSize);
@@ -260,7 +259,7 @@ namespace YoloDotNet.Extensions
         /// </summary>
         /// <param name="size"></param>
         /// <returns></returns>
-        private static Font GetFont(int size)
+        private static Font GetFont(float size)
             => SystemFonts.Get(nameof(FontType.Arial))
                 .CreateFont(size, FontStyle.Bold);
 
