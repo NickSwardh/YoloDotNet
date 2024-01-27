@@ -70,7 +70,7 @@ namespace YoloDotNet.Models
     public record Output(int BatchSize, int Elements, int Channels, int Width, int Height)
     {
         public static Output Classification(int[] dimensions)
-            => new (dimensions[0], dimensions[1], 0, 0, 0);
+            => new(dimensions[0], dimensions[1], 0, 0, 0);
 
         public static Output Detection(int[] dimensions)
             => new(dimensions[0], dimensions[1], dimensions[2], 0, 0);

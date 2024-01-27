@@ -9,7 +9,7 @@ namespace YoloDotNet.Enums
     public enum ModelType
     {
         [EnumMember(Value = "classify")]
-        Classification = 2,
+        Classification,
 
         [EnumMember(Value = "detect")]
         ObjectDetection,
