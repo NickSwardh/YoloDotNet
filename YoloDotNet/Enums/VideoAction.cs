@@ -5,6 +5,7 @@
     /// </summary>
     public enum VideoAction
     {
+        PreProcess,
         GetMetaData,
         ExtractMetaData,
         ExtractAudio,
