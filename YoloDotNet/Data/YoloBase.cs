@@ -57,7 +57,7 @@ namespace YoloDotNet.Data
             _useCuda = useCuda;
         }
 
-        protected List<T> Run<T>(Image img, double limit, ModelType modelType)
+        protected List<T> Run<T>(Image img, double limit)
         {
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 
@@ -95,7 +95,7 @@ namespace YoloDotNet.Data
         /// </summary>
         /// <param name="options">Options for configuring video processing.</param>
         /// <param name="threshold">Optional. The confidence threshold for inference.</param>
-        protected void RunVideo(VideoOptions options, double threshold, ModelType modelType)
+        protected void RunVideo(VideoOptions options, double threshold)
         {
             using var _videoHandler = new VideoHandler.VideoHandler(options, _useCuda);
 
