@@ -26,7 +26,7 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="SixLabors.Fonts" Version="2.0.1" />
     <PackageReference Include="SixLabors.ImageSharp" Version="3.1.2" />
-    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.0" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.1" />
   </ItemGroup>
 
 </Project>
