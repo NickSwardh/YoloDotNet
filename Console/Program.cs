@@ -1,6 +1,5 @@
 ﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Globalization;
 using YoloDotNet;
 using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
@@ -8,27 +7,34 @@ using YoloDotNet.Models;
 
 // Instantiate a new Yolo object
 using var yolo = new Yolo(@"path\to\model.onnx");
+Console.WriteLine($"Loaded ONNX-model is of type: {yolo.OnnxModel.ModelType}");
 
 // Display ONNX metadata
 DisplayOnnxMetaData(yolo);
 
 // Run inference on image
-InferenceOnImage(yolo, @"path\to\image.jpg");
+var inputImage = @"path\to\image.jpg";
+var saveFolder = @"path\to\output\folder";
+
+InferenceOnImage(yolo, inputImage, saveFolder);
 
 // Run inference on video
 InferenceOnVideo(yolo, new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
-    OutputDir = @"path\to\outputfolder",
+    OutputDir = @"path\to\output\folder",
+    //GenerateVideo = true,
+    //DrawLabels = true,
     //FPS = 30,
     //Width = 1280,
     //Height = 720,
     //DrawConfidence = true,
-    //KeepAudio = true
+    //KeepAudio = true,
+    //KeepFrames = false
 });
 
 #region Methods
-static void InferenceOnImage(Yolo yolo, string imgPath)
+static void InferenceOnImage(Yolo yolo, string imgPath, string saveFolder)
 {
     if (File.Exists(imgPath) is false)
     {
@@ -41,28 +47,25 @@ static void InferenceOnImage(Yolo yolo, string imgPath)
     // Load image as RGBA
     using var image = Image.Load<Rgba32>(imgPath);
 
-    // Run Classification or ObjectDetection depending on ONNX-modeltype
-    if (yolo.OnnxModel.ModelType == ModelType.Classification)
-    {
-        var detections = yolo.RunClassification(image, 5); // default classes = 1
 
-        Console.WriteLine("Classification result:");
-        foreach (var label in detections)
-        {
-            Console.WriteLine($"{label.Confidence.ToString("0.00", CultureInfo.InvariantCulture)}% {label.Label}");
-        }
-
-        Console.WriteLine();
-        image.DrawClassificationLabels(detections);
-    }
-    else if (yolo.OnnxModel.ModelType == ModelType.ObjectDetection)
+    switch (yolo.OnnxModel.ModelType)
     {
-        var detections = yolo.RunObjectDetection(image, 0.25); // default threshold = 0.25
-        image.DrawBoundingBoxes(detections);
+        case ModelType.Classification:
+            var classifications = yolo.RunClassification(image, 5); // Get top 5 classifications. Default = 1
+            image.DrawClassificationLabels(classifications);
+            break;
+        case ModelType.ObjectDetection:
+            var detections = yolo.RunObjectDetection(image, 0.25);
+            image.DrawBoundingBoxes(detections);
+            break;
+        case ModelType.Segmentation:
+            var segments = yolo.RunSegmentation(image, 0.25);
+            image.DrawSegmentation(segments);
+            break;
     }
 
     // Save image
-    var filename = Path.GetDirectoryName(imgPath) + @"\result.jpg";
+    var filename = Path.Combine(saveFolder) + @"\result.jpg";
     image.Save(filename);
 
     Console.WriteLine("Done!");
@@ -90,10 +93,18 @@ static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
     // Run inference on video
     try
     {
-        if (yolo.OnnxModel.ModelType == ModelType.Classification)
-            yolo.RunClassification(videoOptions, 5); // default classes = 1
-        else if (yolo.OnnxModel.ModelType == ModelType.ObjectDetection)
-            yolo.RunObjectDetection(videoOptions, 0.3); // default threshold = 0.25
+        switch (yolo.OnnxModel.ModelType)
+        {
+            case ModelType.Classification:
+                var classifications = yolo.RunClassification(videoOptions, 5);
+                break;
+            case ModelType.ObjectDetection:
+                var detections = yolo.RunObjectDetection(videoOptions, 0.25);
+                break;
+            case ModelType.Segmentation:
+                var segmentations = yolo.RunSegmentation(videoOptions, 0.25);
+                break;
+        }
     }
     catch (Exception ex)
     {
@@ -143,7 +154,7 @@ static void DisplayOnnxMetaData(Yolo yolo)
             var customMetaData = (Dictionary<string, string>)value!;
 
             foreach (var data in customMetaData)
-                Console.WriteLine($"{"",-20}{data.Key, -20}{data.Value}");
+                Console.WriteLine($"{"",-20}{data.Key,-20}{data.Value}");
         }
     }
 

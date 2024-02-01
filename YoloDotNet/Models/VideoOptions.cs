@@ -26,7 +26,17 @@
         public bool KeepAudio { get; set; } = true;
 
         /// <summary>
-        /// Draw bounding boxes with confidence scores on frames.
+        /// Generate a new video from processed video frames.
+        /// </summary>
+        public bool GenerateVideo { get; set; } = true;
+
+        /// <summary>
+        /// Draw labels on processed frames
+        /// </summary>
+        public bool DrawLabels { get; set; } = true;
+
+        /// <summary>
+        /// Draw confidence scores on labels.
         /// </summary>
         public bool DrawConfidence { get; set; } = true;
 

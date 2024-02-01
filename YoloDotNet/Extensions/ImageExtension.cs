@@ -6,6 +6,7 @@ using SixLabors.ImageSharp.Drawing;
 using SixLabors.ImageSharp.Drawing.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using System.Collections.Concurrent;
 using System.Globalization;
 using System.Text;
 using YoloDotNet.Enums;
@@ -16,24 +17,32 @@ namespace YoloDotNet.Extensions
     public static class ImageExtension
     {
         /// <summary>
-        /// Creates a resized clone of the input image with new width and height.
+        /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
         /// </summary>
         /// <param name="image">The original image to be resized.</param>
         /// <param name="w">The desired width for the resized image.</param>
         /// <param name="h">The desired height for the resized image.</param>
         /// <returns>A new image with the specified dimensions.</returns>
         public static Image<Rgb24> ResizeImage(this Image image, int w, int h)
-            => image.Clone(x => x.Resize(w, h)).CloneAs<Rgb24>();
+        {
+            var options = new ResizeOptions
+            {
+                Size = new Size(w, h),
+                Mode = ResizeMode.Pad,
+                PadColor = new Color(new Rgb24(0, 0, 0))
+            };
+
+            return image.Clone(x => x.Resize(options)).CloneAs<Rgb24>();
+        }
 
         /// <summary>
-        /// Extracts pixel values from an RGB image and converts them into a tensor.
+        /// Extracts pixel values from an image and converts them into a tensor.
         /// </summary>
-        /// <param name="img">The RGB image to extract pixel values from.</param>
+        /// <param name="img">The image to extract pixel values from.</param>
         /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
-        public static Tensor<float> ExtractPixelsFromImage(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
+        public static Tensor<float> PixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
         {
             var (width, height) = (img.Width, img.Height);
-
             var tensor = new DenseTensor<float>(new[] { inputBatchSize, inputChannels, width, height });
 
             Parallel.For(0, height, y =>
@@ -52,65 +61,50 @@ namespace YoloDotNet.Extensions
         }
 
         /// <summary>
-        /// Draws bounding boxes and associated labels on the image.
+        /// Retrieves segmented pixels from an image based on the specified function.
         /// </summary>
-        /// <param name="image">The image on which to draw the boxes and labels.</param>
-        /// <param name="predictions">The collection of prediction results containing bounding boxes and labels.</param>
-        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> labels, bool drawConfidence = true)
+        /// <typeparam name="TPixel">The type of pixels in the image.</typeparam>
+        /// <param name="image">The image from which to retrieve segmented pixels.</param>
+        /// <param name="func">A function that computes confidence values for pixels.</param>
+        /// <returns>An array of <see cref="Pixel"/> representing the segmented pixels.</returns>
+        public static Pixel[] GetSegmentedPixels(this Image<L8> image, Func<L8, float> func)// where L8 : unmanaged, IPixel<L8>
         {
-            // Define constants for readability
-            const int fontSize = 16;
-            const int borderWidth = 2;
-            const int shadowOffset = 1;
+            var width = image.Width;
+            var height = image.Height;
 
-            // Define fonts and colors
-            var font = SystemFonts.Get(nameof(FontType.Arial))
-                .CreateFont(fontSize, FontStyle.Bold);
+            var pixels = new ConcurrentBag<Pixel>();
 
-            var shadowColor = new Rgba32(44, 44, 44, 180);
-            var foregroundColor = new Rgba32(248, 240, 227, 224);
-
-            image.Mutate(context =>
+            Parallel.For(0, height, y =>
             {
-                foreach (var label in labels!)
+                var row = image.DangerousGetPixelRowMemory(y).Span;
+
+                for (int x = 0; x < width; x++)
                 {
-                    var labelColor = HexToRgba(label.Label.Color, 128);
+                    var confidence = func(row[x]);
 
-                    // Text with label name and confidence in percent
-                    var text = label.Label.Name;
-
-                    if (drawConfidence)
-                        text += $" ({label!.Confidence.ToPercent()}%)";
-
-                    // Calculate text width and height
-                    var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
-
-                    // Label x, y coordinates
-                    var (x, y) = (label.Rectangle.X, label.Rectangle.Y - (textSize.Height * 2));
-
-                    // Draw box
-                    context.Draw(Pens.Solid(labelColor, borderWidth), label.Rectangle);
-
-                    // Draw text background
-                    context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));
-
-                    // Draw text shadow
-                    context.DrawText(text, font, shadowColor, new PointF(x + shadowOffset + (fontSize / 2), y + shadowOffset + (textSize.Height / 2)));
-
-                    // Draw label text
-                    context.DrawText(text, font, foregroundColor, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
+                    if (confidence > 0.75f)
+                        pixels.Add(new Pixel(x, y, confidence));
                 }
             });
+
+            return pixels.ToArray();
         }
 
+        /// <summary>
+        /// Draws classification labels on the given image, optionally including confidence scores.
+        /// </summary>
+        /// <param name="image">The image on which the labels are to be drawn.</param>
+        /// <param name="labels">An collection of classification labels and confidence scores.</param>
+        /// <param name="drawConfidence">A flag indicating whether to include confidence scores in the labels.</param>
         public static void DrawClassificationLabels(this Image image, IEnumerable<Classification>? labels, bool drawConfidence = true)
         {
-            // Define constants for readability
-            const int fontSize = 16;
-            const int x = fontSize;
-            const int y = fontSize;
-            const int margin = fontSize / 2;
-            const float lineSpace = 1.5f;
+            ArgumentNullException.ThrowIfNull(labels);
+
+            var fontSize = image.CalculateFontSizeByDpi(16f);
+            var x = (int)fontSize;
+            var y = (int)fontSize;
+            var margin = fontSize / 2;
+            var lineSpace = 1.5f;
 
             // Define fonts and colors
             var font = GetFont(fontSize);
@@ -148,7 +142,130 @@ namespace YoloDotNet.Extensions
             });
         }
 
-        private static Font GetFont(int size)
+        /// <summary>
+        /// Draws bounding boxes around detected objects on the specified image, including label names and optional confidence percentages.
+        /// </summary>
+        /// <param name="image">The image on which to draw bounding boxes.</param>
+        /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
+        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection>? detections, bool drawConfidence = true)
+            => DrawBoundingBoxesHelper(image, detections, drawConfidence);
+
+        /// <summary>
+        /// Draws segmentations and bounding boxes with label names on the specified image, optionally including confidence percentages.
+        /// </summary>
+        /// <param name="image">The image on which to draw segmentations.</param>
+        /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
+        public static void DrawSegmentation(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
+        {
+            ArgumentNullException.ThrowIfNull(segmentations);
+
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+            Parallel.ForEach(segmentations, options, segmentation =>
+            {
+                // Create a new transparent image
+                using var mask = new Image<Rgba32>(segmentation.Rectangle.Width, segmentation.Rectangle.Height);
+
+                var color = Color.ParseHex(segmentation.Label.Color);
+
+                // Add color to segmented pixels
+                foreach (var pixel in segmentation.SegmentedPixels)
+                    mask[pixel.X, pixel.Y] = color;
+
+                image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .28f));
+            });
+
+            DrawBoundingBoxesHelper(image, segmentations, drawConfidence);
+        }
+
+        /// <summary>
+        /// Resizes a segmented image to the original image size and crops segmented area.
+        /// </summary>
+        /// <param name="image">The segmented image to be resized and cropped.</param>
+        /// <param name="originalImage">The original image used as a reference for resizing.</param>
+        /// <param name="rectangle">The rectangle specifying the area to be cropped after resizing.</param>
+        public static void CropResizedSegmentedArea(this Image image, Image originalImage, Rectangle rectangle)
+        {
+            var gain = Math.Min(image.Width / (float)originalImage.Width, image.Height / (float)originalImage.Height);
+
+            var x = (int)((image.Width - originalImage.Width * gain) / 2);
+            var y = (int)((image.Height - originalImage.Height * gain) / 2);
+            var w = image.Width - x * 2;
+            var h = image.Height - y * 2;
+
+            image.Mutate(img =>
+            {
+                img.Crop(new Rectangle(x, y, w, h));
+                img.Resize(originalImage.Width, originalImage.Height);
+                img.Crop(rectangle);
+            });
+        }
+
+        #region Helper methods
+
+        /// <summary>
+        /// Helper method for drawing bounding boxes around detected objects on the specified image.
+        /// </summary>
+        /// <param name="image">The image on which to draw bounding boxes.</param>
+        /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
+        private static void DrawBoundingBoxesHelper(Image image, IEnumerable<IDetection>? detections, bool drawConfidence)
+        {
+            ArgumentNullException.ThrowIfNull(detections);
+
+            // Define constants for readability
+            const int borderThickness = 2;
+            const int shadowOffset = 1;
+
+            // Define fonts and colors
+            var fontSize = image.CalculateFontSizeByDpi(16f);
+            var font = SystemFonts.Get(nameof(FontType.Arial))
+                .CreateFont(fontSize, FontStyle.Bold);
+
+            var shadowColor = new Rgba32(44, 44, 44, 180);
+            var foregroundColor = new Rgba32(248, 240, 227, 224);
+
+            image.Mutate(context =>
+            {
+                foreach (var label in detections!)
+                {
+                    var labelColor = HexToRgba(label.Label.Color, 128);
+
+                    // Text with label name and confidence in percent
+                    var text = label.Label.Name;
+
+                    if (drawConfidence)
+                        text += $" ({label!.Confidence.ToPercent()}%)";
+
+                    // Calculate text width and height
+                    var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
+
+                    // Label x, y coordinates
+                    var (x, y) = (label.Rectangle.X, label.Rectangle.Y - (textSize.Height * 2));
+
+                    // Draw box
+                    context.Draw(Pens.Solid(labelColor, borderThickness), label.Rectangle);
+
+                    // Draw text background
+                    context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));
+
+                    // Draw text shadow
+                    context.DrawText(text, font, shadowColor, new PointF(x + shadowOffset + (fontSize / 2), y + shadowOffset + (textSize.Height / 2)));
+
+                    // Draw label text
+                    context.DrawText(text, font, foregroundColor, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
+                }
+            });
+        }
+
+        /// <summary>
+        /// Gets the default label font
+        /// </summary>
+        /// <param name="size"></param>
+        /// <returns></returns>
+        private static Font GetFont(float size)
             => SystemFonts.Get(nameof(FontType.Arial))
                 .CreateFont(size, FontStyle.Bold);
 
@@ -168,7 +285,7 @@ namespace YoloDotNet.Extensions
                 throw new ArgumentException("Invalid hexadecimal color format.");
 
             if (alpha < 0 || alpha > 255)
-                throw new ArgumentOutOfRangeException("Alfa value must be between 0-255.");
+                throw new ArgumentOutOfRangeException(nameof(alpha), "Alfa value must be between 0-255.");
 
             byte r = byte.Parse(hexColor.Substring(1, 2), NumberStyles.HexNumber);
             byte g = byte.Parse(hexColor.Substring(3, 2), NumberStyles.HexNumber);
@@ -176,6 +293,8 @@ namespace YoloDotNet.Extensions
 
             return new Rgba32(r, g, b, (byte)alpha);
         }
+
+        #endregion
 
     }
 }

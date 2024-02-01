@@ -1,6 +1,9 @@
-﻿using Microsoft.ML.OnnxRuntime.Tensors;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
+using System.Collections.Concurrent;
 using YoloDotNet.Data;
+using YoloDotNet.Enums;
+using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
 namespace YoloDotNet
@@ -9,25 +12,73 @@ namespace YoloDotNet
     /// Detects objects in an image based on ONNX model.
     /// </summary>
     /// <remarks>
-    public class Yolo : YoloBase
+    /// Initializes a new instance of the Yolo object detection model.
+    /// </remarks>
+    /// <param name="onnxModel">The path to the ONNX model.</param>
+    /// <param name="cuda">Optional. Indicates whether to use CUDA for GPU acceleration (default is true).</param>
+    /// <param name="gpuId">Optional. The GPU device ID to use when CUDA is enabled (default is 0).</param>
+    public class Yolo(string onnxModel, bool cuda = true, int gpuId = 0) : YoloBase(onnxModel, cuda, gpuId)
     {
         /// <summary>
-        /// Initializes a new instance of the Yolo object detection model.
+        /// Run image classification on an Image.
         /// </summary>
-        /// <param name="onnxModel">The path to the ONNX model.</param>
-        /// <param name="cuda">Optional. Indicates whether to use CUDA for GPU acceleration (default is true).</param>
-        /// <param name="gpuId">Optional. The GPU device ID to use when CUDA is enabled (default is 0).</param>
-        /// <remarks>
-        public Yolo(string onnxModel, bool cuda = true, int gpuId = 0)
-            : base(onnxModel, cuda, gpuId) { }
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of classification results.</returns>
+        public override List<Classification> RunClassification(Image img, int classes = 1)
+            => Run<Classification>(img, classes, ModelType.Classification);
 
         /// <summary>
-        /// Classifies a tensor abd returnbs a Classification list 
+        /// Run object detection on an image.
+        /// </summary>
+        /// <param name="img">The image for object detection.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <returns>A list of detected objects.</returns>
+        public override List<ObjectDetection> RunObjectDetection(Image img, double threshold = 0.25)
+            => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
+
+        /// <summary>
+        /// Run segmentation on an image.
+        /// </summary>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of Segmentation results.</returns>
+        public override List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
+            => Run<Segmentation>(img, threshold, ModelType.Segmentation);
+
+        /// <summary>
+        /// Run image classification on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
+        public override Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes = 1)
+            => RunVideo<Classification>(options, classes, ModelType.Classification);
+
+        /// <summary>
+        /// Run object detection on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold = 0.25)
+            => RunVideo<ObjectDetection>(options, threshold, ModelType.ObjectDetection);
+
+        /// <summary>
+        /// Run object detection on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold = 0.25)
+            => RunVideo<Segmentation>(options, threshold, ModelType.Segmentation);
+
+        #region Tensor methods
+
+        /// <summary>
+        /// Classifies a tensor and returns a Classification list 
         /// </summary>
         /// <param name="tensor"></param>
         /// <param name="numberOfClasses"></param>
         /// <returns></returns>
-        public override List<Classification> ClassifyTensor(Tensor<float> tensor, int numberOfClasses) => tensor.Select((score, index) => new Classification
+        protected override List<Classification> ClassifyTensor(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]].Select((score, index) => new Classification
         {
             Confidence = score,
             Label = OnnxModel.Labels[index].Name
@@ -43,33 +94,37 @@ namespace YoloDotNet
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="threshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public override List<ObjectDetection> DetectObjectsInTensor(Tensor<float> tensor, Image image, double threshold)
+        protected override List<ObjectResult> ObjectDetectImage(Image image, double threshold)
         {
-            var result = new List<ObjectDetection>();
+            var result = new ConcurrentBag<ObjectResult>();
 
             var (w, h) = (image.Width, image.Height);
-            var (xGain, yGain) = (OnnxModel.Input.Width / (float)w, OnnxModel.Input.Height / (float)h);
-            var (xPad, yPad) = ((OnnxModel.Input.Width - w * xGain) / 2, (OnnxModel.Input.Height - h * yGain) / 2);
 
-            var elements = (OnnxModel.Output as ObjectDetectionShape)!.Elements - 4;
-            var batchSize = tensor.Dimensions[0];
-            var elementsPerPrediction = (int)(tensor.Length / tensor.Dimensions[1]); //divide total length by the elements per prediction
+            var gain = Math.Max((float)w / OnnxModel.Input.Width, (float)h / OnnxModel.Input.Height);
+            var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
+            var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
 
-            Parallel.For(0, batchSize, i =>
+            var elements = OnnxModel.Labels.Length;
+            var batchSize = OnnxModel.Outputs[0].BatchSize;
+            var channels = OnnxModel.Outputs[0].Channels;
+
+            var tensor = Tensors[OnnxModel.OutputNames[0]];
+
+            for (var i = 0; i < batchSize; i++)
             {
-                for (var j = 0; j < elementsPerPrediction; j++)
+                Parallel.For(0, channels, j =>
                 {
                     // Calculate coordinates of the bounding box in the original image
-                    var xMin = ((tensor[i, 0, j] - tensor[i, 2, j] / 2) - xPad) / xGain;
-                    var yMin = ((tensor[i, 1, j] - tensor[i, 3, j] / 2) - yPad) / yGain;
-                    var xMax = ((tensor[i, 0, j] + tensor[i, 2, j] / 2) - xPad) / xGain;
-                    var yMax = ((tensor[i, 1, j] + tensor[i, 3, j] / 2) - yPad) / yGain;
+                    var xMin = (int)((tensor[i, 0, j] - tensor[i, 2, j] / 2 - xPad) * gain);
+                    var yMin = (int)((tensor[i, 1, j] - tensor[i, 3, j] / 2 - yPad) * gain);
+                    var xMax = (int)((tensor[i, 0, j] + tensor[i, 2, j] / 2 - xPad) * gain);
+                    var yMax = (int)((tensor[i, 1, j] + tensor[i, 3, j] / 2 - yPad) * gain);
 
                     // Keep bounding box coordinates within the image boundaries
-                    xMin = Math.Max(xMin, 0);
-                    yMin = Math.Max(yMin, 0);
-                    xMax = Math.Min(xMax, w - 1);
-                    yMax = Math.Min(yMax, h - 1);
+                    xMin = Math.Clamp(xMin, 0, w);
+                    yMin = Math.Clamp(yMin, 0, h);
+                    xMax = Math.Clamp(xMax, 0, w);
+                    yMax = Math.Clamp(yMax, 0, h);
 
                     for (int l = 0; l < elements; l++)
                     {
@@ -77,17 +132,64 @@ namespace YoloDotNet
 
                         if (confidence < threshold) continue;
 
-                        result.Add(new ObjectDetection()
+                        result.Add(new ObjectResult
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = confidence,
-                            Rectangle = new RectangleF(xMin, yMin, xMax - xMin, yMax - yMin)
-                        });
+                            Rectangle = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
+                            BoundingBoxIndex = j,
+                        }); ;
                     }
-                }
+                });
+            }
+
+            return RemoveOverlappingBoxes([.. result]);
+        }
+
+        /// <summary>
+        /// Performs segmentation on the input image
+        /// </summary>
+        /// <param name="image">The input image for segmentation.</param>
+        /// <param name="boundingBoxes">List of bounding boxes for segmentation.</param>
+        /// <returns>List of Segmentation objects corresponding to the input bounding boxes.</returns>
+        protected override List<Segmentation> SegmentImage(Image image, List<ObjectResult> boundingBoxes)
+        {
+            var output = OnnxModel.Outputs[1]; // Segmentation output
+            var tensor0 = Tensors[OnnxModel.OutputNames[0]];
+            var tensor1 = Tensors[OnnxModel.OutputNames[1]];
+
+            var elements = OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
+
+            Parallel.ForEach(boundingBoxes, _parallelOptions, box =>
+            {
+                // Collect mask weights from the first tensor based on the bounding box index
+                var maskWeights = Enumerable.Range(0, output.Channels)
+                    .Select(i => tensor0[0, elements + i, box.BoundingBoxIndex])
+                    .ToArray();
+
+                // Create an empty image with the same size as the output shape
+                using var segmentedImage = new Image<L8>(output.Width, output.Height);
+
+                // Iterate over each empty pixel...
+                for (int y = 0; y < output.Height; y++)
+                    for (int x = 0; x < output.Width; x++)
+                    {
+                        // Iterate over each channel and calculate pixel location (x, y) with its maskweight, collected from first tensor.
+                        var value = Enumerable.Range(0, output.Channels)
+                                      .Sum(i => tensor1[0, i, y, x] * maskWeights[i]);
+
+                        // Calculate and update the pixel luminance value
+                        var pixelLuminance = CalculatePixelLuminance(Sigmoid(value));
+                        segmentedImage[x, y] = new L8(pixelLuminance);
+                    }
+
+                segmentedImage.CropResizedSegmentedArea(image, box.Rectangle);
+                box.SegmentedPixels = segmentedImage.GetSegmentedPixels(p => CalculatePixelConfidence(p.PackedValue));
             });
 
-            return result;
+            return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
+
+        #endregion
     }
 }
