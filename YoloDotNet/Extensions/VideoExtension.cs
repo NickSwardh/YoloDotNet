@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.RegularExpressions;
+using YoloDotNet.Enums;
 using YoloDotNet.Models;
 
 namespace YoloDotNet.Extensions
@@ -58,10 +59,31 @@ namespace YoloDotNet.Extensions
         /// <returns></returns>
         public static DirectoryInfo CreateOutputFolder(string outputDir, bool deleteOld = false)
         {
-            if (deleteOld is true && Directory.Exists(outputDir))
-                Directory.Delete(outputDir, true);
+            var dir = new DirectoryInfo(outputDir);
 
-            return Directory.CreateDirectory(outputDir);
+            if (dir.Exists && deleteOld is true)
+                dir.Delete(true);
+
+            var maxTries = 3;
+
+            while (dir.Exists is false && maxTries > 0)
+            {
+                try
+                {
+                    dir.Create();
+                }
+                catch (Exception)
+                {
+                    if (maxTries == 1)
+                        throw;
+
+                    Thread.Sleep(1000);
+                }
+                
+                maxTries--;
+            }
+
+            return dir;
         }
 
         /// <summary>
