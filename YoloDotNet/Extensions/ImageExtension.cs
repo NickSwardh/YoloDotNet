@@ -98,6 +98,8 @@ namespace YoloDotNet.Extensions
         /// <param name="drawConfidence">A flag indicating whether to include confidence scores in the labels.</param>
         public static void DrawClassificationLabels(this Image image, IEnumerable<Classification>? labels, bool drawConfidence = true)
         {
+            ArgumentNullException.ThrowIfNull(labels);
+
             var fontSize = image.CalculateFontSizeByDpi(16f);
             var x = (int)fontSize;
             var y = (int)fontSize;
@@ -146,7 +148,7 @@ namespace YoloDotNet.Extensions
         /// <param name="image">The image on which to draw bounding boxes.</param>
         /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
-        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection> detections, bool drawConfidence = true)
+        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection>? detections, bool drawConfidence = true)
             => DrawBoundingBoxesHelper(image, detections, drawConfidence);
 
         /// <summary>
@@ -155,8 +157,10 @@ namespace YoloDotNet.Extensions
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        public static void DrawSegmentation(this Image image, List<Segmentation> segmentations, bool drawConfidence = true)
+        public static void DrawSegmentation(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
         {
+            ArgumentNullException.ThrowIfNull(segmentations);
+
             var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
             Parallel.ForEach(segmentations, options, segmentation =>
@@ -207,8 +211,10 @@ namespace YoloDotNet.Extensions
         /// <param name="image">The image on which to draw bounding boxes.</param>
         /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
-        private static void DrawBoundingBoxesHelper(Image image, IEnumerable<IDetection> detections, bool drawConfidence)
+        private static void DrawBoundingBoxesHelper(Image image, IEnumerable<IDetection>? detections, bool drawConfidence)
         {
+            ArgumentNullException.ThrowIfNull(detections);
+
             // Define constants for readability
             const int borderThickness = 2;
             const int shadowOffset = 1;
