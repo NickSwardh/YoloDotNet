@@ -59,6 +59,16 @@ namespace YoloDotNet.Models
         public bool KeepAudio { get; set; }
 
         /// <summary>
+        /// Draw labels on image
+        /// </summary>
+        public bool GenerateVideo { get; set; }
+
+        /// <summary>
+        /// Draw labels on processed frames
+        /// </summary>
+        public bool DrawLabels { get; set; }
+
+        /// <summary>
         /// Draw confidence percentage on frames
         /// </summary>
         public bool DrawConfidence { get; set; }
@@ -79,6 +89,8 @@ namespace YoloDotNet.Models
             TempFolder = VideoExtension.CreateOutputFolder(Path.Combine(result.OutputDir, nameof(FolderName.Temp)), true),
             KeepFrames = result.KeepFrames,
             KeepAudio = result.KeepAudio,
+            GenerateVideo = result.GenerateVideo,
+            DrawLabels = result.DrawLabels,
             DrawConfidence  = result.KeepAudio
         };
 
