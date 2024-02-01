@@ -23,11 +23,14 @@ InferenceOnVideo(yolo, new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
     OutputDir = @"path\to\output\folder",
+    //GenerateVideo = true,
+    //DrawLabels = true,
     //FPS = 30,
     //Width = 1280,
     //Height = 720,
     //DrawConfidence = true,
-    //KeepAudio = true
+    //KeepAudio = true,
+    //KeepFrames = false
 });
 
 #region Methods
@@ -92,9 +95,15 @@ static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
     {
         switch (yolo.OnnxModel.ModelType)
         {
-            case ModelType.Classification: yolo.RunClassification(videoOptions, 5); break;
-            case ModelType.ObjectDetection: yolo.RunObjectDetection(videoOptions, 0.25); break;
-            case ModelType.Segmentation: yolo.RunSegmentation(videoOptions, 0.25); break;
+            case ModelType.Classification:
+                var classifications = yolo.RunClassification(videoOptions, 5);
+                break;
+            case ModelType.ObjectDetection:
+                var detections = yolo.RunObjectDetection(videoOptions, 0.25);
+                break;
+            case ModelType.Segmentation:
+                var segmentations = yolo.RunSegmentation(videoOptions, 0.25);
+                break;
         }
     }
     catch (Exception ex)
