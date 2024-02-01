@@ -115,7 +115,6 @@ namespace YoloDotNet.VideoHandler
         /// <param name="e">Event arguments.</param>
         private void OnProcessCompleteEvent(object? sender, EventArgs e)
         {
-
             if (CurrentPipelineStep == VideoAction.CompileFrames)
             {
                 VideoCompleteEvent?.Invoke(null, EventArgs.Empty);
@@ -134,6 +133,7 @@ namespace YoloDotNet.VideoHandler
         {
             var tempFile = Path.Combine(_videoSettings.TempFolder.FullName, TEMP_VIDEO_FILENAME);
             Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -map 0:v:0 -vsync vfr -an -cq 51 -preset ultrafast -c copy ""{tempFile}"" -y");
+            Thread.Sleep(100);
         }
 
         /// <summary>
