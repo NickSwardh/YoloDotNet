@@ -108,8 +108,12 @@ namespace YoloDotNet.Data
             _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
             _videoHandler.FramesExtractedEvent += (sender, e) =>
             {
-                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, options, threshold);
-                _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
+                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, threshold);
+
+                if (options.GenerateVideo)
+                    _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
+                else
+                    VideoCompleteEvent?.Invoke(null, null!);
             };
 
             _videoHandler.ProcessVideoPipeline();
@@ -120,12 +124,15 @@ namespace YoloDotNet.Data
         /// <summary>
         /// Runs batch inference on the extracted video frames.
         /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, VideoOptions options, double limit) where T : class, new()
+        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, double limit) where T : class, new()
         {
-            var frames = new List<string>(_videoHandler.GetExtractedFrames());
+            var frames = _videoHandler.GetExtractedFrames();
             int progressCounter = 0;
-            int totalFrames = frames.Count;
+            int totalFrames = frames.Length;
             var batch = new List<T>[totalFrames];
+
+            var shouldDrawLabelsOnKeptFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.KeepFrames;
+            var shouldDrawLabelsOnVideoFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.GenerateVideo;
 
             _ = Parallel.For(0, totalFrames, i =>
             {
@@ -135,21 +142,8 @@ namespace YoloDotNet.Data
                 var results = Run<T>(img, limit, OnnxModel.ModelType);
                 batch[i] = results;
 
-                switch (OnnxModel.ModelType)
-                {
-                    case ModelType.Classification:
-                        img.DrawClassificationLabels(results as List<Classification>, options.DrawConfidence);
-                        break;
-                    case ModelType.ObjectDetection:
-                        img.DrawBoundingBoxes(results as List<ObjectDetection>, options.DrawConfidence);
-                        break;
-                    case ModelType.Segmentation:
-                        img.DrawSegmentation(results as List<Segmentation>, options.DrawConfidence);
-                        break;
-                    default: throw new NotSupportedException("Unknown ONNX model.");
-                }
-
-                img.SaveAsync(frame).ConfigureAwait(false);
+                if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)
+                    DrawResultsOnVideoFrame(img, results, frame, _videoHandler._videoSettings.DrawConfidence);
 
                 Interlocked.Increment(ref progressCounter);
                 var progress = ((double)progressCounter / totalFrames) * 100;
@@ -162,6 +156,28 @@ namespace YoloDotNet.Data
             });
 
             return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x]);
+        }
+
+        /// <summary>
+        /// Draw labels on video frames
+        /// </summary>
+        private void DrawResultsOnVideoFrame<T>(Image<Rgba32> img, List<T> results, string savePath, bool drawConfidence)
+        {
+            switch (OnnxModel.ModelType)
+            {
+                case ModelType.Classification:
+                    img.DrawClassificationLabels(results as List<Classification>, drawConfidence);
+                    break;
+                case ModelType.ObjectDetection:
+                    img.DrawBoundingBoxes(results as List<ObjectDetection>, drawConfidence);
+                    break;
+                case ModelType.Segmentation:
+                    img.DrawSegmentation(results as List<Segmentation>, drawConfidence);
+                    break;
+                default: throw new NotSupportedException("Unknown ONNX model.");
+            }
+
+            img.SaveAsync(savePath).ConfigureAwait(false);
         }
 
         /// <summary>
