@@ -2,7 +2,6 @@
 using Microsoft.ML.OnnxRuntime.Tensors;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Collections.Concurrent;
 using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
@@ -28,9 +27,9 @@ namespace YoloDotNet.Data
         public abstract List<Classification> RunClassification(Image img, int classes);
         public abstract List<ObjectDetection> RunObjectDetection(Image img, double threshold);
         public abstract List<Segmentation> RunSegmentation(Image img, double threshold);
-        public abstract void RunClassification(VideoOptions options, int classes);
-        public abstract void RunObjectDetection(VideoOptions options, double threshold);
-        public abstract void RunSegmentation(VideoOptions options, double threshold);
+        public abstract Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes);
+        public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold);
+        public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold);
         protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
         protected abstract List<ObjectResult> ObjectDetectImage(Image image, double threshold);
         protected abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
@@ -57,10 +56,11 @@ namespace YoloDotNet.Data
             _useCuda = useCuda;
         }
 
-        protected List<T> Run<T>(Image img, double limit)
+        protected List<T> Run<T>(Image img, double limit, ModelType expectedModel)
         {
-            using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
+            VerifyExpectedModelType(expectedModel);
 
+            using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
             var tensorPixels = resizedImg.PixelsToTensor(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
 
             lock (_progressLock)
@@ -95,8 +95,12 @@ namespace YoloDotNet.Data
         /// </summary>
         /// <param name="options">Options for configuring video processing.</param>
         /// <param name="threshold">Optional. The confidence threshold for inference.</param>
-        protected void RunVideo(VideoOptions options, double threshold)
+        protected Dictionary<int, List<T>> RunVideo<T>(VideoOptions options, double threshold, ModelType expectedModel) where T : class, new()
         {
+            VerifyExpectedModelType(expectedModel);
+
+            var output = new Dictionary<int, List<T>>();
+
             using var _videoHandler = new VideoHandler.VideoHandler(options, _useCuda);
 
             _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
@@ -104,39 +108,46 @@ namespace YoloDotNet.Data
             _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
             _videoHandler.FramesExtractedEvent += (sender, e) =>
             {
-                RunBatchInferenceOnVideoFrames(_videoHandler, options, threshold);
+                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, options, threshold);
                 _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
             };
 
             _videoHandler.ProcessVideoPipeline();
+
+            return output;
         }
 
         /// <summary>
         /// Runs batch inference on the extracted video frames.
         /// </summary>
-        private void RunBatchInferenceOnVideoFrames(VideoHandler.VideoHandler _videoHandler, VideoOptions options, double limit)
+        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, VideoOptions options, double limit) where T : class, new()
         {
-            var frames = new ConcurrentBag<string>(_videoHandler.GetExtractedFrames());
+            var frames = new List<string>(_videoHandler.GetExtractedFrames());
             int progressCounter = 0;
             int totalFrames = frames.Count;
+            var batch = new List<T>[totalFrames];
 
-            Parallel.ForEach(frames, _parallelOptions, (frame, token) =>
+            _ = Parallel.For(0, totalFrames, i =>
             {
+                var frame = frames[i];
                 using var img = Image.Load<Rgba32>(frame);
+
+                var results = Run<T>(img, limit, OnnxModel.ModelType);
+                batch[i] = results;
 
                 switch (OnnxModel.ModelType)
                 {
                     case ModelType.Classification:
-                        img.DrawClassificationLabels(RunClassification(img, (int)limit), options.DrawConfidence);
+                        img.DrawClassificationLabels(results as List<Classification>, options.DrawConfidence);
                         break;
                     case ModelType.ObjectDetection:
-                        img.DrawBoundingBoxes(RunObjectDetection(img, limit), options.DrawConfidence);
+                        img.DrawBoundingBoxes(results as List<ObjectDetection>, options.DrawConfidence);
                         break;
                     case ModelType.Segmentation:
-                        img.DrawSegmentation(RunSegmentation(img, limit), options.DrawConfidence);
+                        img.DrawSegmentation(results as List<Segmentation>, options.DrawConfidence);
                         break;
                     default: throw new NotSupportedException("Unknown ONNX model.");
-                };
+                }
 
                 img.SaveAsync(frame).ConfigureAwait(false);
 
@@ -147,7 +158,10 @@ namespace YoloDotNet.Data
                 {
                     VideoProgressEvent?.Invoke((int)progress, null!);
                 }
+
             });
+
+            return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x]);
         }
 
         /// <summary>
@@ -203,6 +217,15 @@ namespace YoloDotNet.Data
         /// Calculate
         /// </summary>
         protected static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
+
+        /// <summary>
+        /// Verify that loaded model is of the expected type
+        /// </summary>
+        private void VerifyExpectedModelType(ModelType expectedModelType)
+        {
+            if (expectedModelType.Equals(OnnxModel.ModelType) is false)
+                throw new Exception($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModelType}.");
+        }
 
         /// <summary>
         /// Releases resources and suppresses the finalizer for the current object.

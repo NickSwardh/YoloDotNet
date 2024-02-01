@@ -2,6 +2,7 @@
 using SixLabors.ImageSharp.PixelFormats;
 using System.Collections.Concurrent;
 using YoloDotNet.Data;
+using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
@@ -25,7 +26,7 @@ namespace YoloDotNet
         /// <param name="classes">The number of classes to return (default is 1).</param>
         /// <returns>A list of classification results.</returns>
         public override List<Classification> RunClassification(Image img, int classes = 1)
-            => Run<Classification>(img, classes);
+            => Run<Classification>(img, classes, ModelType.Classification);
 
         /// <summary>
         /// Run object detection on an image.
@@ -34,7 +35,7 @@ namespace YoloDotNet
         /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
         /// <returns>A list of detected objects.</returns>
         public override List<ObjectDetection> RunObjectDetection(Image img, double threshold = 0.25)
-            => Run<ObjectDetection>(img, threshold);
+            => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
 
         /// <summary>
         /// Run segmentation on an image.
@@ -43,33 +44,34 @@ namespace YoloDotNet
         /// <param name="classes">The number of classes to return (default is 1).</param>
         /// <returns>A list of Segmentation results.</returns>
         public override List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
-            => Run<Segmentation>(img, threshold);
+            => Run<Segmentation>(img, threshold, ModelType.Segmentation);
 
         /// <summary>
         /// Run image classification on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
-        public override void RunClassification(VideoOptions options, int classes = 1)
-            => RunVideo(options, classes);
+        public override Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes = 1)
+            => RunVideo<Classification>(options, classes, ModelType.Classification);
 
         /// <summary>
         /// Run object detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public override void RunObjectDetection(VideoOptions options, double threshold = 0.25)
-            => RunVideo(options, threshold);
+        public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold = 0.25)
+            => RunVideo<ObjectDetection>(options, threshold, ModelType.ObjectDetection);
 
         /// <summary>
         /// Run object detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public override void RunSegmentation(VideoOptions options, double threshold = 0.25)
-            => RunVideo(options, threshold);
+        public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold = 0.25)
+            => RunVideo<Segmentation>(options, threshold, ModelType.Segmentation);
 
         #region Tensor methods
+
         /// <summary>
         /// Classifies a tensor and returns a Classification list 
         /// </summary>
@@ -187,6 +189,7 @@ namespace YoloDotNet
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
+
         #endregion
     }
 }
