@@ -193,15 +193,6 @@ namespace YoloDotNet.Extensions
             });
         }
 
-        ///// <summary>
-        ///// Draws bounding boxes around detected objects on the specified image, including label names and optional confidence percentages.
-        ///// </summary>
-        ///// <param name="image">The image on which to draw bounding boxes.</param>
-        ///// <param name="detections">An enumerable collection of objects representing the detected items.</param>
-        ///// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
-        //private static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection>? detections, bool drawConfidence = true)
-        //    => DrawBoundingBoxesHelper(image, detections, drawConfidence);
-
         /// <summary>
         /// Helper method for drawing segmentations and bounding boxes.
         /// </summary>
@@ -229,7 +220,6 @@ namespace YoloDotNet.Extensions
                 image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .28f));
             });
 
-            //DrawBoundingBoxesHelper(image, segmentations, drawConfidence);
             image.DrawBoundingBoxes(segmentations, drawConfidence);
         }
 
