@@ -134,7 +134,7 @@ namespace YoloDotNet.Data
             var shouldDrawLabelsOnKeptFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.KeepFrames;
             var shouldDrawLabelsOnVideoFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.GenerateVideo;
 
-            _ = Parallel.For(0, totalFrames, i =>
+            _ = Parallel.For(0, totalFrames, _parallelOptions, i =>
             {
                 var frame = frames[i];
                 using var img = Image.Load<Rgba32>(frame);
