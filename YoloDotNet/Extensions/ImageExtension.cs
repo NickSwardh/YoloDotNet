@@ -17,6 +17,33 @@ namespace YoloDotNet.Extensions
     public static class ImageExtension
     {
         /// <summary>
+        /// Draw classification labels on the given image, optionally including confidence scores.
+        /// </summary>
+        /// <param name="image">The image on which the labels are to be drawn.</param>
+        /// <param name="detections">An collection of classification labels and confidence scores.</param>
+        /// <param name="drawConfidence">A flag indicating whether to include confidence scores in the labels.</param>
+        public static void Draw(this Image image, IEnumerable<Classification>? classifications, bool drawConfidence = true)
+            => image.DrawClassificationLabels(classifications, drawConfidence);
+
+        /// <summary>
+        /// Draw bounding boxes around detected objects on the specified image.
+        /// </summary>
+        /// <param name="image">The image on which to draw bounding boxes.</param>
+        /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
+        public static void Draw(this Image image, IEnumerable<ObjectDetection>? detections, bool drawConfidence = true)
+            => image.DrawBoundingBoxes(detections, drawConfidence);
+
+        /// <summary>
+        /// Draw segmentations and bounding boxes on the specified image.
+        /// </summary>
+        /// <param name="image">The image on which to draw segmentations.</param>
+        /// <param name="detections">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
+        public static void Draw(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
+            => image.DrawSegmentations(segmentations, drawConfidence);
+
+        /// <summary>
         /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
         /// </summary>
         /// <param name="image">The original image to be resized.</param>
@@ -63,7 +90,6 @@ namespace YoloDotNet.Extensions
         /// <summary>
         /// Retrieves segmented pixels from an image based on the specified function.
         /// </summary>
-        /// <typeparam name="TPixel">The type of pixels in the image.</typeparam>
         /// <param name="image">The image from which to retrieve segmented pixels.</param>
         /// <param name="func">A function that computes confidence values for pixels.</param>
         /// <returns>An array of <see cref="Pixel"/> representing the segmented pixels.</returns>
@@ -91,12 +117,37 @@ namespace YoloDotNet.Extensions
         }
 
         /// <summary>
-        /// Draws classification labels on the given image, optionally including confidence scores.
+        /// Resizes a segmented image to the original image size and crops segmented area.
+        /// </summary>
+        /// <param name="image">The segmented image to be resized and cropped.</param>
+        /// <param name="originalImage">The original image used as a reference for resizing.</param>
+        /// <param name="rectangle">The rectangle specifying the area to be cropped after resizing.</param>
+        public static void CropResizedSegmentedArea(this Image image, Image originalImage, Rectangle rectangle)
+        {
+            var gain = Math.Min(image.Width / (float)originalImage.Width, image.Height / (float)originalImage.Height);
+
+            var x = (int)((image.Width - originalImage.Width * gain) / 2);
+            var y = (int)((image.Height - originalImage.Height * gain) / 2);
+            var w = image.Width - x * 2;
+            var h = image.Height - y * 2;
+
+            image.Mutate(img =>
+            {
+                img.Crop(new Rectangle(x, y, w, h));
+                img.Resize(originalImage.Width, originalImage.Height);
+                img.Crop(rectangle);
+            });
+        }
+
+        #region Helper methods
+
+        /// <summary>
+        /// Helper method for drawing classification labels.
         /// </summary>
         /// <param name="image">The image on which the labels are to be drawn.</param>
         /// <param name="labels">An collection of classification labels and confidence scores.</param>
         /// <param name="drawConfidence">A flag indicating whether to include confidence scores in the labels.</param>
-        public static void DrawClassificationLabels(this Image image, IEnumerable<Classification>? labels, bool drawConfidence = true)
+        private static void DrawClassificationLabels(this Image image, IEnumerable<Classification>? labels, bool drawConfidence = true)
         {
             ArgumentNullException.ThrowIfNull(labels);
 
@@ -143,21 +194,12 @@ namespace YoloDotNet.Extensions
         }
 
         /// <summary>
-        /// Draws bounding boxes around detected objects on the specified image, including label names and optional confidence percentages.
-        /// </summary>
-        /// <param name="image">The image on which to draw bounding boxes.</param>
-        /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
-        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
-        public static void DrawBoundingBoxes(this Image image, IEnumerable<ObjectDetection>? detections, bool drawConfidence = true)
-            => DrawBoundingBoxesHelper(image, detections, drawConfidence);
-
-        /// <summary>
-        /// Draws segmentations and bounding boxes with label names on the specified image, optionally including confidence percentages.
+        /// Helper method for drawing segmentations and bounding boxes.
         /// </summary>
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        public static void DrawSegmentation(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
+        private static void DrawSegmentations(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
         {
             ArgumentNullException.ThrowIfNull(segmentations);
 
@@ -171,47 +213,23 @@ namespace YoloDotNet.Extensions
                 var color = Color.ParseHex(segmentation.Label.Color);
 
                 // Add color to segmented pixels
-                foreach (var pixel in segmentation.SegmentedPixels)
+                var test = segmentation.SegmentedPixels.AsSpan();
+                foreach (var pixel in test)
                     mask[pixel.X, pixel.Y] = color;
 
                 image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .28f));
             });
 
-            DrawBoundingBoxesHelper(image, segmentations, drawConfidence);
+            image.DrawBoundingBoxes(segmentations, drawConfidence);
         }
 
         /// <summary>
-        /// Resizes a segmented image to the original image size and crops segmented area.
-        /// </summary>
-        /// <param name="image">The segmented image to be resized and cropped.</param>
-        /// <param name="originalImage">The original image used as a reference for resizing.</param>
-        /// <param name="rectangle">The rectangle specifying the area to be cropped after resizing.</param>
-        public static void CropResizedSegmentedArea(this Image image, Image originalImage, Rectangle rectangle)
-        {
-            var gain = Math.Min(image.Width / (float)originalImage.Width, image.Height / (float)originalImage.Height);
-
-            var x = (int)((image.Width - originalImage.Width * gain) / 2);
-            var y = (int)((image.Height - originalImage.Height * gain) / 2);
-            var w = image.Width - x * 2;
-            var h = image.Height - y * 2;
-
-            image.Mutate(img =>
-            {
-                img.Crop(new Rectangle(x, y, w, h));
-                img.Resize(originalImage.Width, originalImage.Height);
-                img.Crop(rectangle);
-            });
-        }
-
-        #region Helper methods
-
-        /// <summary>
-        /// Helper method for drawing bounding boxes around detected objects on the specified image.
+        /// Helper method for drawing bounding boxes around detected objects.
         /// </summary>
         /// <param name="image">The image on which to draw bounding boxes.</param>
         /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
-        private static void DrawBoundingBoxesHelper(Image image, IEnumerable<IDetection>? detections, bool drawConfidence)
+        private static void DrawBoundingBoxes(this Image image, IEnumerable<IDetection>? detections, bool drawConfidence)
         {
             ArgumentNullException.ThrowIfNull(detections);
 

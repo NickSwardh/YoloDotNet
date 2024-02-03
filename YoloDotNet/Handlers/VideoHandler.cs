@@ -34,16 +34,12 @@ namespace YoloDotNet.VideoHandler
         public VideoHandler(VideoOptions options, bool useCuda)
         {
             _handler = new ProcessHandler();
-            _videoSettings = MapToVideoSettings(options);
+            _videoSettings = (VideoSettings)options;
             _pipeline = BuildPipeline();
             _handler.ProcessStopped += OnProcessCompleteEvent;
             _handler.DataReceived += OnDataReceivedEvent;
             _useCuda = useCuda;
         }
-
-        private VideoSettings MapToVideoSettings(VideoOptions options) => (Directory.Exists(options.OutputDir))
-            ? (VideoSettings)options
-            : throw new DirectoryNotFoundException($@"Folder ""{options.OutputDir}"" does not exist.");
 
         /// <summary>
         /// Pipeline for processing video
@@ -131,7 +127,9 @@ namespace YoloDotNet.VideoHandler
 
         private void PreProcess()
         {
-            var tempFile = Path.Combine(_videoSettings.TempFolder.FullName, TEMP_VIDEO_FILENAME);
+            VideoExtension.CreateOutputFolder(_videoSettings.TempFolder, true);
+
+            var tempFile = Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME);
             Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -map 0:v:0 -vsync vfr -an -cq 51 -preset ultrafast -c copy ""{tempFile}"" -y");
             Thread.Sleep(100);
         }
@@ -142,7 +140,7 @@ namespace YoloDotNet.VideoHandler
         /// <exception cref="FileNotFoundException">Thrown if the specified video file is not found.</exception>
         private void GetVideoInfo()
         {
-            var tempVideo = Path.Combine(_videoSettings.TempFolder.FullName, TEMP_VIDEO_FILENAME);
+            var tempVideo = Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME);
             Execute($@"-select_streams v:0 -show_entries stream=r_frame_rate,duration ""{tempVideo}""", Executable.ffprobe);
         }
 
@@ -158,13 +156,13 @@ namespace YoloDotNet.VideoHandler
             var matches = VideoMetadataRegex().Matches(metadata);
 
             if (matches.Count == 0)
-                throw new ArgumentException($"Error extracting metadata: {metadata}", nameof(matches));
+                throw new ArgumentException($"Error extracting metadata from video.", nameof(matches));
 
             // Update settings
             matches[0].Groups.ParseVideoMetaData(_videoSettings);
 
             // Delete temporary processed file
-            Path.Combine(_videoSettings.TempFolder.FullName, TEMP_VIDEO_FILENAME).DeleteFile();
+            Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME).DeleteFile();
 
             OnProcessCompleteEvent(null, null!);
         }
@@ -173,7 +171,7 @@ namespace YoloDotNet.VideoHandler
         /// Execute command to extrac audio from video
         /// </summary>
         private void ExtractAudio()
-            => Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -vn -c:a copy ""{Path.Combine(_videoSettings.TempFolder.FullName, TEMP_AUDIO_FILENAME)}"" -y -hide_banner");
+            => Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -vn -c:a copy ""{Path.Combine(_videoSettings.TempFolder, TEMP_AUDIO_FILENAME)}"" -y -hide_banner");
 
         /// <summary>
         /// Execute commant to extract all frames from video
@@ -181,7 +179,7 @@ namespace YoloDotNet.VideoHandler
         private void ExtractFrames()
         {
             var (w, h) = (_videoSettings.Width, _videoSettings.Height);
-            Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -vsync vfr -vf ""fps={FormatedFps},scale={w}:{h}"" ""{Path.Combine(_videoSettings.TempFolder.FullName, "%d.png")}"" -hide_banner");
+            Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -vsync vfr -vf ""fps={FormatedFps},scale={w}:{h}"" ""{Path.Combine(_videoSettings.TempFolder, "%d.png")}"" -hide_banner");
         }
 
         /// <summary>
@@ -195,7 +193,7 @@ namespace YoloDotNet.VideoHandler
         /// </summary>
         private void CompileFrames()
         {
-            var tempFolder = _videoSettings.TempFolder.FullName;
+            var tempFolder = _videoSettings.TempFolder;
             var audioPath = Path.Combine(tempFolder, TEMP_AUDIO_FILENAME);
             var outputFile = Path.Combine(_videoSettings.OutputFolder, OUTPUT_FILEMAME);
             var outputImage = Path.Combine(tempFolder, "%d.png");
@@ -220,7 +218,7 @@ namespace YoloDotNet.VideoHandler
         /// Get all extracted frames from temporary folder
         /// </summary>
         public string[] GetExtractedFrames()
-            => Directory.GetFiles(_videoSettings.TempFolder.FullName, "*.png")
+            => Directory.GetFiles(_videoSettings.TempFolder, "*.png")
                 .OrderBy(x => int.Parse(Path.GetFileNameWithoutExtension(x))).ToArray();
 
         /// <summary>
@@ -253,8 +251,8 @@ namespace YoloDotNet.VideoHandler
 
         public void Dispose()
         {
-            if (_videoSettings.KeepFrames is false && _videoSettings.TempFolder is not null)
-                _videoSettings.TempFolder.Delete(true);
+            if (_videoSettings.KeepFrames is false)
+                Directory.Delete(_videoSettings.TempFolder, true);
 
             _handler.ProcessStopped -= OnProcessCompleteEvent;
             _handler.DataReceived -= OnDataReceivedEvent;
