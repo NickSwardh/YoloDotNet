@@ -12,14 +12,15 @@ Console.WriteLine($"Loaded ONNX-model is of type: {yolo.OnnxModel.ModelType}");
 // Display ONNX metadata
 DisplayOnnxMetaData(yolo);
 
-// Run inference on image
+// Image
 var inputImage = @"path\to\image.jpg";
 var saveFolder = @"path\to\output\folder";
 
-InferenceOnImage(yolo, inputImage, saveFolder);
+// Run Yolo on image
+ProcessImage(yolo, inputImage, saveFolder);
 
-// Run inference on video
-InferenceOnVideo(yolo, new VideoOptions
+// Run Yolo on video
+ProcessVideo(yolo, new VideoOptions
 {
     VideoFile = @"path\to\video.mp4",
     OutputDir = @"path\to\output\folder",
@@ -34,7 +35,7 @@ InferenceOnVideo(yolo, new VideoOptions
 });
 
 #region Methods
-static void InferenceOnImage(Yolo yolo, string imgPath, string saveFolder)
+static void ProcessImage(Yolo yolo, string imgPath, string saveFolder)
 {
     if (File.Exists(imgPath) is false)
     {
@@ -47,20 +48,19 @@ static void InferenceOnImage(Yolo yolo, string imgPath, string saveFolder)
     // Load image as RGBA
     using var image = Image.Load<Rgba32>(imgPath);
 
-
     switch (yolo.OnnxModel.ModelType)
     {
         case ModelType.Classification:
-            var classifications = yolo.RunClassification(image, 5); // Get top 5 classifications. Default = 1
-            image.DrawClassificationLabels(classifications);
+            List<Classification> classifications = yolo.RunClassification(image, 5); // Get top 5 classifications. Default = 1
+            image.Draw(classifications);
             break;
         case ModelType.ObjectDetection:
-            var detections = yolo.RunObjectDetection(image, 0.25);
-            image.DrawBoundingBoxes(detections);
+            List<ObjectDetection> detections = yolo.RunObjectDetection(image, 0.25);
+            image.Draw(detections);
             break;
         case ModelType.Segmentation:
-            var segments = yolo.RunSegmentation(image, 0.25);
-            image.DrawSegmentation(segments);
+            List<Segmentation> segments = yolo.RunSegmentation(image, 0.25);
+            image.Draw(segments);
             break;
     }
 
@@ -72,7 +72,7 @@ static void InferenceOnImage(Yolo yolo, string imgPath, string saveFolder)
     Console.WriteLine("Saved as {0}", filename);
 }
 
-static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
+static void ProcessVideo(Yolo yolo, VideoOptions videoOptions)
 {
     if (File.Exists(videoOptions.VideoFile) is false)
     {
@@ -96,13 +96,16 @@ static void InferenceOnVideo(Yolo yolo, VideoOptions videoOptions)
         switch (yolo.OnnxModel.ModelType)
         {
             case ModelType.Classification:
-                var classifications = yolo.RunClassification(videoOptions, 5);
+                Dictionary<int, List<Classification>> classifications = yolo.RunClassification(videoOptions, 5);
+                // classifications contains all frames (int) and a list of classes for each frame
                 break;
             case ModelType.ObjectDetection:
-                var detections = yolo.RunObjectDetection(videoOptions, 0.25);
+                Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(videoOptions, 0.25);
+                // detections contains all frames (int) and a list of detected object for each frame
                 break;
             case ModelType.Segmentation:
-                var segmentations = yolo.RunSegmentation(videoOptions, 0.25);
+                Dictionary<int, List<Segmentation>> segmentations = yolo.RunSegmentation(videoOptions, 0.25);
+                // detections contains all frames (int) and a list of segmentationns for each frame
                 break;
         }
     }
