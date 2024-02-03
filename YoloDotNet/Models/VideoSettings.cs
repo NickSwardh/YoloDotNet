@@ -1,5 +1,4 @@
 ﻿using YoloDotNet.Enums;
-using YoloDotNet.Extensions;
 
 namespace YoloDotNet.Models
 {
@@ -46,7 +45,7 @@ namespace YoloDotNet.Models
         /// <summary>
         /// Temporary folder used during video processing.
         /// </summary>
-        public DirectoryInfo TempFolder { get; set; } = default!;
+        public string TempFolder { get; set; } = default!;
 
         /// <summary>
         /// Keep processed frames in temp folder
@@ -86,12 +85,12 @@ namespace YoloDotNet.Models
             Width = result.Width,
             Height = result.Height,
             OutputFolder = result.OutputDir,
-            TempFolder = VideoExtension.CreateOutputFolder(Path.Combine(result.OutputDir, nameof(FolderName.Temp)), true),
+            TempFolder = Path.Combine(result.OutputDir, nameof(FolderName.Temp)),
             KeepFrames = result.KeepFrames,
             KeepAudio = result.KeepAudio,
             GenerateVideo = result.GenerateVideo,
             DrawLabels = result.DrawLabels,
-            DrawConfidence  = result.KeepAudio
+            DrawConfidence = result.KeepAudio
         };
 
         #endregion

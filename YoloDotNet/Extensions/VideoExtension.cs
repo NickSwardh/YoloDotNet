@@ -1,6 +1,5 @@
 ﻿using System.Globalization;
 using System.Text.RegularExpressions;
-using YoloDotNet.Enums;
 using YoloDotNet.Models;
 
 namespace YoloDotNet.Extensions
@@ -57,7 +56,7 @@ namespace YoloDotNet.Extensions
         /// <param name="outputDir"></param>
         /// <param name="deleteOld">Delete everything? Delete folder if it exists and create a new folder - false by default.</param>
         /// <returns></returns>
-        public static DirectoryInfo CreateOutputFolder(string outputDir, bool deleteOld = false)
+        public static string CreateOutputFolder(string outputDir, bool deleteOld = false)
         {
             var dir = new DirectoryInfo(outputDir);
 
@@ -83,7 +82,7 @@ namespace YoloDotNet.Extensions
                 maxTries--;
             }
 
-            return dir;
+            return dir.FullName;
         }
 
         /// <summary>
