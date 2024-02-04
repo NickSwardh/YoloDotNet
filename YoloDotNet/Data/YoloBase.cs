@@ -186,10 +186,10 @@ namespace YoloDotNet.Data
 
             foreach (var item in predictions)
             {
-                var rect1 = item.Rectangle;
+                var rect1 = item.BoundingBox;
                 var overlappingItem = result.FirstOrDefault(current =>
                 {
-                    var rect2 = current.Rectangle;
+                    var rect2 = current.BoundingBox;
                     var intersection = RectangleF.Intersect(rect1, rect2);
 
                     float intArea = intersection.Width * intersection.Height; // intersection area

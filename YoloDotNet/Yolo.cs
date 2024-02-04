@@ -126,9 +126,11 @@ namespace YoloDotNet
                     xMax = Math.Clamp(xMax, 0, w);
                     yMax = Math.Clamp(yMax, 0, h);
 
+                    var boundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
+
                     for (int l = 0; l < elements; l++)
                     {
-                        var confidence = tensor[i, 4 + l, j];
+                        var confidence = tensor[i, l + 4, j];
 
                         if (confidence < threshold) continue;
 
@@ -136,9 +138,9 @@ namespace YoloDotNet
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = confidence,
-                            Rectangle = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
+                            BoundingBox = boundingBox,
                             BoundingBoxIndex = j,
-                        }); ;
+                        });
                     }
                 });
             }
@@ -183,7 +185,7 @@ namespace YoloDotNet
                         segmentedImage[x, y] = new L8(pixelLuminance);
                     }
 
-                segmentedImage.CropResizedSegmentedArea(image, box.Rectangle);
+                segmentedImage.CropResizedSegmentedArea(image, box.BoundingBox);
                 box.SegmentedPixels = segmentedImage.GetSegmentedPixels(p => CalculatePixelConfidence(p.PackedValue));
             });
 
