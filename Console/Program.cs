@@ -171,7 +171,7 @@ static void DisplayOnnxMetaData(Yolo yolo)
     for (var i = 0; i < 3; i++)
     {
         // Capitalize first letter in label
-        var label = string.Concat(labels[i].Name[0].ToString().ToUpper(), labels[i].Name.AsSpan(1));
+        var label = char.ToUpper(labels[i].Name[0]) + labels[i].Name[1..];
         Console.WriteLine($"index: {i,-8} label: {label,-20} color: {labels[i].Color}");
     }
 
