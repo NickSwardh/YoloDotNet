@@ -3,7 +3,7 @@
 ### YoloDotNet is a C# .NET 8.0 implementation of Yolov8 and ONNX runtime with CUDA
 
 YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
-YoloDotNet currently supports `Classification`, `Object Detection` adn `Segmentation` in both images and videos.
+YoloDotNet currently supports `Classification`, `Object Detection` and `Segmentation` in both images and videos.
 
 | Classification | Object Dectection | Segmentation |
 |:---:|:---:|:---:|
