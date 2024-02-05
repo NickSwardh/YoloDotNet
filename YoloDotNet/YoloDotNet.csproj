@@ -8,17 +8,19 @@
     <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOV8</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;ONNX;ML;CUDA;GPU;object-detection;image-vision;video;media;converter;encode;imagesharp;sixlabors;ffmpeg;core</PackageTags>
+    <PackageTags>yolo;yolov8;ONNX;ML;CUDA;GPU;classification;object-detection;segmentation;image-vision;video;media;converter;encode;imagesharp;sixlabors;ffmpeg;core;ai</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon></PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
-    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for object detection in images and videos. For object detection in videos, FFMPEG is requred and added to your system PATH environment variables.</Description>
+    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection and Segmentation in images and videos.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.1</Version>
+	<Version>1.2</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Added option to classify images and video frames.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added new segmentation feature
+Optimizations for improved performance
+Code enhancements for better maintainability</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
