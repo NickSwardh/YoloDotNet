@@ -15,9 +15,9 @@ namespace YoloDotNet.Models
         public double Confidence { get; set; }
 
         /// <summary>
-        /// Rectangle defining the region of interest (bounding box) of the detected object.
+        /// Region of interest (bounding box) of the detected object.
         /// </summary>
-        public Rectangle Rectangle { get; set; }
+        public Rectangle BoundingBox { get; set; }
 
         /// <summary>
         /// Index of bounding box
@@ -34,14 +34,14 @@ namespace YoloDotNet.Models
         {
             Label = result.Label,
             Confidence = result.Confidence,
-            Rectangle = result.Rectangle
+            Rectangle = result.BoundingBox
         };
 
         public static explicit operator Segmentation(ObjectResult result) => new()
         {
             Label = result.Label,
             Confidence = result.Confidence,
-            Rectangle = result.Rectangle,
+            Rectangle = result.BoundingBox,
             SegmentedPixels = result.SegmentedPixels
         };
         #endregion

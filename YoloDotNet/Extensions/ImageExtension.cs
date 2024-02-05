@@ -108,7 +108,7 @@ namespace YoloDotNet.Extensions
                 {
                     var confidence = func(row[x]);
 
-                    if (confidence > 0.75f)
+                    if (confidence > 0.68f)
                         pixels.Add(new Pixel(x, y, confidence));
                 }
             });
@@ -217,7 +217,7 @@ namespace YoloDotNet.Extensions
                 foreach (var pixel in test)
                     mask[pixel.X, pixel.Y] = color;
 
-                image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .28f));
+                image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .38f));
             });
 
             image.DrawBoundingBoxes(segmentations, drawConfidence);
