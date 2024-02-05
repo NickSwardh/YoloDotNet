@@ -10,7 +10,6 @@ YoloDotNet currently supports `Classification`, `Object Detection` and `Segmenta
 | Categorize an image | Detect multiple objects in a single image | Separate detected objects by pixel maps |
 | ![hummingbird](https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg)[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/) | ![result](https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg)[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/) | ![traffic](https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6)[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/) |
 
-https://user-images.githubusercontent.com/35733515/c87f9aa9-362b-4828-bcb8-498b562dc97c.jpg
 YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 
 :information_source: Before installing CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
