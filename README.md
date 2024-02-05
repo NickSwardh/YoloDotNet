@@ -45,6 +45,7 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 
 ```csharp
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using YoloDotNet;
 using YoloDotNet.Extensions;
 
@@ -57,7 +58,8 @@ using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
 // Run
 var results = yolo.RunClassification(image, 5); // Top 5 classes
 //var results = yolo.RunObjectDetection(image, 0.25);
-//var results = yolo.RunClassification(image, 0.25);
+//var results = yolo.RunSegmentation(image, 0.25);
+
 image.Draw(results);
 image.Save(@"path\to\save\image.jpg");
 ```
@@ -66,6 +68,7 @@ image.Save(@"path\to\save\image.jpg");
 
 ```csharp
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using YoloDotNet;
 using YoloDotNet.Extensions;
 
@@ -90,7 +93,7 @@ var options = new VideoOptions
 // Run
 var results = yolo.RunClassification(options, 5); // Top 5 classes
 //var results = yolo.RunObjectDetection(options, 0.25);
-//var results = yolo.RunClassification(options, 0.25);
+//var results = yolo.RunSegmentation(options, 0.25);
 
 // Do further processing with results if needed...
 ```
