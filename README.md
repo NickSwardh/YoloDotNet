@@ -18,7 +18,7 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 - Download and install [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Download [cuDNN](https://developer.nvidia.com/cudnn) and follow the [installation instructions](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html#install-windows)
 - Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)<br>
-  Currently, YoloDotNet supports `Classification` and `ObjectDetection` on both images and videos
+  Currently, YoloDotNet supports `Classification`, `Object Detection` and `Segmentation` in both images and videos
   
   ## Verify your model
   
