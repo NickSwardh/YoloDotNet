@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YoloDotNet", "YoloDotNet\Yo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Console", "Console\Console.csproj", "{9FAD402E-E86D-4BF9-BE07-2AFC10A1B036}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoloDotNet.Tests", "YoloDotNet.Tests\YoloDotNet.Tests.csproj", "{8DB429FE-35C1-4879-9FF1-9811AFF808C5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{9FAD402E-E86D-4BF9-BE07-2AFC10A1B036}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9FAD402E-E86D-4BF9-BE07-2AFC10A1B036}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9FAD402E-E86D-4BF9-BE07-2AFC10A1B036}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8DB429FE-35C1-4879-9FF1-9811AFF808C5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8DB429FE-35C1-4879-9FF1-9811AFF808C5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8DB429FE-35C1-4879-9FF1-9811AFF808C5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8DB429FE-35C1-4879-9FF1-9811AFF808C5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
