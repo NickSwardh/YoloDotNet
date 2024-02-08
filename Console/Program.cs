@@ -1,150 +1,145 @@
 ﻿using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Diagnostics;
 using YoloDotNet;
-using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
-// Instantiate a new Yolo object
-using var yolo = new Yolo(@"path\to\model.onnx");
-Console.WriteLine($"Loaded ONNX-model is of type: {yolo.OnnxModel.ModelType}");
+// Use models and testdata from assets in YoloDotNet.Tests
+const string ASSETS_FOLDER = @"..\..\..\..\YoloDotNet.Tests\Assets";
+const string MODELS_FOLDER = ASSETS_FOLDER + @"\models";
+const string MEDIA_FOLDER = ASSETS_FOLDER + @"\media";
+string outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
+Console.CursorVisible = false;
 
-// Display ONNX metadata
-DisplayOnnxMetaData(yolo);
-
-// Image
-var inputImage = @"path\to\image.jpg";
-var saveFolder = @"path\to\output\folder";
-
-// Run Yolo on image
-ProcessImage(yolo, inputImage, saveFolder);
-
-// Run Yolo on video
-ProcessVideo(yolo, new VideoOptions
+// Build pipeline
+var pipeline = new List<Action<string>>
 {
-    VideoFile = @"path\to\video.mp4",
-    OutputDir = @"path\to\output\folder",
-    //GenerateVideo = true,
-    //DrawLabels = true,
-    //FPS = 30,
-    //Width = 1280,
-    //Height = 720,
-    //DrawConfidence = true,
-    //KeepAudio = true,
-    //KeepFrames = false
-});
+    CreateOutputFolder,
+    Classification,
+    ObjectDetection,
+    Segmentation,
+    ObjectDetectionOnVideo,
+    DisplayOutputFolder
+};
 
-#region Methods
-static void ProcessImage(Yolo yolo, string imgPath, string saveFolder)
+// Run pipeline demo
+foreach (var item in pipeline)
 {
-    if (File.Exists(imgPath) is false)
-    {
-        Console.WriteLine($"{imgPath} not found.");
-        return;
-    }
-
-    Console.WriteLine($"Running inference on {imgPath}\r\n");
-
-    // Load image as RGBA
-    using var image = Image.Load<Rgba32>(imgPath);
-
-    switch (yolo.OnnxModel.ModelType)
-    {
-        case ModelType.Classification:
-            List<Classification> classifications = yolo.RunClassification(image, 5); // Get top 5 classifications. Default = 1
-            image.Draw(classifications);
-            break;
-        case ModelType.ObjectDetection:
-            List<ObjectDetection> detections = yolo.RunObjectDetection(image, 0.25);
-            image.Draw(detections);
-            break;
-        case ModelType.Segmentation:
-            List<Segmentation> segments = yolo.RunSegmentation(image, 0.25);
-            image.Draw(segments);
-            break;
-    }
-
-    // Save image
-    var filename = Path.Combine(saveFolder) + @"\result.jpg";
-    image.Save(filename);
-
-    Console.WriteLine("Done!");
-    Console.WriteLine("Saved as {0}", filename);
+    item.Invoke(outputFolder);
 }
 
-static void ProcessVideo(Yolo yolo, VideoOptions videoOptions)
+DisplayOnnxMetaDataExample();
+
+#region Methods
+
+static void CreateOutputFolder(string outputFolder)
 {
-    if (File.Exists(videoOptions.VideoFile) is false)
+    if (Directory.Exists(outputFolder) is false)
+        Directory.CreateDirectory(outputFolder);
+}
+
+static void Classification(string outputFolder)
+{
+    Console.Write("Running Classification...\t");
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-cls.onnx"), false);
+
+    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "hummingbird.jpg"));
+
+    List<Classification> results = yolo.RunClassification(image, 3); // Get top 5 classifications. Default = 1
+
+    image.Draw(results);
+    image.Save(Path.Combine(outputFolder, $"{nameof(Classification)}.jpg"));
+    Console.Write("complete!");
+    Console.WriteLine();
+}
+
+static void ObjectDetection(string outputFolder)
+{
+    Console.Write("Running Object Detection...\t");
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s.onnx"), false);
+
+    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "street.jpg"));
+
+    List<ObjectDetection> results = yolo.RunObjectDetection(image, 0.25);
+
+    image.Draw(results);
+    image.Save(Path.Combine(outputFolder, $"{nameof(ObjectDetection)}.jpg"));
+    Console.Write("complete!");
+    Console.WriteLine();
+}
+
+static void Segmentation(string outputFolder)
+{
+    Console.Write("Running Segmentation...\t\t");
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-seg.onnx"), false);
+
+    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "people.jpg"));
+
+    List<Segmentation> results = yolo.RunSegmentation(image, 0.25);
+
+    image.Draw(results);
+    image.Save(Path.Combine(outputFolder, $"{nameof(Segmentation)}.jpg"));
+    Console.Write("complete!");
+    Console.WriteLine();
+}
+
+static void ObjectDetectionOnVideo(string outputFolder)
+{
+    var options = new VideoOptions
     {
-        Console.WriteLine($"{videoOptions.VideoFile} not found.");
-        return;
-    }
+        VideoFile = Path.Combine(MEDIA_FOLDER, "walking.mp4"),
+        OutputDir = outputFolder,
+        //GenerateVideo = true,
+        //DrawLabels = true,
+        //FPS = 30,
+        Width = 640, // Resize video...
+        Height = -2, // -2 = automatically calculate dimensions to keep proportions
+        //DrawConfidence = true,
+        //KeepAudio = true,
+        //KeepFrames = false
+    };
+
+    Console.WriteLine();
+    Console.WriteLine("Running Object Detection on video...");
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s.onnx"));
 
     int currentLineCursor = 0;
-    Console.WriteLine();
-    Console.WriteLine(@"Running inference on {0}", videoOptions.VideoFile);
-    Console.CursorVisible = false;
 
     // Listen to events...
-    yolo.VideoStatusEvent += OnStatusChangeEvent;
-    yolo.VideoProgressEvent += OnVideoProgressEvent;
-    yolo.VideoCompleteEvent += OnCompleteEvent;
-
-    // Run inference on video
-    try
-    {
-        switch (yolo.OnnxModel.ModelType)
-        {
-            case ModelType.Classification:
-                Dictionary<int, List<Classification>> classifications = yolo.RunClassification(videoOptions, 5);
-                // classifications contains all frames (int) and a list of classes for each frame
-                break;
-            case ModelType.ObjectDetection:
-                Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(videoOptions, 0.25);
-                // detections contains all frames (int) and a list of detected object for each frame
-                break;
-            case ModelType.Segmentation:
-                Dictionary<int, List<Segmentation>> segmentations = yolo.RunSegmentation(videoOptions, 0.25);
-                // detections contains all frames (int) and a list of segmentationns for each frame
-                break;
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.SetCursorPosition(20, currentLineCursor);
-        Console.Write("{0}", ex.Message);
-    }
-
-    static void OnCompleteEvent(object? sender, EventArgs e)
-    {
-        Console.WriteLine();
-        Console.WriteLine("All done!");
-    }
-
-    void OnStatusChangeEvent(object? sender, EventArgs e)
+    yolo.VideoStatusEvent += (sender, e) =>
     {
         Console.WriteLine();
         Console.Write((string)sender!);
         currentLineCursor = Console.CursorTop;
-    }
+    };
 
-    void OnVideoProgressEvent(object? sender, EventArgs e)
+    yolo.VideoProgressEvent += (object? sender, EventArgs e) =>
     {
         Console.SetCursorPosition(20, currentLineCursor);
         Console.Write(new string(' ', 4));
         Console.SetCursorPosition(20, currentLineCursor);
         Console.Write("{0}%", (int)sender!);
-    }
+    };
 
+    yolo.VideoCompleteEvent += (object? sender, EventArgs e) =>
+    {
+        Console.WriteLine();
+        Console.WriteLine();
+        Console.WriteLine("Complete!");
+    };
+
+    Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(options, 0.25);
     Console.WriteLine();
-    Console.CursorVisible = true;
 }
 
-static void DisplayOnnxMetaData(Yolo yolo)
+static void DisplayOnnxMetaDataExample()
 {
     Console.WriteLine();
     Console.WriteLine("Internal ONNX properties");
     Console.WriteLine(new string('-', 58));
+
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s.onnx"), false);
 
     // Display internal ONNX properties...
     foreach (var property in yolo.OnnxModel.GetType().GetProperties())
@@ -178,4 +173,9 @@ static void DisplayOnnxMetaData(Yolo yolo)
     Console.WriteLine("...");
     Console.WriteLine();
 }
+
+
+static void DisplayOutputFolder(string outputFolder)
+    => Process.Start("explorer.exe", outputFolder);
+
 #endregion
