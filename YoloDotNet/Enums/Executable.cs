@@ -3,7 +3,7 @@
     /// <summary>
     /// Strongly typed names for executables.
     /// </summary>
-    enum Executable
+    public enum Executable
     {
         ffmpeg,
         ffprobe

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using YoloDotNet.Enums;
 
 namespace YoloDotNet.VideoHandler
 {
@@ -14,15 +15,15 @@ namespace YoloDotNet.VideoHandler
         /// Start new process
         /// </summary>
         /// <param name="executable"></param>
-        /// <param name="parameter"></param>
-        public void RunProcess(string executable, string parameter)
+        /// <param name="arguments"></param>
+        public void RunProcess(Executable executable, string arguments)
         {
             using Process process = new()
             {
                 StartInfo = new()
                 {
-                    FileName = executable,
-                    Arguments = parameter,
+                    FileName = executable.ToString(),
+                    Arguments = ValidateCommandLineArguments(executable, arguments),
                     UseShellExecute = false,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
@@ -39,6 +40,14 @@ namespace YoloDotNet.VideoHandler
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
             process.WaitForExit();
+        }
+
+        private static string ValidateCommandLineArguments(Executable executable, string arguments)
+        {
+            if (arguments is null)
+                throw new ArgumentNullException(nameof(arguments), "Command-line arguments can't be null.");
+
+            return executable == Executable.ffprobe ? arguments : $@"-hwaccel auto {arguments} -y -hide_banner";
         }
 
         /// <summary>

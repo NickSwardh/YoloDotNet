@@ -15,7 +15,7 @@ namespace YoloDotNet.VideoHandler
 
         private readonly ProcessHandler _handler;
         private readonly Dictionary<VideoAction, Action> _pipeline;
-        private List<string> _output = new();
+        private List<string> _output = [];
 
         public VideoSettings _videoSettings;
         private readonly bool _useCuda;
@@ -23,6 +23,7 @@ namespace YoloDotNet.VideoHandler
         private const string TEMP_VIDEO_FILENAME = "temp.mp4";
         private const string TEMP_AUDIO_FILENAME = "audio.mkv";
         private const string OUTPUT_FILEMAME = "output.mp4";
+        private const string FRAME_FORMAT = "png";
 
         public VideoAction CurrentPipelineStep;
 
@@ -95,9 +96,9 @@ namespace YoloDotNet.VideoHandler
 
             var match = FrameNumberRegex().Match(text);
 
-            if (match.Success)
+            if (match.Success && double.TryParse(match.Value, out double currentFrame))
             {
-                var currentFrame = double.Parse(match.Value);
+                //var currentFrame = double.Parse(match.Value);
                 var progressPercent = (int)(currentFrame / frames * 100);
                 ProgressEvent.Invoke(progressPercent, EventArgs.Empty);
             }
@@ -125,19 +126,21 @@ namespace YoloDotNet.VideoHandler
             }
         }
 
+        /// <summary>
+        /// Pre-process video file by creating a temporary file with video stream only, in order to get actual duration of video and other video info
+        /// </summary>
         private void PreProcess()
         {
             VideoExtension.CreateOutputFolder(_videoSettings.TempFolder, true);
 
             var tempFile = Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME);
-            Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -map 0:v:0 -vsync vfr -an -cq 51 -preset ultrafast -c copy ""{tempFile}"" -y");
+            Execute($@"-i ""{_videoSettings.VideoFile}"" -map 0:v:0 -vsync vfr -an -cq 51 -preset ultrafast -c copy ""{tempFile}""");
             Thread.Sleep(100);
         }
 
         /// <summary>
         /// Retrieves information about the specified video file using ffprobe.
         /// </summary>
-        /// <exception cref="FileNotFoundException">Thrown if the specified video file is not found.</exception>
         private void GetVideoInfo()
         {
             var tempVideo = Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME);
@@ -171,7 +174,7 @@ namespace YoloDotNet.VideoHandler
         /// Execute command to extrac audio from video
         /// </summary>
         private void ExtractAudio()
-            => Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -vn -c:a copy ""{Path.Combine(_videoSettings.TempFolder, TEMP_AUDIO_FILENAME)}"" -y -hide_banner");
+            => Execute($@"-i ""{_videoSettings.VideoFile}"" -vn -c:a copy ""{Path.Combine(_videoSettings.TempFolder, TEMP_AUDIO_FILENAME)}""");
 
         /// <summary>
         /// Execute commant to extract all frames from video
@@ -179,7 +182,7 @@ namespace YoloDotNet.VideoHandler
         private void ExtractFrames()
         {
             var (w, h) = (_videoSettings.Width, _videoSettings.Height);
-            Execute($@"-hwaccel auto -i ""{_videoSettings.VideoFile}"" -vsync vfr -vf ""fps={FormatedFps},scale={w}:{h}"" ""{Path.Combine(_videoSettings.TempFolder, "%d.png")}"" -hide_banner");
+            Execute($@"-i ""{_videoSettings.VideoFile}"" -vsync vfr -vf ""fps={FormatedFps},scale={w}:{h}"" ""{Path.Combine(_videoSettings.TempFolder, $"%d.{FRAME_FORMAT}")}""");
         }
 
         /// <summary>
@@ -196,29 +199,23 @@ namespace YoloDotNet.VideoHandler
             var tempFolder = _videoSettings.TempFolder;
             var audioPath = Path.Combine(tempFolder, TEMP_AUDIO_FILENAME);
             var outputFile = Path.Combine(_videoSettings.OutputFolder, OUTPUT_FILEMAME);
-            var outputImage = Path.Combine(tempFolder, "%d.png");
+            var outputImage = Path.Combine(tempFolder, $"%d.{FRAME_FORMAT}");
 
             var audio = _videoSettings.KeepAudio && File.Exists(audioPath)
-                ? $@"-i ""{audioPath}"""
+                ? $@"-i ""{audioPath}"" -c:a copy"
                 : "";
 
-            var cv = " libx264";
-            var cuda = "";
+            string cv = _useCuda ? "h264_nvenc" : "libx264";
+            string cuda = _useCuda ? "-hwaccel_output_format cuda" : "";
 
-            if (_useCuda)
-            {
-                cuda = "-hwaccel_output_format cuda";
-                cv = "h264_nvenc";
-            }
-
-            Execute($@"-hwaccel auto {cuda} -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:a copy -c:v {cv} -pix_fmt yuv420p ""{outputFile}"" -y -hide_banner");
+            Execute($@"{cuda} -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -pix_fmt yuv420p -vf setsar=1:1 ""{outputFile}""");
         }
 
         /// <summary>
         /// Get all extracted frames from temporary folder
         /// </summary>
         public string[] GetExtractedFrames()
-            => Directory.GetFiles(_videoSettings.TempFolder, "*.png")
+            => Directory.GetFiles(_videoSettings.TempFolder, $"*.{FRAME_FORMAT}")
                 .OrderBy(x => int.Parse(Path.GetFileNameWithoutExtension(x))).ToArray();
 
         /// <summary>
@@ -233,7 +230,7 @@ namespace YoloDotNet.VideoHandler
         /// <param name="cmd">Commands</param>
         /// <param name="exe">Executable</param>
         private void Execute(string cmd, Executable exe = Executable.ffmpeg)
-            => _handler.RunProcess(exe.ToString(), cmd);
+            => _handler.RunProcess(exe, cmd);
 
         /// <summary>
         /// Regex for matching current frame in progress from ffmpeg stream output
@@ -245,7 +242,6 @@ namespace YoloDotNet.VideoHandler
         /// <summary>
         /// Regex for matching metadata from ffprobe output
         /// </summary>
-        /// <returns></returns>
         [GeneratedRegex(@"(?<=r_frame_rate=)(?<Frame>\d+)\/(?<Rate>\d+).*?(?<=duration=)(?<Duration>\d+\.\d+).*?(?<=bitrate: )(?<Bitrate>\d+).*?(?<=, )(?<Width>\d+)x(?<Height>\d+).*?(?<FPS>\d+(?:\.\d+)?)(?=\s+fps)", RegexOptions.Singleline)]
         private static partial Regex VideoMetadataRegex();
 
