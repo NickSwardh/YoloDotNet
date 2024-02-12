@@ -1,18 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntime.Tensors;
-using SixLabors.Fonts;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.Drawing;
-using SixLabors.ImageSharp.Drawing.Processing;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using System.Collections.Concurrent;
-using System.Globalization;
-using System.Text;
-using YoloDotNet.Enums;
-using YoloDotNet.Models;
-
-namespace YoloDotNet.Extensions
+﻿namespace YoloDotNet.Extensions
 {
     public static class ImageExtension
     {

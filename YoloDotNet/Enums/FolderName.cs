@@ -1,5 +1,4 @@
-﻿
-namespace YoloDotNet.Enums
+﻿namespace YoloDotNet.Enums
 {
     /// <summary>
     /// Strongly typed names for folder names.

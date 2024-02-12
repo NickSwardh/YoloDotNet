@@ -1,6 +1,4 @@
-﻿using System.Runtime.Serialization;
-
-namespace YoloDotNet.Enums
+﻿namespace YoloDotNet.Enums
 {
     /// <summary>
     /// Strongly typed names for image vision types.

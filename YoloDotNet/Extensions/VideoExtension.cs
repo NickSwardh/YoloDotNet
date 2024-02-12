@@ -1,8 +1,4 @@
-﻿using System.Globalization;
-using System.Text.RegularExpressions;
-using YoloDotNet.Models;
-
-namespace YoloDotNet.Extensions
+﻿namespace YoloDotNet.Extensions
 {
     public static class VideoExtension
     {

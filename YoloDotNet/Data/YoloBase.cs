@@ -1,12 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntime;
-using Microsoft.ML.OnnxRuntime.Tensors;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using YoloDotNet.Enums;
-using YoloDotNet.Extensions;
-using YoloDotNet.Models;
-
-namespace YoloDotNet.Data
+﻿namespace YoloDotNet.Data
 {
     /// <summary>
     /// Abstract base class for performing image vision tasks using a YOLOv8 model in ONNX format.

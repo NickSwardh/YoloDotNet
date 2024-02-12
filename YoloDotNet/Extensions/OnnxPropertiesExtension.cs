@@ -1,12 +1,4 @@
-﻿using Microsoft.ML.OnnxRuntime;
-using Newtonsoft.Json;
-using SixLabors.ImageSharp;
-using System.Runtime.Serialization;
-using YoloDotNet.Data;
-using YoloDotNet.Enums;
-using YoloDotNet.Models;
-
-namespace YoloDotNet.Extensions
+﻿namespace YoloDotNet.Extensions
 {
     public static class OnnxPropertiesExtension
     {

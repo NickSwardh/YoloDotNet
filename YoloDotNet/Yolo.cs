@@ -1,12 +1,4 @@
-﻿using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using System.Collections.Concurrent;
-using YoloDotNet.Data;
-using YoloDotNet.Enums;
-using YoloDotNet.Extensions;
-using YoloDotNet.Models;
-
-namespace YoloDotNet
+﻿namespace YoloDotNet
 {
     /// <summary>
     /// Detects objects in an image based on ONNX model.

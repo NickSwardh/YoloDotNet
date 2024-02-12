@@ -1,6 +1,4 @@
-﻿using SixLabors.ImageSharp;
-
-namespace YoloDotNet.Models
+﻿namespace YoloDotNet.Models
 {
     public class ObjectResult
     {

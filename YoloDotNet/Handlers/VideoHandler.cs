@@ -1,10 +1,4 @@
-﻿using System.Globalization;
-using System.Text.RegularExpressions;
-using YoloDotNet.Enums;
-using YoloDotNet.Extensions;
-using YoloDotNet.Models;
-
-namespace YoloDotNet.VideoHandler
+﻿namespace YoloDotNet.VideoHandler
 {
     public partial class VideoHandler : IDisposable
     {

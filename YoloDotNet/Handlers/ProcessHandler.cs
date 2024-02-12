@@ -1,7 +1,4 @@
-﻿using System.Diagnostics;
-using YoloDotNet.Enums;
-
-namespace YoloDotNet.VideoHandler
+﻿namespace YoloDotNet.VideoHandler
 {
     /// <summary>
     /// Handles the execution of external processes, providing events for data reception and process completion.
@@ -44,8 +41,9 @@ namespace YoloDotNet.VideoHandler
 
         private static string ValidateCommandLineArguments(Executable executable, string arguments)
         {
-            if (arguments is null)
-                throw new ArgumentNullException(nameof(arguments), "Command-line arguments can't be null.");
+            //if (arguments is null)
+            //    throw new ArgumentNullException(nameof(arguments), "Command-line arguments can't be null.");
+            ArgumentNullException.ThrowIfNull(nameof(arguments), "Command-line arguments can't be null.");
 
             return executable == Executable.ffprobe ? arguments : $@"-hwaccel auto {arguments} -y -hide_banner";
         }

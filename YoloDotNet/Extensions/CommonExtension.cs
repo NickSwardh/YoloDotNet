@@ -1,7 +1,4 @@
-﻿using SixLabors.ImageSharp;
-using System.Globalization;
-
-namespace YoloDotNet.Extensions
+﻿namespace YoloDotNet.Extensions
 {
     public static class CommonExtension
     {

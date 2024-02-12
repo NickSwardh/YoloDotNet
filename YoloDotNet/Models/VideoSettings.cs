@@ -1,6 +1,4 @@
-﻿using YoloDotNet.Enums;
-
-namespace YoloDotNet.Models
+﻿namespace YoloDotNet.Models
 {
     /// <summary>
     /// Extracted metadata from video
