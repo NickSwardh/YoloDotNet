@@ -70,6 +70,11 @@
         /// </summary>
         public bool DrawConfidence { get; set; }
 
+        /// <summary>
+        /// Draw boundingbox and/or pixelmask for segmentation
+        /// </summary>
+        public DrawSegment DrawSegment { get; set; }
+
         #region Mapping methods
 
         /// <summary>
@@ -88,7 +93,8 @@
             KeepAudio = result.KeepAudio,
             GenerateVideo = result.GenerateVideo,
             DrawLabels = result.DrawLabels,
-            DrawConfidence = result.KeepAudio
+            DrawConfidence = result.KeepAudio,
+            DrawSegment = result.DrawSegment,
         };
 
         #endregion

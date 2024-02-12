@@ -135,7 +135,7 @@
                 batch[i] = results;
 
                 if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)
-                    DrawResultsOnVideoFrame(img, results, frame, _videoHandler._videoSettings.DrawConfidence);
+                    DrawResultsOnVideoFrame(img, results, frame, _videoHandler._videoSettings);
 
                 Interlocked.Increment(ref progressCounter);
                 var progress = ((double)progressCounter / totalFrames) * 100;
@@ -153,16 +153,25 @@
         /// <summary>
         /// Draw labels on video frames
         /// </summary>
-        private static void DrawResultsOnVideoFrame<T>(Image<Rgba32> img, List<T> results, string savePath, bool drawConfidence)
+        private static void DrawResultsOnVideoFrame<T>(Image<Rgba32> img, List<T> results, string savePath, VideoSettings videoSettings)
         {
-            if (results is List<Classification> classifications)
-                img.Draw(classifications, drawConfidence);
-            else if (results is List<ObjectDetection> objectDetections)
-                img.Draw(objectDetections, drawConfidence);
-            else if (results is List<Segmentation> segmentations)
-                img.Draw(segmentations, drawConfidence);
-            else
-                throw new NotSupportedException("Unknown or incompatible ONNX model type.");
+            var drawConfidence = videoSettings.DrawConfidence;
+            var drawSegment = videoSettings.DrawSegment;
+
+            switch (results)
+            {
+                case List<Classification> classifications:
+                    img.Draw(classifications, drawConfidence);
+                    break;
+                case List<ObjectDetection> objectDetections:
+                    img.Draw(objectDetections, drawConfidence);
+                    break;
+                case List<Segmentation> segmentations:
+                    img.Draw(segmentations, drawSegment, drawConfidence);
+                    break;
+                default:
+                    throw new NotSupportedException("Unknown or incompatible ONNX model type.");
+            }
 
             img.SaveAsync(savePath).ConfigureAwait(false);
         }

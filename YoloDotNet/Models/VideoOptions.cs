@@ -54,5 +54,10 @@
         /// Set height of output video.
         /// </summary>
         public int? Height { get; set; }
+
+        /// <summary>
+        /// Draw boundingboxes and/or pixelmasks on segmented objects
+        /// </summary>
+        public DrawSegment DrawSegment { get; set; }
     }
 }

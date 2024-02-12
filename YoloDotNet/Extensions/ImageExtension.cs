@@ -26,8 +26,8 @@
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="detections">A list of segmentation information, including rectangles and segmented pixels.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        public static void Draw(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
-            => image.DrawSegmentations(segmentations, drawConfidence);
+        public static void Draw(this Image image, IEnumerable<Segmentation>? segmentations, DrawSegment draw = DrawSegment.Default, bool drawConfidence = true)
+            => image.DrawSegmentations(segmentations, draw, drawConfidence);
 
         /// <summary>
         /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
@@ -185,28 +185,32 @@
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        private static void DrawSegmentations(this Image image, IEnumerable<Segmentation>? segmentations, bool drawConfidence = true)
+        private static void DrawSegmentations(this Image image, IEnumerable<Segmentation>? segmentations, DrawSegment draw, bool drawConfidence)
         {
             ArgumentNullException.ThrowIfNull(segmentations);
 
-            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            Parallel.ForEach(segmentations, options, segmentation =>
+            if (draw == DrawSegment.Default || draw == DrawSegment.PixelMaskOnly)
             {
-                // Create a new transparent image
-                using var mask = new Image<Rgba32>(segmentation.Rectangle.Width, segmentation.Rectangle.Height);
+                var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
-                var color = Color.ParseHex(segmentation.Label.Color);
+                Parallel.ForEach(segmentations, options, segmentation =>
+                {
+                    // Create a new transparent image
+                    using var mask = new Image<Rgba32>(segmentation.Rectangle.Width, segmentation.Rectangle.Height);
 
-                // Add color to segmented pixels
-                var test = segmentation.SegmentedPixels.AsSpan();
-                foreach (var pixel in test)
-                    mask[pixel.X, pixel.Y] = color;
+                    var color = Color.ParseHex(segmentation.Label.Color);
 
-                image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .38f));
-            });
+                    // Add color to segmented pixels
+                    var test = segmentation.SegmentedPixels.AsSpan();
+                    foreach (var pixel in test)
+                        mask[pixel.X, pixel.Y] = color;
 
-            image.DrawBoundingBoxes(segmentations, drawConfidence);
+                    image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .38f));
+                });
+            }
+
+            if (draw == DrawSegment.Default || draw == DrawSegment.BoundingBoxOnly)
+                image.DrawBoundingBoxes(segmentations, drawConfidence);
         }
 
         /// <summary>
