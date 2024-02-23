@@ -27,6 +27,8 @@
         /// </summary>
         public Pixel[] SegmentedPixels { get; set; } = [];
 
+        public Pose[] PoseMarkers { get; set; } = [];
+
         #region Mapping methods
         public static explicit operator ObjectDetection(ObjectResult result) => new()
         {
@@ -41,6 +43,14 @@
             Confidence = result.Confidence,
             Rectangle = result.BoundingBox,
             SegmentedPixels = result.SegmentedPixels
+        };
+
+        public static explicit operator PoseEstimation(ObjectResult result) => new()
+        {
+            Label = result.Label,
+            Confidence = result.Confidence,
+            BoundingBox = result.BoundingBox,
+            PoseMarkers = result.PoseMarkers
         };
         #endregion
     }

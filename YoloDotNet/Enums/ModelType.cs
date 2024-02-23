@@ -13,6 +13,9 @@
         ObjectDetection,
 
         [EnumMember(Value = "segment")]
-        Segmentation
+        Segmentation,
+
+        [EnumMember(Value = "pose")]
+        PoseEstimation
     }
 }

@@ -75,6 +75,11 @@
         /// </summary>
         public DrawSegment DrawSegment { get; set; }
 
+        /// <summary>
+        /// Options for drawing pose estimation markers.
+        /// </summary>
+        public PoseOptions PoseOptions { get; set; } = new();
+
         #region Mapping methods
 
         /// <summary>
@@ -95,6 +100,7 @@
             DrawLabels = result.DrawLabels,
             DrawConfidence = result.KeepAudio,
             DrawSegment = result.DrawSegment,
+            PoseOptions = result.PoseOptions,
         };
 
         #endregion
