@@ -1,7 +1,9 @@
-﻿using SixLabors.ImageSharp;
+﻿using ConsoleDemo.Config;
+using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System.Diagnostics;
 using YoloDotNet;
+using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
@@ -19,6 +21,7 @@ var pipeline = new List<Action<string>>
     Classification,
     ObjectDetection,
     Segmentation,
+    PoseEstimation,
     ObjectDetectionOnVideo,
     DisplayOutputFolder
 };
@@ -39,6 +42,7 @@ static void CreateOutputFolder(string outputFolder)
         Directory.CreateDirectory(outputFolder);
 }
 
+
 static void Classification(string outputFolder)
 {
     Console.Write("Running Classification...\t");
@@ -53,6 +57,7 @@ static void Classification(string outputFolder)
     Console.Write("complete!");
     Console.WriteLine();
 }
+
 
 static void ObjectDetection(string outputFolder)
 {
@@ -69,6 +74,7 @@ static void ObjectDetection(string outputFolder)
     Console.WriteLine();
 }
 
+
 static void Segmentation(string outputFolder)
 {
     Console.Write("Running Segmentation...\t\t");
@@ -78,26 +84,46 @@ static void Segmentation(string outputFolder)
 
     List<Segmentation> results = yolo.RunSegmentation(image, 0.25);
 
-    image.Draw(results);
+    image.Draw(results, DrawSegment.PixelMaskOnly);
     image.Save(Path.Combine(outputFolder, $"{nameof(Segmentation)}.jpg"));
     Console.Write("complete!");
     Console.WriteLine();
 }
 
+
+static void PoseEstimation(string outputFolder)
+{
+    Console.Write("Running Pose Estimation...\t");
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-pose.onnx"), false);
+
+    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "crosswalk.jpg"));
+
+    var results = yolo.RunPoseEstimation(image, 0.25);
+
+    // Draw the connected pose-markers and colors according to a custom configuration for the model
+    image.Draw(results, CustomPoseMarkerColorMap.MyCustomPoseMarkerMap);
+    image.Save(Path.Combine(outputFolder, $"{nameof(YoloDotNet.Models.PoseEstimation)}.jpg"));
+    Console.Write("complete!");
+    Console.WriteLine();
+}
+
+
 static void ObjectDetectionOnVideo(string outputFolder)
 {
-    var options = new VideoOptions
+    var videoOptions = new VideoOptions
     {
         VideoFile = Path.Combine(MEDIA_FOLDER, "walking.mp4"),
         OutputDir = outputFolder,
         //GenerateVideo = true,
         //DrawLabels = true,
         //FPS = 30,
-        Width = 640, // Resize video...
-        Height = -2, // -2 = automatically calculate dimensions to keep proportions
+        //Width = 640, // Resize video...
+        //Height = -2, // -2 = automatically calculate dimensions to keep proportions
         //DrawConfidence = true,
         //KeepAudio = true,
-        //KeepFrames = false
+        //KeepFrames = false,
+        DrawSegment = DrawSegment.Default,
+        PoseOptions = CustomPoseMarkerColorMap.MyCustomPoseMarkerMap
     };
 
     Console.WriteLine();
@@ -129,7 +155,7 @@ static void ObjectDetectionOnVideo(string outputFolder)
         Console.WriteLine("Complete!");
     };
 
-    Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(options, 0.25);
+    Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(videoOptions, 0.25);
     Console.WriteLine();
 }
 
