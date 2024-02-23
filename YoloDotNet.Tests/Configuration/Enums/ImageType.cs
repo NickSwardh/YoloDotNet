@@ -4,6 +4,7 @@
     {
         Hummingbird,
         Street,
-        People
+        People,
+        Crosswalk
     }
 }

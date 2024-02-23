@@ -6,8 +6,9 @@ namespace YoloDotNet.Tests
         [InlineData(ModelType.Classification, 1, 3, 224, 224, 1, 0, 1000)]
         [InlineData(ModelType.ObjectDetection, 1, 3, 640, 640, 1, 8400, 84)]
         [InlineData(ModelType.Segmentation, 1, 3, 640, 640, 1, 8400, 116, 0, 0, 1, 32, 0, 160, 160)]
+        [InlineData(ModelType.PoseEstimation, 1, 3, 640, 640, 1, 8400, 56)]
         public void OnnxModel_ValidateProperties_ReturnTrue(
-            ModelType model,
+            ModelType modelTypeToTest,
 
             int inputBatch,
             int inputChannels,
@@ -28,7 +29,7 @@ namespace YoloDotNet.Tests
             )
         {
             // Arrange
-            var yolo = new Yolo(Config.GetTestModel(model), false);
+            var yolo = new Yolo(Config.GetTestModel(modelTypeToTest), false);
             var props = yolo.OnnxModel;
 
             // Act

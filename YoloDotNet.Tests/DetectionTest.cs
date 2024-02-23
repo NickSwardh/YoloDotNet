@@ -33,7 +33,7 @@
             var results = yolo.RunObjectDetection(image);
 
             // Assert
-            Assert.Equal(27, results.Count);
+            Assert.Equal(31, results.Count);
         }
 
         [Fact]
@@ -51,6 +51,23 @@
 
             // Assert
             Assert.Equal(20, results.Count);
+        }
+
+        [Fact]
+        public void RunPoseEstimation_GetExpectedNumberOfPoseEstimations_AssertTrue()
+        {
+            // Arrange
+            var model = Config.GetTestModel(ModelType.PoseEstimation);
+            var testImage = Config.GetTestImage(ImageType.Crosswalk);
+
+            var yolo = new Yolo(model, false);
+            var image = Image.Load<Rgba32>(testImage);
+
+            // Act
+            var results = yolo.RunPoseEstimation(image);
+
+            // Assert
+            Assert.Equal(10, results.Count);
         }
     }
 }
