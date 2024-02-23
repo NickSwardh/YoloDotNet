@@ -196,7 +196,7 @@
                 Parallel.ForEach(segmentations, options, segmentation =>
                 {
                     // Create a new transparent image
-                    using var mask = new Image<Rgba32>(segmentation.Rectangle.Width, segmentation.Rectangle.Height);
+                    using var mask = new Image<Rgba32>(segmentation.BoundingBox.Width, segmentation.BoundingBox.Height);
 
                     var color = Color.ParseHex(segmentation.Label.Color);
 
@@ -205,7 +205,7 @@
                     foreach (var pixel in test)
                         mask[pixel.X, pixel.Y] = color;
 
-                    image.Mutate(x => x.DrawImage(mask, segmentation.Rectangle.Location, .38f));
+                    image.Mutate(x => x.DrawImage(mask, segmentation.BoundingBox.Location, .38f));
                 });
             }
 
@@ -251,10 +251,10 @@
                     var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
 
                     // Label x, y coordinates
-                    var (x, y) = (label.Rectangle.X, label.Rectangle.Y - (textSize.Height * 2));
+                    var (x, y) = (label.BoundingBox.X, label.BoundingBox.Y - (textSize.Height * 2));
 
                     // Draw box
-                    context.Draw(Pens.Solid(labelColor, borderThickness), label.Rectangle);
+                    context.Draw(Pens.Solid(labelColor, borderThickness), label.BoundingBox);
 
                     // Draw text background
                     context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));

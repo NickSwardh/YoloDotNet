@@ -34,14 +34,14 @@
         {
             Label = result.Label,
             Confidence = result.Confidence,
-            Rectangle = result.BoundingBox
+            BoundingBox = result.BoundingBox
         };
 
         public static explicit operator Segmentation(ObjectResult result) => new()
         {
             Label = result.Label,
             Confidence = result.Confidence,
-            Rectangle = result.BoundingBox,
+            BoundingBox = result.BoundingBox,
             SegmentedPixels = result.SegmentedPixels
         };
 

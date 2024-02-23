@@ -18,6 +18,6 @@
         /// <summary>
         /// Rectangle defining the region of interest (bounding box) of the detected object.
         /// </summary>
-        public Rectangle Rectangle { get; init; }
+        public Rectangle BoundingBox { get; init; }
     }
 }
