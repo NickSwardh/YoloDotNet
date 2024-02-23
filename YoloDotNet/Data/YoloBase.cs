@@ -19,12 +19,15 @@
         public abstract List<Classification> RunClassification(Image img, int classes);
         public abstract List<ObjectDetection> RunObjectDetection(Image img, double threshold);
         public abstract List<Segmentation> RunSegmentation(Image img, double threshold);
+        public abstract List<PoseEstimation> RunPoseEstimation(Image img, double threshold);
         public abstract Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes);
         public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold);
         public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold);
+        public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double threshold);
         protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
         protected abstract List<ObjectResult> ObjectDetectImage(Image image, double threshold);
         protected abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
+        protected abstract List<PoseEstimation> PoseImage(Image image, double threshold);
         #endregion
 
         protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
@@ -78,6 +81,7 @@
             ModelType.Classification => ClassifyTensor((int)limit),
             ModelType.ObjectDetection => ObjectDetectImage(img, limit).Select(x => (ObjectDetection)x).ToList(),
             ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, limit)),
+            ModelType.PoseEstimation => PoseImage(img, limit),
             _ => throw new NotSupportedException($"Unknown ONNX model")
         };
 
@@ -156,7 +160,6 @@
         private static void DrawResultsOnVideoFrame<T>(Image<Rgba32> img, List<T> results, string savePath, VideoSettings videoSettings)
         {
             var drawConfidence = videoSettings.DrawConfidence;
-            var drawSegment = videoSettings.DrawSegment;
 
             switch (results)
             {
@@ -167,7 +170,10 @@
                     img.Draw(objectDetections, drawConfidence);
                     break;
                 case List<Segmentation> segmentations:
-                    img.Draw(segmentations, drawSegment, drawConfidence);
+                    img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence);
+                    break;
+                case List<PoseEstimation> poseEstimations:
+                    img.Draw(poseEstimations, videoSettings.PoseOptions, drawConfidence);
                     break;
                 default:
                     throw new NotSupportedException("Unknown or incompatible ONNX model type.");

@@ -30,6 +30,15 @@
             => image.DrawSegmentations(segmentations, draw, drawConfidence);
 
         /// <summary>
+        /// Draw segmentations and bounding boxes on the specified image.
+        /// </summary>
+        /// <param name="image">The image on which to draw segmentations.</param>
+        /// <param name="detections">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
+        public static void Draw(this Image image, IEnumerable<PoseEstimation>? segmentations, PoseOptions poseOptions, bool drawConfidence = true)
+            => image.DrawPoseEstimation(segmentations, poseOptions, drawConfidence);
+
+        /// <summary>
         /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
         /// </summary>
         /// <param name="image">The original image to be resized.</param>
@@ -211,6 +220,70 @@
 
             if (draw == DrawSegment.Default || draw == DrawSegment.BoundingBoxOnly)
                 image.DrawBoundingBoxes(segmentations, drawConfidence);
+        }
+
+        /// <summary>
+        /// Helper method for drawing segmentations and bounding boxes.
+        /// </summary>
+        /// <param name="image">The image on which to draw segmentations.</param>
+        /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
+        private static void DrawPoseEstimation(this Image image, IEnumerable<PoseEstimation>? poseEstimations, PoseOptions poseOptions, bool drawConfidence)
+        {
+            ArgumentNullException.ThrowIfNull(poseEstimations);
+
+            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
+            var circleRadius = image.CalculateFontSizeByDpi(8) / 2;
+            var lineSize = image.CalculateFontSizeByDpi(2) / 8;
+            var confidenceThreshold = poseOptions.PoseConfidence;
+            var hasPoseMapping = poseOptions.PoseMappings.Length > 0;
+            var emptyPoseMap = new PoseMap();
+            var alpha = 192;
+
+            foreach (var poseEstimation in poseEstimations)
+            {
+                Parallel.For(0, poseEstimation.PoseMarkers.Length, options, i =>
+                {
+                    var poseMarker = poseEstimation.PoseMarkers[i];
+
+                    if (poseMarker.Confidence < confidenceThreshold)
+                        return;
+
+                    image.Mutate(context =>
+                    {
+                        var poseMap = hasPoseMapping
+                            ? poseOptions.PoseMappings[i]
+                            : emptyPoseMap;
+
+                        var color = hasPoseMapping
+                            ? HexToRgba(poseMap.Color, alpha)
+                            : HexToRgba(poseOptions.DefaultPoseColor, alpha);
+
+                        var markerLocation = new Point(poseMarker.X, poseMarker.Y);
+
+                        // Draw pose markers
+                        var circle = new EllipsePolygon(markerLocation, circleRadius);
+                        context.Fill(color, circle);
+
+                        // Draw lines between pose-markers
+                        foreach (var connection in poseMap.Connections)
+                        {
+                            var markerDestination = poseEstimation.PoseMarkers[connection.Index];
+
+                            if (markerDestination.Confidence < confidenceThreshold)
+                                continue;
+
+                            var destination = new Point(markerDestination.X, markerDestination.Y);
+                            var pen = Pens.Solid(Color.Parse(connection.Color), lineSize);
+                            context.DrawLine(pen, [markerLocation, destination]);
+                        }
+                    });
+                });
+            }
+
+            if (poseOptions.DrawBoundingBox)
+                image.DrawBoundingBoxes(poseEstimations, drawConfidence);
         }
 
         /// <summary>

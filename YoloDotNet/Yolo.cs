@@ -39,6 +39,15 @@
             => Run<Segmentation>(img, threshold, ModelType.Segmentation);
 
         /// <summary>
+        /// Run pose estimation on an image.
+        /// </summary>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of Segmentation results.</returns>
+        public override List<PoseEstimation> RunPoseEstimation(Image img, double threshold = 0.25)
+            => Run<PoseEstimation>(img, threshold, ModelType.PoseEstimation);
+
+        /// <summary>
         /// Run image classification on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
@@ -61,6 +70,14 @@
         /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
         public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold = 0.25)
             => RunVideo<Segmentation>(options, threshold, ModelType.Segmentation);
+
+        /// <summary>
+        /// Run pose estimation on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public override Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double threshold = 0.25)
+            => RunVideo<PoseEstimation>(options, threshold, ModelType.PoseEstimation);
 
         #region Tensor methods
 
@@ -182,6 +199,45 @@
             });
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
+        }
+
+        protected override List<PoseEstimation> PoseImage(Image image, double threshold)
+        {
+            var (w, h) = (image.Width, image.Height);
+
+            var gain = Math.Max((float)w / OnnxModel.Input.Width, (float)h / OnnxModel.Input.Height);
+            var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
+            var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
+
+            var boxes = ObjectDetectImage(image, threshold);
+
+            var tensor = Tensors[OnnxModel.OutputNames[0]];
+
+            var labels = OnnxModel.Labels.Length;
+            var channels = OnnxModel.Input.Channels;
+            var elements = OnnxModel.Outputs[0].Elements;
+            var markers = (int)Math.Floor(((double)elements / channels)) - labels;
+
+            for (int i = 0; i < boxes.Count; i++)
+            {
+                var poseEstimations = new Pose[markers];
+                var box = boxes[i];
+
+                for (int j = 0; j < markers; j++)
+                {
+                    var offset = j * channels + labels + 4; // 4 = dimensions of the boundingbox (w, h, x, y)
+
+                    var x = (int)((tensor[0, offset + 0, box.BoundingBoxIndex] - xPad) * gain);
+                    var y = (int)((tensor[0, offset + 1, box.BoundingBoxIndex] - yPad) * gain);
+                    var confidence = tensor[0, offset + 2, box.BoundingBoxIndex];
+
+                    poseEstimations[j] = new Pose(x, y, confidence);
+                }
+
+                box.PoseMarkers = poseEstimations;
+            }
+
+            return boxes.Select(x => (PoseEstimation)x).ToList();
         }
 
         #endregion
