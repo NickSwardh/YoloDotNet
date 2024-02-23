@@ -56,7 +56,7 @@ namespace ConsoleDemo.Config
         public static PoseOptions MyCustomPoseMarkerMap => new()
         {
             PoseConfidence = 0.65,
-            PoseMappings = GetPoseMapping,
+            PoseMarkers = GetPoseMapping,
             DrawBoundingBox = true
         };
 
@@ -64,7 +64,7 @@ namespace ConsoleDemo.Config
         /// <summary>
         /// Configure the connections between pose markers and specify the colors to use.
         /// </summary>
-        private static PoseMap[] GetPoseMapping =>
+        private static YoloDotNet.Models.PoseMarker[] GetPoseMapping =>
         [
             new () // Nose
             {

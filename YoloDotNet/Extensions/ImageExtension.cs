@@ -223,10 +223,10 @@
         }
 
         /// <summary>
-        /// Helper method for drawing segmentations and bounding boxes.
+        /// Helper method for drawing pose estimation and bounding boxes.
         /// </summary>
-        /// <param name="image">The image on which to draw segmentations.</param>
-        /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="image">The image on which to pose estimations.</param>
+        /// <param name="poseEstimations">A list of pose estimation information, including rectangles and pose markers.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
         private static void DrawPoseEstimation(this Image image, IEnumerable<PoseEstimation>? poseEstimations, PoseOptions poseOptions, bool drawConfidence)
         {
@@ -237,8 +237,8 @@
             var circleRadius = image.CalculateFontSizeByDpi(8) / 2;
             var lineSize = image.CalculateFontSizeByDpi(2) / 8;
             var confidenceThreshold = poseOptions.PoseConfidence;
-            var hasPoseMapping = poseOptions.PoseMappings.Length > 0;
-            var emptyPoseMap = new PoseMap();
+            var hasPoseMarkers = poseOptions.PoseMarkers.Length > 0;
+            var emptyPoseMarker = new PoseMarker();
             var alpha = 192;
 
             foreach (var poseEstimation in poseEstimations)
@@ -252,11 +252,11 @@
 
                     image.Mutate(context =>
                     {
-                        var poseMap = hasPoseMapping
-                            ? poseOptions.PoseMappings[i]
-                            : emptyPoseMap;
+                        var poseMap = hasPoseMarkers
+                            ? poseOptions.PoseMarkers[i]
+                            : emptyPoseMarker;
 
-                        var color = hasPoseMapping
+                        var color = hasPoseMarkers
                             ? HexToRgba(poseMap.Color, alpha)
                             : HexToRgba(poseOptions.DefaultPoseColor, alpha);
 

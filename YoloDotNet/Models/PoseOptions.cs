@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Models
 {
-    public class PoseOptions
+    public record PoseOptions
     {
         /// <summary>
         /// Confidence threshold for displaying markers.
@@ -15,20 +15,27 @@
         /// <summary>
         /// Default color for pos-markers.
         /// </summary>
-        public string DefaultPoseColor { get; init; } = "#FF69B4"; // Hotpink
+        public string DefaultPoseColor { get; init; } = "#FFF633"; // Yellow
 
         /// <summary>
         /// User-defined mapping to determine how to connect pose-markers and specify associated colors.
         /// </summary>
-        public PoseMap[] PoseMappings { get; init; } = [];
+        public PoseMarker[] PoseMarkers { get; init; } = [];
     }
 
     /// <summary>
-    /// 
+    /// Represents a mapping between pose markers and their connections.
     /// </summary>
-    public class PoseMap
+    public record PoseMarker
     {
+        /// <summary>
+        /// Color associated with the pose markers.
+        /// </summary>
         public string Color { get; init; } = default!;
+
+        /// <summary>
+        /// Defines connections between pose markers and their parent marker.
+        /// </summary>
         public PoseConnection[] Connections { get; init; } = [];
     }
 
