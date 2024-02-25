@@ -101,7 +101,7 @@ static void PoseEstimation(string outputFolder)
     var results = yolo.RunPoseEstimation(image, 0.25);
 
     // Draw the connected pose-markers and colors according to a custom configuration for the model
-    image.Draw(results, CustomPoseMarkerColorMap.MyCustomPoseMarkerMap);
+    image.Draw(results, CustomPoseMarkerColorMap.PoseMarkerOptions);
     image.Save(Path.Combine(outputFolder, $"{nameof(YoloDotNet.Models.PoseEstimation)}.jpg"));
     Console.Write("complete!");
     Console.WriteLine();
@@ -123,7 +123,7 @@ static void ObjectDetectionOnVideo(string outputFolder)
         //KeepAudio = true,
         //KeepFrames = false,
         DrawSegment = DrawSegment.Default,
-        PoseOptions = CustomPoseMarkerColorMap.MyCustomPoseMarkerMap
+        PoseOptions = CustomPoseMarkerColorMap.PoseMarkerOptions
     };
 
     Console.WriteLine();

@@ -2,6 +2,9 @@
 
 namespace ConsoleDemo.Config
 {
+    /// <summary>
+    /// Demonstrates configuring a custom pose marker profile with personalized colors and illustrating marker connections.
+    /// </summary>
     public static class CustomPoseMarkerColorMap
     {
         /// <summary>
@@ -53,10 +56,10 @@ namespace ConsoleDemo.Config
         /// <summary>
         /// Options for pose estimation.
         /// </summary>
-        public static PoseOptions MyCustomPoseMarkerMap => new()
+        public static PoseOptions PoseMarkerOptions => new()
         {
             PoseConfidence = 0.65,
-            PoseMarkers = GetPoseMapping,
+            PoseMarkers = GetPoseMarkerConfiguration,
             DrawBoundingBox = true
         };
 
@@ -64,7 +67,7 @@ namespace ConsoleDemo.Config
         /// <summary>
         /// Configure the connections between pose markers and specify the colors to use.
         /// </summary>
-        private static YoloDotNet.Models.PoseMarker[] GetPoseMapping =>
+        private static YoloDotNet.Models.PoseMarker[] GetPoseMarkerConfiguration =>
         [
             new () // Nose
             {
