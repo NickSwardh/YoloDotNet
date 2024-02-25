@@ -3,12 +3,17 @@
 ### YoloDotNet is a C# .NET 8.0 implementation of Yolov8 and ONNX runtime with CUDA
 
 YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
-YoloDotNet currently supports `Classification`, `Object Detection` and `Segmentation` in both images and videos.
+YoloDotNet currently supports `Classification`, `Object Detection`, `Segmentation` and `Pose Estimation` in both images and videos.
 
-| Classification | Object Dectection | Segmentation |
-|:---:|:---:|:---:|
-| Categorize an image | Detect multiple objects in a single image | Separate detected objects by pixel maps |
-| ![hummingbird](https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg)[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/) | ![result](https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg)[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/) | ![traffic](https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6)[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/) |
+| Classification | Object Dectection |
+|:---:|:---:|
+| Categorize an image | Detect multiple objects in a single image
+| <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=500>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/) | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=500>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/) |
+
+| Segmentation | Pose Estimation |
+|:---:|:---:|
+| Separate detected objects by pixel maps | Identifying location of specific keypoints in an image |
+<img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=500>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/) | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=500>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/) |
 
 YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 
@@ -17,7 +22,7 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 - Download and install [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Download [cuDNN](https://developer.nvidia.com/cudnn) and follow the [installation instructions](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html#install-windows)
 - Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)<br>
-  Currently, YoloDotNet supports `Classification`, `Object Detection` and `Segmentation` in both images and videos
+  Currently, YoloDotNet supports `Classification`, `Object Detection`, `Segmentation` and `Pose Estimation` in both images and videos
   
   ## Verify your model
   
@@ -27,7 +32,7 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
   // Instantiate a new Yolo object with your ONNX-model
   using var yolo = new Yolo(@"path\to\model.onnx");
   
-  Console.WriteLine(yolo.OnnxModel.ModelType); // Output if valid: Classification or ObjectDetection
+  Console.WriteLine(yolo.OnnxModel.ModelType); // Output if valid: Classification, ObjectDetection, Segmentation or PoseEstimation
   ```
   
 > [!NOTE]
@@ -58,6 +63,7 @@ using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
 var results = yolo.RunClassification(image, 5); // Top 5 classes
 //var results = yolo.RunObjectDetection(image, 0.25);
 //var results = yolo.RunSegmentation(image, 0.25);
+//var results = yolo.RunPoseEstimation(image, 0.25);
 
 image.Draw(results);
 image.Save(@"path\to\save\image.jpg");
@@ -82,17 +88,20 @@ var options = new VideoOptions
     //GenerateVideo = true,
     //DrawLabels = true,
     //FPS = 30,
-    //Width = 1280,
-    //Height = 720,
+    //Width = 640, // Resize video...
+    //Height = -2, // -2 automatically calculate dimensions to keep proportions
     //DrawConfidence = true,
     //KeepAudio = true,
-    //KeepFrames = false
+    //KeepFrames = false,
+    //DrawSegment = DrawSegment.Default,
+    //PoseOptions = MyPoseMarkerConfiguration // Your own pose marker configuration...
 };
 
 // Run
 var results = yolo.RunClassification(options, 5); // Top 5 classes
 //var results = yolo.RunObjectDetection(options, 0.25);
 //var results = yolo.RunSegmentation(options, 0.25);
+//var results = yolo.RunPoseEstimation(options, 0.25);
 
 // Do further processing with results if needed...
 ```
@@ -119,6 +128,13 @@ YoloDotNet detection with CPU
 ```csharp
 // With CPU
 using var yolo = new Yolo(@"path\to\model.onnx", false);
+```
+
+# Custom Pose-marker configuration
+[Example on how to configure PoseOptions for a Pose Estimation model](ConsoleDemo/Config/PoseSetup.cs)
+ ```csharp
+// Pass in a PoseOptions parameter to the Draw() extension method. Ex:
+image.Draw(poseEstimationResults, poseOptions);
 ```
 
 # Access ONNX metadata and labels
