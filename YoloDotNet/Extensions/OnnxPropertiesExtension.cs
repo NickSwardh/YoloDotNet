@@ -37,16 +37,13 @@
             var onnxLabels = JsonConvert.DeserializeObject<Dictionary<int, string>>(onnxLabelData);
 
             var colors = modelType == ModelType.Classification
-                ? Enumerable.Repeat(YoloDotNetColors.Default(), onnxLabels!.Count).ToArray()
+                ? [YoloDotNetColors.Default()]
                 : YoloDotNetColors.Get();
 
-            if (onnxLabels!.Count > colors.Length)
-                throw new("There are more labels than available colors.");
-
-            return onnxLabels.Zip(colors, (label, color) => new LabelModel
+            return onnxLabels!.Select((label, index) => new LabelModel
             {
                 Name = label.Value,
-                Color = color
+                Color = colors[index % colors.Length] // Repeat colors if there are more labels than colors.
             }).ToArray();
         }
 
