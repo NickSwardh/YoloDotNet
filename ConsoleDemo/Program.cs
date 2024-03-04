@@ -119,6 +119,7 @@ static void ObjectDetectionOnVideo(string outputFolder)
         //FPS = 30,
         //Width = 640, // Resize video...
         //Height = -2, // -2 = automatically calculate dimensions to keep proportions
+        //Quality = 28,
         //DrawConfidence = true,
         //KeepAudio = true,
         //KeepFrames = false,

@@ -202,7 +202,7 @@
             string cv = _useCuda ? "h264_nvenc" : "libx264";
             string cuda = _useCuda ? "-hwaccel_output_format cuda" : "";
 
-            Execute($@"{cuda} -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -pix_fmt yuv420p -vf setsar=1:1 ""{outputFile}""");
+            Execute($@"{cuda} -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -pix_fmt yuv420p -vf setsar=1:1 -tune:v hq -rc:v vbr -cq:v {_videoSettings.Quality} ""{outputFile}""");
         }
 
         /// <summary>

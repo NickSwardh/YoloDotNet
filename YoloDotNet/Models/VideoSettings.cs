@@ -36,6 +36,11 @@
         public int? Height { get; set; }
 
         /// <summary>
+        /// Compression Quality 0-51
+        /// </summary>
+        public int Quality { get; set; }
+
+        /// <summary>
         /// Output folder for processed video file.
         /// </summary>
         public string OutputFolder { get; set; } = default!;
@@ -92,6 +97,7 @@
             FPS = result.FPS,
             Width = result.Width,
             Height = result.Height,
+            Quality = result.Quality,
             OutputFolder = result.OutputDir,
             TempFolder = Path.Combine(result.OutputDir, nameof(FolderName.Temp)),
             KeepFrames = result.KeepFrames,

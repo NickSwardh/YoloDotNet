@@ -56,7 +56,12 @@
         public int? Height { get; set; }
 
         /// <summary>
-        /// Draw boundingboxes and/or pixelmasks on segmented objects
+        /// Compression Quality (0-51) 28 = Default.
+        /// </summary>
+        public int Quality { get; set; } = 28;
+
+        /// <summary>
+        /// Draw boundingboxes and/or pixelmasks on segmented objects.
         /// </summary>
         public DrawSegment DrawSegment { get; set; }
 
