@@ -120,7 +120,6 @@ namespace ConsoleDemo.Config
                 Color = Colors[PoseColor.LightBlue],
                 Connections =
                 [
-                    new ((int)PoseMarker.LeftShoulder, Colors[PoseColor.LightBlue]),
                     new ((int)PoseMarker.RightElbow, Colors[PoseColor.LightBlue]),
                     new ((int)PoseMarker.RightHip, Colors[PoseColor.HotPink])
                 ]
