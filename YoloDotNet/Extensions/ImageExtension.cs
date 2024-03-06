@@ -21,6 +21,15 @@
             => image.DrawBoundingBoxes(detections, drawConfidence);
 
         /// <summary>
+        /// Draw oriented bounding boxes around detected objects on the specified image.
+        /// </summary>
+        /// <param name="image">The image on which to draw oriented bounding boxes.</param>
+        /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
+        public static void Draw(this Image image, IEnumerable<OBBDetection>? detections, bool drawConfidence = true)
+            => image.DrawOrientedBoundingBoxes(detections, drawConfidence);
+
+        /// <summary>
         /// Draw segmentations and bounding boxes on the specified image.
         /// </summary>
         /// <param name="image">The image on which to draw segmentations.</param>
@@ -302,8 +311,7 @@
 
             // Define fonts and colors
             var fontSize = image.CalculateFontSizeByDpi(16f);
-            var font = SystemFonts.Get(nameof(FontType.Arial))
-                .CreateFont(fontSize, FontStyle.Bold);
+            var font = GetFont(fontSize);
 
             var shadowColor = new Rgba32(44, 44, 44, 180);
             var foregroundColor = new Rgba32(248, 240, 227, 224);
@@ -337,6 +345,73 @@
 
                     // Draw label text
                     context.DrawText(text, font, foregroundColor, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
+                }
+            });
+        }
+
+        private static void DrawOrientedBoundingBoxes(this Image image, IEnumerable<OBBDetection>? detections, bool drawConfidence)
+        {
+            ArgumentNullException.ThrowIfNull(detections);
+
+            // Define constants for readability
+            const int borderThickness = 2;
+            const int shadowOffset = 1;
+
+            // Define fonts and colors
+            var fontSize = image.CalculateFontSizeByDpi(16f);
+            var font = GetFont(fontSize);
+
+            var shadowColor = new Rgba32(44, 44, 44, 180);
+            var foregroundColor = new Rgba32(248, 240, 227, 224);
+
+            image.Mutate(context =>
+            {
+                foreach (var bbox in detections!)
+                {
+                    var x = bbox.BoundingBox.X;
+                    var y = bbox.BoundingBox.Y;
+                    var w = bbox.BoundingBox.Width;
+                    var h = bbox.BoundingBox.Height;
+                    var degrees = bbox.OrientationAngle;
+
+                    var boxColor = HexToRgba(bbox.Label.Color, 128);
+
+                    // Calculate center of unrotated bounding box
+                    var centerPoint = new PointF(x + w / 2, y + h / 2);
+
+                    // Create a rotation matrix based on the orientation angle of the bounding box.
+                    var matrix = Matrix3x2Extensions.CreateRotationDegrees(degrees, centerPoint);
+
+                    // Set the rotation matrix on the context and rotate around the center of the rectangle.
+                    context.SetDrawingTransform(matrix);
+
+                    // Draw the rectangle on the rotated context
+                    context.Draw(Pens.Solid(boxColor, borderThickness), new Rectangle(x, y, w, h));
+
+                    // Get the new coordinates of the bounding box after it has been rotated.
+                    var position = new PointF(x + w, y + h); // Bottom right corner
+                    var bottomRightCorner = Vector2.Transform(position, matrix);
+
+                    // Reset context and clear it from the rotation matrix in order to be able to draw horizontal labels.
+                    context.SetDrawingTransform(Matrix3x2.Identity);
+
+                    // Text with label name and confidence in percent
+                    var text = bbox.Label.Name;
+
+                    if (drawConfidence)
+                        text += $" ({bbox!.Confidence.ToPercent()}%)";
+
+                    // Calculate text width and height
+                    var textSize = TextMeasurer.MeasureSize(text, new TextOptions(font));
+
+                    // Draw text background
+                    context.Fill(boxColor, new RectangularPolygon(bottomRightCorner.X, bottomRightCorner.Y, textSize.Width + fontSize, textSize.Height * 2));
+
+                    // Draw text shadow
+                    context.DrawText(text, font, shadowColor, new PointF(bottomRightCorner.X + shadowOffset + (fontSize / 2), bottomRightCorner.Y + shadowOffset + (textSize.Height / 2)));
+
+                    // Draw label text
+                    context.DrawText(text, font, foregroundColor, new PointF(bottomRightCorner.X + (fontSize / 2), bottomRightCorner.Y + (textSize.Height / 2)));
                 }
             });
         }

@@ -4,6 +4,7 @@
     {
         Classification,
         ObjectDetection,
+        ObbDetection,
         Segmentation,
         PoseEstimation
     }

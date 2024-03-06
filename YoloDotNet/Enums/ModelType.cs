@@ -12,6 +12,9 @@
         [EnumMember(Value = "detect")]
         ObjectDetection,
 
+        [EnumMember(Value = "obb")]
+        ObbDetection,
+
         [EnumMember(Value = "segment")]
         Segmentation,
 

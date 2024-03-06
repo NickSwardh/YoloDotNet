@@ -29,12 +29,25 @@
 
         public Pose[] PoseMarkers { get; set; } = [];
 
+        /// <summary>
+        /// Orientation angle of the bounding box for OBB detections.
+        /// </summary>
+        public float OrientationAngle { get; set; }
+
         #region Mapping methods
         public static explicit operator ObjectDetection(ObjectResult result) => new()
         {
             Label = result.Label,
             Confidence = result.Confidence,
             BoundingBox = result.BoundingBox
+        };
+
+        public static explicit operator OBBDetection(ObjectResult result) => new()
+        {
+            Label = result.Label,
+            Confidence = result.Confidence,
+            BoundingBox = result.BoundingBox,
+            OrientationAngle = result.OrientationAngle
         };
 
         public static explicit operator Segmentation(ObjectResult result) => new()

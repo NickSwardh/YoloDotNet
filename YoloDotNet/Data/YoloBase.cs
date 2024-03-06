@@ -20,8 +20,10 @@
         public abstract List<ObjectDetection> RunObjectDetection(Image img, double threshold);
         public abstract List<Segmentation> RunSegmentation(Image img, double threshold);
         public abstract List<PoseEstimation> RunPoseEstimation(Image img, double threshold);
+        public abstract List<OBBDetection> RunObbDetection(Image img, double threshold);
         public abstract Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes);
         public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold);
+        public abstract Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double threshold);
         public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold);
         public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double threshold);
         protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
@@ -82,6 +84,7 @@
             ModelType.ObjectDetection => ObjectDetectImage(img, limit).Select(x => (ObjectDetection)x).ToList(),
             ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, limit)),
             ModelType.PoseEstimation => PoseImage(img, limit),
+            ModelType.ObbDetection => ObjectDetectImage(img, limit).Select(x => (OBBDetection)x).ToList(),
             _ => throw new NotSupportedException($"Unknown ONNX model")
         };
 
@@ -169,6 +172,9 @@
                 case List<ObjectDetection> objectDetections:
                     img.Draw(objectDetections, drawConfidence);
                     break;
+                case List<OBBDetection> obbDetections:
+                    img.Draw(obbDetections, drawConfidence);
+                    break;
                 case List<Segmentation> segmentations:
                     img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence);
                     break;
@@ -232,9 +238,15 @@
         protected static byte CalculatePixelLuminance(float value) => (byte)(255 - value * 255);
 
         /// <summary>
-        /// Calculate
+        /// Calculate pixel by byte to confidence
         /// </summary>
         protected static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
+
+        /// <summary>
+        /// Calculate radian to degree
+        /// </summary>
+        /// <param name="value"></param>
+        protected static float CaclulateRadianToDegree(float value) => value * (180 / (float)Math.PI);
 
         /// <summary>
         /// Verify that loaded model is of the expected type

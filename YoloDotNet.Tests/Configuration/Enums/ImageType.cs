@@ -5,6 +5,7 @@
         Hummingbird,
         Street,
         People,
-        Crosswalk
+        Crosswalk,
+        Island
     }
 }

@@ -67,6 +67,7 @@
             {
                 ModelType.Classification => (Output.Classification(dimensions[0]), Output.Empty()),
                 ModelType.ObjectDetection => (Output.Detection(dimensions[0]), Output.Empty()),
+                ModelType.ObbDetection => (Output.Detection(dimensions[0]), Output.Empty()),
                 ModelType.Segmentation => (Output.Detection(dimensions[0]), Output.Segmentation(dimensions[1])),
                 ModelType.PoseEstimation => (Output.Detection(dimensions[0]), Output.Empty()),
                 _ => throw new ArgumentException($"Error getting output shapes. Unknown ONNX model type.", nameof(modelType))

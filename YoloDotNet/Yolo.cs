@@ -30,6 +30,15 @@
             => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
 
         /// <summary>
+        /// Run oriented bounding bBox detection on an image.
+        /// </summary>
+        /// <param name="img">The image to classify.</param>
+        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <returns>A list of Segmentation results.</returns>
+        public override List<OBBDetection> RunObbDetection(Image img, double threshold = 0.25)
+            => Run<OBBDetection>(img, threshold, ModelType.ObbDetection);
+
+        /// <summary>
         /// Run segmentation on an image.
         /// </summary>
         /// <param name="img">The image to classify.</param>
@@ -62,6 +71,14 @@
         /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
         public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold = 0.25)
             => RunVideo<ObjectDetection>(options, threshold, ModelType.ObjectDetection);
+
+        /// <summary>
+        /// Run oriented bounding box detection on a video file.
+        /// </summary>
+        /// <param name="options">Options for video processing.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        public override Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double threshold = 0.25)
+            => RunVideo<OBBDetection>(options, threshold, ModelType.ObbDetection);
 
         /// <summary>
         /// Run object detection on a video file.
@@ -113,12 +130,12 @@
             var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
             var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
 
-            var elements = OnnxModel.Labels.Length;
+            var labels = OnnxModel.Labels.Length;
             var batchSize = OnnxModel.Outputs[0].BatchSize;
+            var elements = OnnxModel.Outputs[0].Elements;
             var channels = OnnxModel.Outputs[0].Channels;
 
             var tensor = Tensors[OnnxModel.OutputNames[0]];
-
             for (var i = 0; i < batchSize; i++)
             {
                 Parallel.For(0, channels, j =>
@@ -137,7 +154,7 @@
 
                     var boundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
 
-                    for (int l = 0; l < elements; l++)
+                    for (int l = 0; l < labels; l++)
                     {
                         var confidence = tensor[i, l + 4, j];
 
@@ -149,6 +166,7 @@
                             Confidence = confidence,
                             BoundingBox = boundingBox,
                             BoundingBoxIndex = j,
+                            OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CaclulateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
                         });
                     }
                 });

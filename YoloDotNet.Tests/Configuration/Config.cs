@@ -9,6 +9,7 @@
         {
             ModelType.Classification => Path.Combine(BASE_MODELS, "yolov8s-cls.onnx"),
             ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov8s.onnx"),
+            ModelType.ObbDetection => Path.Combine(BASE_MODELS, "yolov8s-obb.onnx"),
             ModelType.Segmentation => Path.Combine(BASE_MODELS, "yolov8s-seg.onnx"),
             ModelType.PoseEstimation => Path.Combine(BASE_MODELS, "yolov8s-pose.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
@@ -20,6 +21,7 @@
             ImageType.Street => Path.Combine(BASE_MEDIA, "street.jpg"),
             ImageType.People => Path.Combine(BASE_MEDIA, "people.jpg"),
             ImageType.Crosswalk => Path.Combine(BASE_MEDIA, "crosswalk.jpg"),
+            ImageType.Island => Path.Combine(BASE_MEDIA, "island.jpg"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
     }

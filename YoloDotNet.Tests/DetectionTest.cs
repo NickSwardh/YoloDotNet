@@ -37,6 +37,23 @@
         }
 
         [Fact]
+        public void RunObbDetection_GetExpectedNumberOfObjects_AssertTrue()
+        {
+            // Arrange
+            var model = Config.GetTestModel(ModelType.ObbDetection);
+            var testImage = Config.GetTestImage(ImageType.Island);
+
+            var yolo = new Yolo(model, false);
+            var image = Image.Load<Rgba32>(testImage);
+
+            // Act
+            var results = yolo.RunObbDetection(image);
+
+            // Assert
+            Assert.Equal(5, results.Count);
+        }
+
+        [Fact]
         public void RunSegmentation_GetExpectedNumberOfSegmentations_AssertTrue()
         {
             // Arrange
