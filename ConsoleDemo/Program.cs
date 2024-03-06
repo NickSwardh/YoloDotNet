@@ -20,6 +20,7 @@ var pipeline = new List<Action<string>>
     CreateOutputFolder,
     Classification,
     ObjectDetection,
+    ObbDetection,
     Segmentation,
     PoseEstimation,
     ObjectDetectionOnVideo,
@@ -70,6 +71,22 @@ static void ObjectDetection(string outputFolder)
 
     image.Draw(results);
     image.Save(Path.Combine(outputFolder, $"{nameof(ObjectDetection)}.jpg"));
+    Console.Write("complete!");
+    Console.WriteLine();
+}
+
+
+static void ObbDetection(string outputFolder)
+{
+    Console.Write("Running OBB Detection...\t");
+    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-obb.onnx"), false);
+
+    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "island.jpg"));
+
+    var results = yolo.RunObbDetection(image, 0.25);
+
+    image.Draw(results, false);
+    image.Save(Path.Combine(outputFolder, $"{nameof(ObbDetection)}.jpg"));
     Console.Write("complete!");
     Console.WriteLine();
 }
