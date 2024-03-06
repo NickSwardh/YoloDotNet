@@ -6,7 +6,7 @@ YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in imag
 
 &nbsp;&nbsp;✓&nbsp;&nbsp;`   Classification   `&nbsp;&nbsp;Categorize an image<br>
 &nbsp;&nbsp;✓&nbsp;&nbsp;`  Object Detection  `&nbsp;&nbsp;Detect multiple objects in a single image<br>
-&nbsp;&nbsp;✓&nbsp;&nbsp;`   OOB Detection    `&nbsp;&nbsp;OBB (Oriented Bounding Box), like `Object Detection` but with rotated bounding boxes<br>
+&nbsp;&nbsp;✓&nbsp;&nbsp;`   OBB Detection    `&nbsp;&nbsp;OBB (Oriented Bounding Box), like `Object Detection` but with rotated bounding boxes<br>
 &nbsp;&nbsp;✓&nbsp;&nbsp;`   Segmentation     `&nbsp;&nbsp;Separate detected objects using pixel masks<br>
 &nbsp;&nbsp;✓&nbsp;&nbsp;`  Pose Estimation   `&nbsp;&nbsp;Identifying location of specific keypoints in an image<br>
 
@@ -39,7 +39,7 @@ Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export
   // Instantiate a new Yolo object with your ONNX-model
   using var yolo = new Yolo(@"path\to\model.onnx");
   
-  Console.WriteLine(yolo.OnnxModel.ModelType); // Output if valid: Classification, ObjectDetection, Segmentation or PoseEstimation
+  Console.WriteLine(yolo.OnnxModel.ModelType); // Output modeltype...
   ```
 
 # Example - Image
