@@ -8,20 +8,19 @@
     <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOV8</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;ONNX;ML;CUDA;GPU;classification;object-detection;segmentation;pose-estimation;image-vision;video;media;converter;encode;imagesharp;sixlabors;ffmpeg;core;ai</PackageTags>
+    <PackageTags>yolo;yolov8;ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon></PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
-    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, Segmentation and Pose Estimation in images and videos.</Description>
+    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.3</Version>
+	<Version>1.4</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Added new Pose Estimation feature
-Added option to configure a custom pose marker profile
-Added option to draw boxes and/or pixel mask on segmented objects
-Fixed issue if there are more labels than internal colors</PackageReleaseNotes>
+    <PackageReleaseNotes>Added new OBB (Oriented Bounding Box) detection feature
+Added option to set compression quality on generated videos
+Added Index-property for labels</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
