@@ -42,6 +42,7 @@
 
             return onnxLabels!.Select((label, index) => new LabelModel
             {
+                Index = index,
                 Name = label.Value,
                 Color = colors[index % colors.Length] // Repeat colors if there are more labels than colors.
             }).ToArray();
