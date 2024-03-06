@@ -1,28 +1,35 @@
-# YoloDotNet
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.4
 
-### YoloDotNet is a C# .NET 8.0 implementation of Yolov8 and ONNX runtime with CUDA
+YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
 
-YoloDotNet is a .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
-YoloDotNet currently supports `Classification`, `Object Detection`, `Segmentation` and `Pose Estimation` in both images and videos.
+### YoloDotNet supports the following:
 
-| Classification | Object Dectection |
-|:---:|:---:|
-| Categorize an image | Detect multiple objects in a single image
-| <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=500>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/) | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=500>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/) |
+&nbsp;&nbsp;✓&nbsp;&nbsp;`   Classification   `&nbsp;&nbsp;Categorize an image<br>
+&nbsp;&nbsp;✓&nbsp;&nbsp;`  Object Detection  `&nbsp;&nbsp;Detect multiple objects in a single image<br>
+&nbsp;&nbsp;✓&nbsp;&nbsp;`   OOB Detection    `&nbsp;&nbsp;OBB (Oriented Bounding Box), like `Object Detection` but with rotated bounding boxes<br>
+&nbsp;&nbsp;✓&nbsp;&nbsp;`   Segmentation     `&nbsp;&nbsp;Separate detected objects using pixel masks<br>
+&nbsp;&nbsp;✓&nbsp;&nbsp;`  Pose Estimation   `&nbsp;&nbsp;Identifying location of specific keypoints in an image<br>
 
-| Segmentation | Pose Estimation |
-|:---:|:---:|
-| Separate detected objects by pixel maps | Identifying location of specific keypoints in an image |
-<img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=500>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/) | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=500>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/) |
+| Classification | Object Detection | OOB Detection | Segmentation | Pose Estimation |
+|:---:|:---:|:---:|:---:|:---:|
+| <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
+| <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
+# Nuget
+```
+> dotnet add package YoloDotNet
+```
+
+# Install CUDA (optional)
 YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 
 :information_source: Before installing CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
 
 - Download and install [CUDA](https://developer.nvidia.com/cuda-downloads)
 - Download [cuDNN](https://developer.nvidia.com/cudnn) and follow the [installation instructions](https://docs.nvidia.com/deeplearning/cudnn/install-guide/index.html#install-windows)
-- Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)<br>
-  Currently, YoloDotNet supports `Classification`, `Object Detection`, `Segmentation` and `Pose Estimation` in both images and videos
+
+# Export Yolov8 model to ONNX
+Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)
   
   ## Verify your model
   
@@ -34,16 +41,6 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
   
   Console.WriteLine(yolo.OnnxModel.ModelType); // Output if valid: Classification, ObjectDetection, Segmentation or PoseEstimation
   ```
-  
-> [!NOTE]
-> For Video, you need FFmpeg and FFProbe
-> - Download [FFMPEG](https://ffmpeg.org/download.html)
-> - Add FFmpeg and ffprobe to the Path-variable in your Environment Variables
-
-# Nuget
-```
-> dotnet add package YoloDotNet
-```
 
 # Example - Image
 
@@ -62,6 +59,7 @@ using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
 // Run
 var results = yolo.RunClassification(image, 5); // Top 5 classes
 //var results = yolo.RunObjectDetection(image, 0.25);
+//var results = yolo.RunObbDetection(options, 0.25);
 //var results = yolo.RunSegmentation(image, 0.25);
 //var results = yolo.RunPoseEstimation(image, 0.25);
 
@@ -70,6 +68,11 @@ image.Save(@"path\to\save\image.jpg");
 ```
 
 # Example - Video
+
+> [!IMPORTANT]
+> Processing video requires FFmpeg and FFProbe
+> - Download [FFMPEG](https://ffmpeg.org/download.html)
+> - Add FFmpeg and ffprobe to the Path-variable in your Environment Variables
 
 ```csharp
 using SixLabors.ImageSharp;
@@ -90,6 +93,7 @@ var options = new VideoOptions
     //FPS = 30,
     //Width = 640, // Resize video...
     //Height = -2, // -2 automatically calculate dimensions to keep proportions
+    //Quality = 28,
     //DrawConfidence = true,
     //KeepAudio = true,
     //KeepFrames = false,
@@ -100,6 +104,7 @@ var options = new VideoOptions
 // Run
 var results = yolo.RunClassification(options, 5); // Top 5 classes
 //var results = yolo.RunObjectDetection(options, 0.25);
+//var results = yolo.RunObbDetection(options, 0.25);
 //var results = yolo.RunSegmentation(options, 0.25);
 //var results = yolo.RunPoseEstimation(options, 0.25);
 
