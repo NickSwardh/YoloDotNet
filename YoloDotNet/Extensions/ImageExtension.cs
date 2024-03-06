@@ -313,9 +313,6 @@
             var fontSize = image.CalculateFontSizeByDpi(16f);
             var font = GetFont(fontSize);
 
-            var shadowColor = new Rgba32(44, 44, 44, 180);
-            var foregroundColor = new Rgba32(248, 240, 227, 224);
-
             image.Mutate(context =>
             {
                 foreach (var label in detections!)
@@ -341,10 +338,10 @@
                     context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));
 
                     // Draw text shadow
-                    context.DrawText(text, font, shadowColor, new PointF(x + shadowOffset + (fontSize / 2), y + shadowOffset + (textSize.Height / 2)));
+                    context.DrawText(text, font, ShadowColor, new PointF(x + shadowOffset + (fontSize / 2), y + shadowOffset + (textSize.Height / 2)));
 
                     // Draw label text
-                    context.DrawText(text, font, foregroundColor, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
+                    context.DrawText(text, font, ForegroundColor, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
                 }
             });
         }
@@ -360,9 +357,6 @@
             // Define fonts and colors
             var fontSize = image.CalculateFontSizeByDpi(16f);
             var font = GetFont(fontSize);
-
-            var shadowColor = new Rgba32(44, 44, 44, 180);
-            var foregroundColor = new Rgba32(248, 240, 227, 224);
 
             image.Mutate(context =>
             {
@@ -408,10 +402,10 @@
                     context.Fill(boxColor, new RectangularPolygon(bottomRightCorner.X, bottomRightCorner.Y, textSize.Width + fontSize, textSize.Height * 2));
 
                     // Draw text shadow
-                    context.DrawText(text, font, shadowColor, new PointF(bottomRightCorner.X + shadowOffset + (fontSize / 2), bottomRightCorner.Y + shadowOffset + (textSize.Height / 2)));
+                    context.DrawText(text, font, ShadowColor, new PointF(bottomRightCorner.X + shadowOffset + (fontSize / 2), bottomRightCorner.Y + shadowOffset + (textSize.Height / 2)));
 
                     // Draw label text
-                    context.DrawText(text, font, foregroundColor, new PointF(bottomRightCorner.X + (fontSize / 2), bottomRightCorner.Y + (textSize.Height / 2)));
+                    context.DrawText(text, font, ForegroundColor, new PointF(bottomRightCorner.X + (fontSize / 2), bottomRightCorner.Y + (textSize.Height / 2)));
                 }
             });
         }
@@ -424,6 +418,16 @@
         private static Font GetFont(float size)
             => SystemFonts.Get(nameof(FontType.Arial))
                 .CreateFont(size, FontStyle.Bold);
+
+        /// <summary>
+        /// Default shadow color
+        /// </summary>
+        private static Rgba32 ShadowColor => new (0, 0, 0, 60);
+
+        /// <summary>
+        /// Default foreground color
+        /// </summary>
+        private static Rgba32 ForegroundColor => new (255, 255, 255);
 
         /// <summary>
         /// Converts a hexadecimal color representation to an Rgba32 color.
