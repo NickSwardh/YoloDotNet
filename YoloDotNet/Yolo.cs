@@ -18,43 +18,47 @@
         /// <param name="classes">The number of classes to return (default is 1).</param>
         /// <returns>A list of classification results.</returns>
         public override List<Classification> RunClassification(Image img, int classes = 1)
-            => Run<Classification>(img, classes, ModelType.Classification);
+            => Run<Classification>(img, classes, 0, ModelType.Classification);
 
         /// <summary>
-        /// Run object detection on an image.
+        /// Run object detection on the provided image.
         /// </summary>
-        /// <param name="img">The image for object detection.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="img">The image to perform object detection on.</param>
+        /// <param name="confidence">Confidence threshold value for detected objects (default: 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of detected objects.</returns>
-        public override List<ObjectDetection> RunObjectDetection(Image img, double threshold = 0.25)
-            => Run<ObjectDetection>(img, threshold, ModelType.ObjectDetection);
+        public override List<ObjectDetection> RunObjectDetection(Image img, double confidence = 0.25, double overlap = 0.45)
+            => Run<ObjectDetection>(img, confidence, overlap, ModelType.ObjectDetection);
 
         /// <summary>
         /// Run oriented bounding bBox detection on an image.
         /// </summary>
-        /// <param name="img">The image to classify.</param>
-        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <param name="img">The image to obb detect.</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public override List<OBBDetection> RunObbDetection(Image img, double threshold = 0.25)
-            => Run<OBBDetection>(img, threshold, ModelType.ObbDetection);
+        public override List<OBBDetection> RunObbDetection(Image img, double confidence = 0.25, double overlap = 0.45)
+            => Run<OBBDetection>(img, confidence, overlap, ModelType.ObbDetection);
 
         /// <summary>
         /// Run segmentation on an image.
         /// </summary>
-        /// <param name="img">The image to classify.</param>
-        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <param name="img">The image to segmentate.</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public override List<Segmentation> RunSegmentation(Image img, double threshold = 0.25)
-            => Run<Segmentation>(img, threshold, ModelType.Segmentation);
+        public override List<Segmentation> RunSegmentation(Image img, double confidence = 0.25, double overlap = 0.45)
+            => Run<Segmentation>(img, confidence, overlap, ModelType.Segmentation);
 
         /// <summary>
         /// Run pose estimation on an image.
         /// </summary>
-        /// <param name="img">The image to classify.</param>
-        /// <param name="classes">The number of classes to return (default is 1).</param>
+        /// <param name="img">The image to pose estimate.</param>
+        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public override List<PoseEstimation> RunPoseEstimation(Image img, double threshold = 0.25)
-            => Run<PoseEstimation>(img, threshold, ModelType.PoseEstimation);
+        public override List<PoseEstimation> RunPoseEstimation(Image img, double confidence = 0.25, double overlap = 0.45)
+            => Run<PoseEstimation>(img, confidence, overlap, ModelType.PoseEstimation);
 
         /// <summary>
         /// Run image classification on a video file.
@@ -62,39 +66,42 @@
         /// <param name="options">Options for video processing.</param>
         /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
         public override Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes = 1)
-            => RunVideo<Classification>(options, classes, ModelType.Classification);
+            => RunVideo<Classification>(options, classes, 0, ModelType.Classification);
 
         /// <summary>
         /// Run object detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double threshold = 0.25)
-            => RunVideo<ObjectDetection>(options, threshold, ModelType.ObjectDetection);
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
+            => RunVideo<ObjectDetection>(options, confidence, overlap, ModelType.ObjectDetection);
 
         /// <summary>
         /// Run oriented bounding box detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public override Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double threshold = 0.25)
-            => RunVideo<OBBDetection>(options, threshold, ModelType.ObbDetection);
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
+            => RunVideo<OBBDetection>(options, confidence, overlap, ModelType.ObbDetection);
 
         /// <summary>
         /// Run object detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double threshold = 0.25)
-            => RunVideo<Segmentation>(options, threshold, ModelType.Segmentation);
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
+        public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
+            => RunVideo<Segmentation>(options, confidence, overlap, ModelType.Segmentation);
 
         /// <summary>
         /// Run pose estimation on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
-        /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        public override Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double threshold = 0.25)
-            => RunVideo<PoseEstimation>(options, threshold, ModelType.PoseEstimation);
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
+        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
+            => RunVideo<PoseEstimation>(options, confidence, overlap, ModelType.PoseEstimation);
 
         #region Tensor methods
 
@@ -118,9 +125,9 @@
         /// </summary>
         /// <param name="tensor">The input tensor containing object detection data.</param>
         /// <param name="image">The image associated with the tensor data.</param>
-        /// <param name="threshold">The confidence threshold for accepting object detections.</param>
+        /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        protected override List<ObjectResult> ObjectDetectImage(Image image, double threshold)
+        protected override List<ObjectResult> ObjectDetectImage(Image image, double confidenceThreshold, double overlapThreshold)
         {
             var result = new ConcurrentBag<ObjectResult>();
 
@@ -156,14 +163,14 @@
 
                     for (int l = 0; l < labels; l++)
                     {
-                        var confidence = tensor[i, l + 4, j];
+                        var boxConfidence = tensor[i, l + 4, j];
 
-                        if (confidence < threshold) continue;
+                        if (boxConfidence < confidenceThreshold) continue;
 
                         result.Add(new ObjectResult
                         {
                             Label = OnnxModel.Labels[l],
-                            Confidence = confidence,
+                            Confidence = boxConfidence,
                             BoundingBox = boundingBox,
                             BoundingBoxIndex = j,
                             OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CaclulateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
@@ -172,7 +179,7 @@
                 });
             }
 
-            return RemoveOverlappingBoxes([.. result]);
+            return RemoveOverlappingBoxes([.. result], overlapThreshold);
         }
 
         /// <summary>
@@ -219,7 +226,7 @@
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
 
-        protected override List<PoseEstimation> PoseImage(Image image, double threshold)
+        protected override List<PoseEstimation> PoseEstimateImage(Image image, double threshold, double overlapThrehshold)
         {
             var (w, h) = (image.Width, image.Height);
 
@@ -227,7 +234,7 @@
             var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
             var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
 
-            var boxes = ObjectDetectImage(image, threshold);
+            var boxes = ObjectDetectImage(image, threshold, overlapThrehshold);
 
             var tensor = Tensors[OnnxModel.OutputNames[0]];
 
