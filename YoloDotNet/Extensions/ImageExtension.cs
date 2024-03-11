@@ -101,6 +101,7 @@
         {
             var width = image.Width;
             var height = image.Height;
+            var pixelConfidenceThreshold = ImageConfig.SEGMENTATION_PIXEL_THRESHOLD;
 
             var pixels = new ConcurrentBag<Pixel>();
 
@@ -112,7 +113,7 @@
                 {
                     var confidence = func(row[x]);
 
-                    if (confidence > 0.68f)
+                    if (confidence > pixelConfidenceThreshold)
                         pixels.Add(new Pixel(x, y, confidence));
                 }
             });
@@ -155,20 +156,17 @@
         {
             ArgumentNullException.ThrowIfNull(labels);
 
-            var fontSize = image.CalculateFontSizeByDpi(16f);
+            var fontSize = image.CalculateFontSizeByDpi(ImageConfig.DEFAULT_FONT_SIZE);
             var x = (int)fontSize;
             var y = (int)fontSize;
             var margin = fontSize / 2;
-            var lineSpace = 1.5f;
 
             // Define fonts and colors
             var font = GetFont(fontSize);
-            var shadowColor = new Rgba32(0, 0, 0, 60);
-            var foregroundColor = new Rgba32(255, 255, 255);
 
             var options = new RichTextOptions(font)
             {
-                LineSpacing = lineSpace,
+                LineSpacing = ImageConfig.LINE_SPACING,
                 Origin = new PointF(x + margin, y + margin)
             };
 
@@ -190,10 +188,10 @@
                 var textSize = TextMeasurer.MeasureSize(sb.ToString(), options);
 
                 // Draw background
-                context.Fill(shadowColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height + fontSize));
+                context.Fill(ImageConfig.SHADOW_COLOR, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height + fontSize));
 
                 // Draw labels
-                context.DrawText(options, sb.ToString(), foregroundColor);
+                context.DrawText(options, sb.ToString(), ImageConfig.FOREGROUND_COLOR);
             });
         }
 
@@ -223,7 +221,7 @@
                     foreach (var pixel in test)
                         mask[pixel.X, pixel.Y] = color;
 
-                    image.Mutate(x => x.DrawImage(mask, segmentation.BoundingBox.Location, .38f));
+                    image.Mutate(x => x.DrawImage(mask, segmentation.BoundingBox.Location, ImageConfig.SEGMENTATION_MASK_OPACITY));
                 });
             }
 
@@ -243,12 +241,12 @@
 
             var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
-            var circleRadius = image.CalculateFontSizeByDpi(8f) / 2;
-            var lineSize = (int)Math.Floor(image.CalculateFontSizeByDpi(8f) / 8);
+            var circleRadius = image.CalculateFontSizeByDpi(ImageConfig.FONT_SIZE_8) / 2;
+            var lineSize = (int)Math.Floor(image.CalculateFontSizeByDpi(ImageConfig.FONT_SIZE_8) / 8);
             var confidenceThreshold = poseOptions.PoseConfidence;
             var hasPoseMarkers = poseOptions.PoseMarkers.Length > 0;
             var emptyPoseMarker = new PoseMarker();
-            var alpha = 192;
+            var alpha = ImageConfig.POSE_ESTIMATION_MARKER_OPACITY;
 
             foreach (var poseEstimation in poseEstimations)
             {
@@ -305,19 +303,17 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            // Define constant for readability
-            const int shadowOffset = 1;
-
             // Define fonts and colors
-            var fontSize = image.CalculateFontSizeByDpi(16f);
-            var borderThickness = (int)Math.Floor(image.CalculateFontSizeByDpi(16f) / 8);
+            var shadowOffset = ImageConfig.SHADOW_OFFSET;
+            var fontSize = image.CalculateFontSizeByDpi(ImageConfig.DEFAULT_FONT_SIZE);
+            var borderThickness = (int)Math.Floor(image.CalculateFontSizeByDpi(ImageConfig.DEFAULT_FONT_SIZE) / 8);
             var font = GetFont(fontSize);
 
             image.Mutate(context =>
             {
                 foreach (var label in detections!)
                 {
-                    var labelColor = HexToRgba(label.Label.Color, 128);
+                    var labelColor = HexToRgba(label.Label.Color, ImageConfig.DEFAULT_OPACITY);
 
                     // Text with label name and confidence in percent
                     var text = label.Label.Name;
@@ -338,10 +334,10 @@
                     context.Fill(labelColor, new RectangularPolygon(x, y, textSize.Width + fontSize, textSize.Height * 2));
 
                     // Draw text shadow
-                    context.DrawText(text, font, ShadowColor, new PointF(x + shadowOffset + (fontSize / 2), y + shadowOffset + (textSize.Height / 2)));
+                    context.DrawText(text, font, ImageConfig.SHADOW_COLOR, new PointF(x + shadowOffset + (fontSize / 2), y + shadowOffset + (textSize.Height / 2)));
 
                     // Draw label text
-                    context.DrawText(text, font, ForegroundColor, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
+                    context.DrawText(text, font, ImageConfig.FOREGROUND_COLOR, new PointF(x + (fontSize / 2), y + (textSize.Height / 2)));
                 }
             });
         }
@@ -350,12 +346,10 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            // Define constants for readability
-            const int borderThickness = 2;
-            const int shadowOffset = 1;
-
             // Define fonts and colors
-            var fontSize = image.CalculateFontSizeByDpi(16f);
+            var shadowOffset = ImageConfig.SHADOW_OFFSET;
+            var fontSize = image.CalculateFontSizeByDpi(ImageConfig.DEFAULT_FONT_SIZE);
+            var borderThickness = (int)Math.Floor(image.CalculateFontSizeByDpi(ImageConfig.DEFAULT_FONT_SIZE) / 8);
             var font = GetFont(fontSize);
 
             image.Mutate(context =>
@@ -368,7 +362,7 @@
                     var h = bbox.BoundingBox.Height;
                     var degrees = bbox.OrientationAngle;
 
-                    var boxColor = HexToRgba(bbox.Label.Color, 128);
+                    var boxColor = HexToRgba(bbox.Label.Color, ImageConfig.DEFAULT_OPACITY);
 
                     // Calculate center of unrotated bounding box
                     var centerPoint = new PointF(x + w / 2, y + h / 2);
@@ -402,10 +396,10 @@
                     context.Fill(boxColor, new RectangularPolygon(bottomRightCorner.X, bottomRightCorner.Y, textSize.Width + fontSize, textSize.Height * 2));
 
                     // Draw text shadow
-                    context.DrawText(text, font, ShadowColor, new PointF(bottomRightCorner.X + shadowOffset + (fontSize / 2), bottomRightCorner.Y + shadowOffset + (textSize.Height / 2)));
+                    context.DrawText(text, font, ImageConfig.SHADOW_COLOR, new PointF(bottomRightCorner.X + shadowOffset + (fontSize / 2), bottomRightCorner.Y + shadowOffset + (textSize.Height / 2)));
 
                     // Draw label text
-                    context.DrawText(text, font, ForegroundColor, new PointF(bottomRightCorner.X + (fontSize / 2), bottomRightCorner.Y + (textSize.Height / 2)));
+                    context.DrawText(text, font, ImageConfig.FOREGROUND_COLOR, new PointF(bottomRightCorner.X + (fontSize / 2), bottomRightCorner.Y + (textSize.Height / 2)));
                 }
             });
         }
@@ -418,16 +412,6 @@
         private static Font GetFont(float size)
             => SystemFonts.Get(nameof(FontType.Arial))
                 .CreateFont(size, FontStyle.Bold);
-
-        /// <summary>
-        /// Default shadow color
-        /// </summary>
-        private static Rgba32 ShadowColor => new (0, 0, 0, 60);
-
-        /// <summary>
-        /// Default foreground color
-        /// </summary>
-        private static Rgba32 ForegroundColor => new (255, 255, 255);
 
         /// <summary>
         /// Converts a hexadecimal color representation to an Rgba32 color.

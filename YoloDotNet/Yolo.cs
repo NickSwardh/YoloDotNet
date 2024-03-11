@@ -211,8 +211,7 @@
                     for (int x = 0; x < output.Width; x++)
                     {
                         // Iterate over each channel and calculate pixel location (x, y) with its maskweight, collected from first tensor.
-                        var value = Enumerable.Range(0, output.Channels)
-                                      .Sum(i => tensor1[0, i, y, x] * maskWeights[i]);
+                        var value = Enumerable.Range(0, output.Channels).Sum(i => tensor1[0, i, y, x] * maskWeights[i]);
 
                         // Calculate and update the pixel luminance value
                         var pixelLuminance = CalculatePixelLuminance(Sigmoid(value));

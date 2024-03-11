@@ -23,5 +23,6 @@ global using YoloDotNet.Data;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
 global using YoloDotNet.Extensions;
+global using YoloDotNet.Configuration;
 
 global using Path = System.IO.Path;
