@@ -243,8 +243,8 @@
 
             var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
-            var circleRadius = image.CalculateFontSizeByDpi(8) / 2;
-            var lineSize = image.CalculateFontSizeByDpi(2) / 8;
+            var circleRadius = image.CalculateFontSizeByDpi(8f) / 2;
+            var lineSize = (int)Math.Floor(image.CalculateFontSizeByDpi(8f) / 8);
             var confidenceThreshold = poseOptions.PoseConfidence;
             var hasPoseMarkers = poseOptions.PoseMarkers.Length > 0;
             var emptyPoseMarker = new PoseMarker();
@@ -305,12 +305,12 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            // Define constants for readability
-            const int borderThickness = 2;
+            // Define constant for readability
             const int shadowOffset = 1;
 
             // Define fonts and colors
             var fontSize = image.CalculateFontSizeByDpi(16f);
+            var borderThickness = (int)Math.Floor(image.CalculateFontSizeByDpi(16f) / 8);
             var font = GetFont(fontSize);
 
             image.Mutate(context =>
