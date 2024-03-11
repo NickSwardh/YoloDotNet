@@ -13,7 +13,7 @@
             var image = Image.Load<Rgba32>(testImage);
 
             // Act
-            var classification = yolo.RunClassification(image);
+            var classification = yolo.RunClassification(image, 1);
 
             // Assert
             Assert.Equal("hummingbird", classification[0].Label);
@@ -30,7 +30,7 @@
             var image = Image.Load<Rgba32>(testImage);
 
             // Act
-            var results = yolo.RunObjectDetection(image);
+            var results = yolo.RunObjectDetection(image, 0.25, 0.45);
 
             // Assert
             Assert.Equal(31, results.Count);
@@ -47,7 +47,7 @@
             var image = Image.Load<Rgba32>(testImage);
 
             // Act
-            var results = yolo.RunObbDetection(image);
+            var results = yolo.RunObbDetection(image, 0.25, 0.45);
 
             // Assert
             Assert.Equal(5, results.Count);
@@ -64,7 +64,7 @@
             var image = Image.Load<Rgba32>(testImage);
 
             // Act
-            var results = yolo.RunSegmentation(image);
+            var results = yolo.RunSegmentation(image, 0.25, 0.45);
 
             // Assert
             Assert.Equal(20, results.Count);
@@ -81,7 +81,7 @@
             var image = Image.Load<Rgba32>(testImage);
 
             // Act
-            var results = yolo.RunPoseEstimation(image);
+            var results = yolo.RunPoseEstimation(image, 0.25, 0.45);
 
             // Assert
             Assert.Equal(10, results.Count);
