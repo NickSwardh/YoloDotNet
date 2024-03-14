@@ -1,4 +1,4 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.4
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.5
 
 YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
 
@@ -58,10 +58,10 @@ using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
 
 // Run
 var results = yolo.RunClassification(image, 5); // Top 5 classes
-//var results = yolo.RunObjectDetection(image, 0.25);
-//var results = yolo.RunObbDetection(options, 0.25);
-//var results = yolo.RunSegmentation(image, 0.25);
-//var results = yolo.RunPoseEstimation(image, 0.25);
+//var results = yolo.RunObjectDetection(image) // Example with default confidence (0.25) and IoU (0.45) threshold;
+//var results = yolo.RunObbDetection(options, 0.35, 0.5);
+//var results = yolo.RunSegmentation(image, 0.25, 0.5);
+//var results = yolo.RunPoseEstimation(image, 0.25, 0.5);
 
 image.Draw(results);
 image.Save(@"path\to\save\image.jpg");
