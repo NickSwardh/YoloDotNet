@@ -84,7 +84,7 @@
             ModelType.ObjectDetection => ObjectDetectImage(img, confidence, overlap).Select(x => (ObjectDetection)x).ToList(),
             ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, confidence, overlap)),
             ModelType.PoseEstimation => PoseEstimateImage(img, confidence, overlap),
-            ModelType.ObbDetection => ObjectDetectImage(img, confidence,overlap).Select(x => (OBBDetection)x).ToList(),
+            ModelType.ObbDetection => ObjectDetectImage(img, confidence, overlap).Select(x => (OBBDetection)x).ToList(),
             _ => throw new NotSupportedException($"Unknown ONNX model")
         };
 
@@ -192,35 +192,16 @@
         /// Removes overlapping bounding boxes in a list of object detection results.
         /// </summary>
         /// <param name="predictions">The list of object detection results to process.</param>
+        /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        protected static List<ObjectResult> RemoveOverlappingBoxes(List<ObjectResult> predictions, double overlapThreshold = 0.45)
+        protected static List<ObjectResult> RemoveOverlappingBoxes(List<ObjectResult> predictions, double iouThreshold)
         {
+            predictions.Sort((a, b) => b.Confidence.CompareTo(a.Confidence));
             var result = new List<ObjectResult>();
 
             foreach (var item in predictions)
             {
-                var rect1 = item.BoundingBox;
-                var overlappingItem = result.FirstOrDefault(current =>
-                {
-                    var rect2 = current.BoundingBox;
-                    var intersection = RectangleF.Intersect(rect1, rect2);
-
-                    float intArea = intersection.Width * intersection.Height; // intersection area
-                    float unionArea = rect1.Width * rect1.Height + rect2.Width * rect2.Height - intArea; // union area
-                    float overlap = intArea / unionArea; // overlap ratio
-
-                    return overlap > overlapThreshold;
-                });
-
-                if (overlappingItem is not null)
-                {
-                    if (item.Confidence >= overlappingItem.Confidence)
-                    {
-                        result.Remove(overlappingItem);
-                        result.Add(item); // Replace the current overlapping box with the higher confidence one
-                    }
-                }
-                else
+                if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false) // Invert threshold logic, hence  1 - overlapThreshold.
                     result.Add(item);
             }
 
@@ -246,7 +227,28 @@
         /// Calculate radian to degree
         /// </summary>
         /// <param name="value"></param>
-        protected static float CaclulateRadianToDegree(float value) => value * (180 / (float)Math.PI);
+        protected static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
+
+        /// <summary>
+        /// Caclulate rectangle area
+        /// </summary>
+        /// <param name="rect"></param>
+        protected static float CalculateArea(RectangleF rect) => rect.Width * rect.Height;
+
+        /// <summary>
+        /// Calculate IoU (Intersection Over Union) bounding box overlap.
+        /// </summary>
+        /// <param name="a"></param>
+        /// <param name="b"></param>
+        protected static float CalculateIoU(RectangleF a, RectangleF b)
+        {
+            var intersectionArea = CalculateArea(RectangleF.Intersect(a, b));
+
+            if (intersectionArea == 0)
+                return 0;
+
+            return intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
+        }
 
         /// <summary>
         /// Verify that loaded model is of the expected type
