@@ -14,13 +14,12 @@
     <PackageReadmeFile></PackageReadmeFile>
     <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.4</Version>
+	<Version>1.5</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Added new OBB (Oriented Bounding Box) detection feature
-Added option to set compression quality on generated videos
-Added Index-property for labels</PackageReleaseNotes>
+    <PackageReleaseNotes>Added parameters for controlling IoU (Intersection over Union)
+Minor bugfix when drawing pose estimation</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
