@@ -17,19 +17,19 @@
 
         #region Contracts
         public abstract List<Classification> RunClassification(Image img, int classes);
-        public abstract List<ObjectDetection> RunObjectDetection(Image img, double confidence, double overlap);
-        public abstract List<Segmentation> RunSegmentation(Image img, double confidence, double overlap);
-        public abstract List<PoseEstimation> RunPoseEstimation(Image img, double confidence, double overlap);
-        public abstract List<OBBDetection> RunObbDetection(Image img, double confidence, double overlap);
+        public abstract List<ObjectDetection> RunObjectDetection(Image img, double confidence, double iou);
+        public abstract List<Segmentation> RunSegmentation(Image img, double confidence, double iou);
+        public abstract List<PoseEstimation> RunPoseEstimation(Image img, double confidence, double iou);
+        public abstract List<OBBDetection> RunObbDetection(Image img, double confidence, double iou);
         public abstract Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes);
-        public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence, double overlap);
-        public abstract Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence, double overlap);
-        public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence, double overlap);
-        public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence, double overlap);
+        public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence, double iou);
+        public abstract Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence, double iou);
+        public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence, double iou);
+        public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence, double iou);
         protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
-        protected abstract List<ObjectResult> ObjectDetectImage(Image image, double confidence, double overlap);
+        protected abstract List<ObjectResult> ObjectDetectImage(Image image, double confidence, double iou);
         protected abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
-        protected abstract List<PoseEstimation> PoseEstimateImage(Image image, double confidence, double overlap);
+        protected abstract List<PoseEstimation> PoseEstimateImage(Image image, double confidence, double iou);
         #endregion
 
         protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
@@ -53,7 +53,15 @@
             _useCuda = useCuda;
         }
 
-        protected List<T> Run<T>(Image img, double confidence, double overlap, ModelType expectedModel)
+        /// <summary>
+        /// Run inference on image
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="img"></param>
+        /// <param name="confidence"></param>
+        /// <param name="iouThreshold"></param>
+        /// <param name="expectedModel"></param>
+        protected List<T> Run<T>(Image img, double confidence, double iouThreshold, ModelType expectedModel)
         {
             VerifyExpectedModelType(expectedModel);
 
@@ -69,7 +77,7 @@
 
                 Tensors = result.ToDictionary(x => x.Name, x => x.AsTensor<float>());
 
-                return InvokeInferenceType(img, confidence, overlap) is List<T> results
+                return InvokeInferenceType(img, confidence, iouThreshold) is List<T> results
                     ? results
                     : [];
             }
@@ -78,13 +86,13 @@
         /// <summary>
         /// Invokes inference based on the ONNX model type, processing the input tensor and image data.
         /// </summary>
-        private object InvokeInferenceType(Image img, double confidence, double overlap) => OnnxModel.ModelType switch
+        private object InvokeInferenceType(Image img, double confidence, double iouThreshold) => OnnxModel.ModelType switch
         {
             ModelType.Classification => ClassifyTensor((int)confidence),
-            ModelType.ObjectDetection => ObjectDetectImage(img, confidence, overlap).Select(x => (ObjectDetection)x).ToList(),
-            ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, confidence, overlap)),
-            ModelType.PoseEstimation => PoseEstimateImage(img, confidence, overlap),
-            ModelType.ObbDetection => ObjectDetectImage(img, confidence, overlap).Select(x => (OBBDetection)x).ToList(),
+            ModelType.ObjectDetection => ObjectDetectImage(img, confidence, iouThreshold).Select(x => (ObjectDetection)x).ToList(),
+            ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, confidence, iouThreshold)),
+            ModelType.PoseEstimation => PoseEstimateImage(img, confidence, iouThreshold),
+            ModelType.ObbDetection => ObjectDetectImage(img, confidence, iouThreshold).Select(x => (OBBDetection)x).ToList(),
             _ => throw new NotSupportedException($"Unknown ONNX model")
         };
 
@@ -93,8 +101,10 @@
         /// Trigger events for progress, completion, and status changes during video processing.
         /// </summary>
         /// <param name="options">Options for configuring video processing.</param>
-        /// <param name="threshold">Optional. The confidence threshold for inference.</param>
-        protected Dictionary<int, List<T>> RunVideo<T>(VideoOptions options, double threshold, double overlap, ModelType expectedModel) where T : class, new()
+        /// <param name="confidence">Confidence threshold for inference.</param>
+        /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes</param>
+        /// <param name="expectedModel">Onnx modeltype</param>
+        protected Dictionary<int, List<T>> RunVideo<T>(VideoOptions options, double confidence, double iouThreshold, ModelType expectedModel) where T : class, new()
         {
             VerifyExpectedModelType(expectedModel);
 
@@ -107,7 +117,7 @@
             _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
             _videoHandler.FramesExtractedEvent += (sender, e) =>
             {
-                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, threshold, overlap);
+                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, iouThreshold);
 
                 if (options.GenerateVideo)
                     _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
@@ -123,7 +133,7 @@
         /// <summary>
         /// Runs batch inference on the extracted video frames.
         /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, double limit, double overlap) where T : class, new()
+        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, double confidence, double iouThreshold) where T : class, new()
         {
             var frames = _videoHandler.GetExtractedFrames();
             int progressCounter = 0;
@@ -138,7 +148,7 @@
                 var frame = frames[i];
                 using var img = Image.Load<Rgba32>(frame);
 
-                var results = Run<T>(img, limit, overlap, OnnxModel.ModelType);
+                var results = Run<T>(img, confidence, iouThreshold, OnnxModel.ModelType);
                 batch[i] = results;
 
                 if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)

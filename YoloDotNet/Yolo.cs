@@ -25,40 +25,40 @@
         /// </summary>
         /// <param name="img">The image to perform object detection on.</param>
         /// <param name="confidence">Confidence threshold value for detected objects (default: 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of detected objects.</returns>
-        public override List<ObjectDetection> RunObjectDetection(Image img, double confidence = 0.25, double overlap = 0.45)
-            => Run<ObjectDetection>(img, confidence, overlap, ModelType.ObjectDetection);
+        public override List<ObjectDetection> RunObjectDetection(Image img, double confidence = 0.25, double iou = 0.45)
+            => Run<ObjectDetection>(img, confidence, iou, ModelType.ObjectDetection);
 
         /// <summary>
         /// Run oriented bounding bBox detection on an image.
         /// </summary>
         /// <param name="img">The image to obb detect.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public override List<OBBDetection> RunObbDetection(Image img, double confidence = 0.25, double overlap = 0.45)
-            => Run<OBBDetection>(img, confidence, overlap, ModelType.ObbDetection);
+        public override List<OBBDetection> RunObbDetection(Image img, double confidence = 0.25, double iou = 0.45)
+            => Run<OBBDetection>(img, confidence, iou, ModelType.ObbDetection);
 
         /// <summary>
         /// Run segmentation on an image.
         /// </summary>
         /// <param name="img">The image to segmentate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public override List<Segmentation> RunSegmentation(Image img, double confidence = 0.25, double overlap = 0.45)
-            => Run<Segmentation>(img, confidence, overlap, ModelType.Segmentation);
+        public override List<Segmentation> RunSegmentation(Image img, double confidence = 0.25, double iou = 0.45)
+            => Run<Segmentation>(img, confidence, iou, ModelType.Segmentation);
 
         /// <summary>
         /// Run pose estimation on an image.
         /// </summary>
         /// <param name="img">The image to pose estimate.</param>
         /// <param name="threshold">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public override List<PoseEstimation> RunPoseEstimation(Image img, double confidence = 0.25, double overlap = 0.45)
-            => Run<PoseEstimation>(img, confidence, overlap, ModelType.PoseEstimation);
+        public override List<PoseEstimation> RunPoseEstimation(Image img, double confidence = 0.25, double iou = 0.45)
+            => Run<PoseEstimation>(img, confidence, iou, ModelType.PoseEstimation);
 
         /// <summary>
         /// Run image classification on a video file.
@@ -73,35 +73,36 @@
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
-        public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
-            => RunVideo<ObjectDetection>(options, confidence, overlap, ModelType.ObjectDetection);
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence = 0.25, double iou = 0.45)
+            => RunVideo<ObjectDetection>(options, confidence, iou, ModelType.ObjectDetection);
 
         /// <summary>
         /// Run oriented bounding box detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
-        public override Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
-            => RunVideo<OBBDetection>(options, confidence, overlap, ModelType.ObbDetection);
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence = 0.25, double iou = 0.45)
+            => RunVideo<OBBDetection>(options, confidence, iou, ModelType.ObbDetection);
 
         /// <summary>
         /// Run object detection on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
-        public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
-            => RunVideo<Segmentation>(options, confidence, overlap, ModelType.Segmentation);
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence = 0.25, double iou = 0.45)
+            => RunVideo<Segmentation>(options, confidence, iou, ModelType.Segmentation);
 
         /// <summary>
         /// Run pose estimation on a video file.
         /// </summary>
         /// <param name="options">Options for video processing.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.25).</param>
-        /// <param name="overlap">The bounding box overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
-        public override Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence = 0.25, double overlap = 0.45)
-            => RunVideo<PoseEstimation>(options, confidence, overlap, ModelType.PoseEstimation);
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.45).</param>
+        public override Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence = 0.25, double iou = 0.45)
+            => RunVideo<PoseEstimation>(options, confidence, iou, ModelType.PoseEstimation);
 
         #region Tensor methods
 
@@ -173,7 +174,7 @@
                             Confidence = boxConfidence,
                             BoundingBox = boundingBox,
                             BoundingBoxIndex = j,
-                            OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CaclulateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
+                            OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
                         });
                     }
                 });

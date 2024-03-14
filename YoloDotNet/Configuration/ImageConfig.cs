@@ -12,9 +12,9 @@
 
 
 
-        public static readonly Rgba32 SHADOW_COLOR = new (0, 0, 0, 60);
+        public static readonly Rgba32 SHADOW_COLOR = new(0, 0, 0, 60);
 
-        public static readonly Rgba32 FOREGROUND_COLOR = new (255, 255, 255);
+        public static readonly Rgba32 FOREGROUND_COLOR = new(255, 255, 255);
 
 
 
