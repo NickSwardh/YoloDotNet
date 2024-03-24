@@ -26,8 +26,8 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 :information_source: Before installing CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
 
 - Download and install [CUDA v11.8](https://developer.nvidia.com/cuda-toolkit-archive)
-- Download [cuDNN v8.9.7 ZIP](https://developer.nvidia.com/rdp/cudnn-archive), unzip and copy the dll's in bin folder to your CUDA bin folder
-- Add the path to your CUDA bin folder to your `PATH` environment variables
+- Download [cuDNN v8.9.7 ZIP for CUDA v11.x](https://developer.nvidia.com/rdp/cudnn-archive), unzip and copy the dll's in bin folder to your CUDA bin folder
+- Add CUDA bin folder-path to your `Path` environment variables
 - [Installation guide](https://github.com/NickSwardh/YoloDotNet/issues/9#issuecomment-2016843692)
 
 # Export Yolov8 model to ONNX
