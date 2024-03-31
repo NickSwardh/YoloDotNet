@@ -10,6 +10,8 @@
         public event EventHandler VideoCompleteEvent = delegate { };
 
         private readonly InferenceSession _session;
+        private readonly RunOptions _runOptions;
+        private readonly OrtIoBinding _ortIoBinding;
         protected readonly ParallelOptions _parallelOptions;
         private readonly bool _useCuda;
 
@@ -41,16 +43,22 @@
         /// <param name="onnxModel">The path to the ONNX model file to use.</param>
         /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
         /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
-        public YoloBase(string onnxModel, bool useCuda, int gpuId)
+        public YoloBase(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId)
         {
+            _useCuda = useCuda;
             _session = useCuda
                 ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
                 : new InferenceSession(onnxModel);
 
+            _runOptions = new RunOptions();
+            _ortIoBinding = _session.CreateIoBinding();
+
             OnnxModel = _session.GetOnnxProperties();
 
             _parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-            _useCuda = useCuda;
+
+            if (useCuda && allocateGpuMemory)
+                AllocateGpuMemory();
         }
 
         /// <summary>
@@ -61,7 +69,7 @@
         /// <param name="confidence"></param>
         /// <param name="iouThreshold"></param>
         /// <param name="expectedModel"></param>
-        protected List<T> Run<T>(Image img, double confidence, double iouThreshold, ModelType expectedModel)
+        protected List<T> Run<T>(Image img, double confidence, double iouThreshold, ModelType expectedModel, bool preloadGpu = false)
         {
             VerifyExpectedModelType(expectedModel);
 
@@ -74,6 +82,9 @@
                 {
                     NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels),
                 });
+
+                if (preloadGpu)
+                    return [];
 
                 Tensors = result.ToDictionary(x => x.Name, x => x.AsTensor<float>());
 
@@ -261,6 +272,17 @@
         }
 
         /// <summary>
+        /// Prime GPU by allocating memory.
+        /// </summary>
+        private void AllocateGpuMemory()
+        {
+            _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
+
+            using var img = new Image<Rgba32>(OnnxModel.Input.Width, OnnxModel.Input.Height);
+            _ = Run<object>(img, 1, 1, OnnxModel.ModelType, true);
+        }
+
+        /// <summary>
         /// Verify that loaded model is of the expected type
         /// </summary>
         private void VerifyExpectedModelType(ModelType expectedModelType)
@@ -274,6 +296,8 @@
         /// </summary>
         public void Dispose()
         {
+            _ortIoBinding?.Dispose();
+            _runOptions.Dispose();
             _session.Dispose();
             GC.SuppressFinalize(this);
         }
