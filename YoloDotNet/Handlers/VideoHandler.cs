@@ -199,10 +199,9 @@
                 ? $@"-i ""{audioPath}"" -c:a copy"
                 : "";
 
-            string cv = _useCuda ? "h264_nvenc" : "libx264";
-            string cuda = _useCuda ? "-hwaccel_output_format cuda" : "";
-
-            Execute($@"{cuda} -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -pix_fmt yuv420p -vf setsar=1:1 -tune:v hq -rc:v vbr -cq:v {_videoSettings.Quality} ""{outputFile}""");
+            string cv = _useCuda ? "hevc_nvenc -tune:v hq" : "libx265";
+            
+            Execute($@" -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -preset slow -pix_fmt p010le -vf setsar=1:1 -rc:v:0 vbr_hq -cq:v {_videoSettings.Quality} -tag:v hvc1 ""{outputFile}""");
         }
 
         /// <summary>
