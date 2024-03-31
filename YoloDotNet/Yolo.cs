@@ -162,19 +162,17 @@
                     xMax = Math.Clamp(xMax, 0, w);
                     yMax = Math.Clamp(yMax, 0, h);
 
-                    var boundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin);
-
                     for (int l = 0; l < labels; l++)
                     {
                         var boxConfidence = tensor[i, l + 4, j];
 
-                        if (boxConfidence < confidenceThreshold) continue;
+                        if (boxConfidence <= confidenceThreshold) continue;
 
                         result.Add(new ObjectResult
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = boxConfidence,
-                            BoundingBox = boundingBox,
+                            BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
                             BoundingBoxIndex = j,
                             OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
                         });
