@@ -23,6 +23,7 @@ global using Newtonsoft.Json;
 global using YoloDotNet.Data;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
+global using YoloDotNet.Converters;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Configuration;
 

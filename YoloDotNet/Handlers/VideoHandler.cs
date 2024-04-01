@@ -201,8 +201,15 @@
 
             string cv = _useCuda ? "hevc_nvenc -tune:v hq" : "libx265";
             
-            Execute($@" -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -preset slow -pix_fmt p010le -vf setsar=1:1 -rc:v:0 vbr_hq -cq:v {_videoSettings.Quality} -tag:v hvc1 ""{outputFile}""");
+            Execute($@" -framerate {FormatedFps} -i ""{outputImage}"" {audio} -c:v {cv} -preset slow -pix_fmt p010le -vf setsar=1:1 -rc:v:0 vbr_hq -cq:v {_videoSettings.Quality} -tag:v hvc1 {MetaData()} -id3v2_version 3 ""{outputFile}""");
         }
+
+        /// <summary>
+        /// Set metadata tags.
+        /// </summary>
+        /// <returns></returns>
+        private static string MetaData()
+            => string.Join(" ", VideoMetadata.Tags.Select(x => $@"-metadata {x.Key}=""{x.Value}"""));
 
         /// <summary>
         /// Get all extracted frames from temporary folder
