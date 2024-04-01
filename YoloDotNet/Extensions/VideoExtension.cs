@@ -8,18 +8,18 @@
         /// <param name="grp"></param>
         /// <param name="_videoOptions"></param>
         /// <returns>VideoMetaData</returns>
-        public static void ParseVideoMetaData(this GroupCollection grp, VideoSettings videoSettings)
+        public static void ParseVideoMetaData(this VideoMetaData metaData, VideoSettings videoSettings)
         {
-            // Parse metadata
-            var frames = double.Parse(grp["Frame"].Value, CultureInfo.InvariantCulture);
-            var rate = double.Parse(grp["Rate"].Value, CultureInfo.InvariantCulture);
-            var timeStamp = double.Parse(grp["Duration"].Value, CultureInfo.InvariantCulture);
-            var width = videoSettings.Width ?? int.Parse(grp["Width"].Value);
-            var height = videoSettings.Height ?? int.Parse(grp["Height"].Value);
+            var te = metaData.Streams[0].Framerate.Split('/');
+            var framesPerSecond = int.Parse(te[0]);
+            var rate = int.Parse(te[1]);
+            var timeStamp = metaData.Streams[0].Duration;
+            var width = metaData.Streams[0].Width;
+            var height = metaData.Streams[0].Width;
             var duration = TimeSpan.FromSeconds(timeStamp);
 
             // Calculate actual fps
-            var fps = frames / rate;
+            double fps = framesPerSecond / rate;
 
             // Calculate total frames
             var totalFrames = (int)Math.Round(fps * timeStamp);

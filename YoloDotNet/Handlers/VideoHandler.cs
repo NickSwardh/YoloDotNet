@@ -138,7 +138,7 @@
         private void GetVideoInfo()
         {
             var tempVideo = Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME);
-            Execute($@"-select_streams v:0 -show_entries stream=r_frame_rate,duration ""{tempVideo}""", Executable.ffprobe);
+            Execute($@"-v quiet -print_format json -hide_banner -show_format -show_entries stream=width,height,r_frame_rate,duration ""{tempVideo}""", Executable.ffprobe);
         }
 
         /// <summary>
@@ -150,16 +150,28 @@
         private void ExtractMetaData()
         {
             var metadata = string.Join("\r\n", _output);
-            var matches = VideoMetadataRegex().Matches(metadata);
 
-            if (matches.Count == 0)
-                throw new ArgumentException($"Error extracting metadata from video.", nameof(matches));
+            var options = new JsonSerializerOptions()
+            {
+                Converters = { new DoubleJsonConverter() },
+                NumberHandling = JsonNumberHandling.AllowReadingFromString,
+                WriteIndented = true,
+            };
 
-            // Update settings
-            matches[0].Groups.ParseVideoMetaData(_videoSettings);
-
-            // Delete temporary processed file
-            Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME).DeleteFile();
+            try
+            {
+                var meta = System.Text.Json.JsonSerializer.Deserialize<VideoMetaData>(metadata, options);
+                meta!.ParseVideoMetaData(_videoSettings);
+            }
+            catch
+            {
+                throw new ArgumentException($"Error extracting metadata from video.", nameof(metadata));
+            }
+            finally
+            {
+                // Delete temporary processed file
+                Path.Combine(_videoSettings.TempFolder, TEMP_VIDEO_FILENAME).DeleteFile();
+            }
 
             OnProcessCompleteEvent(null, null!);
         }
@@ -238,12 +250,6 @@
         /// <returns></returns>
         [GeneratedRegex(@"(?<=frame=\s*)\d+")]
         private static partial Regex FrameNumberRegex();
-
-        /// <summary>
-        /// Regex for matching metadata from ffprobe output
-        /// </summary>
-        [GeneratedRegex(@"(?<=r_frame_rate=)(?<Frame>\d+)\/(?<Rate>\d+).*?(?<=duration=)(?<Duration>\d+\.\d+).*?(?<=bitrate: )(?<Bitrate>\d+).*?(?<=, )(?<Width>\d+)x(?<Height>\d+).*?(?<FPS>\d+(?:\.\d+)?)(?=\s+fps)", RegexOptions.Singleline)]
-        private static partial Regex VideoMetadataRegex();
 
         public void Dispose()
         {
