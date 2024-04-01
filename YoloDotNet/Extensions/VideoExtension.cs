@@ -10,12 +10,14 @@
         /// <returns>VideoMetaData</returns>
         public static void ParseVideoMetaData(this VideoMetaData metaData, VideoSettings videoSettings)
         {
-            var te = metaData.Streams[0].Framerate.Split('/');
-            var framesPerSecond = int.Parse(te[0]);
-            var rate = int.Parse(te[1]);
-            var timeStamp = metaData.Streams[0].Duration;
-            var width = metaData.Streams[0].Width;
-            var height = metaData.Streams[0].Width;
+            var streamInfo = metaData.Streams[0];
+
+            var meta = streamInfo.Framerate.Split('/');
+            var framesPerSecond = int.Parse(meta[0]);
+            var rate = int.Parse(meta[1]);
+            var timeStamp = streamInfo.Duration;
+            var width = streamInfo.Width;
+            var height = streamInfo.Height;
             var duration = TimeSpan.FromSeconds(timeStamp);
 
             // Calculate actual fps
