@@ -34,7 +34,13 @@
         /// </summary>
         private static LabelModel[] MapLabelsAndColors(string onnxLabelData, ModelType modelType)
         {
-            var onnxLabels = JsonConvert.DeserializeObject<Dictionary<int, string>>(onnxLabelData);
+            // Labels to Dictionary
+            var onnxLabels = onnxLabelData
+                .Trim('{', '}')
+                .Replace("'", "")
+                .Split(", ")
+                .Select(x => x.Split(": "))
+                .ToDictionary(x => int.Parse(x[0]), x => x[1]);
 
             var colors = modelType == ModelType.Classification
                 ? [YoloDotNetColors.Default()]
