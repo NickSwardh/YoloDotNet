@@ -8,9 +8,9 @@
     /// </remarks>
     /// <param name="onnxModel">The path to the ONNX model.</param>
     /// <param name="cuda">Optional. Indicates whether to use CUDA for GPU acceleration (default is true).</param>
-    /// <param name="primeGpu">Optional. Indicates whether to prime the GPU by allocating memory for faster initial inference (default is true).</param>
+    /// <param name="primeGpu">Optional. Indicates whether to prime the GPU by allocating memory for faster initial inference (default is false).</param>
     /// <param name="gpuId">Optional. The GPU device ID to use when CUDA is enabled (default is 0).</param>
-    public class Yolo(string onnxModel, bool cuda = true, bool primeGpu = true, int gpuId = 0)
+    public class Yolo(string onnxModel, bool cuda = true, bool primeGpu = false, int gpuId = 0)
         : YoloBase(onnxModel, cuda, primeGpu, gpuId)
     {
         /// <summary>
