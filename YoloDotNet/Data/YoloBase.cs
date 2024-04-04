@@ -222,7 +222,7 @@
 
             foreach (var item in predictions)
             {
-                if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false) // Invert threshold logic, hence  1 - overlapThreshold.
+                if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false)
                     result.Add(item);
             }
 
@@ -265,21 +265,9 @@
         {
             var intersectionArea = CalculateArea(RectangleF.Intersect(a, b));
 
-            if (intersectionArea == 0)
-                return 0;
-
-            return intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
-        }
-
-        /// <summary>
-        /// Prime GPU by allocating memory.
-        /// </summary>
-        private void AllocateGpuMemory()
-        {
-            _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
-
-            using var img = new Image<Rgba32>(OnnxModel.Input.Width, OnnxModel.Input.Height);
-            _ = Run<object>(img, 1, 1, OnnxModel.ModelType, true);
+            return intersectionArea == 0
+                ? 0
+                : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
         /// <summary>
