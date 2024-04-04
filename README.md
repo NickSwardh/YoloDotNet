@@ -1,4 +1,4 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.5
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.6
 
 YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
 
@@ -14,6 +14,12 @@ YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in imag
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
+
+# New in v1.6
+- [Added new option to allocate memory to GPU for faster initial inference](#gpu)
+- Video processing will now be encoded using H.265 codec
+- Improved compatibility with different ffprobe builds for video processing
+- Lost some weight by removing Json Newtonsoft dependency
 
 # Nuget
 ```
@@ -122,12 +128,20 @@ Object detection with GPU and GPU-Id = 0 is enabled by default
 using var yolo = new Yolo(@"path\to\model.onnx");
 ```
 
+```New in v1.6``` Allocate GPU memory for faster initial inference (disabled by default)
+
+```csharp
+// With CUDA and Allocated GPU memory
+using var yolo = new Yolo(@"path\to\model.onnx", primeGpu: true);
+```
+
 With a specific GPU-Id
 
 ```csharp
 // GPU with a user defined GPU-Id
-using var yolo = new Yolo(@"path\to\model.onnx", true, 1);
+using var yolo = new Yolo(@"path\to\model.onnx", gpuId: 1);
 ```
+
 # CPU
 
 YoloDotNet detection with CPU
