@@ -3,7 +3,7 @@
     public static class GpuExtension
     {
         /// <summary>
-        /// Allocates GPU memory for input data and ensures memory synchronization.
+        /// Allocate GPU memory for input data and ensure memory synchronization.
         /// </summary>
         public static void AllocateGpuMemory(this InferenceSession session, OrtIoBinding ortIoBinding, RunOptions runOptions)
         {
@@ -31,11 +31,30 @@
             // Ensure input data is properly synchronized with memory before running the inference.
             ortIoBinding.SynchronizeBoundInputs();
 
-            // Run inference and bind allocated GPU-memory.
+            // Run inference on the OrtIoBinding and bind allocated GPU-memory.
             session.RunWithBinding(runOptions, ortIoBinding);
 
             // Ensure that the output data is properly synchronized with memory after running the inference.
             ortIoBinding.SynchronizeBoundOutputs();
+
+            // Initialize GPU with blank image
+            session.InitializeGpu();
+        }
+
+        private static void InitializeGpu(this InferenceSession session)
+        {
+            var inputName = session.InputNames[0];
+            var dimensions = session.InputMetadata[session.InputNames[0]].Dimensions;
+            var (batchSize, channels, width, height) = (dimensions[0], dimensions[1], dimensions[2], dimensions[3]);
+
+            // Create blank image for initial inference
+            using var img = new Image<Rgba32>(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE);
+            using var resizedImg = img.ResizeImage(width, height);
+
+            using var result = session.Run(new List<NamedOnnxValue>()
+            {
+                NamedOnnxValue.CreateFromTensor(inputName, resizedImg.PixelsToTensor(batchSize, channels))
+            });
         }
     }
 }

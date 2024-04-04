@@ -58,7 +58,7 @@
             _parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
             if (useCuda && allocateGpuMemory)
-                AllocateGpuMemory();
+                _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
         }
 
         /// <summary>
@@ -82,9 +82,6 @@
                 {
                     NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels),
                 });
-
-                if (preloadGpu)
-                    return [];
 
                 Tensors = result.ToDictionary(x => x.Name, x => x.AsTensor<float>());
 

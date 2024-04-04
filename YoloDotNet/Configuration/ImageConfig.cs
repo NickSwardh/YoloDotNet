@@ -27,5 +27,9 @@
 
 
         public const float SEGMENTATION_PIXEL_THRESHOLD = .68f;
+
+
+        // Image size for GPU memory allocation.
+        public const int GPU_IMG_ALLOC_SIZE = 1080;
     }
 }
