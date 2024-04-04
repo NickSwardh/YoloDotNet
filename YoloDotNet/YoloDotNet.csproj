@@ -12,14 +12,16 @@
     <PackAsTool>False</PackAsTool>
     <PackageIcon></PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
-    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos.</Description>
+    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos in realtime.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.5</Version>
+	<Version>1.6</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Added parameters for controlling IoU (Intersection over Union)
-Minor bugfix when drawing pose estimation</PackageReleaseNotes>
+    <PackageReleaseNotes>Added new option to allocate memory to GPU for faster initial inference
+Video processing will now be encoded using H.265 codec
+Improved compability with different ffprobe builds for video processing
+Lost some weight by removing Json Newtonsoft dependency</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
