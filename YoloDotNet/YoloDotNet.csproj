@@ -20,7 +20,7 @@
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <PackageReleaseNotes>Added new option to allocate memory to GPU for faster initial inference
 Video processing will now be encoded using H.265 codec
-Improved compability with different ffprobe builds for video processing
+Improved compatibility with different ffprobe builds for video processing
 Lost some weight by removing Json Newtonsoft dependency</PackageReleaseNotes>
   </PropertyGroup>
 
