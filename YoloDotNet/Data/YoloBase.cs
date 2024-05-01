@@ -74,7 +74,7 @@
             VerifyExpectedModelType(expectedModel);
 
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
-            var tensorPixels = resizedImg.PixelsToTensor(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
+            var tensorPixels = resizedImg.NormalizePixelsToTensor(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
 
             lock (_progressLock)
             {

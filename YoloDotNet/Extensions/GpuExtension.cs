@@ -53,7 +53,7 @@
 
             using var result = session.Run(new List<NamedOnnxValue>()
             {
-                NamedOnnxValue.CreateFromTensor(inputName, resizedImg.PixelsToTensor(batchSize, channels))
+                NamedOnnxValue.CreateFromTensor(inputName, resizedImg.NormalizePixelsToTensor(batchSize, channels))
             });
         }
     }

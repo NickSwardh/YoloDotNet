@@ -67,14 +67,14 @@
         }
 
         /// <summary>
-        /// Extracts pixel values from an image and converts them into a tensor.
+        /// Extract and normalize pixel values in an image into a tensor.
         /// </summary>
         /// <param name="img">The image to extract pixel values from.</param>
         /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
-        public static Tensor<float> PixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
+        public static Tensor<float> NormalizePixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
         {
             var (width, height) = (img.Width, img.Height);
-            var tensor = new DenseTensor<float>(new[] { inputBatchSize, inputChannels, width, height });
+            var tensor = new DenseTensor<float>([inputBatchSize, inputChannels, width, height]);
 
             Parallel.For(0, height, y =>
             {
