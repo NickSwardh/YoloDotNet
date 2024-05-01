@@ -150,17 +150,17 @@
             {
                 Parallel.For(0, channels, j =>
                 {
-                    // Calculate coordinates of the bounding box in the original image
-                    var xMin = (int)((tensor[i, 0, j] - tensor[i, 2, j] / 2 - xPad) * gain);
-                    var yMin = (int)((tensor[i, 1, j] - tensor[i, 3, j] / 2 - yPad) * gain);
-                    var xMax = (int)((tensor[i, 0, j] + tensor[i, 2, j] / 2 - xPad) * gain);
-                    var yMax = (int)((tensor[i, 1, j] + tensor[i, 3, j] / 2 - yPad) * gain);
+                    // Cache values for reuse
+                    var tensor0 = tensor[i, 0, j];
+                    var tensor1 = tensor[i, 1, j];
+                    var tensor2 = tensor[i, 2, j];
+                    var tensor3 = tensor[i, 3, j];
 
-                    // Keep bounding box coordinates within the image boundaries
-                    xMin = Math.Clamp(xMin, 0, w);
-                    yMin = Math.Clamp(yMin, 0, h);
-                    xMax = Math.Clamp(xMax, 0, w);
-                    yMax = Math.Clamp(yMax, 0, h);
+                    // Calculate coordinates of the bounding box in the original image
+                    var xMin = (int)((tensor0 - tensor2 / 2 - xPad) * gain);
+                    var yMin = (int)((tensor1 - tensor3 / 2 - yPad) * gain);
+                    var xMax = (int)((tensor0 + tensor2 / 2 - xPad) * gain);
+                    var yMax = (int)((tensor1 + tensor3 / 2 - yPad) * gain);
 
                     for (int l = 0; l < labels; l++)
                     {
