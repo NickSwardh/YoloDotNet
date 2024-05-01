@@ -166,7 +166,7 @@
                     {
                         var boxConfidence = tensor[i, l + 4, j];
 
-                        if (boxConfidence <= confidenceThreshold) continue;
+                        if (boxConfidence < confidenceThreshold) continue;
 
                         result.Add(new ObjectResult
                         {
@@ -176,6 +176,8 @@
                             BoundingBoxIndex = j,
                             OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
                         });
+
+                        break;
                     }
                 });
             }
