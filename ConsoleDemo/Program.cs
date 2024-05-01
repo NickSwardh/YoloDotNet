@@ -7,130 +7,92 @@ using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 
-// Use models and testdata from assets in YoloDotNet.Tests
-const string ASSETS_FOLDER = @"..\..\..\..\YoloDotNet.Tests\Assets";
-const string MODELS_FOLDER = ASSETS_FOLDER + @"\models";
-const string MEDIA_FOLDER = ASSETS_FOLDER + @"\media";
-string outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
 Console.CursorVisible = false;
 
-// Build pipeline
-var pipeline = new List<Action<string>>
-{
-    CreateOutputFolder,
-    Classification,
-    ObjectDetection,
-    ObbDetection,
-    Segmentation,
-    PoseEstimation,
-    ObjectDetectionOnVideo,
-    DisplayOutputFolder
-};
+CreateOutputFolder();
 
-// Run pipeline demo
-foreach (var item in pipeline)
-{
-    item.Invoke(outputFolder);
-}
+Action<string, string, bool, bool> runDemoAction = RunDemo;
+runDemoAction("yolov8s-cls.onnx", "hummingbird.jpg", false, false);
+runDemoAction("yolov8s.onnx", "street.jpg", false, false);
+runDemoAction("yolov8s-obb.onnx", "island.jpg", false, false);
+runDemoAction("yolov8s-seg.onnx", "people.jpg", false, false);
+runDemoAction("yolov8s-pose.onnx", "crosswalk.jpg", false, false);
 
+ObjectDetectionOnVideo();
+DisplayOutputFolder();
 DisplayOnnxMetaDataExample();
 
-#region Methods
-
-static void CreateOutputFolder(string outputFolder)
+#region Helper methods
+static void CreateOutputFolder()
 {
+    var outputFolder = DemoSettings.OUTPUT_FOLDER;
+
     if (Directory.Exists(outputFolder) is false)
         Directory.CreateDirectory(outputFolder);
 }
 
-
-static void Classification(string outputFolder)
+static void RunDemo(string model, string inferenceImage, bool cuda = false, bool primeGpu = false)
 {
-    Console.Write("Running Classification...\t");
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-cls.onnx"), false);
+    using var yolo = new Yolo(Path.Combine(DemoSettings.MODELS_FOLDER, model), cuda, primeGpu);
+    using var image = Image.Load<Rgba32>(Path.Combine(DemoSettings.MEDIA_FOLDER, inferenceImage));
 
-    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "hummingbird.jpg"));
+    var device = cuda ? "GPU" : "CPU";
+    device += device == "CPU" ? "" : primeGpu ? ", primed: yes" : ", primed: no";
 
-    List<Classification> results = yolo.RunClassification(image, 3); // Get top 5 classifications. Default = 1
+    Console.Write($"{yolo.OnnxModel.ModelType,-20}device: {device,-20}");
 
-    image.Draw(results);
-    image.Save(Path.Combine(outputFolder, $"{nameof(Classification)}.jpg"));
-    Console.Write("complete!");
+    object results = yolo.OnnxModel.ModelType switch
+    {
+        ModelType.Classification => yolo.RunClassification(image, 5),   // Top 5 classes, default: classes = 1
+        ModelType.ObjectDetection => yolo.RunObjectDetection(image),    // Example with default confidence (0.25) and IoU (0.45) threshold;
+        ModelType.ObbDetection => yolo.RunObbDetection(image, 0.35, 0.5),
+        ModelType.Segmentation => yolo.RunSegmentation(image, 0.25, 0.5),
+        ModelType.PoseEstimation => yolo.RunPoseEstimation(image, 0.25, 0.5),
+        _ => throw new NotImplementedException()
+    };
+
+    Console.Write("done!");
     Console.WriteLine();
+
+    // Draw results and save image
+    if (results is List<Classification> classification)
+    {
+        image.Draw(classification);
+    }
+
+    if (results is List<ObjectDetection> objectDetection)
+    {
+        DisplayDetectedLabels(objectDetection.Select(x => x.Label));
+        image.Draw(objectDetection);
+    }
+
+    if (results is List<OBBDetection> obbDetection)
+    {
+        DisplayDetectedLabels(obbDetection.Select(x => x.Label));
+        image.Draw(obbDetection);
+    }
+
+    if (results is List<Segmentation> segmentation)
+    {
+        DisplayDetectedLabels(segmentation.Select(x => x.Label));
+        image.Draw(segmentation);
+    }
+
+    if (results is List<PoseEstimation> poseEstimation)
+    {
+        DisplayDetectedLabels(poseEstimation.Select(x => x.Label));
+        image.Draw(poseEstimation, CustomPoseMarkerColorMap.PoseMarkerOptions);
+    }
+
+    image.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{yolo.OnnxModel.ModelType}.jpg"));
 }
 
-
-static void ObjectDetection(string outputFolder)
-{
-    Console.Write("Running Object Detection...\t");
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s.onnx"), false);
-
-    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "street.jpg"));
-
-    List<ObjectDetection> results = yolo.RunObjectDetection(image, 0.25);
-
-    image.Draw(results);
-    image.Save(Path.Combine(outputFolder, $"{nameof(ObjectDetection)}.jpg"));
-    Console.Write("complete!");
-    Console.WriteLine();
-}
-
-
-static void ObbDetection(string outputFolder)
-{
-    Console.Write("Running OBB Detection...\t");
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-obb.onnx"), false);
-
-    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "island.jpg"));
-
-    var results = yolo.RunObbDetection(image, 0.25);
-
-    image.Draw(results, false);
-    image.Save(Path.Combine(outputFolder, $"{nameof(ObbDetection)}.jpg"));
-    Console.Write("complete!");
-    Console.WriteLine();
-}
-
-
-static void Segmentation(string outputFolder)
-{
-    Console.Write("Running Segmentation...\t\t");
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-seg.onnx"), false);
-
-    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "people.jpg"));
-
-    List<Segmentation> results = yolo.RunSegmentation(image, 0.25);
-
-    image.Draw(results, DrawSegment.PixelMaskOnly);
-    image.Save(Path.Combine(outputFolder, $"{nameof(Segmentation)}.jpg"));
-    Console.Write("complete!");
-    Console.WriteLine();
-}
-
-
-static void PoseEstimation(string outputFolder)
-{
-    Console.Write("Running Pose Estimation...\t");
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s-pose.onnx"), false);
-
-    using var image = Image.Load<Rgba32>(Path.Combine(MEDIA_FOLDER, "crosswalk.jpg"));
-
-    var results = yolo.RunPoseEstimation(image, 0.25);
-
-    // Draw the connected pose-markers and colors according to a custom configuration for the model
-    image.Draw(results, CustomPoseMarkerColorMap.PoseMarkerOptions);
-    image.Save(Path.Combine(outputFolder, $"{nameof(YoloDotNet.Models.PoseEstimation)}.jpg"));
-    Console.Write("complete!");
-    Console.WriteLine();
-}
-
-
-static void ObjectDetectionOnVideo(string outputFolder)
+static void ObjectDetectionOnVideo()
 {
     var videoOptions = new VideoOptions
     {
-        VideoFile = Path.Combine(MEDIA_FOLDER, "walking.mp4"),
-        OutputDir = outputFolder,
+        VideoFile = Path.Combine(DemoSettings.MEDIA_FOLDER, "walking.mp4"),
+        OutputDir = DemoSettings.OUTPUT_FOLDER,
         //GenerateVideo = true,
         //DrawLabels = true,
         //FPS = 30,
@@ -146,7 +108,7 @@ static void ObjectDetectionOnVideo(string outputFolder)
 
     Console.WriteLine();
     Console.WriteLine("Running Object Detection on video...");
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s.onnx"));
+    using var yolo = new Yolo(Path.Combine(DemoSettings.MODELS_FOLDER, "yolov8s.onnx"));
 
     int currentLineCursor = 0;
 
@@ -177,13 +139,28 @@ static void ObjectDetectionOnVideo(string outputFolder)
     Console.WriteLine();
 }
 
+static void DisplayDetectedLabels(IEnumerable<LabelModel> labels)
+{
+    var ls = labels.GroupBy(x => x.Name)
+        .ToDictionary(x => x.Key, x => x.Count());
+
+    Console.WriteLine(new string('-', 33));
+    Console.ForegroundColor = ConsoleColor.Blue;
+
+    foreach (var label in ls)
+        Console.WriteLine($"{label.Key,16} ({label.Value})");
+
+    Console.ForegroundColor = ConsoleColor.Gray;
+    Console.WriteLine();
+}
+
 static void DisplayOnnxMetaDataExample()
 {
     Console.WriteLine();
     Console.WriteLine("Internal ONNX properties");
     Console.WriteLine(new string('-', 58));
 
-    using var yolo = new Yolo(Path.Combine(MODELS_FOLDER, "yolov8s.onnx"), false);
+    using var yolo = new Yolo(Path.Combine(DemoSettings.MODELS_FOLDER, "yolov8s.onnx"), false);
 
     // Display internal ONNX properties...
     foreach (var property in yolo.OnnxModel.GetType().GetProperties())
@@ -218,8 +195,7 @@ static void DisplayOnnxMetaDataExample()
     Console.WriteLine();
 }
 
-
-static void DisplayOutputFolder(string outputFolder)
-    => Process.Start("explorer.exe", outputFolder);
+static void DisplayOutputFolder()
+    => Process.Start("explorer.exe", DemoSettings.OUTPUT_FOLDER);
 
 #endregion
