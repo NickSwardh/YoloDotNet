@@ -1,6 +1,6 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.6
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v1.7
 
-YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in images and videos using ML.NET and ONNX runtime with GPU acceleration using CUDA.
+YoloDotNet is a C# .NET 8 implementation of Yolov8 for real-time detection of objects in images and videos using ML.NET and ONNX runtime, with GPU acceleration using CUDA.
 
 ### YoloDotNet supports the following:
 
@@ -10,16 +10,16 @@ YoloDotNet is a C# .NET 8 implementation of Yolov8 for detecting objects in imag
 &nbsp;&nbsp;✓&nbsp;&nbsp;`   Segmentation     `&nbsp;&nbsp;Separate detected objects using pixel masks<br>
 &nbsp;&nbsp;✓&nbsp;&nbsp;`  Pose Estimation   `&nbsp;&nbsp;Identifying location of specific keypoints in an image<br>
 
+Batteries not included ;)
+
 | Classification | Object Detection | OBB Detection | Segmentation | Pose Estimation |
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
-# New in v1.6
-- [Added new option to allocate memory to GPU for faster initial inference](#gpu)
-- Video processing will now be encoded using H.265 codec
-- Improved compatibility with different ffprobe builds for video processing
-- Lost some weight by removing Json Newtonsoft dependency
+# What's new?
+- Minor improvements and optimizations
+- Updated dependencies to the latest version
 
 # Nuget
 ```
@@ -35,9 +35,10 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 - Download [cuDNN v8.9.7 ZIP for CUDA v11.x](https://developer.nvidia.com/rdp/cudnn-archive), unzip and copy the dll's in bin folder to your CUDA bin folder
 - Add CUDA bin folder-path to your `Path` environment variables
 - [Youtube Installation guide](https://www.youtube.com/watch?v=KC9-9L7FgPc)
+- Optional: [Allocate memory to the GPU for faster initial inference](#gpu)
 
 # Export Yolov8 model to ONNX
-Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples)
+All models must be Yolov8-models. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).
   
   ## Verify your model
   
@@ -50,16 +51,17 @@ Yolov8 model [exported to ONNX format](https://docs.ultralytics.com/modes/export
   Console.WriteLine(yolo.OnnxModel.ModelType); // Output modeltype...
   ```
 
-# Example - Image
+# Example - Image inference
 
 ```csharp
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using YoloDotNet;
 using YoloDotNet.Extensions;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 // Instantiate a new Yolo object with your ONNX-model and CUDA (default)
 using var yolo = new Yolo(@"path\to\your_model.onnx");
+//using var yolo = new Yolo(@"path\to\your_model.onnx", primeGpu: true); // Allocate GPU-memory for blazing fast inference
 
 // Load image
 using var image = Image.Load<Rgba32>(@"path\to\image.jpg");
@@ -75,7 +77,7 @@ image.Draw(results);
 image.Save(@"path\to\save\image.jpg");
 ```
 
-# Example - Video
+# Example - Video inference
 
 > [!IMPORTANT]
 > Processing video requires FFmpeg and FFProbe
@@ -116,7 +118,7 @@ var results = yolo.RunClassification(options, 5); // Top 5 classes
 //var results = yolo.RunSegmentation(options, 0.25);
 //var results = yolo.RunPoseEstimation(options, 0.25);
 
-// Do further processing with results if needed...
+// Do further processing with 'results'...
 ```
 
 # GPU
@@ -128,7 +130,7 @@ Object detection with GPU and GPU-Id = 0 is enabled by default
 using var yolo = new Yolo(@"path\to\model.onnx");
 ```
 
-```New in v1.6``` Allocate GPU memory for faster initial inference (disabled by default)
+Allocate GPU memory for faster initial inference (disabled by default)
 
 ```csharp
 // With CUDA and Allocated GPU memory

@@ -14,14 +14,12 @@
     <PackageReadmeFile></PackageReadmeFile>
     <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos in realtime.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.6</Version>
+	<Version>1.7</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Added new option to allocate memory to GPU for faster initial inference
-Video processing will now be encoded using H.265 codec
-Improved compatibility with different ffprobe builds for video processing
-Lost some weight by removing Json Newtonsoft dependency</PackageReleaseNotes>
+    <PackageReleaseNotes>Minor improvements and optimizations
+Updated dependencies to latest version</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
