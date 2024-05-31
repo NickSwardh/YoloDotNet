@@ -18,11 +18,6 @@
         public List<string> OutputNames { get; init; } = default!;
 
         /// <summary>
-        /// Size of input images expected by the ONNX model.
-        /// </summary>
-        public Size ImageSize { get; init; }
-
-        /// <summary>
         /// Input tensor configuration of the ONNX model.
         /// </summary>
         public Input Input { get; init; } = default!;
