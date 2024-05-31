@@ -103,7 +103,7 @@
             var height = image.Height;
             var pixelConfidenceThreshold = ImageConfig.SEGMENTATION_PIXEL_THRESHOLD;
 
-            var pixels = new ConcurrentBag<Pixel>();
+            var pixels = new Pixel[width * height];
 
             Parallel.For(0, height, y =>
             {
@@ -114,11 +114,11 @@
                     var confidence = func(row[x]);
 
                     if (confidence > pixelConfidenceThreshold)
-                        pixels.Add(new Pixel(x, y, confidence));
+                        pixels[y * width + x] = new Pixel(x, y, confidence);
                 }
             });
 
-            return pixels.ToArray();
+            return pixels.Where(x => x is not null).ToArray();
         }
 
         /// <summary>
