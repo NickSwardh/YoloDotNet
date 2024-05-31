@@ -216,9 +216,8 @@
 
                     var color = Color.ParseHex(segmentation.Label.Color);
 
-                    // Add color to segmented pixels
-                    var test = segmentation.SegmentedPixels.AsSpan();
-                    foreach (var pixel in test)
+                    var pixelSpan = segmentation.SegmentedPixels.AsSpan();
+                    foreach (var pixel in pixelSpan)
                         mask[pixel.X, pixel.Y] = color;
 
                     image.Mutate(x => x.DrawImage(mask, segmentation.BoundingBox.Location, ImageConfig.SEGMENTATION_MASK_OPACITY));
