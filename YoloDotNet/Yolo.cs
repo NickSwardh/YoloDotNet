@@ -113,7 +113,6 @@
         /// </summary>
         /// <param name="tensor"></param>
         /// <param name="numberOfClasses"></param>
-        /// <returns></returns>
         protected override List<Classification> ClassifyTensor(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]]
             .GetTensorDataAsSpan<float>()
             .ToArray()
@@ -126,13 +125,12 @@
             .Take(numberOfClasses)
             .ToList();
 
-        // TODO: Update intellisense comment to match parameters
         /// <summary>
         /// Detects objects in a tensor and returns a ObjectDetection list.
         /// </summary>
-        /// <param name="tensor">The input tensor containing object detection data.</param>
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
+        /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
         protected override ObjectResult[] ObjectDetectImage(Image image, double confidenceThreshold, double overlapThreshold)
         {
