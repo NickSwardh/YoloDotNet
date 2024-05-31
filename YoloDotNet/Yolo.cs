@@ -135,13 +135,7 @@
         /// <returns>A list of result models representing detected objects.</returns>
         protected override ObjectResult[] ObjectDetectImage(Image image, double confidenceThreshold, double overlapThreshold)
         {
-            var result = new ConcurrentBag<ObjectResult>();
-
-            var (w, h) = (image.Width, image.Height);
-
-            var gain = Math.Max((float)w / OnnxModel.Input.Width, (float)h / OnnxModel.Input.Height);
-            var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
-            var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
+            var (xPad, yPad, gain) = CalculateGain(image, OnnxModel);
 
             var labels = OnnxModel.Labels.Length;
             var elements = OnnxModel.Outputs[0].Elements;
@@ -248,13 +242,8 @@
 
         protected override List<PoseEstimation> PoseEstimateImage(Image image, double threshold, double overlapThrehshold)
         {
-            var (w, h) = (image.Width, image.Height);
-
-            var gain = Math.Max((float)w / OnnxModel.Input.Width, (float)h / OnnxModel.Input.Height);
-            var ratio = Math.Min(OnnxModel.Input.Width / (float)image.Width, OnnxModel.Input.Height / (float)image.Height);
-            var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
-
             var boxes = ObjectDetectImage(image, threshold, overlapThrehshold);
+            var (xPad, yPad, gain) = CalculateGain(image, OnnxModel);
 
             // Get tensor as a flattened Span for faster processing.
             var ortSpan = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();

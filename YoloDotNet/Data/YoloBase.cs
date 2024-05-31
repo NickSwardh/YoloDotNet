@@ -281,6 +281,17 @@
                 : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
+        protected static (int, int, float) CalculateGain(Image image, OnnxModel model)
+        {
+            var (w, h) = (image.Width, image.Height);
+
+            var gain = Math.Max((float)w / model.Input.Width, (float)h / model.Input.Height);
+            var ratio = Math.Min(model.Input.Width / (float)image.Width, model.Input.Height / (float)image.Height);
+            var (xPad, yPad) = ((int)(model.Input.Width - w * ratio) / 2, (int)(model.Input.Height - h * ratio) / 2);
+
+            return (xPad, yPad, gain);
+        }
+
         /// <summary>
         /// Verify that loaded model is of the expected type
         /// </summary>
