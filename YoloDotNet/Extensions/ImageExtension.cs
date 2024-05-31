@@ -211,7 +211,6 @@
 
                 Parallel.ForEach(segmentations, options, segmentation =>
                 {
-                    // Create a new transparent image
                     using var mask = new Image<Rgba32>(segmentation.BoundingBox.Width, segmentation.BoundingBox.Height);
 
                     var color = Color.ParseHex(segmentation.Label.Color);

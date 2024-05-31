@@ -118,14 +118,15 @@
             .GetTensorDataAsSpan<float>()
             .ToArray()
             .Select((score, index) => new Classification
-        {
-            Confidence = score,
-            Label = OnnxModel.Labels[index].Name
-        })
+            {
+                Confidence = score,
+                Label = OnnxModel.Labels[index].Name
+            })
             .OrderByDescending(x => x.Confidence)
             .Take(numberOfClasses)
             .ToList();
 
+        // TODO: Update intellisense comment to match parameters
         /// <summary>
         /// Detects objects in a tensor and returns a ObjectDetection list.
         /// </summary>
@@ -147,7 +148,7 @@
             var ortSpan = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();
 
             for (int i = 0; i < channels; i++)
-                    {
+            {
                 // Move forward to confidence value of first label
                 var labelOffset = i + channels * 4;
 
@@ -156,7 +157,7 @@
                 {
                     var boxConfidence = ortSpan[labelOffset];
 
-                        if (boxConfidence < confidenceThreshold) continue;
+                    if (boxConfidence < confidenceThreshold) continue;
 
                     float x = ortSpan[i];                   // x
                     float y = ortSpan[i + channels];        // y
@@ -169,14 +170,14 @@
                     var yMax = (int)((y + h / 2 - yPad) * gain);
 
                     boxes[i] = new ObjectResult
-                        {
-                            Label = OnnxModel.Labels[l],
-                            Confidence = boxConfidence,
-                            BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
+                    {
+                        Label = OnnxModel.Labels[l],
+                        Confidence = boxConfidence,
+                        BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
                         BoundingBoxIndex = i,
                         OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
                     };
-                    }
+                }
             }
 
             var results = boxes.Where(x => x is not null).ToArray();

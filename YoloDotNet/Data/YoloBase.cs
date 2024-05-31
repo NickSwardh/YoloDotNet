@@ -266,7 +266,7 @@
         protected static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
 
         /// <summary>
-        /// Caclulate rectangle area
+        /// Calculate rectangle area
         /// </summary>
         /// <param name="rect"></param>
         protected static float CalculateArea(RectangleF rect) => rect.Width * rect.Height;
