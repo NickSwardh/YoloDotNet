@@ -114,7 +114,10 @@
         /// <param name="tensor"></param>
         /// <param name="numberOfClasses"></param>
         /// <returns></returns>
-        protected override List<Classification> ClassifyTensor(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]].Select((score, index) => new Classification
+        protected override List<Classification> ClassifyTensor(int numberOfClasses) => Tensors[OnnxModel.OutputNames[0]]
+            .GetTensorDataAsSpan<float>()
+            .ToArray()
+            .Select((score, index) => new Classification
         {
             Confidence = score,
             Label = OnnxModel.Labels[index].Name
@@ -130,7 +133,7 @@
         /// <param name="image">The image associated with the tensor data.</param>
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        protected override List<ObjectResult> ObjectDetectImage(Image image, double confidenceThreshold, double overlapThreshold)
+        protected override ObjectResult[] ObjectDetectImage(Image image, double confidenceThreshold, double overlapThreshold)
         {
             var result = new ConcurrentBag<ObjectResult>();
 
@@ -141,48 +144,50 @@
             var (xPad, yPad) = ((int)(OnnxModel.Input.Width - w * ratio) / 2, (int)(OnnxModel.Input.Height - h * ratio) / 2);
 
             var labels = OnnxModel.Labels.Length;
-            var batchSize = OnnxModel.Outputs[0].BatchSize;
             var elements = OnnxModel.Outputs[0].Elements;
             var channels = OnnxModel.Outputs[0].Channels;
 
-            var tensor = Tensors[OnnxModel.OutputNames[0]];
-            for (var i = 0; i < batchSize; i++)
-            {
-                Parallel.For(0, channels, j =>
-                {
-                    // Cache values for reuse
-                    var tensor0 = tensor[i, 0, j];
-                    var tensor1 = tensor[i, 1, j];
-                    var tensor2 = tensor[i, 2, j];
-                    var tensor3 = tensor[i, 3, j];
+            var boxes = new ObjectResult[channels];
 
-                    // Calculate coordinates of the bounding box in the original image
-                    var xMin = (int)((tensor0 - tensor2 / 2 - xPad) * gain);
-                    var yMin = (int)((tensor1 - tensor3 / 2 - yPad) * gain);
-                    var xMax = (int)((tensor0 + tensor2 / 2 - xPad) * gain);
-                    var yMax = (int)((tensor1 + tensor3 / 2 - yPad) * gain);
+            // Get tensor as a flattened Span for faster processing.
+            var ortSpan = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();
 
-                    for (int l = 0; l < labels; l++)
+            for (int i = 0; i < channels; i++)
                     {
-                        var boxConfidence = tensor[i, l + 4, j];
+                // Move forward to confidence value of first label
+                var labelOffset = i + channels * 4;
+
+                // Iterate through all labels...
+                for (var l = 0; l < labels; l++, labelOffset += channels)
+                {
+                    var boxConfidence = ortSpan[labelOffset];
 
                         if (boxConfidence < confidenceThreshold) continue;
 
-                        result.Add(new ObjectResult
+                    float x = ortSpan[i];                   // x
+                    float y = ortSpan[i + channels];        // y
+                    float w = ortSpan[i + channels * 2];    // w
+                    float h = ortSpan[i + channels * 3];    // h
+
+                    var xMin = (int)((x - w / 2 - xPad) * gain);
+                    var yMin = (int)((y - h / 2 - yPad) * gain);
+                    var xMax = (int)((x + w / 2 - xPad) * gain);
+                    var yMax = (int)((y + h / 2 - yPad) * gain);
+
+                    boxes[i] = new ObjectResult
                         {
                             Label = OnnxModel.Labels[l],
                             Confidence = boxConfidence,
                             BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
-                            BoundingBoxIndex = j,
-                            OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(tensor[i, elements - 1, j]) : 0 // Angle (radian) for OBB is the last item in elements.
-                        });
-
-                        break;
+                        BoundingBoxIndex = i,
+                        OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
+                    };
                     }
-                });
             }
 
-            return RemoveOverlappingBoxes([.. result], overlapThreshold);
+            var results = boxes.Where(x => x is not null).ToArray();
+
+            return RemoveOverlappingBoxes(results, overlapThreshold);
         }
 
         /// <summary>
@@ -191,39 +196,52 @@
         /// <param name="image">The input image for segmentation.</param>
         /// <param name="boundingBoxes">List of bounding boxes for segmentation.</param>
         /// <returns>List of Segmentation objects corresponding to the input bounding boxes.</returns>
-        protected override List<Segmentation> SegmentImage(Image image, List<ObjectResult> boundingBoxes)
+        protected override List<Segmentation> SegmentImage(Image image, ObjectResult[] boundingBoxes)
         {
-            var output = OnnxModel.Outputs[1]; // Segmentation output
-            var tensor0 = Tensors[OnnxModel.OutputNames[0]];
-            var tensor1 = Tensors[OnnxModel.OutputNames[1]];
+            Output? output = OnnxModel.Outputs[1]; // Segmentation output
+
+            // Get tensors as a flattened Span for faster processing.
+            var ortSpan0 = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();
+            var ortSpan1 = Tensors[OnnxModel.OutputNames[1]].GetTensorDataAsSpan<float>();
 
             var elements = OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
+            var channels = OnnxModel.Outputs[0].Channels;
 
-            Parallel.ForEach(boundingBoxes, _parallelOptions, box =>
+            var boxSpan = boundingBoxes.AsSpan();
+            for (var i = 0; i < boxSpan.Length; i++)
             {
+                var box = boxSpan[i];
+
                 // Collect mask weights from the first tensor based on the bounding box index
-                var maskWeights = Enumerable.Range(0, output.Channels)
-                    .Select(i => tensor0[0, elements + i, box.BoundingBoxIndex])
-                    .ToArray();
+                var maskWeights = new float[output.Channels];
+                var maskOffset = box.BoundingBoxIndex + (channels * elements);
+
+                for (var m = 0; m < output.Channels; m++, maskOffset += channels)
+                    maskWeights[m] = ortSpan0[maskOffset];
 
                 // Create an empty image with the same size as the output shape
                 using var segmentedImage = new Image<L8>(output.Width, output.Height);
 
+                var heightOffset = 0;
+
                 // Iterate over each empty pixel...
-                for (int y = 0; y < output.Height; y++)
+                for (var y = 0; y < output.Height; y++, heightOffset += output.Height)
                     for (int x = 0; x < output.Width; x++)
                     {
+                        float pixelWeight = 0;
+
                         // Iterate over each channel and calculate pixel location (x, y) with its maskweight, collected from first tensor.
-                        var value = Enumerable.Range(0, output.Channels).Sum(i => tensor1[0, i, y, x] * maskWeights[i]);
+                        for (var (p, off) = (0, x + heightOffset); p < output.Channels; p++, off += output.Width * output.Height)
+                            pixelWeight += ortSpan1[off] * maskWeights[p];
 
                         // Calculate and update the pixel luminance value
-                        var pixelLuminance = CalculatePixelLuminance(Sigmoid(value));
+                        var pixelLuminance = CalculatePixelLuminance(Sigmoid(pixelWeight));
                         segmentedImage[x, y] = new L8(pixelLuminance);
                     }
 
                 segmentedImage.CropResizedSegmentedArea(image, box.BoundingBox);
                 box.SegmentedPixels = segmentedImage.GetSegmentedPixels(p => CalculatePixelConfidence(p.PackedValue));
-            });
+            }
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
@@ -238,25 +256,29 @@
 
             var boxes = ObjectDetectImage(image, threshold, overlapThrehshold);
 
-            var tensor = Tensors[OnnxModel.OutputNames[0]];
+            // Get tensor as a flattened Span for faster processing.
+            var ortSpan = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();
 
             var labels = OnnxModel.Labels.Length;
-            var channels = OnnxModel.Input.Channels;
-            var elements = OnnxModel.Outputs[0].Elements;
-            var markers = (int)Math.Floor(((double)elements / channels)) - labels;
+            var ouputChannels = OnnxModel.Outputs[0].Channels;
+            var totalKeypoints = (int)Math.Floor(((double)OnnxModel.Outputs[0].Elements / OnnxModel.Input.Channels)) - labels;
 
-            for (int i = 0; i < boxes.Count; i++)
+            for (int i = 0; i < boxes.Length; i++)
             {
-                var poseEstimations = new Pose[markers];
                 var box = boxes[i];
+                var poseEstimations = new Pose[totalKeypoints];
+                var keypointOffset = box.BoundingBoxIndex + (ouputChannels * (4 + labels)); // Skip boundingbox + labels (4 + labels) and move forward to the first keypoint
 
-                for (int j = 0; j < markers; j++)
+                for (var j = 0; j < totalKeypoints; j++)
                 {
-                    var offset = j * channels + labels + 4; // 4 = dimensions of the boundingbox (w, h, x, y)
+                    var xIndex = keypointOffset;
+                    var yIndex = xIndex + ouputChannels;
+                    var cIndex = yIndex + ouputChannels;
+                    keypointOffset += ouputChannels * 3;
 
-                    var x = (int)((tensor[0, offset + 0, box.BoundingBoxIndex] - xPad) * gain);
-                    var y = (int)((tensor[0, offset + 1, box.BoundingBoxIndex] - yPad) * gain);
-                    var confidence = tensor[0, offset + 2, box.BoundingBoxIndex];
+                    var x = (int)((ortSpan[xIndex] - xPad) * gain);  // Keypoint x
+                    var y = (int)((ortSpan[yIndex] - yPad) * gain);  // Keypoint y
+                    var confidence = ortSpan[cIndex];               // Keypoint confidence
 
                     poseEstimations[j] = new Pose(x, y, confidence);
                 }
@@ -266,7 +288,6 @@
 
             return boxes.Select(x => (PoseEstimation)x).ToList();
         }
-
         #endregion
     }
 }

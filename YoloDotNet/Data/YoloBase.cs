@@ -29,12 +29,13 @@
         public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence, double iou);
         public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence, double iou);
         protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
-        protected abstract List<ObjectResult> ObjectDetectImage(Image image, double confidence, double iou);
-        protected abstract List<Segmentation> SegmentImage(Image image, List<ObjectResult> boxes);
+        protected abstract ObjectResult[] ObjectDetectImage(Image image, double confidence, double iou);
+        protected abstract List<Segmentation> SegmentImage(Image image, ObjectResult[] boxes);
         protected abstract List<PoseEstimation> PoseEstimateImage(Image image, double confidence, double iou);
         #endregion
 
-        protected Dictionary<string, Tensor<float>> Tensors { get; set; } = [];
+        protected Dictionary<string, OrtValue> Tensors { get; set; } = [];
+
         public OnnxModel OnnxModel { get; init; }
 
         /// <summary>
@@ -78,12 +79,25 @@
 
             lock (_progressLock)
             {
-                using var result = _session.Run(new List<NamedOnnxValue>()
+                var inputShape = new long[]
                 {
-                    NamedOnnxValue.CreateFromTensor(OnnxModel.InputName, tensorPixels),
-                });
+                    OnnxModel.Input.BatchSize,
+                    OnnxModel.Input.Channels,
+                    OnnxModel.Input.Width,
+                    OnnxModel.Input.Height
+                };
 
-                Tensors = result.ToDictionary(x => x.Name, x => x.AsTensor<float>());
+                using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, inputShape);
+
+                var inputNames = new Dictionary<string, OrtValue>
+                {
+                    { OnnxModel.InputName, inputOrtValue }
+                };
+
+                using var ortResults = _session.Run(new RunOptions(), inputNames, OnnxModel.OutputNames);
+
+                Tensors = OnnxModel.OutputNames.Zip(ortResults, (output, ort) => new { output, ort })
+                    .ToDictionary(item => item.output, item => item.ort);
 
                 return InvokeInferenceType(img, confidence, iouThreshold) is List<T> results
                     ? results
