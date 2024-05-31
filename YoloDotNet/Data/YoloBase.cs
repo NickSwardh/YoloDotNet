@@ -226,18 +226,22 @@
         /// <param name="predictions">The list of object detection results to process.</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        protected static List<ObjectResult> RemoveOverlappingBoxes(List<ObjectResult> predictions, double iouThreshold)
+        protected static ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
         {
-            predictions.Sort((a, b) => b.Confidence.CompareTo(a.Confidence));
-            var result = new List<ObjectResult>();
+            Array.Sort(predictions, (a, b) => b.Confidence.CompareTo(a.Confidence));
+            var result = new HashSet<ObjectResult>();
 
-            foreach (var item in predictions)
+            var span = predictions.AsSpan();
+
+            for (int i = 0; i < span.Length; i++)
             {
+                var item = span[i];
+
                 if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false)
                     result.Add(item);
             }
 
-            return result;
+            return [.. result];
         }
 
         /// <summary>
