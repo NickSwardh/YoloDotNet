@@ -285,6 +285,12 @@
                 : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
+        /// <summary>
+        /// Calculates the padding and scaling factor needed to adjust the bounding box
+        /// so that the detected object can be resized to match the original image size.
+        /// </summary>
+        /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
+        /// <param name="model">The ONNX model containing the input dimensions.</param>
         protected static (int, int, float) CalculateGain(Image image, OnnxModel model)
         {
             var (w, h) = (image.Width, image.Height);
