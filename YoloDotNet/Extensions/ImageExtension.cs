@@ -67,28 +67,39 @@
         }
 
         /// <summary>
-        /// Extract and normalize pixel values in an image into a tensor.
+        /// Extract and normalize pixel values in an image into a DenseTensor object.
         /// </summary>
         /// <param name="img">The image to extract pixel values from.</param>
         /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
         public static DenseTensor<float> NormalizePixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
         {
             var (width, height) = (img.Width, img.Height);
-            var tensor = new DenseTensor<float>([inputBatchSize, inputChannels, width, height]);
 
-            Parallel.For(0, height, y =>
+            // For increased performance, use a predefined array instead of working with the DenseTensor directly!
+            var tensorBufferSize = inputBatchSize * inputChannels * width * height;
+            var tensorArray = new float[tensorBufferSize];
+            var pixelsPerChannel = tensorBufferSize / inputChannels;
+
+            var pixIndex = 0;
+
+            for (int y = 0; y < height; y++)
             {
                 var pixelSpan = img.DangerousGetPixelRowMemory(y).Span;
 
-                for (int x = 0; x < width; x++)
+                for (int x = 0; x < width; x++, pixIndex++)
                 {
-                    tensor[0, 0, y, x] = pixelSpan[x].R / 255.0F; // r
-                    tensor[0, 1, y, x] = pixelSpan[x].G / 255.0F; // g
-                    tensor[0, 2, y, x] = pixelSpan[x].B / 255.0F; // b
-                }
-            });
+                    var r = pixelSpan[x].R / 255.0F;
+                    var g = pixelSpan[x].G / 255.0F;
+                    var b = pixelSpan[x].B / 255.0F;
 
-            return tensor;
+                    tensorArray[pixIndex] = r;
+                    tensorArray[pixIndex + pixelsPerChannel] = g;
+                    tensorArray[pixIndex + pixelsPerChannel * 2] = b;
+
+                }
+            }
+
+            return new DenseTensor<float>(tensorArray,[inputBatchSize, inputChannels, width, height]);
         }
 
         /// <summary>
