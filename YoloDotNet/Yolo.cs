@@ -167,14 +167,14 @@
                     var yMax = (int)((y + h / 2 - yPad) * gain);
 
                     if (boxes[i] is null || boxConfidence > boxes[i].Confidence)
-                    boxes[i] = new ObjectResult
-                    {
-                        Label = OnnxModel.Labels[l],
-                        Confidence = boxConfidence,
-                        BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
-                        BoundingBoxIndex = i,
-                        OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
-                    };
+                        boxes[i] = new ObjectResult
+                        {
+                            Label = OnnxModel.Labels[l],
+                            Confidence = boxConfidence,
+                            BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
+                            BoundingBoxIndex = i,
+                            OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
+                        };
                 }
             }
 
