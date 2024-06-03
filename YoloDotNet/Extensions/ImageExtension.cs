@@ -80,26 +80,28 @@
             var tensorArray = new float[tensorBufferSize];
             var pixelsPerChannel = tensorBufferSize / inputChannels;
 
-            var pixIndex = 0;
+            var pixelIndex = 0;
 
             for (int y = 0; y < height; y++)
             {
                 var pixelSpan = img.DangerousGetPixelRowMemory(y).Span;
 
-                for (int x = 0; x < width; x++, pixIndex++)
+                for (int x = 0; x < width; x++, pixelIndex++)
                 {
-                    var r = pixelSpan[x].R / 255.0F;
-                    var g = pixelSpan[x].G / 255.0F;
-                    var b = pixelSpan[x].B / 255.0F;
+                    var r = pixelSpan[x].R;
+                    var g = pixelSpan[x].G;
+                    var b = pixelSpan[x].B;
 
-                    tensorArray[pixIndex] = r;
-                    tensorArray[pixIndex + pixelsPerChannel] = g;
-                    tensorArray[pixIndex + pixelsPerChannel * 2] = b;
+                    if ((r | g | b) == 0)
+                        continue;
 
+                    tensorArray[pixelIndex] = r / 255.0F;
+                    tensorArray[pixelIndex + pixelsPerChannel] = g / 255.0F;
+                    tensorArray[pixelIndex + pixelsPerChannel * 2] = b / 255.0F;
                 }
             }
 
-            return new DenseTensor<float>(tensorArray,[inputBatchSize, inputChannels, width, height]);
+            return new DenseTensor<float>(tensorArray, [inputBatchSize, inputChannels, width, height]);
         }
 
         /// <summary>
