@@ -137,7 +137,6 @@
             var (xPad, yPad, gain) = CalculateGain(image, OnnxModel);
 
             var labels = OnnxModel.Labels.Length;
-            var elements = OnnxModel.Outputs[0].Elements;
             var channels = OnnxModel.Outputs[0].Channels;
 
             var boxes = new ObjectResult[channels];
@@ -167,6 +166,7 @@
                     var xMax = (int)((x + w / 2 - xPad) * gain);
                     var yMax = (int)((y + h / 2 - yPad) * gain);
 
+                    if (boxes[i] is null || boxConfidence > boxes[i].Confidence)
                     boxes[i] = new ObjectResult
                     {
                         Label = OnnxModel.Labels[l],
