@@ -33,6 +33,11 @@
         public LabelModel[] Labels { get; init; } = default!;
 
         /// <summary>
+        /// The ONNX-model input shape for creating a Tensor
+        /// </summary>
+        public long[] InputShape { get; init; } = default!;
+
+        /// <summary>
         /// ONNX custom metadata 
         /// </summary>
         public Dictionary<string, string> CustomMetaData { get; set; } = [];

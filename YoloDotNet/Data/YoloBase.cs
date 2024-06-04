@@ -79,15 +79,7 @@
 
             lock (_progressLock)
             {
-                var inputShape = new long[]
-                {
-                    OnnxModel.Input.BatchSize,
-                    OnnxModel.Input.Channels,
-                    OnnxModel.Input.Width,
-                    OnnxModel.Input.Height
-                };
-
-                using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, inputShape);
+                using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
                 var inputNames = new Dictionary<string, OrtValue>
                 {

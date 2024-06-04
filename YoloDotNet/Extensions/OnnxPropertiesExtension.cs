@@ -24,7 +24,14 @@
                 CustomMetaData = metaData,
                 Input = GetModelInputShape(session.InputMetadata[inputName]),
                 Outputs = GetOutputShapes(session.OutputMetadata, modelType),
-                Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], modelType)
+                Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], modelType),
+                InputShape = new long[]
+                {
+                    session.InputMetadata[inputName].Dimensions[0], // Batches (nr of images the model can process)
+                    session.InputMetadata[inputName].Dimensions[1], // Total color channels the model expects
+                    session.InputMetadata[inputName].Dimensions[2], // Required image width
+                    session.InputMetadata[inputName].Dimensions[3], // Required image Height
+                }
             };
         }
 
