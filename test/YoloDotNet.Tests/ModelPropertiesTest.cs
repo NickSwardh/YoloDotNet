@@ -1,5 +1,7 @@
 namespace YoloDotNet.Tests
 {
+    using YoloDotNet.Enums;
+
     public class ModelPropertiesTest
     {
         [Theory]

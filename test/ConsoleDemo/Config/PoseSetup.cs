@@ -1,7 +1,9 @@
-﻿using YoloDotNet.Models;
-
-namespace ConsoleDemo.Config
+﻿namespace ConsoleDemo.Config
 {
+    using System.Collections.Generic;
+
+    using YoloDotNet.Models;
+
     /// <summary>
     /// Demonstrates configuring a custom pose marker profile with personalized colors and illustrating marker connections.
     /// </summary>

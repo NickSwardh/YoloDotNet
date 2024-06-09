@@ -1,5 +1,8 @@
 ﻿namespace YoloDotNet.Tests
 {
+    using YoloDotNet.Enums;
+    using YoloDotNet.Test.Common.Enums;
+
     public class DetectionTest
     {
         [Fact]

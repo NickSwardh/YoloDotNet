@@ -1,22 +1,30 @@
-﻿using ConsoleDemo.Config;
+﻿using System;
+using System.IO;
+using System.Linq;
+using System.Diagnostics;
+using System.Collections.Generic;
+
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Diagnostics;
+
 using YoloDotNet;
 using YoloDotNet.Enums;
-using YoloDotNet.Extensions;
 using YoloDotNet.Models;
+using ConsoleDemo.Config;
+using YoloDotNet.Extensions;
+using YoloDotNet.Benchmarks;
+using YoloDotNet.Test.Common.Enums;
 
 Console.CursorVisible = false;
 
 CreateOutputFolder();
 
-Action<string, string, bool, bool> runDemoAction = RunDemo;
-runDemoAction("yolov8s-cls.onnx", "hummingbird.jpg", false, false);
-runDemoAction("yolov8s.onnx", "street.jpg", false, false);
-runDemoAction("yolov8s-obb.onnx", "island.jpg", false, false);
-runDemoAction("yolov8s-seg.onnx", "people.jpg", false, false);
-runDemoAction("yolov8s-pose.onnx", "crosswalk.jpg", false, false);
+Action<ModelType, ImageType, bool, bool> runDemoAction = RunDemo;
+runDemoAction(ModelType.Classification, ImageType.Hummingbird, false, false);
+runDemoAction(ModelType.ObjectDetection, ImageType.Street, false, false);
+runDemoAction(ModelType.ObbDetection, ImageType.Island, false, false);
+runDemoAction(ModelType.Segmentation, ImageType.People, false, false);
+runDemoAction(ModelType.PoseEstimation, ImageType.Crosswalk, false, false);
 
 ObjectDetectionOnVideo();
 DisplayOutputFolder();
@@ -31,10 +39,13 @@ static void CreateOutputFolder()
         Directory.CreateDirectory(outputFolder);
 }
 
-static void RunDemo(string model, string inferenceImage, bool cuda = false, bool primeGpu = false)
+static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false, bool primeGpu = false)
 {
-    using var yolo = new Yolo(Path.Combine(DemoSettings.MODELS_FOLDER, model), cuda, primeGpu);
-    using var image = Image.Load<Rgba32>(Path.Combine(DemoSettings.MEDIA_FOLDER, inferenceImage));
+    var modelPath = SharedConfig.GetTestModel(modelType);
+    var imagePath = SharedConfig.GetTestImage(imageType);
+
+    using var yolo = new Yolo(modelPath, cuda, primeGpu);
+    using var image = Image.Load<Rgba32>(imagePath);
 
     var device = cuda ? "GPU" : "CPU";
     device += device == "CPU" ? "" : primeGpu ? ", primed: yes" : ", primed: no";
@@ -91,7 +102,7 @@ static void ObjectDetectionOnVideo()
 {
     var videoOptions = new VideoOptions
     {
-        VideoFile = Path.Combine(DemoSettings.MEDIA_FOLDER, "walking.mp4"),
+        VideoFile = Path.GetFullPath( SharedConfig.GetTestImage("walking.mp4")),
         OutputDir = DemoSettings.OUTPUT_FOLDER,
         //GenerateVideo = true,
         //DrawLabels = true,
@@ -108,7 +119,7 @@ static void ObjectDetectionOnVideo()
 
     Console.WriteLine();
     Console.WriteLine("Running Object Detection on video...");
-    using var yolo = new Yolo(Path.Combine(DemoSettings.MODELS_FOLDER, "yolov8s.onnx"));
+    using var yolo = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection));
 
     int currentLineCursor = 0;
 
@@ -160,7 +171,7 @@ static void DisplayOnnxMetaDataExample()
     Console.WriteLine("Internal ONNX properties");
     Console.WriteLine(new string('-', 58));
 
-    using var yolo = new Yolo(Path.Combine(DemoSettings.MODELS_FOLDER, "yolov8s.onnx"), false);
+    using var yolo = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection), false);
 
     // Display internal ONNX properties...
     foreach (var property in yolo.OnnxModel.GetType().GetProperties())
