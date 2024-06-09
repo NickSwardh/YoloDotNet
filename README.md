@@ -321,10 +321,10 @@ Allocations and GC presure is greatly reduced.
 | RunSimpleClassificationGpu | 6.356 ms | 0.1185 ms | 0.1163 ms | 7.8125 |  86.08 KB |
 | RunSimpleClassificationCpu | 5.986 ms | 0.0341 ms | 0.0302 ms | 7.8125 |  86.15 KB |
 
-| Method                      | Mean     | Error    | StdDev   | Gen0    | Allocated |
-|---------------------------- |---------:|---------:|---------:|--------:|----------:|
-| RunSimpleObjectDetectionGpu | 11.84 ms | 0.091 ms | 0.085 ms | 15.6250 | 159.64 KB |
-| RunSimpleObjectDetectionCpu | 52.95 ms | 0.760 ms | 0.594 ms |       - | 159.81 KB |
+| Method                      | Mean     | Error    | StdDev   | Allocated |
+|---------------------------- |---------:|---------:|---------:|----------:|
+| RunSimpleObjectDetectionGpu | 11.74 ms | 0.096 ms | 0.080 ms |  70.64 KB |
+| RunSimpleObjectDetectionCpu | 53.92 ms | 0.947 ms | 0.839 ms |  71.16 KB |
 
 | Method                   | Mean      | Error    | StdDev   | Allocated |
 |------------------------- |----------:|---------:|---------:|----------:|

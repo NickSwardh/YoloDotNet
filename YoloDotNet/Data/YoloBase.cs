@@ -20,6 +20,7 @@ namespace YoloDotNet.Data
 
         private int tensorBufferSize;
         private ArrayPool<float> customSizeFloatPool;
+        protected ArrayPool<ObjectResult> customSizeObjectResultPool;
 
         private readonly object _progressLock = new();
 
@@ -70,6 +71,9 @@ namespace YoloDotNet.Data
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
             this.tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
             this.customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: this.tensorBufferSize + 1, maxArraysPerBucket: 10);
+
+
+            this.customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: this.OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
         }
 
         /// <summary>
@@ -101,9 +105,9 @@ namespace YoloDotNet.Data
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
                     var inputNames = new Dictionary<string, OrtValue>
-                {
-                    { OnnxModel.InputName, inputOrtValue }
-                };
+                    {
+                        { OnnxModel.InputName, inputOrtValue }
+                    };
 
                     using var ortResults = _session.Run(new RunOptions(), inputNames, OnnxModel.OutputNames);
 

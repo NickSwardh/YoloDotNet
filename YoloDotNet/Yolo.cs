@@ -139,48 +139,56 @@
             var labels = OnnxModel.Labels.Length;
             var channels = OnnxModel.Outputs[0].Channels;
 
-            var boxes = new ObjectResult[channels];
+            var boxes = this.customSizeObjectResultPool.Rent(channels);
 
-            // Get tensor as a flattened Span for faster processing.
-            var ortSpan = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();
-
-            for (int i = 0; i < channels; i++)
+            try
             {
-                // Move forward to confidence value of first label
-                var labelOffset = i + channels * 4;
 
-                // Iterate through all labels...
-                for (var l = 0; l < labels; l++, labelOffset += channels)
+                // Get tensor as a flattened Span for faster processing.
+                var ortSpan = Tensors[OnnxModel.OutputNames[0]].GetTensorDataAsSpan<float>();
+
+                for (int i = 0; i < channels; i++)
                 {
-                    var boxConfidence = ortSpan[labelOffset];
+                    // Move forward to confidence value of first label
+                    var labelOffset = i + channels * 4;
 
-                    if (boxConfidence < confidenceThreshold) continue;
+                    // Iterate through all labels...
+                    for (var l = 0; l < labels; l++, labelOffset += channels)
+                    {
+                        var boxConfidence = ortSpan[labelOffset];
 
-                    float x = ortSpan[i];                   // x
-                    float y = ortSpan[i + channels];        // y
-                    float w = ortSpan[i + channels * 2];    // w
-                    float h = ortSpan[i + channels * 3];    // h
+                        if (boxConfidence < confidenceThreshold) continue;
 
-                    var xMin = (int)((x - w / 2 - xPad) * gain);
-                    var yMin = (int)((y - h / 2 - yPad) * gain);
-                    var xMax = (int)((x + w / 2 - xPad) * gain);
-                    var yMax = (int)((y + h / 2 - yPad) * gain);
+                        float x = ortSpan[i];                   // x
+                        float y = ortSpan[i + channels];        // y
+                        float w = ortSpan[i + channels * 2];    // w
+                        float h = ortSpan[i + channels * 3];    // h
 
-                    if (boxes[i] is null || boxConfidence > boxes[i].Confidence)
-                        boxes[i] = new ObjectResult
-                        {
-                            Label = OnnxModel.Labels[l],
-                            Confidence = boxConfidence,
-                            BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
-                            BoundingBoxIndex = i,
-                            OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
-                        };
+                        var xMin = (int)((x - w / 2 - xPad) * gain);
+                        var yMin = (int)((y - h / 2 - yPad) * gain);
+                        var xMax = (int)((x + w / 2 - xPad) * gain);
+                        var yMax = (int)((y + h / 2 - yPad) * gain);
+
+                        if (boxes[i] is null || boxConfidence > boxes[i].Confidence)
+                            boxes[i] = new ObjectResult
+                            {
+                                Label = OnnxModel.Labels[l],
+                                Confidence = boxConfidence,
+                                BoundingBox = new Rectangle(xMin, yMin, xMax - xMin, yMax - yMin),
+                                BoundingBoxIndex = i,
+                                OrientationAngle = OnnxModel.ModelType == ModelType.ObbDetection ? CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
+                            };
+                    }
                 }
+
+                var results = boxes.Where(x => x is not null).ToArray();
+
+                return RemoveOverlappingBoxes(results, overlapThreshold);
             }
-
-            var results = boxes.Where(x => x is not null).ToArray();
-
-            return RemoveOverlappingBoxes(results, overlapThreshold);
+            finally
+            {
+                this.customSizeObjectResultPool.Return(boxes);
+            }
         }
 
         /// <summary>
