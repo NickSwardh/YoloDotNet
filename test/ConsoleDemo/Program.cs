@@ -102,7 +102,7 @@ static void ObjectDetectionOnVideo()
 {
     var videoOptions = new VideoOptions
     {
-        VideoFile = Path.GetFullPath( SharedConfig.GetTestImage("walking.mp4")),
+        VideoFile = SharedConfig.GetTestImage("walking.mp4"),
         OutputDir = DemoSettings.OUTPUT_FOLDER,
         //GenerateVideo = true,
         //DrawLabels = true,

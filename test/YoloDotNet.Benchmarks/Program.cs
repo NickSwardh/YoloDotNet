@@ -15,8 +15,8 @@
             //simpleObjectDetectionTests.GlobalSetup();
             //simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
 
-            var resizeSourceObjectDetectionTests = new ResizeSourceObjectDetectionTests();
-            resizeSourceObjectDetectionTests.GlobalSetup();
+            //var resizeSourceObjectDetectionTests = new ResizeSourceObjectDetectionTests();
+            //resizeSourceObjectDetectionTests.GlobalSetup();
 
             var summary = BenchmarkRunner.Run<ObjectDetectionTests.SimpleObjectDetectionTests>(config:
                 DefaultConfig.Instance
