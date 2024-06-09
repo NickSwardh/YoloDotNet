@@ -121,7 +121,7 @@ namespace YoloDotNet.Data
             }
             finally
             {
-                this.customSizeFloatPool.Return(tensorArrayBuffer);
+                this.customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
             }
         }
 

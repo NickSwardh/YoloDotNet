@@ -187,7 +187,7 @@
             }
             finally
             {
-                this.customSizeObjectResultPool.Return(boxes);
+                this.customSizeObjectResultPool.Return(boxes, clearArray: true);
             }
         }
 
