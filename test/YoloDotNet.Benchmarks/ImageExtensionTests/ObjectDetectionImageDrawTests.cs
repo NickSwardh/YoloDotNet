@@ -11,7 +11,7 @@
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
-    public class ObjectClassificationImageDrawTests
+    public class ObjectDetectionImageDrawTests
     {
         #region Fields
 
