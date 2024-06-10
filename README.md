@@ -311,6 +311,10 @@ The starting point means that the benchmarks are run without any optimizations o
 | ObjectDetectionModelSizeGpu    |  8.104 ms | 0.0284 ms | 0.0237 ms | 484.3750 | 484.3750 | 484.3750 |   4.82 MB |
 | ObjectDetectionModelSizeCpu    | 52.827 ms | 1.0047 ms | 1.2706 ms | 400.0000 | 400.0000 | 400.0000 |   4.82 MB |
 
+| Method                  | Mean     | Error   | StdDev  | Allocated |
+|------------------------ |---------:|--------:|--------:|----------:|
+| NormalizePixelsToTensor | 801.9 us | 3.11 us | 2.91 us |     154 B |
+
 ## Ending Point 
 
 1. Implement a custom array pool which is able to provide buffers for the NormalizePixelsToTensor method. This dramatically reduces the GC overhead.
