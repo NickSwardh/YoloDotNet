@@ -1,27 +1,27 @@
-﻿namespace YoloDotNet.Benchmarks.PoseEstimationTests
+﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     using System.Collections.Generic;
 
     using SixLabors.ImageSharp;
     using BenchmarkDotNet.Attributes;
-    using SixLabors.ImageSharp.PixelFormats;
 
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
-    using YoloDotNet.Benchmarks;
+    using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
-    public class SimplePostEstimationTests
+    public class PoseEstimationImageDrawTests
     {
         #region Fields
 
         private static string model = SharedConfig.GetTestModel(modelType: ModelType.PoseEstimation);
         private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Crosswalk);
 
-        private Yolo cudaYolo;
         private Yolo cpuYolo;
         private Image image;
+        private List<PoseEstimation> poseEstimations;
 
         #endregion Fields
 
@@ -30,21 +30,20 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
             this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            this.image = Image.Load(path: testImage);
+            this.poseEstimations = this.cpuYolo.RunPoseEstimation(img: this.image, confidence: 0.25, iou: 0.45);
         }
 
-        [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationGpu()
-        {
-            return this.cudaYolo.RunPoseEstimation(img: this.image, confidence: 0.25, iou: 0.45);
-        }
+        [Params(true,false)]
+        public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationCpu()
+        public Image DrawPoseEstimation()
         {
-            return this.cpuYolo.RunPoseEstimation(img: this.image, confidence: 0.25, iou: 0.45);
+            this.image.Draw(segmentations: this.poseEstimations, CustomPoseMarkerColorMap.PoseMarkerOptions, drawConfidence: this.DrawConfidence);
+
+            return this.image;
         }
 
         #endregion Methods

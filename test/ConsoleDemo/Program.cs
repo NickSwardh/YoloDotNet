@@ -13,6 +13,7 @@ using YoloDotNet.Models;
 using ConsoleDemo.Config;
 using YoloDotNet.Extensions;
 using YoloDotNet.Benchmarks;
+using YoloDotNet.Test.Common;
 using YoloDotNet.Test.Common.Enums;
 
 Console.CursorVisible = false;

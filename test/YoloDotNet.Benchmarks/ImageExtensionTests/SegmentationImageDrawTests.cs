@@ -1,27 +1,26 @@
-﻿namespace YoloDotNet.Benchmarks.SegmentationTests
+﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     using System.Collections.Generic;
 
     using SixLabors.ImageSharp;
     using BenchmarkDotNet.Attributes;
-    using SixLabors.ImageSharp.PixelFormats;
 
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
-    using YoloDotNet.Benchmarks;
+    using YoloDotNet.Extensions;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
-    public class SimpleSegmentationTests
+    public class SegmentationImageDrawTests
     {
         #region Fields
 
         private static string model = SharedConfig.GetTestModel(modelType: ModelType.Segmentation);
         private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.People);
 
-        private Yolo cudaYolo;
         private Yolo cpuYolo;
         private Image image;
+        private List<Segmentation> segmentations;
 
         #endregion Fields
 
@@ -30,21 +29,20 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
             this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            this.image = Image.Load(path: testImage);
+            this.segmentations = this.cpuYolo.RunSegmentation(img: this.image, confidence: 0.25, iou: 0.45);
         }
 
-        [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationGpu()
-        {
-            return this.cudaYolo.RunSegmentation(img: this.image, confidence: 0.25, iou: 0.45);
-        }
+        [Params(true,false)]
+        public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationCpu()
+        public Image DrawSegmentation()
         {
-            return this.cpuYolo.RunSegmentation(img: this.image, confidence: 0.25, iou: 0.45);
+            this.image.Draw(segmentations: this.segmentations, drawConfidence: this.DrawConfidence);
+
+            return this.image;
         }
 
         #endregion Methods

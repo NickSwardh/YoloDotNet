@@ -11,9 +11,9 @@
         static void Main(string[] args)
         {
 #if DEBUG
-            //var simpleObjectDetectionTests = new SimpleObjectDetectionTests();
-            //simpleObjectDetectionTests.GlobalSetup();
-            //simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
+            var simpleObjectDetectionTests = new SimpleObjectDetectionTests();
+            simpleObjectDetectionTests.GlobalSetup();
+            simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
 
             //var resizeSourceObjectDetectionTests = new ResizeSourceObjectDetectionTests();
             //resizeSourceObjectDetectionTests.GlobalSetup();
@@ -22,7 +22,7 @@
                 DefaultConfig.Instance
                 .WithOptions(ConfigOptions.DisableOptimizationsValidator));
 #else
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator));
 #endif
         }
     }

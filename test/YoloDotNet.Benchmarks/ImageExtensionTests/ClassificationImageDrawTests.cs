@@ -1,27 +1,26 @@
-﻿namespace YoloDotNet.Benchmarks.ClassificationTests
+﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     using System.Collections.Generic;
 
     using SixLabors.ImageSharp;
     using BenchmarkDotNet.Attributes;
-    using SixLabors.ImageSharp.PixelFormats;
 
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
-    using YoloDotNet.Benchmarks;
+    using YoloDotNet.Extensions;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
-    public class SimpleClassificationTests
+    public class ClassificationImageDrawTests
     {
         #region Fields
 
         private static string model = SharedConfig.GetTestModel(modelType: ModelType.Classification);
         private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Hummingbird);
 
-        private Yolo cudaYolo;
         private Yolo cpuYolo;
         private Image image;
+        private List<Classification> classifications;
 
         #endregion Fields
 
@@ -30,21 +29,20 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
             this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            this.image = Image.Load(path: testImage);
+            this.classifications = this.cpuYolo.RunClassification(img: this.image, classes: 1);
         }
 
-        [Benchmark]
-        public List<Classification> RunSimpleClassificationGpu()
-        {
-            return this.cudaYolo.RunClassification(img: this.image, classes: 1);
-        }
+        [Params(true,false)]
+        public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public List<Classification> RunSimpleClassificationCpu()
+        public Image DrawClassification()
         {
-            return this.cpuYolo.RunClassification(img: this.image, classes: 1);
+            this.image.Draw(classifications: this.classifications, drawConfidence: this.DrawConfidence);
+
+            return this.image;
         }
 
         #endregion Methods

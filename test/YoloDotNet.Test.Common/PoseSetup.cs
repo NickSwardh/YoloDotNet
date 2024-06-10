@@ -1,4 +1,4 @@
-﻿namespace ConsoleDemo.Config
+﻿namespace YoloDotNet.Test.Common
 {
     using System.Collections.Generic;
 
@@ -69,7 +69,7 @@
         /// <summary>
         /// Configure the connections between pose markers and specify the colors to use.
         /// </summary>
-        private static YoloDotNet.Models.PoseMarker[] GetPoseMarkerConfiguration =>
+        private static Models.PoseMarker[] GetPoseMarkerConfiguration =>
         [
             new () // Nose
             {

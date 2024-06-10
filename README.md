@@ -315,6 +315,35 @@ The starting point means that the benchmarks are run without any optimizations o
 |------------------------ |---------:|--------:|--------:|----------:|
 | NormalizePixelsToTensor | 801.9 us | 3.11 us | 2.91 us |     154 B |
 
+| Method             | DrawConfidence | Mean     | Error   | StdDev  | Gen0    | Gen1    | Allocated |
+|------------------- |--------------- |---------:|--------:|--------:|--------:|--------:|----------:|
+| DrawClassification | False          | 450.8 us | 1.52 us | 1.35 us | 50.7813 | 10.2539 | 519.59 KB |
+| DrawClassification | True           | 842.0 us | 4.16 us | 3.89 us | 93.7500 | 29.2969 | 957.68 KB |
+
+| Method              | DrawConfidence | Mean     | Error    | StdDev   | Gen0      | Gen1     | Allocated |
+|-------------------- |--------------- |---------:|---------:|---------:|----------:|---------:|----------:|
+| DrawObjectDetection | False          | 13.88 ms | 0.103 ms | 0.096 ms | 1375.0000 | 171.8750 |   13.8 MB |
+| DrawObjectDetection | True           | 34.17 ms | 0.405 ms | 0.378 ms | 3666.6667 | 666.6667 |  37.49 MB |
+
+| Method                  | DrawConfidence | Mean     | Error     | StdDev    | Gen0     | Gen1     | Allocated |
+|------------------------ |--------------- |---------:|----------:|----------:|---------:|---------:|----------:|
+| DrawOrientedBoundingBox | False          | 2.892 ms | 0.0346 ms | 0.0323 ms | 277.3438 |  46.8750 |   2.78 MB |
+| DrawOrientedBoundingBox | True           | 5.932 ms | 0.0206 ms | 0.0193 ms | 671.8750 | 171.8750 |   6.74 MB |
+
+| Method             | DrawConfidence | Mean     | Error    | StdDev   | Gen0      | Gen1     | Allocated |
+|------------------- |--------------- |---------:|---------:|---------:|----------:|---------:|----------:|
+| DrawPoseEstimation | False          | 14.08 ms | 0.044 ms | 0.041 ms |  906.2500 | 109.3750 |   9.07 MB |
+| DrawPoseEstimation | True           | 20.51 ms | 0.067 ms | 0.062 ms | 1656.2500 | 343.7500 |  16.63 MB |
+
+| Method           | DrawConfidence | Mean     | Error    | StdDev   | Gen0      | Gen1     | Allocated |
+|----------------- |--------------- |---------:|---------:|---------:|----------:|---------:|----------:|
+| DrawSegmentation | False          | 15.33 ms | 0.267 ms | 0.237 ms | 1296.8750 | 187.5000 |  12.88 MB |
+| DrawSegmentation | True           | 28.30 ms | 0.373 ms | 0.415 ms | 2666.6667 | 666.6667 |   28.7 MB |
+
+| Method      | Mean     | Error   | StdDev  | Gen0   | Gen1   | Allocated |
+|------------ |---------:|--------:|--------:|-------:|-------:|----------:|
+| ResizeImage | 263.9 us | 1.28 us | 1.20 us | 4.8828 | 0.4883 |  52.35 KB |
+
 ## Ending Point 
 
 1. Implement a custom array pool which is able to provide buffers for the NormalizePixelsToTensor method. This dramatically reduces the GC overhead.

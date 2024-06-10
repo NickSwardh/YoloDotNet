@@ -16,8 +16,8 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
-        private static string testImage = SharedConfig.GetTestImage(ImageType.Street);
+        private static string model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
+        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
         private ArrayPool<float> customSizeFloatPool;
 
         private int tensorBufferSize;
@@ -34,17 +34,17 @@
         public void GlobalSetup()
         {
             this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(testImage).ResizeImage(this.cpuYolo.OnnxModel.Input.Width, this.cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
+            this.image = Image.Load<Rgba32>(path: testImage).ResizeImage(w: this.cpuYolo.OnnxModel.Input.Width, h: this.cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
 
             this.tensorBufferSize = this.cpuYolo.OnnxModel.Input.BatchSize * this.cpuYolo.OnnxModel.Input.Channels * this.cpuYolo.OnnxModel.Input.Width * this.cpuYolo.OnnxModel.Input.Height;
             this.customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: this.tensorBufferSize + 1, maxArraysPerBucket: 10);
-            this.tensorArrayBuffer = this.customSizeFloatPool.Rent(this.tensorBufferSize);
+            this.tensorArrayBuffer = this.customSizeFloatPool.Rent(minimumLength: this.tensorBufferSize);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            this.customSizeFloatPool.Return(this.tensorArrayBuffer);
+            this.customSizeFloatPool.Return(array: this.tensorArrayBuffer);
         }
 
         [Benchmark]
