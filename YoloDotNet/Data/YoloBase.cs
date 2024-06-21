@@ -1,7 +1,4 @@
-﻿using System.Buffers;
-using YoloDotNet.Extensions;
-
-namespace YoloDotNet.Data
+﻿namespace YoloDotNet.Data
 {
     /// <summary>
     /// Abstract base class for performing image vision tasks using a YOLOv8 model in ONNX format.
@@ -18,9 +15,9 @@ namespace YoloDotNet.Data
         protected readonly ParallelOptions _parallelOptions;
         private readonly bool _useCuda;
 
-        private int tensorBufferSize;
-        private ArrayPool<float> customSizeFloatPool;
-        protected ArrayPool<ObjectResult> customSizeObjectResultPool;
+        private int _tensorBufferSize;
+        private ArrayPool<float> _customSizeFloatPool;
+        protected ArrayPool<ObjectResult> _customSizeObjectResultPool;
 
         private readonly object _progressLock = new();
 
@@ -69,11 +66,9 @@ namespace YoloDotNet.Data
                 _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
 
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
-            this.tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
-            this.customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: this.tensorBufferSize + 1, maxArraysPerBucket: 10);
-
-
-            this.customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: this.OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
+            _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
+            _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
+            _customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
         }
 
         /// <summary>
@@ -90,7 +85,7 @@ namespace YoloDotNet.Data
 
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
 
-            var tensorArrayBuffer = this.customSizeFloatPool.Rent(minimumLength: tensorBufferSize);
+            var tensorArrayBuffer = _customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
 
             try
             {
@@ -99,7 +94,7 @@ namespace YoloDotNet.Data
                     var tensorPixels = resizedImg.NormalizePixelsToTensor(
                         inputBatchSize: OnnxModel.Input.BatchSize,
                         inputChannels: OnnxModel.Input.Channels,
-                        tensorBufferSize: this.tensorBufferSize,
+                        tensorBufferSize: _tensorBufferSize,
                         tensorArrayBuffer: tensorArrayBuffer);
 
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
@@ -121,7 +116,7 @@ namespace YoloDotNet.Data
             }
             finally
             {
-                this.customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
+                _customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
             }
         }
 

@@ -139,7 +139,7 @@
             var labels = OnnxModel.Labels.Length;
             var channels = OnnxModel.Outputs[0].Channels;
 
-            var boxes = this.customSizeObjectResultPool.Rent(channels);
+            var boxes = _customSizeObjectResultPool.Rent(channels);
 
             try
             {
@@ -187,7 +187,7 @@
             }
             finally
             {
-                this.customSizeObjectResultPool.Return(boxes, clearArray: true);
+                _customSizeObjectResultPool.Return(boxes, clearArray: true);
             }
         }
 
