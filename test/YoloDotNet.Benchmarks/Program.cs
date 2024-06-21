@@ -1,16 +1,23 @@
 ﻿namespace YoloDotNet.Benchmarks
 {
+    using BenchmarkDotNet.Reports;
     using BenchmarkDotNet.Configs;
     using BenchmarkDotNet.Running;
 
     using YoloDotNet.Test.Common;
     using YoloDotNet.Benchmarks.ObjectDetectionTests;
+    using YoloDotNet.Benchmarks.ImageExtensionTests;
 
     internal class Program
     {
         static void Main(string[] args)
         {
 #if DEBUG
+            var tt = new ObjectDetectionImageDrawTests();
+            tt.GlobalSetup();
+            tt.IterationSetup();
+            tt.DrawObjectDetection();
+
             var simpleObjectDetectionTests = new SimpleObjectDetectionTests();
             simpleObjectDetectionTests.GlobalSetup();
             simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
@@ -22,7 +29,9 @@
                 DefaultConfig.Instance
                 .WithOptions(ConfigOptions.DisableOptimizationsValidator));
 #else
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator));
+            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, DefaultConfig.Instance
+                .WithOptions(ConfigOptions.DisableOptimizationsValidator)
+                .WithSummaryStyle(summaryStyle: SummaryStyle.Default.WithRatioStyle(ratioStyle: BenchmarkDotNet.Columns.RatioStyle.Trend)));
 #endif
         }
     }

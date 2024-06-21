@@ -380,3 +380,13 @@ Allocations and GC presure is greatly reduced.
 | ObjectDetectionOriginalSizeCpu | 54.716 ms | 1.0659 ms | 1.5286 ms |       - | 159.84 KB |
 | ObjectDetectionModelSizeGpu    |  7.795 ms | 0.0947 ms | 0.0886 ms |       - | 136.87 KB |
 | ObjectDetectionModelSizeCpu    | 49.994 ms | 0.9314 ms | 0.8712 ms |       - | 137.76 KB |
+
+
+
+| Method                       | DrawConfidence | Mean      | Error     | StdDev    | Median    | Ratio        | RatioSD | Gen0      | Gen1      | Allocated   | Alloc Ratio     |
+|----------------------------- |--------------- |----------:|----------:|----------:|----------:|-------------:|--------:|----------:|----------:|------------:|----------------:|
+| DrawObjectDetection          | False          | 15.065 ms | 0.2662 ms | 0.7012 ms | 14.793 ms |     baseline |         | 1000.0000 | 1000.0000 | 14135.67 KB |                 |
+| DrawExperimentalSkiaSharp    | False          |  7.760 ms | 0.0723 ms | 0.0604 ms |  7.774 ms | 2.12x faster |   0.11x |         - |         - |    25.41 KB |   556.215x less |
+|                              |                |           |           |           |           |              |         |           |           |             |                 |
+| DrawObjectDetection          | True           | 36.689 ms | 0.6858 ms | 1.2011 ms | 36.091 ms |     baseline |         | 3000.0000 | 1000.0000 | 38392.75 KB |                 |
+| DrawExperimentalSkiaSharp    | True           |  7.617 ms | 0.0614 ms | 0.0544 ms |  7.598 ms | 4.90x faster |   0.20x |         - |         - |     22.9 KB | 1,676.654x less |
