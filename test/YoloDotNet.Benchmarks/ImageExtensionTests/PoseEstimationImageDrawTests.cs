@@ -1,16 +1,5 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
-    using System.Collections.Generic;
-
-    using SixLabors.ImageSharp;
-    using BenchmarkDotNet.Attributes;
-
-    using YoloDotNet.Enums;
-    using YoloDotNet.Models;
-    using YoloDotNet.Extensions;
-    using YoloDotNet.Test.Common;
-    using YoloDotNet.Test.Common.Enums;
-
     [MemoryDiagnoser]
     public class PoseEstimationImageDrawTests
     {

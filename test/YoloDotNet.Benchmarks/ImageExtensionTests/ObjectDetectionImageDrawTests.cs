@@ -1,22 +1,5 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
-    using System;
-    using System.IO;
-    using System.Globalization;
-    using System.Collections.Generic;
-
-    using SkiaSharp;
-    using SixLabors.ImageSharp;
-    using BenchmarkDotNet.Attributes;
-    using SixLabors.ImageSharp.PixelFormats;
-
-    using YoloDotNet.Enums;
-    using YoloDotNet.Models;
-    using YoloDotNet.Extensions;
-    using YoloDotNet.Test.Common;
-    using YoloDotNet.Configuration;
-    using YoloDotNet.Test.Common.Enums;
-
     [MemoryDiagnoser]
     public class ObjectDetectionImageDrawTests
     {

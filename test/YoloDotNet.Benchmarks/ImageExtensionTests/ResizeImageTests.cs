@@ -1,13 +1,5 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
-    using SixLabors.ImageSharp;
-    using BenchmarkDotNet.Attributes;
-    using SixLabors.ImageSharp.PixelFormats;
-
-    using YoloDotNet.Enums;
-    using YoloDotNet.Extensions;
-    using YoloDotNet.Test.Common;
-
     [MemoryDiagnoser]
     public class ResizeImageTests
     {

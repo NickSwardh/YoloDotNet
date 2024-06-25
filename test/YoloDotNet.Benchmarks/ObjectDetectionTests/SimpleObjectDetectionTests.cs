@@ -1,16 +1,5 @@
 ﻿namespace YoloDotNet.Benchmarks.ObjectDetectionTests
 {
-    using System.Collections.Generic;
-
-    using SixLabors.ImageSharp;
-    using BenchmarkDotNet.Attributes;
-    using SixLabors.ImageSharp.PixelFormats;
-
-    using YoloDotNet.Enums;
-    using YoloDotNet.Models;
-    using YoloDotNet.Test.Common;
-    using YoloDotNet.Test.Common.Enums;
-
     [MemoryDiagnoser]
     public class SimpleObjectDetectionTests
     {

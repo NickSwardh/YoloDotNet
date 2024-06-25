@@ -1,8 +1,4 @@
-﻿using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Reports;
-using BenchmarkDotNet.Running;
-
-namespace YoloDotNet.Benchmarks
+﻿namespace YoloDotNet.Benchmarks
 {
     internal class Program
     {

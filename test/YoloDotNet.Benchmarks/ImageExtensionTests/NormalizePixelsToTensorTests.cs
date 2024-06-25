@@ -1,17 +1,5 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
-    using System.Buffers;
-
-    using SixLabors.ImageSharp;
-    using BenchmarkDotNet.Attributes;
-    using Microsoft.ML.OnnxRuntime.Tensors;
-    using SixLabors.ImageSharp.PixelFormats;
-
-    using YoloDotNet.Enums;
-    using YoloDotNet.Extensions;
-    using YoloDotNet.Test.Common;
-    using YoloDotNet.Test.Common.Enums;
-
     [MemoryDiagnoser]
     public class NormalizePixelsToTensorTests
     {
