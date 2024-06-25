@@ -1,16 +1,13 @@
 ﻿namespace YoloDotNet.Tests
 {
-    using YoloDotNet.Enums;
-    using YoloDotNet.Test.Common.Enums;
-
     public class DetectionTest
     {
         [Fact]
         public void RunClassification_LabelImageCorrectly_AssertTrue()
         {
             // Arrange
-            var model  = Config.GetTestModel(ModelType.Classification);
-            var testImage = Config.GetTestImage(ImageType.Hummingbird);
+            var model  = SharedConfig.GetTestModel(ModelType.Classification);
+            var testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
             var yolo = new Yolo(model, false);
             var image = Image.Load<Rgba32>(testImage);
@@ -26,8 +23,8 @@
         public void RunObjectDetection_GetExpectedNumberOfObjects_AssertTrue()
         {
             // Arrange
-            var model = Config.GetTestModel(ModelType.ObjectDetection);
-            var testImage = Config.GetTestImage(ImageType.Street);
+            var model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+            var testImage = SharedConfig.GetTestImage(ImageType.Street);
 
             var yolo = new Yolo(model, false);
             var image = Image.Load<Rgba32>(testImage);
@@ -43,8 +40,8 @@
         public void RunObbDetection_GetExpectedNumberOfObjects_AssertTrue()
         {
             // Arrange
-            var model = Config.GetTestModel(ModelType.ObbDetection);
-            var testImage = Config.GetTestImage(ImageType.Island);
+            var model = SharedConfig.GetTestModel(ModelType.ObbDetection);
+            var testImage = SharedConfig.GetTestImage(ImageType.Island);
 
             var yolo = new Yolo(model, false);
             var image = Image.Load<Rgba32>(testImage);
@@ -60,8 +57,8 @@
         public void RunSegmentation_GetExpectedNumberOfSegmentations_AssertTrue()
         {
             // Arrange
-            var model = Config.GetTestModel(ModelType.Segmentation);
-            var testImage = Config.GetTestImage(ImageType.People);
+            var model = SharedConfig.GetTestModel(ModelType.Segmentation);
+            var testImage = SharedConfig.GetTestImage(ImageType.People);
 
             var yolo = new Yolo(model, false);
             var image = Image.Load<Rgba32>(testImage);
@@ -77,8 +74,8 @@
         public void RunPoseEstimation_GetExpectedNumberOfPoseEstimations_AssertTrue()
         {
             // Arrange
-            var model = Config.GetTestModel(ModelType.PoseEstimation);
-            var testImage = Config.GetTestImage(ImageType.Crosswalk);
+            var model = SharedConfig.GetTestModel(ModelType.PoseEstimation);
+            var testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
             var yolo = new Yolo(model, false);
             var image = Image.Load<Rgba32>(testImage);

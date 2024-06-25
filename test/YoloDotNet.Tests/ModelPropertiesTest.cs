@@ -1,7 +1,5 @@
 namespace YoloDotNet.Tests
 {
-    using YoloDotNet.Enums;
-
     public class ModelPropertiesTest
     {
         [Theory]
@@ -32,7 +30,7 @@ namespace YoloDotNet.Tests
             )
         {
             // Arrange
-            var yolo = new Yolo(Config.GetTestModel(modelTypeToTest), false);
+            var yolo = new Yolo(SharedConfig.GetTestModel(modelTypeToTest), false);
             var props = yolo.OnnxModel;
 
             // Act

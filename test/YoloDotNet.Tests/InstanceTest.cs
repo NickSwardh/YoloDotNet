@@ -1,7 +1,5 @@
 ﻿namespace YoloDotNet.Tests
 {
-    using YoloDotNet.Enums;
-
     public class InstanceTest
     {
         [Theory]
@@ -15,7 +13,7 @@
             // Act
             try
             {
-                var mock = new Yolo(Config.GetTestModel(ModelType.ObjectDetection), useCuda);
+                var mock = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection), useCuda);
             }
             catch (Exception)
             {
