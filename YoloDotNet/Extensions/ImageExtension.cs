@@ -71,44 +71,6 @@
         /// </summary>
         /// <param name="img">The image to extract pixel values from.</param>
         /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
-        public static DenseTensor<float> NormalizePixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels)
-        {
-            var (width, height) = (img.Width, img.Height);
-
-            // For increased performance, use a predefined array instead of working with the DenseTensor directly!
-            var tensorBufferSize = inputBatchSize * inputChannels * width * height;
-            var tensorArray = new float[tensorBufferSize];
-            var pixelsPerChannel = tensorBufferSize / inputChannels;
-
-            var pixelIndex = 0;
-
-            for (int y = 0; y < height; y++)
-            {
-                var pixelSpan = img.DangerousGetPixelRowMemory(y).Span;
-
-                for (int x = 0; x < width; x++, pixelIndex++)
-                {
-                    var r = pixelSpan[x].R;
-                    var g = pixelSpan[x].G;
-                    var b = pixelSpan[x].B;
-
-                    if ((r | g | b) == 0)
-                        continue;
-
-                    tensorArray[pixelIndex] = r / 255.0F;
-                    tensorArray[pixelIndex + pixelsPerChannel] = g / 255.0F;
-                    tensorArray[pixelIndex + pixelsPerChannel * 2] = b / 255.0F;
-                }
-            }
-
-            return new DenseTensor<float>(tensorArray, [inputBatchSize, inputChannels, width, height]);
-        }
-
-        /// <summary>
-        /// Extract and normalize pixel values in an image into a DenseTensor object.
-        /// </summary>
-        /// <param name="img">The image to extract pixel values from.</param>
-        /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
         public static DenseTensor<float> NormalizePixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels, int tensorBufferSize, float[] tensorArrayBuffer)
         {
             var (width, height) = (img.Width, img.Height);

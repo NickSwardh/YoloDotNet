@@ -62,13 +62,13 @@
 
             _parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
-            if (useCuda && allocateGpuMemory)
-                _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
-
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
             _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
             _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
             _customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
+
+            if (useCuda && allocateGpuMemory)
+                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _customSizeFloatPool);
         }
 
         /// <summary>
