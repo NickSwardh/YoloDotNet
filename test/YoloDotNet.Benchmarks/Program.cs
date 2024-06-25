@@ -1,13 +1,9 @@
-﻿namespace YoloDotNet.Benchmarks
+﻿using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Reports;
+using BenchmarkDotNet.Running;
+
+namespace YoloDotNet.Benchmarks
 {
-    using BenchmarkDotNet.Reports;
-    using BenchmarkDotNet.Configs;
-    using BenchmarkDotNet.Running;
-
-    using YoloDotNet.Test.Common;
-    using YoloDotNet.Benchmarks.ObjectDetectionTests;
-    using YoloDotNet.Benchmarks.ImageExtensionTests;
-
     internal class Program
     {
         static void Main(string[] args)
