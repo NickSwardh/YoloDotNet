@@ -11,6 +11,8 @@ global using YoloDotNet.Test.Common;
 global using YoloDotNet.Configuration;
 global using YoloDotNet.Test.Common.Enums;
 
+global using ConsoleDemo.Config;
+
 global using SixLabors.ImageSharp;
 global using SixLabors.ImageSharp.PixelFormats;
 
