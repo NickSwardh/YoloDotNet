@@ -30,21 +30,21 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            cudaYolo = new Yolo(onnxModel: model, cuda: true);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load<Rgba32>(path: testImage);
         }
 
         [Benchmark]
         public List<OBBDetection> RunSimpleObbDetectionGpu()
         {
-            return this.cudaYolo.RunObbDetection(img: this.image, confidence: 0.25, iou: 0.45);
+            return cudaYolo.RunObbDetection(img: image, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<OBBDetection> RunSimpleObbDetectionCpu()
         {
-            return this.cpuYolo.RunObbDetection(img: this.image, confidence: 0.25, iou: 0.45);
+            return cpuYolo.RunObbDetection(img: image, confidence: 0.25, iou: 0.45);
         }
 
         #endregion Methods

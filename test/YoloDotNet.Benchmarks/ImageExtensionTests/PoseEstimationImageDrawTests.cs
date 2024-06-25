@@ -30,9 +30,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load(path: testImage);
-            this.poseEstimations = this.cpuYolo.RunPoseEstimation(img: this.image, confidence: 0.25, iou: 0.45);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load(path: testImage);
+            poseEstimations = cpuYolo.RunPoseEstimation(img: image, confidence: 0.25, iou: 0.45);
         }
 
         [Params(true,false)]
@@ -41,9 +41,9 @@
         [Benchmark]
         public Image DrawPoseEstimation()
         {
-            this.image.Draw(segmentations: this.poseEstimations, CustomPoseMarkerColorMap.PoseMarkerOptions, drawConfidence: this.DrawConfidence);
+            image.Draw(segmentations: poseEstimations, CustomPoseMarkerColorMap.PoseMarkerOptions, drawConfidence: DrawConfidence);
 
-            return this.image;
+            return image;
         }
 
         #endregion Methods

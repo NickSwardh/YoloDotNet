@@ -13,14 +13,14 @@
         static void Main(string[] args)
         {
 #if DEBUG
-            var tt = new ObjectDetectionImageDrawTests();
-            tt.GlobalSetup();
-            tt.IterationSetup();
-            tt.DrawObjectDetection();
+            //var imageDrawTests = new ObjectDetectionImageDrawTests();
+            //imageDrawTests.GlobalSetup();
+            //imageDrawTests.IterationSetup();
+            //imageDrawTests.DrawObjectDetection();
 
-            var simpleObjectDetectionTests = new SimpleObjectDetectionTests();
-            simpleObjectDetectionTests.GlobalSetup();
-            simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
+            //var simpleObjectDetectionTests = new SimpleObjectDetectionTests();
+            //simpleObjectDetectionTests.GlobalSetup();
+            //simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
 
             //var resizeSourceObjectDetectionTests = new ResizeSourceObjectDetectionTests();
             //resizeSourceObjectDetectionTests.GlobalSetup();

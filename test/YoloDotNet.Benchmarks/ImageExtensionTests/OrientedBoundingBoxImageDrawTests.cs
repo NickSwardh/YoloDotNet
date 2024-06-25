@@ -29,9 +29,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load(path: testImage);
-            this.oBBDetections = this.cpuYolo.RunObbDetection(img: this.image, confidence: 0.25, iou: 0.45);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load(path: testImage);
+            oBBDetections = cpuYolo.RunObbDetection(img: image, confidence: 0.25, iou: 0.45);
         }
 
         [Params(true,false)]
@@ -40,9 +40,9 @@
         [Benchmark]
         public Image DrawOrientedBoundingBox()
         {
-            this.image.Draw(detections: this.oBBDetections, drawConfidence: this.DrawConfidence);
+            image.Draw(detections: oBBDetections, drawConfidence: DrawConfidence);
 
-            return this.image;
+            return image;
         }
 
         #endregion Methods

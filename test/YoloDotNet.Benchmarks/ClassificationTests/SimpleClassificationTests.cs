@@ -30,21 +30,21 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            cudaYolo = new Yolo(onnxModel: model, cuda: true);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load<Rgba32>(path: testImage);
         }
 
         [Benchmark]
         public List<Classification> RunSimpleClassificationGpu()
         {
-            return this.cudaYolo.RunClassification(img: this.image, classes: 1);
+            return cudaYolo.RunClassification(img: image, classes: 1);
         }
 
         [Benchmark]
         public List<Classification> RunSimpleClassificationCpu()
         {
-            return this.cpuYolo.RunClassification(img: this.image, classes: 1);
+            return cpuYolo.RunClassification(img: image, classes: 1);
         }
 
         #endregion Methods

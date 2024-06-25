@@ -30,21 +30,21 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            cudaYolo = new Yolo(onnxModel: model, cuda: true);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load<Rgba32>(path: testImage);
         }
 
         [Benchmark]
         public List<Segmentation> RunSimpleSegmentationGpu()
         {
-            return this.cudaYolo.RunSegmentation(img: this.image, confidence: 0.25, iou: 0.45);
+            return cudaYolo.RunSegmentation(img: image, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<Segmentation> RunSimpleSegmentationCpu()
         {
-            return this.cpuYolo.RunSegmentation(img: this.image, confidence: 0.25, iou: 0.45);
+            return cpuYolo.RunSegmentation(img: image, confidence: 0.25, iou: 0.45);
         }
 
         #endregion Methods

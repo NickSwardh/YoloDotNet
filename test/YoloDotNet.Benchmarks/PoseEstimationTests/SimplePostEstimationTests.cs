@@ -30,21 +30,21 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage);
+            cudaYolo = new Yolo(onnxModel: model, cuda: true);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load<Rgba32>(path: testImage);
         }
 
         [Benchmark]
         public List<PoseEstimation> RunSimplePoseEstimationGpu()
         {
-            return this.cudaYolo.RunPoseEstimation(img: this.image, confidence: 0.25, iou: 0.45);
+            return cudaYolo.RunPoseEstimation(img: image, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<PoseEstimation> RunSimplePoseEstimationCpu()
         {
-            return this.cpuYolo.RunPoseEstimation(img: this.image, confidence: 0.25, iou: 0.45);
+            return cpuYolo.RunPoseEstimation(img: image, confidence: 0.25, iou: 0.45);
         }
 
         #endregion Methods

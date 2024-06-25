@@ -25,16 +25,16 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load(path: testImage);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load(path: testImage);
         }
 
         [Benchmark]
         public Image<Rgb24> ResizeImage()
         {
-            return this.image.ResizeImage(
-                        w: this.cpuYolo.OnnxModel.Input.BatchSize,
-                        h: this.cpuYolo.OnnxModel.Input.Channels);
+            return image.ResizeImage(
+                        w: cpuYolo.OnnxModel.Input.BatchSize,
+                        h: cpuYolo.OnnxModel.Input.Channels);
         }
 
         #endregion Methods

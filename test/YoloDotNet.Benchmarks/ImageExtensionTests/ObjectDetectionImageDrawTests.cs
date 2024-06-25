@@ -36,17 +36,17 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load(path: testImage);
-            this.objectDetections = cpuYolo.RunObjectDetection(img: this.image, confidence: 0.25, iou: 0.45);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load(path: testImage);
+            objectDetections = cpuYolo.RunObjectDetection(img: image, confidence: 0.25, iou: 0.45);
         }
 
         [IterationSetup]
         public void IterationSetup()
         {
-            this.imageJpegDataStream = new MemoryStream();
-            this.image.SaveAsJpeg(this.imageJpegDataStream);
-            this.imageJpegDataStream.Position = 0;
+            imageJpegDataStream = new MemoryStream();
+            image.SaveAsJpeg(imageJpegDataStream);
+            imageJpegDataStream.Position = 0;
         }
 
         [Params(true, false)]
@@ -55,15 +55,15 @@
         [Benchmark(Baseline = true)]
         public Image DrawObjectDetection()
         {
-            this.image.Draw(detections: this.objectDetections, drawConfidence: this.DrawConfidence);
+            image.Draw(detections: objectDetections, drawConfidence: DrawConfidence);
 
-            return this.image;
+            return image;
         }
 
         [Benchmark]
         public SKBitmap DrawExperimentalSkiaSharp()
         {
-            SKBitmap bitmap = SKBitmap.Decode(this.imageJpegDataStream);
+            SKBitmap bitmap = SKBitmap.Decode(imageJpegDataStream);
             using (SKCanvas canvas = new SKCanvas(bitmap))
             {
                 SKTypeface typeface = SKTypeface.FromFamilyName(
@@ -81,7 +81,7 @@
                     Style = SKPaintStyle.Fill
                 };
 
-                foreach (var detection in this.objectDetections)
+                foreach (var detection in objectDetections)
                 {
                     var color = HexToRgba(detection.Label.Color, ImageConfig.DEFAULT_OPACITY);
 
@@ -102,7 +102,7 @@
                     // Text with label name and confidence in percent
                     var text = detection.Label.Name;
 
-                    if (!this.DrawConfidence)
+                    if (!DrawConfidence)
                         text += $" ({detection!.Confidence.ToPercent()}%)";
 
                     var boundingBoxRectangle = new SKRect(

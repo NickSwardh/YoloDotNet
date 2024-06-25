@@ -29,9 +29,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load(path: testImage);
-            this.classifications = this.cpuYolo.RunClassification(img: this.image, classes: 1);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load(path: testImage);
+            classifications = cpuYolo.RunClassification(img: image, classes: 1);
         }
 
         [Params(true,false)]
@@ -40,9 +40,9 @@
         [Benchmark]
         public Image DrawClassification()
         {
-            this.image.Draw(classifications: this.classifications, drawConfidence: this.DrawConfidence);
+            image.Draw(classifications: classifications, drawConfidence: DrawConfidence);
 
-            return this.image;
+            return image;
         }
 
         #endregion Methods

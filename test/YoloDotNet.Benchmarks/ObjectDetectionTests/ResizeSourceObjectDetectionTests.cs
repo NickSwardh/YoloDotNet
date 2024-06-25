@@ -32,34 +32,34 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cudaYolo = new Yolo(onnxModel: model, cuda: true);
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.originalSizeimage = Image.Load<Rgba32>(path: originalSizeimagePath);
-            this.modelSizeImage = Image.Load<Rgba32>(path: modelSizeimagePath);
+            cudaYolo = new Yolo(onnxModel: model, cuda: true);
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            originalSizeimage = Image.Load<Rgba32>(path: originalSizeimagePath);
+            modelSizeImage = Image.Load<Rgba32>(path: modelSizeimagePath);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionOriginalSizeGpu()
         {
-            return this.cudaYolo.RunObjectDetection(img: this.originalSizeimage, confidence: 0.25, iou: 0.45);
+            return cudaYolo.RunObjectDetection(img: originalSizeimage, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionOriginalSizeCpu()
         {
-            return this.cpuYolo.RunObjectDetection(img: this.originalSizeimage, confidence: 0.25, iou: 0.45);
+            return cpuYolo.RunObjectDetection(img: originalSizeimage, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionModelSizeGpu()
         {
-            return this.cudaYolo.RunObjectDetection(img: this.modelSizeImage, confidence: 0.25, iou: 0.45);
+            return cudaYolo.RunObjectDetection(img: modelSizeImage, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionModelSizeCpu()
         {
-            return this.cpuYolo.RunObjectDetection(img: this.modelSizeImage, confidence: 0.25, iou: 0.45);
+            return cpuYolo.RunObjectDetection(img: modelSizeImage, confidence: 0.25, iou: 0.45);
         }
 
         #endregion Methods

@@ -33,27 +33,27 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            this.cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            this.image = Image.Load<Rgba32>(path: testImage).ResizeImage(w: this.cpuYolo.OnnxModel.Input.Width, h: this.cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
+            cpuYolo = new Yolo(onnxModel: model, cuda: false);
+            image = Image.Load<Rgba32>(path: testImage).ResizeImage(w: cpuYolo.OnnxModel.Input.Width, h: cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
 
-            this.tensorBufferSize = this.cpuYolo.OnnxModel.Input.BatchSize * this.cpuYolo.OnnxModel.Input.Channels * this.cpuYolo.OnnxModel.Input.Width * this.cpuYolo.OnnxModel.Input.Height;
-            this.customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: this.tensorBufferSize + 1, maxArraysPerBucket: 10);
-            this.tensorArrayBuffer = this.customSizeFloatPool.Rent(minimumLength: this.tensorBufferSize);
+            tensorBufferSize = cpuYolo.OnnxModel.Input.BatchSize * cpuYolo.OnnxModel.Input.Channels * cpuYolo.OnnxModel.Input.Width * cpuYolo.OnnxModel.Input.Height;
+            customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: tensorBufferSize + 1, maxArraysPerBucket: 10);
+            tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: tensorBufferSize);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            this.customSizeFloatPool.Return(array: this.tensorArrayBuffer);
+            customSizeFloatPool.Return(array: tensorArrayBuffer);
         }
 
         [Benchmark]
         public DenseTensor<float> NormalizePixelsToTensor()
         {
-            return this.image.NormalizePixelsToTensor(
-                        inputBatchSize: this.cpuYolo.OnnxModel.Input.BatchSize,
-                        inputChannels: this.cpuYolo.OnnxModel.Input.Channels,
-                        tensorBufferSize: this.tensorBufferSize,
+            return image.NormalizePixelsToTensor(
+                        inputBatchSize: cpuYolo.OnnxModel.Input.BatchSize,
+                        inputChannels: cpuYolo.OnnxModel.Input.Channels,
+                        tensorBufferSize: tensorBufferSize,
                         tensorArrayBuffer: tensorArrayBuffer);
         }
 
