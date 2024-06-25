@@ -226,7 +226,7 @@
                     img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence);
                     break;
                 case List<PoseEstimation> poseEstimations:
-                    img.Draw(poseEstimations, videoSettings.PoseOptions, drawConfidence);
+                    img.Draw(poseEstimations, videoSettings.KeyPointOptions, drawConfidence);
                     break;
                 default:
                     throw new NotSupportedException("Unknown or incompatible ONNX model type.");

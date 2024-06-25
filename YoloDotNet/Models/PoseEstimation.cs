@@ -18,8 +18,8 @@
         public Rectangle BoundingBox { get; init; }
 
         /// <summary>
-        /// Pose estimations with x, y coordinates and confidence score
+        /// Keypoints with x, y coordinates and confidence score
         /// </summary>
-        public Pose[] PoseMarkers { get; set; } = [];
+        public KeyPoint[] KeyPoints { get; set; } = [];
     }
 }

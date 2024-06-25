@@ -1,9 +1,9 @@
 ﻿namespace YoloDotNet.Models
 {
-    public record PoseOptions
+    public record KeyPointOptions
     {
         /// <summary>
-        /// Confidence threshold for displaying markers.
+        /// Confidence threshold for displaying keypoints.
         /// </summary>
         public double PoseConfidence { get; init; } = 0.65;
 
@@ -13,30 +13,30 @@
         public bool DrawBoundingBox { get; init; } = true;
 
         /// <summary>
-        /// Default color for pos-markers.
+        /// Keypoint Default color.
         /// </summary>
         public string DefaultPoseColor { get; init; } = "#FFF633"; // Yellow
 
         /// <summary>
-        /// User-defined mapping to determine how to connect pose-markers and specify associated colors.
+        /// User-defined mapping to determine how to connect keypoints and specify associated colors.
         /// </summary>
-        public PoseMarker[] PoseMarkers { get; init; } = [];
+        public KeyPointMarker[] PoseMarkers { get; init; } = [];
     }
 
     /// <summary>
-    /// Represents a mapping between pose markers and their connections.
+    /// Represents a mapping between keypoints and their connections.
     /// </summary>
-    public record PoseMarker
+    public record KeyPointMarker
     {
         /// <summary>
-        /// Color associated with the pose markers.
+        /// Color associated with the keypoint.
         /// </summary>
         public string Color { get; init; } = default!;
 
         /// <summary>
-        /// Defines connections between pose markers and their parent marker.
+        /// Defines connections between keypoints.
         /// </summary>
-        public PoseConnection[] Connections { get; init; } = [];
+        public KeyPointConnection[] Connections { get; init; } = [];
     }
 
     /// <summary>
@@ -44,5 +44,5 @@
     /// </summary>
     /// <param name="Index"></param>
     /// <param name="Color"></param>
-    public record PoseConnection(int Index, string Color);
+    public record KeyPointConnection(int Index, string Color);
 }

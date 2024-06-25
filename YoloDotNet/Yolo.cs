@@ -262,7 +262,7 @@
             for (int i = 0; i < boxes.Length; i++)
             {
                 var box = boxes[i];
-                var poseEstimations = new Pose[totalKeypoints];
+                var poseEstimations = new KeyPoint[totalKeypoints];
                 var keypointOffset = box.BoundingBoxIndex + (ouputChannels * (4 + labels)); // Skip boundingbox + labels (4 + labels) and move forward to the first keypoint
 
                 for (var j = 0; j < totalKeypoints; j++)
@@ -276,10 +276,10 @@
                     var y = (int)((ortSpan[yIndex] - yPad) * gain);  // Keypoint y
                     var confidence = ortSpan[cIndex];               // Keypoint confidence
 
-                    poseEstimations[j] = new Pose(x, y, confidence);
+                    poseEstimations[j] = new KeyPoint(x, y, confidence);
                 }
 
-                box.PoseMarkers = poseEstimations;
+                box.KeyPoints = poseEstimations;
             }
 
             return boxes.Select(x => (PoseEstimation)x).ToList();

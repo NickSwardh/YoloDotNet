@@ -81,9 +81,9 @@
         public DrawSegment DrawSegment { get; set; }
 
         /// <summary>
-        /// Options for drawing pose estimation markers.
+        /// Options for drawing keypoints.
         /// </summary>
-        public PoseOptions PoseOptions { get; set; } = new();
+        public KeyPointOptions KeyPointOptions { get; set; } = new();
 
         #region Mapping methods
 
@@ -106,7 +106,7 @@
             DrawLabels = result.DrawLabels,
             DrawConfidence = result.KeepAudio,
             DrawSegment = result.DrawSegment,
-            PoseOptions = result.PoseOptions,
+            KeyPointOptions = result.KeyPointOptions,
         };
 
         #endregion

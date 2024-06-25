@@ -92,7 +92,7 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
     if (results is List<PoseEstimation> poseEstimation)
     {
         DisplayDetectedLabels(poseEstimation.Select(x => x.Label));
-        image.Draw(poseEstimation, CustomPoseMarkerColorMap.PoseMarkerOptions);
+        image.Draw(poseEstimation, CustomKeyPointColorMap.KeyPointOptions);
     }
 
     image.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{yolo.OnnxModel.ModelType}.jpg"));
@@ -114,7 +114,7 @@ static void ObjectDetectionOnVideo()
         //KeepAudio = true,
         //KeepFrames = false,
         DrawSegment = DrawSegment.Default,
-        PoseOptions = CustomPoseMarkerColorMap.PoseMarkerOptions
+        KeyPointOptions = CustomKeyPointColorMap.KeyPointOptions
     };
 
     Console.WriteLine();

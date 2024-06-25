@@ -27,7 +27,7 @@
         /// </summary>
         public Pixel[] SegmentedPixels { get; set; } = [];
 
-        public Pose[] PoseMarkers { get; set; } = [];
+        public KeyPoint[] KeyPoints { get; set; } = [];
 
         /// <summary>
         /// Orientation angle of the bounding box for OBB detections.
@@ -63,7 +63,7 @@
             Label = result.Label,
             Confidence = result.Confidence,
             BoundingBox = result.BoundingBox,
-            PoseMarkers = result.PoseMarkers
+            KeyPoints = result.KeyPoints
         };
         #endregion
     }

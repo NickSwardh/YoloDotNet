@@ -68,6 +68,6 @@
         /// <summary>
         /// Options for drawing pose estimation markers.
         /// </summary>
-        public PoseOptions PoseOptions { get; set; } = new();
+        public KeyPointOptions KeyPointOptions { get; set; } = new();
     }
 }

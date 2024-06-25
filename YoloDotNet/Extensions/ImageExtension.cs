@@ -39,13 +39,14 @@
             => image.DrawSegmentations(segmentations, draw, drawConfidence);
 
         /// <summary>
-        /// Draw segmentations and bounding boxes on the specified image.
+        /// Draws pose-estimated keypoints and bounding boxes on the specified image.
         /// </summary>
-        /// <param name="image">The image on which to draw segmentations.</param>
-        /// <param name="detections">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="image">The image on which to draw pose estimations.</param>
+        /// <param name="poseEstimations">A list of pose estimations.</param>
+        /// <param name="keyPointOptions">Options for drawing keypoints.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        public static void Draw(this Image image, IEnumerable<PoseEstimation>? segmentations, PoseOptions poseOptions, bool drawConfidence = true)
-            => image.DrawPoseEstimation(segmentations, poseOptions, drawConfidence);
+        public static void Draw(this Image image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions keyPointOptions, bool drawConfidence = true)
+            => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
 
         /// <summary>
         /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
@@ -244,7 +245,7 @@
         /// <param name="image">The image on which to pose estimations.</param>
         /// <param name="poseEstimations">A list of pose estimation information, including rectangles and pose markers.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        private static void DrawPoseEstimation(this Image image, IEnumerable<PoseEstimation>? poseEstimations, PoseOptions poseOptions, bool drawConfidence)
+        private static void DrawPoseEstimation(this Image image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions poseOptions, bool drawConfidence)
         {
             ArgumentNullException.ThrowIfNull(poseEstimations);
 
@@ -254,14 +255,14 @@
             var lineSize = (int)Math.Floor(image.CalculateFontSizeByDpi(ImageConfig.FONT_SIZE_8) / 8);
             var confidenceThreshold = poseOptions.PoseConfidence;
             var hasPoseMarkers = poseOptions.PoseMarkers.Length > 0;
-            var emptyPoseMarker = new PoseMarker();
+            var emptyPoseMarker = new KeyPointMarker();
             var alpha = ImageConfig.POSE_ESTIMATION_MARKER_OPACITY;
 
             foreach (var poseEstimation in poseEstimations)
             {
-                Parallel.For(0, poseEstimation.PoseMarkers.Length, options, i =>
+                Parallel.For(0, poseEstimation.KeyPoints.Length, options, i =>
                 {
-                    var poseMarker = poseEstimation.PoseMarkers[i];
+                    var poseMarker = poseEstimation.KeyPoints[i];
 
                     if (poseMarker.Confidence < confidenceThreshold)
                         return;
@@ -285,7 +286,7 @@
                         // Draw lines between pose-markers
                         foreach (var connection in poseMap.Connections)
                         {
-                            var markerDestination = poseEstimation.PoseMarkers[connection.Index];
+                            var markerDestination = poseEstimation.KeyPoints[connection.Index];
 
                             if (markerDestination.Confidence < confidenceThreshold)
                                 continue;

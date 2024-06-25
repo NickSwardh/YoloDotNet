@@ -30,7 +30,7 @@
         [Benchmark]
         public Image DrawPoseEstimation()
         {
-            _image.Draw(segmentations: _poseEstimations, CustomPoseMarkerColorMap.PoseMarkerOptions, drawConfidence: DrawConfidence);
+            _image.Draw(poseEstimations: _poseEstimations, CustomKeyPointColorMap.KeyPointOptions, drawConfidence: DrawConfidence);
 
             return _image;
         }
