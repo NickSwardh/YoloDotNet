@@ -8,7 +8,7 @@
 
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
-    using YoloDotNet.Benchmarks;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
@@ -16,14 +16,14 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private static string originalSizeimagePath = SharedConfig.GetTestImage(imageType: ImageType.Street);
-        private static string modelSizeimagePath = SharedConfig.GetTestImage(imageName: "street640x640.jpg");
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
+        private static string _originalSizeimagePath = SharedConfig.GetTestImage(imageType: ImageType.Street);
+        private static string _modelSizeimagePath = SharedConfig.GetTestImage(imageName: "street640x640.jpg");
 
-        private Yolo cudaYolo;
-        private Yolo cpuYolo;
-        private Image originalSizeimage;
-        private Image modelSizeImage;
+        private Yolo _cudaYolo;
+        private Yolo _cpuYolo;
+        private Image _originalSizeimage;
+        private Image _modelSizeImage;
 
         #endregion Fields
 
@@ -32,34 +32,34 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cudaYolo = new Yolo(onnxModel: model, cuda: true);
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            originalSizeimage = Image.Load<Rgba32>(path: originalSizeimagePath);
-            modelSizeImage = Image.Load<Rgba32>(path: modelSizeimagePath);
+            _cudaYolo = new Yolo(onnxModel: _model, cuda: true);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _originalSizeimage = Image.Load<Rgba32>(path: _originalSizeimagePath);
+            _modelSizeImage = Image.Load<Rgba32>(path: _modelSizeimagePath);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionOriginalSizeGpu()
         {
-            return cudaYolo.RunObjectDetection(img: originalSizeimage, confidence: 0.25, iou: 0.45);
+            return _cudaYolo.RunObjectDetection(img: _originalSizeimage, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionOriginalSizeCpu()
         {
-            return cpuYolo.RunObjectDetection(img: originalSizeimage, confidence: 0.25, iou: 0.45);
+            return _cpuYolo.RunObjectDetection(img: _originalSizeimage, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionModelSizeGpu()
         {
-            return cudaYolo.RunObjectDetection(img: modelSizeImage, confidence: 0.25, iou: 0.45);
+            return _cudaYolo.RunObjectDetection(img: _modelSizeImage, confidence: 0.25, iou: 0.45);
         }
 
         [Benchmark]
         public List<ObjectDetection> ObjectDetectionModelSizeCpu()
         {
-            return cpuYolo.RunObjectDetection(img: modelSizeImage, confidence: 0.25, iou: 0.45);
+            return _cpuYolo.RunObjectDetection(img: _modelSizeImage, confidence: 0.25, iou: 0.45);
         }
 
         #endregion Methods

@@ -13,6 +13,7 @@
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
     using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Configuration;
     using YoloDotNet.Test.Common.Enums;
 
@@ -21,13 +22,13 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
+        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
 
-        private Yolo cpuYolo;
-        private Image image;
-        private Stream imageJpegDataStream;
-        private List<ObjectDetection> objectDetections;
+        private Yolo _cpuYolo;
+        private Image _image;
+        private Stream _imageJpegDataStream;
+        private List<ObjectDetection> _objectDetections;
 
         #endregion Fields
 
@@ -36,17 +37,17 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load(path: testImage);
-            objectDetections = cpuYolo.RunObjectDetection(img: image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load(path: _testImage);
+            _objectDetections = _cpuYolo.RunObjectDetection(img: _image, confidence: 0.25, iou: 0.45);
         }
 
         [IterationSetup]
         public void IterationSetup()
         {
-            imageJpegDataStream = new MemoryStream();
-            image.SaveAsJpeg(imageJpegDataStream);
-            imageJpegDataStream.Position = 0;
+            _imageJpegDataStream = new MemoryStream();
+            _image.SaveAsJpeg(_imageJpegDataStream);
+            _imageJpegDataStream.Position = 0;
         }
 
         [Params(true, false)]
@@ -55,15 +56,15 @@
         [Benchmark(Baseline = true)]
         public Image DrawObjectDetection()
         {
-            image.Draw(detections: objectDetections, drawConfidence: DrawConfidence);
+            _image.Draw(detections: _objectDetections, drawConfidence: DrawConfidence);
 
-            return image;
+            return _image;
         }
 
         [Benchmark]
         public SKBitmap DrawExperimentalSkiaSharp()
         {
-            SKBitmap bitmap = SKBitmap.Decode(imageJpegDataStream);
+            SKBitmap bitmap = SKBitmap.Decode(_imageJpegDataStream);
             using (SKCanvas canvas = new SKCanvas(bitmap))
             {
                 SKTypeface typeface = SKTypeface.FromFamilyName(
@@ -81,7 +82,7 @@
                     Style = SKPaintStyle.Fill
                 };
 
-                foreach (var detection in objectDetections)
+                foreach (var detection in _objectDetections)
                 {
                     var color = HexToRgba(detection.Label.Color, ImageConfig.DEFAULT_OPACITY);
 

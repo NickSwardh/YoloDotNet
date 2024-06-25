@@ -8,6 +8,7 @@
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
     using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
@@ -15,12 +16,12 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.ObbDetection);
-        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Island);
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObbDetection);
+        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Island);
 
-        private Yolo cpuYolo;
-        private Image image;
-        private List<OBBDetection> oBBDetections;
+        private Yolo _cpuYolo;
+        private Image _image;
+        private List<OBBDetection> _oBBDetections;
 
         #endregion Fields
 
@@ -29,9 +30,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load(path: testImage);
-            oBBDetections = cpuYolo.RunObbDetection(img: image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load(path: _testImage);
+            _oBBDetections = _cpuYolo.RunObbDetection(img: _image, confidence: 0.25, iou: 0.45);
         }
 
         [Params(true,false)]
@@ -40,9 +41,9 @@
         [Benchmark]
         public Image DrawOrientedBoundingBox()
         {
-            image.Draw(detections: oBBDetections, drawConfidence: DrawConfidence);
+            _image.Draw(detections: _oBBDetections, drawConfidence: DrawConfidence);
 
-            return image;
+            return _image;
         }
 
         #endregion Methods

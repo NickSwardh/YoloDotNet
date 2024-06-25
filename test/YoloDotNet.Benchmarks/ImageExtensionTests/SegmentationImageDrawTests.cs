@@ -8,6 +8,7 @@
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
     using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
@@ -15,12 +16,12 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.Segmentation);
-        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.People);
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.Segmentation);
+        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.People);
 
-        private Yolo cpuYolo;
-        private Image image;
-        private List<Segmentation> segmentations;
+        private Yolo _cpuYolo;
+        private Image _image;
+        private List<Segmentation> _segmentations;
 
         #endregion Fields
 
@@ -29,9 +30,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load(path: testImage);
-            segmentations = cpuYolo.RunSegmentation(img: image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load(path: _testImage);
+            _segmentations = _cpuYolo.RunSegmentation(img: _image, confidence: 0.25, iou: 0.45);
         }
 
         [Params(true,false)]
@@ -40,9 +41,9 @@
         [Benchmark]
         public Image DrawSegmentation()
         {
-            image.Draw(segmentations: segmentations, drawConfidence: DrawConfidence);
+            _image.Draw(segmentations: _segmentations, drawConfidence: DrawConfidence);
 
-            return image;
+            return _image;
         }
 
         #endregion Methods

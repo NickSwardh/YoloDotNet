@@ -8,6 +8,7 @@
     using YoloDotNet.Enums;
     using YoloDotNet.Models;
     using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
@@ -15,12 +16,12 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.Classification);
-        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Hummingbird);
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.Classification);
+        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Hummingbird);
 
-        private Yolo cpuYolo;
-        private Image image;
-        private List<Classification> classifications;
+        private Yolo _cpuYolo;
+        private Image _image;
+        private List<Classification> _classifications;
 
         #endregion Fields
 
@@ -29,9 +30,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load(path: testImage);
-            classifications = cpuYolo.RunClassification(img: image, classes: 1);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load(path: _testImage);
+            _classifications = _cpuYolo.RunClassification(img: _image, classes: 1);
         }
 
         [Params(true,false)]
@@ -40,9 +41,9 @@
         [Benchmark]
         public Image DrawClassification()
         {
-            image.Draw(classifications: classifications, drawConfidence: DrawConfidence);
+            _image.Draw(classifications: _classifications, drawConfidence: DrawConfidence);
 
-            return image;
+            return _image;
         }
 
         #endregion Methods

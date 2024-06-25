@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Benchmarks
+﻿namespace YoloDotNet.Test.Common
 {
     using System;
     using System.IO;

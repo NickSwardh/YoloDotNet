@@ -6,17 +6,18 @@
 
     using YoloDotNet.Enums;
     using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
 
     [MemoryDiagnoser]
     public class ResizeImageTests
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private static string testImage = SharedConfig.GetTestImage(imageName: "street640x640.jpg");
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
+        private static string _testImage = SharedConfig.GetTestImage(imageName: "street640x640.jpg");
 
-        private Yolo cpuYolo;
-        private Image image;
+        private Yolo _cpuYolo;
+        private Image _image;
 
         #endregion Fields
 
@@ -25,16 +26,16 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load(path: testImage);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load(path: _testImage);
         }
 
         [Benchmark]
         public Image<Rgb24> ResizeImage()
         {
-            return image.ResizeImage(
-                        w: cpuYolo.OnnxModel.Input.BatchSize,
-                        h: cpuYolo.OnnxModel.Input.Channels);
+            return _image.ResizeImage(
+                        w: _cpuYolo.OnnxModel.Input.BatchSize,
+                        h: _cpuYolo.OnnxModel.Input.Channels);
         }
 
         #endregion Methods

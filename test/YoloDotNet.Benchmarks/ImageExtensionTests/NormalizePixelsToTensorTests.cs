@@ -9,6 +9,7 @@
 
     using YoloDotNet.Enums;
     using YoloDotNet.Extensions;
+    using YoloDotNet.Test.Common;
     using YoloDotNet.Test.Common.Enums;
 
     [MemoryDiagnoser]
@@ -16,15 +17,15 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
-        private ArrayPool<float> customSizeFloatPool;
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
+        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
+        private ArrayPool<float> _customSizeFloatPool;
 
-        private int tensorBufferSize;
+        private int _tensorBufferSize;
 
-        private Yolo cpuYolo;
-        private Image<Rgb24> image;
-        private float[] tensorArrayBuffer;
+        private Yolo _cpuYolo;
+        private Image<Rgb24> _image;
+        private float[] _tensorArrayBuffer;
 
         #endregion Fields
 
@@ -33,28 +34,28 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load<Rgba32>(path: testImage).ResizeImage(w: cpuYolo.OnnxModel.Input.Width, h: cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load<Rgba32>(path: _testImage).ResizeImage(w: _cpuYolo.OnnxModel.Input.Width, h: _cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
 
-            tensorBufferSize = cpuYolo.OnnxModel.Input.BatchSize * cpuYolo.OnnxModel.Input.Channels * cpuYolo.OnnxModel.Input.Width * cpuYolo.OnnxModel.Input.Height;
-            customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: tensorBufferSize + 1, maxArraysPerBucket: 10);
-            tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: tensorBufferSize);
+            _tensorBufferSize = _cpuYolo.OnnxModel.Input.BatchSize * _cpuYolo.OnnxModel.Input.Channels * _cpuYolo.OnnxModel.Input.Width * _cpuYolo.OnnxModel.Input.Height;
+            _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
+            _tensorArrayBuffer = _customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            customSizeFloatPool.Return(array: tensorArrayBuffer);
+            _customSizeFloatPool.Return(array: _tensorArrayBuffer);
         }
 
         [Benchmark]
         public DenseTensor<float> NormalizePixelsToTensor()
         {
-            return image.NormalizePixelsToTensor(
-                        inputBatchSize: cpuYolo.OnnxModel.Input.BatchSize,
-                        inputChannels: cpuYolo.OnnxModel.Input.Channels,
-                        tensorBufferSize: tensorBufferSize,
-                        tensorArrayBuffer: tensorArrayBuffer);
+            return _image.NormalizePixelsToTensor(
+                        inputBatchSize: _cpuYolo.OnnxModel.Input.BatchSize,
+                        inputChannels: _cpuYolo.OnnxModel.Input.Channels,
+                        tensorBufferSize: _tensorBufferSize,
+                        tensorArrayBuffer: _tensorArrayBuffer);
         }
 
         #endregion Methods

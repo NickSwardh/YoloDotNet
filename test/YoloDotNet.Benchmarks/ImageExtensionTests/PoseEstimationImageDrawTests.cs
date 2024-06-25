@@ -16,12 +16,12 @@
     {
         #region Fields
 
-        private static string model = SharedConfig.GetTestModel(modelType: ModelType.PoseEstimation);
-        private static string testImage = SharedConfig.GetTestImage(imageType: ImageType.Crosswalk);
+        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.PoseEstimation);
+        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Crosswalk);
 
-        private Yolo cpuYolo;
-        private Image image;
-        private List<PoseEstimation> poseEstimations;
+        private Yolo _cpuYolo;
+        private Image _image;
+        private List<PoseEstimation> _poseEstimations;
 
         #endregion Fields
 
@@ -30,9 +30,9 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            cpuYolo = new Yolo(onnxModel: model, cuda: false);
-            image = Image.Load(path: testImage);
-            poseEstimations = cpuYolo.RunPoseEstimation(img: image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            _image = Image.Load(path: _testImage);
+            _poseEstimations = _cpuYolo.RunPoseEstimation(img: _image, confidence: 0.25, iou: 0.45);
         }
 
         [Params(true,false)]
@@ -41,9 +41,9 @@
         [Benchmark]
         public Image DrawPoseEstimation()
         {
-            image.Draw(segmentations: poseEstimations, CustomPoseMarkerColorMap.PoseMarkerOptions, drawConfidence: DrawConfidence);
+            _image.Draw(segmentations: _poseEstimations, CustomPoseMarkerColorMap.PoseMarkerOptions, drawConfidence: DrawConfidence);
 
-            return image;
+            return _image;
         }
 
         #endregion Methods
