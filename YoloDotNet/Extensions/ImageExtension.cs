@@ -105,6 +105,42 @@
         }
 
         /// <summary>
+        /// Extract and normalize pixel values in an image into a DenseTensor object.
+        /// </summary>
+        /// <param name="img">The image to extract pixel values from.</param>
+        /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
+        public static DenseTensor<float> NormalizePixelsToTensor(this Image<Rgb24> img, int inputBatchSize, int inputChannels, int tensorBufferSize, float[] tensorArrayBuffer)
+        {
+            var (width, height) = (img.Width, img.Height);
+
+            var pixelsPerChannel = tensorBufferSize / inputChannels;
+
+            var pixelIndex = 0;
+
+            for (int y = 0; y < height; y++)
+            {
+                var pixelSpan = img.DangerousGetPixelRowMemory(y).Span;
+
+                for (int x = 0; x < width; x++, pixelIndex++)
+                {
+                    var r = pixelSpan[x].R;
+                    var g = pixelSpan[x].G;
+                    var b = pixelSpan[x].B;
+
+                    if ((r | g | b) == 0)
+                        continue;
+
+                    tensorArrayBuffer[pixelIndex] = r / 255.0F;
+                    tensorArrayBuffer[pixelIndex + pixelsPerChannel] = g / 255.0F;
+                    tensorArrayBuffer[pixelIndex + pixelsPerChannel * 2] = b / 255.0F;
+                }
+            }
+
+            // Due to how the ArrayPool works, the tensorArrayBuffer can be larger than the actual tensor size, we need to slice it to the correct size.
+            return new DenseTensor<float>(tensorArrayBuffer.AsMemory().Slice(start: 0, length: tensorBufferSize), [inputBatchSize, inputChannels, width, height]);
+        }
+
+        /// <summary>
         /// Retrieves segmented pixels from an image based on the specified function.
         /// </summary>
         /// <param name="image">The image from which to retrieve segmented pixels.</param>

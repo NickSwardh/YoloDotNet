@@ -1,9 +1,16 @@
-﻿namespace YoloDotNet.Tests.Configuration
+﻿namespace YoloDotNet.Test.Common
 {
-    public static class Config
+    using System;
+    using System.IO;
+
+    using YoloDotNet.Enums;
+    using YoloDotNet.Test.Common.Enums;
+
+    public static class SharedConfig
     {
-        const string BASE_MODELS = @"..\..\..\assets\models";
-        const string BASE_MEDIA = @"..\..\..\assets\media";
+        private const string ASSETS_FOLDER = @".\assets";
+        private const string BASE_MODELS = ASSETS_FOLDER + @"\models";
+        private const string BASE_MEDIA = ASSETS_FOLDER + @"\media";
 
         public static string GetTestModel(ModelType modelType) => modelType switch
         {
@@ -24,5 +31,7 @@
             ImageType.Island => Path.Combine(BASE_MEDIA, "island.jpg"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
+
+        public static string GetTestImage(string imageName) => Path.Combine(BASE_MEDIA, imageName);
     }
 }

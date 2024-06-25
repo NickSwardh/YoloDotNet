@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Tests.Configuration.Enums
+﻿namespace YoloDotNet.Test.Common.Enums
 {
     public enum ImageType
     {

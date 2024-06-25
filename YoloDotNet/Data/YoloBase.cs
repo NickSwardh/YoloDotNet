@@ -15,6 +15,10 @@
         protected readonly ParallelOptions _parallelOptions;
         private readonly bool _useCuda;
 
+        private int _tensorBufferSize;
+        private ArrayPool<float> _customSizeFloatPool;
+        protected ArrayPool<ObjectResult> _customSizeObjectResultPool;
+
         private readonly object _progressLock = new();
 
         #region Contracts
@@ -60,6 +64,11 @@
 
             if (useCuda && allocateGpuMemory)
                 _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
+
+            // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
+            _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
+            _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
+            _customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
         }
 
         /// <summary>
@@ -75,25 +84,39 @@
             VerifyExpectedModelType(expectedModel);
 
             using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
-            var tensorPixels = resizedImg.NormalizePixelsToTensor(OnnxModel.Input.BatchSize, OnnxModel.Input.Channels);
 
-            lock (_progressLock)
+            var tensorArrayBuffer = _customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+
+            try
             {
-                using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
-
-                var inputNames = new Dictionary<string, OrtValue>
+                lock (_progressLock)
                 {
-                    { OnnxModel.InputName, inputOrtValue }
-                };
+                    var tensorPixels = resizedImg.NormalizePixelsToTensor(
+                        inputBatchSize: OnnxModel.Input.BatchSize,
+                        inputChannels: OnnxModel.Input.Channels,
+                        tensorBufferSize: _tensorBufferSize,
+                        tensorArrayBuffer: tensorArrayBuffer);
 
-                using var ortResults = _session.Run(new RunOptions(), inputNames, OnnxModel.OutputNames);
+                    using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
-                Tensors = OnnxModel.OutputNames.Zip(ortResults, (output, ort) => new { output, ort })
-                    .ToDictionary(item => item.output, item => item.ort);
+                    var inputNames = new Dictionary<string, OrtValue>
+                    {
+                        { OnnxModel.InputName, inputOrtValue }
+                    };
 
-                return InvokeInferenceType(img, confidence, iouThreshold) is List<T> results
-                    ? results
-                    : [];
+                    using var ortResults = _session.Run(new RunOptions(), inputNames, OnnxModel.OutputNames);
+
+                    Tensors = OnnxModel.OutputNames.Zip(ortResults, (output, ort) => new { output, ort })
+                        .ToDictionary(item => item.output, item => item.ort);
+
+                    return InvokeInferenceType(img, confidence, iouThreshold) is List<T> results
+                        ? results
+                        : [];
+                }
+            }
+            finally
+            {
+                _customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
             }
         }
 

@@ -241,3 +241,152 @@ https://github.com/ultralytics/ultralytics
 https://github.com/sstainba/Yolov8.Net
 
 https://github.com/mentalstack/yolov5-net
+
+# Benchmarks
+
+There are some benchmarks included in the project. To run them, you simply need to build the project and run the `YoloDotNet.Benchmarks` project.
+The solution must be set to Release mode to run the benchmarks.
+
+There is a if DEBUG section in the benchmark project that will run the benchmarks in Debug mode, but it is not recommended as it will not give accurate results.
+This is however useful to debug and step through the code. Two examples have been left in place to show how to run the benchmarks in Debug mode, but have been commented out.
+
+Because there is no persistant storage for benchmark results, the results below are in the form of starting point and ending point.
+If one makes changes to the benchmarks, you would move the ending point to the starting point and run the benchmarks again to see the improvements and those values would 
+be the new ending point.
+
+Benchmark results would be very much based on the hardware used.
+It is important to try run benchmarks on the same hardware for future comparisons. If different hardware is used, it is important to note the hardware used,
+as the results would be different, thus the starting point and ending point would need to be updated. Hopefully in future a single hardware configuration can be used for benchmarks,
+before updating documentation.
+
+## Simple Benchmarks
+
+Simple benchmarks were modeled around the test project. The test project uses the same images and models as the benchmarks. The benchmarks are run on the same images and models as the test project.
+These benchmarks provide a good starting point to identify bottlenecks and areas for improvement.
+
+The hardware these benchmarks used are detailed below, the graphics card used was a Nvidia RTX 4070 TI Super.
+
+// * Summary *
+
+BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.3593/23H2/2023Update/SunValley3)
+Intel Core i9-10900K CPU 3.70GHz, 1 CPU, 20 logical and 10 physical cores
+.NET SDK 8.0.300
+  [Host]     : .NET 8.0.5 (8.0.524.21615), X64 RyuJIT AVX2
+  DefaultJob : .NET 8.0.5 (8.0.524.21615), X64 RyuJIT AVX2
+
+
+### Starting Point
+
+The starting point means that the benchmarks are run without any optimizations or changes to the code.
+
+| Method                     | Mean     | Error     | StdDev    | Gen0   | Allocated |
+|--------------------------- |---------:|----------:|----------:|-------:|----------:|
+| RunSimpleClassificationGpu | 6.397 ms | 0.1018 ms | 0.0952 ms | 7.8125 | 674.09 KB |
+| RunSimpleClassificationCpu | 6.139 ms | 0.0889 ms | 0.0788 ms | 7.8125 | 674.14 KB |
+
+| Method                      | Mean     | Error    | StdDev   | Gen0     | Gen1     | Gen2     | Allocated |
+|---------------------------- |---------:|---------:|---------:|---------:|---------:|---------:|----------:|
+| RunSimpleObjectDetectionGpu | 12.93 ms | 0.165 ms | 0.154 ms | 500.0000 | 484.3750 | 484.3750 |   4.84 MB |
+| RunSimpleObjectDetectionCpu | 54.55 ms | 0.832 ms | 0.738 ms | 444.4444 | 444.4444 | 444.4444 |   4.84 MB |
+
+| Method                   | Mean      | Error    | StdDev   | Gen0     | Gen1     | Gen2     | Allocated |
+|------------------------- |----------:|---------:|---------:|---------:|---------:|---------:|----------:|
+| RunSimpleObbDetectionGpu |  19.22 ms | 0.248 ms | 0.232 ms | 875.0000 | 875.0000 | 875.0000 |  12.22 MB |
+| RunSimpleObbDetectionCpu | 176.15 ms | 3.402 ms | 4.178 ms | 333.3333 | 333.3333 | 333.3333 |  12.22 MB |
+
+| Method                     | Mean     | Error    | StdDev   | Gen0     | Gen1     | Gen2     | Allocated |
+|--------------------------- |---------:|---------:|---------:|---------:|---------:|---------:|----------:|
+| RunSimplePoseEstimationGpu | 11.66 ms | 0.121 ms | 0.113 ms | 484.3750 | 484.3750 | 484.3750 |   4.82 MB |
+| RunSimplePoseEstimationCpu | 55.34 ms | 0.917 ms | 0.813 ms | 444.4444 | 444.4444 | 444.4444 |   4.82 MB |
+
+| Method                   | Mean     | Error   | StdDev  | Gen0      | Gen1     | Gen2     | Allocated |
+|------------------------- |---------:|--------:|--------:|----------:|---------:|---------:|----------:|
+| RunSimpleSegmentationGpu | 286.7 ms | 2.80 ms | 2.34 ms | 1000.0000 | 500.0000 | 500.0000 |  14.75 MB |
+| RunSimpleSegmentationCpu | 306.4 ms | 5.18 ms | 4.84 ms | 1000.0000 | 500.0000 | 500.0000 |  14.76 MB |
+
+| Method                         | Mean      | Error     | StdDev    | Gen0     | Gen1     | Gen2     | Allocated |
+|------------------------------- |----------:|----------:|----------:|---------:|---------:|---------:|----------:|
+| ObjectDetectionOriginalSizeGpu | 12.807 ms | 0.1655 ms | 0.1548 ms | 500.0000 | 484.3750 | 484.3750 |   4.84 MB |
+| ObjectDetectionOriginalSizeCpu | 56.389 ms | 1.1204 ms | 1.3760 ms | 375.0000 | 375.0000 | 375.0000 |   4.84 MB |
+| ObjectDetectionModelSizeGpu    |  8.104 ms | 0.0284 ms | 0.0237 ms | 484.3750 | 484.3750 | 484.3750 |   4.82 MB |
+| ObjectDetectionModelSizeCpu    | 52.827 ms | 1.0047 ms | 1.2706 ms | 400.0000 | 400.0000 | 400.0000 |   4.82 MB |
+
+| Method                  | Mean     | Error   | StdDev  | Allocated |
+|------------------------ |---------:|--------:|--------:|----------:|
+| NormalizePixelsToTensor | 801.9 us | 3.11 us | 2.91 us |     154 B |
+
+| Method             | DrawConfidence | Mean     | Error   | StdDev  | Gen0    | Gen1    | Allocated |
+|------------------- |--------------- |---------:|--------:|--------:|--------:|--------:|----------:|
+| DrawClassification | False          | 450.8 us | 1.52 us | 1.35 us | 50.7813 | 10.2539 | 519.59 KB |
+| DrawClassification | True           | 842.0 us | 4.16 us | 3.89 us | 93.7500 | 29.2969 | 957.68 KB |
+
+| Method              | DrawConfidence | Mean     | Error    | StdDev   | Gen0      | Gen1     | Allocated |
+|-------------------- |--------------- |---------:|---------:|---------:|----------:|---------:|----------:|
+| DrawObjectDetection | False          | 13.88 ms | 0.103 ms | 0.096 ms | 1375.0000 | 171.8750 |   13.8 MB |
+| DrawObjectDetection | True           | 34.17 ms | 0.405 ms | 0.378 ms | 3666.6667 | 666.6667 |  37.49 MB |
+
+| Method                  | DrawConfidence | Mean     | Error     | StdDev    | Gen0     | Gen1     | Allocated |
+|------------------------ |--------------- |---------:|----------:|----------:|---------:|---------:|----------:|
+| DrawOrientedBoundingBox | False          | 2.892 ms | 0.0346 ms | 0.0323 ms | 277.3438 |  46.8750 |   2.78 MB |
+| DrawOrientedBoundingBox | True           | 5.932 ms | 0.0206 ms | 0.0193 ms | 671.8750 | 171.8750 |   6.74 MB |
+
+| Method             | DrawConfidence | Mean     | Error    | StdDev   | Gen0      | Gen1     | Allocated |
+|------------------- |--------------- |---------:|---------:|---------:|----------:|---------:|----------:|
+| DrawPoseEstimation | False          | 14.08 ms | 0.044 ms | 0.041 ms |  906.2500 | 109.3750 |   9.07 MB |
+| DrawPoseEstimation | True           | 20.51 ms | 0.067 ms | 0.062 ms | 1656.2500 | 343.7500 |  16.63 MB |
+
+| Method           | DrawConfidence | Mean     | Error    | StdDev   | Gen0      | Gen1     | Allocated |
+|----------------- |--------------- |---------:|---------:|---------:|----------:|---------:|----------:|
+| DrawSegmentation | False          | 15.33 ms | 0.267 ms | 0.237 ms | 1296.8750 | 187.5000 |  12.88 MB |
+| DrawSegmentation | True           | 28.30 ms | 0.373 ms | 0.415 ms | 2666.6667 | 666.6667 |   28.7 MB |
+
+| Method      | Mean     | Error   | StdDev  | Gen0   | Gen1   | Allocated |
+|------------ |---------:|--------:|--------:|-------:|-------:|----------:|
+| ResizeImage | 263.9 us | 1.28 us | 1.20 us | 4.8828 | 0.4883 |  52.35 KB |
+
+## Ending Point 
+
+1. Implement a custom array pool which is able to provide buffers for the NormalizePixelsToTensor method. This dramatically reduces the GC overhead.
+Allocations and GC presure is greatly reduced.
+
+| Method                     | Mean     | Error     | StdDev    | Gen0   | Allocated |
+|--------------------------- |---------:|----------:|----------:|-------:|----------:|
+| RunSimpleClassificationGpu | 6.356 ms | 0.1185 ms | 0.1163 ms | 7.8125 |  86.08 KB |
+| RunSimpleClassificationCpu | 5.986 ms | 0.0341 ms | 0.0302 ms | 7.8125 |  86.15 KB |
+
+| Method                      | Mean     | Error    | StdDev   | Allocated |
+|---------------------------- |---------:|---------:|---------:|----------:|
+| RunSimpleObjectDetectionGpu | 11.74 ms | 0.096 ms | 0.080 ms |  70.64 KB |
+| RunSimpleObjectDetectionCpu | 53.92 ms | 0.947 ms | 0.839 ms |  71.16 KB |
+
+| Method                   | Mean      | Error    | StdDev   | Allocated |
+|------------------------- |----------:|---------:|---------:|----------:|
+| RunSimpleObbDetectionGpu |  17.39 ms | 0.204 ms | 0.191 ms | 224.74 KB |
+| RunSimpleObbDetectionCpu | 170.74 ms | 3.389 ms | 3.171 ms | 225.64 KB |
+
+| Method                     | Mean     | Error    | StdDev   | Allocated |
+|--------------------------- |---------:|---------:|---------:|----------:|
+| RunSimplePoseEstimationGpu | 10.73 ms | 0.095 ms | 0.089 ms | 133.83 KB |
+| RunSimplePoseEstimationCpu | 53.72 ms | 0.961 ms | 0.803 ms |  134.3 KB |
+
+| Method                   | Mean     | Error   | StdDev   | Median   | Gen0     | Allocated |
+|------------------------- |---------:|--------:|---------:|---------:|---------:|----------:|
+| RunSimpleSegmentationGpu | 271.8 ms | 5.00 ms | 10.09 ms | 267.6 ms | 500.0000 |  10.06 MB |
+| RunSimpleSegmentationCpu | 305.5 ms | 6.04 ms |  7.64 ms | 303.3 ms | 500.0000 |  10.06 MB |
+
+| Method                         | Mean      | Error     | StdDev    | Gen0    | Allocated |
+|------------------------------- |----------:|----------:|----------:|--------:|----------:|
+| ObjectDetectionOriginalSizeGpu | 12.045 ms | 0.0715 ms | 0.0634 ms | 15.6250 | 159.63 KB |
+| ObjectDetectionOriginalSizeCpu | 54.716 ms | 1.0659 ms | 1.5286 ms |       - | 159.84 KB |
+| ObjectDetectionModelSizeGpu    |  7.795 ms | 0.0947 ms | 0.0886 ms |       - | 136.87 KB |
+| ObjectDetectionModelSizeCpu    | 49.994 ms | 0.9314 ms | 0.8712 ms |       - | 137.76 KB |
+
+
+
+| Method                       | DrawConfidence | Mean      | Error     | StdDev    | Median    | Ratio        | RatioSD | Gen0      | Gen1      | Allocated   | Alloc Ratio     |
+|----------------------------- |--------------- |----------:|----------:|----------:|----------:|-------------:|--------:|----------:|----------:|------------:|----------------:|
+| DrawObjectDetection          | False          | 15.065 ms | 0.2662 ms | 0.7012 ms | 14.793 ms |     baseline |         | 1000.0000 | 1000.0000 | 14135.67 KB |                 |
+| DrawExperimentalSkiaSharp    | False          |  7.760 ms | 0.0723 ms | 0.0604 ms |  7.774 ms | 2.12x faster |   0.11x |         - |         - |    25.41 KB |   556.215x less |
+|                              |                |           |           |           |           |              |         |           |           |             |                 |
+| DrawObjectDetection          | True           | 36.689 ms | 0.6858 ms | 1.2011 ms | 36.091 ms |     baseline |         | 3000.0000 | 1000.0000 | 38392.75 KB |                 |
+| DrawExperimentalSkiaSharp    | True           |  7.617 ms | 0.0614 ms | 0.0544 ms |  7.598 ms | 4.90x faster |   0.20x |         - |         - |     22.9 KB | 1,676.654x less |

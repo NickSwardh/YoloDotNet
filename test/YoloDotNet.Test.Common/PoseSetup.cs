@@ -1,7 +1,9 @@
-﻿using YoloDotNet.Models;
-
-namespace ConsoleDemo.Config
+﻿namespace YoloDotNet.Test.Common
 {
+    using System.Collections.Generic;
+
+    using YoloDotNet.Models;
+
     /// <summary>
     /// Demonstrates configuring a custom pose marker profile with personalized colors and illustrating marker connections.
     /// </summary>
@@ -67,7 +69,7 @@ namespace ConsoleDemo.Config
         /// <summary>
         /// Configure the connections between pose markers and specify the colors to use.
         /// </summary>
-        private static YoloDotNet.Models.PoseMarker[] GetPoseMarkerConfiguration =>
+        private static Models.PoseMarker[] GetPoseMarkerConfiguration =>
         [
             new () // Nose
             {
