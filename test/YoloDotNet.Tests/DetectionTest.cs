@@ -10,7 +10,7 @@
             var testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
             var yolo = new Yolo(model, false);
-            var image = Image.Load<Rgba32>(testImage);
+            var image = SKImage.FromEncodedData(testImage);
 
             // Act
             var classification = yolo.RunClassification(image, 1);
@@ -27,13 +27,13 @@
             var testImage = SharedConfig.GetTestImage(ImageType.Street);
 
             var yolo = new Yolo(model, false);
-            var image = Image.Load<Rgba32>(testImage);
+            var image = SKImage.FromEncodedData(testImage);
 
             // Act
             var results = yolo.RunObjectDetection(image, 0.25, 0.45);
 
             // Assert
-            Assert.Equal(31, results.Count);
+            Assert.Equal(30, results.Count);
         }
 
         [Fact]
@@ -44,7 +44,7 @@
             var testImage = SharedConfig.GetTestImage(ImageType.Island);
 
             var yolo = new Yolo(model, false);
-            var image = Image.Load<Rgba32>(testImage);
+            var image = SKImage.FromEncodedData(testImage);
 
             // Act
             var results = yolo.RunObbDetection(image, 0.25, 0.45);
@@ -61,7 +61,7 @@
             var testImage = SharedConfig.GetTestImage(ImageType.People);
 
             var yolo = new Yolo(model, false);
-            var image = Image.Load<Rgba32>(testImage);
+            var image = SKImage.FromEncodedData(testImage);
 
             // Act
             var results = yolo.RunSegmentation(image, 0.25, 0.45);
@@ -78,7 +78,7 @@
             var testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
             var yolo = new Yolo(model, false);
-            var image = Image.Load<Rgba32>(testImage);
+            var image = SKImage.FromEncodedData(testImage);
 
             // Act
             var results = yolo.RunPoseEstimation(image, 0.25, 0.45);

@@ -8,7 +8,8 @@
         public static void AllocateGpuMemory(this InferenceSession session,
             OrtIoBinding ortIoBinding,
             RunOptions runOptions,
-            ArrayPool<float> customSizeFloatPool)
+            ArrayPool<float> customSizeFloatPool,
+            SKImageInfo resizeInfo)
         {
             // Get input shape.
             var inputShape = Array.ConvertAll(session.InputMetadata[session.InputNames[0]].Dimensions, Convert.ToInt64);
@@ -41,10 +42,10 @@
             ortIoBinding.SynchronizeBoundOutputs();
 
             // Initialize.
-            session.InitializeGpu(customSizeFloatPool);
+            session.InitializeGpu(customSizeFloatPool, resizeInfo);
         }
 
-        private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool)
+        private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool, SKImageInfo resizeInfo)
         {
             // Get model data from session
             var inputName = session.InputNames[0];
@@ -53,14 +54,15 @@
             var (batchSize, channels, width, height) = (dimensions[0], dimensions[1], dimensions[2], dimensions[3]);
 
             // Create blank image for initial inference
-            using var img = new Image<Rgba32>(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE);
-            using var resizedImg = img.ResizeImage(width, height);
+            using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
+
+            var resizedImg = img.ResizeImage(resizeInfo);
 
             // Prepare tensor buffer
             var tensorBufferSize = batchSize * channels * width * height;
             var tensorArrayBuffer = customSizeFloatPool.Rent(tensorBufferSize);
 
-            var normalizedTensorPixels = resizedImg.NormalizePixelsToTensor(batchSize, channels, tensorBufferSize, tensorArrayBuffer);
+            var normalizedTensorPixels = resizedImg.NormalizePixelsToTensor([batchSize, channels, width, height], tensorBufferSize, tensorArrayBuffer);
 
             var inputShape = new long[]
             {

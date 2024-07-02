@@ -12,8 +12,13 @@
         private int _tensorBufferSize;
 
         private Yolo _cpuYolo;
-        private Image<Rgb24> _image;
+
+        private SKImage _image;
         private float[] _tensorArrayBuffer;
+
+        private static SKBitmap _resizedBitmap;
+
+        private SKImageInfo _skImageInfo;
 
         #endregion Fields
 
@@ -23,7 +28,11 @@
         public void GlobalSetup()
         {
             _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load<Rgba32>(path: _testImage).ResizeImage(w: _cpuYolo.OnnxModel.Input.Width, h: _cpuYolo.OnnxModel.Input.Height).CloneAs<Rgb24>();
+            _image = SKImage.FromEncodedData(_testImage);
+
+            _skImageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+
+            _resizedBitmap = _image.ResizeImage(_skImageInfo);
 
             _tensorBufferSize = _cpuYolo.OnnxModel.Input.BatchSize * _cpuYolo.OnnxModel.Input.Channels * _cpuYolo.OnnxModel.Input.Width * _cpuYolo.OnnxModel.Input.Height;
             _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
@@ -37,13 +46,9 @@
         }
 
         [Benchmark]
-        public DenseTensor<float> NormalizePixelsToTensor()
+        public void NormalizePixelsToTensor()
         {
-            return _image.NormalizePixelsToTensor(
-                        inputBatchSize: _cpuYolo.OnnxModel.Input.BatchSize,
-                        inputChannels: _cpuYolo.OnnxModel.Input.Channels,
-                        tensorBufferSize: _tensorBufferSize,
-                        tensorArrayBuffer: _tensorArrayBuffer);
+            _ = _resizedBitmap.NormalizePixelsToTensor(_cpuYolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
         }
 
         #endregion Methods

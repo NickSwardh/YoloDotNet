@@ -5,11 +5,11 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.PoseEstimation);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Crosswalk);
+        private readonly string _model = SharedConfig.GetTestModel(modelType: ModelType.PoseEstimation);
+        private readonly string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Crosswalk);
 
         private Yolo _cpuYolo;
-        private Image _image;
+        private SKImage _image;
         private List<PoseEstimation> _poseEstimations;
 
         #endregion Fields
@@ -19,20 +19,25 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load(path: _testImage);
-            _poseEstimations = _cpuYolo.RunPoseEstimation(img: _image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(_model, false);
+            _image = SKImage.FromEncodedData(_testImage);
+            _poseEstimations = _cpuYolo.RunPoseEstimation(_image);
+        }
+
+        [GlobalCleanup]
+        public void CleanUp()
+        {
+            _cpuYolo.Dispose();
+            _image.Dispose();
         }
 
         [Params(true,false)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public Image DrawPoseEstimation()
+        public SKImage DrawPoseEstimation()
         {
-            _image.Draw(poseEstimations: _poseEstimations, CustomKeyPointColorMap.KeyPointOptions, drawConfidence: DrawConfidence);
-
-            return _image;
+            return _image.Draw(_poseEstimations, CustomKeyPointColorMap.KeyPointOptions, DrawConfidence);
         }
 
         #endregion Methods

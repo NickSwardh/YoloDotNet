@@ -21,26 +21,37 @@
 
         private readonly object _progressLock = new();
 
+        private SKImageInfo _imageInfo;
+
         #region Contracts
-        public abstract List<Classification> RunClassification(Image img, int classes);
-        public abstract List<ObjectDetection> RunObjectDetection(Image img, double confidence, double iou);
-        public abstract List<Segmentation> RunSegmentation(Image img, double confidence, double iou);
-        public abstract List<PoseEstimation> RunPoseEstimation(Image img, double confidence, double iou);
-        public abstract List<OBBDetection> RunObbDetection(Image img, double confidence, double iou);
+        public abstract List<Classification> RunClassification(SKImage img, int classes);
+
+        public abstract List<ObjectDetection> RunObjectDetection(SKImage img, double confidence, double iou);
+
+        public abstract List<Segmentation> RunSegmentation(SKImage img, double confidence, double iou);
+
+        public abstract List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence, double iou);
+
+        public abstract List<OBBDetection> RunObbDetection(SKImage img, double confidence, double iou);
+
         public abstract Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes);
         public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence, double iou);
         public abstract Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence, double iou);
         public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence, double iou);
         public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence, double iou);
+
+
         protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
-        protected abstract ObjectResult[] ObjectDetectImage(Image image, double confidence, double iou);
-        protected abstract List<Segmentation> SegmentImage(Image image, ObjectResult[] boxes);
-        protected abstract List<PoseEstimation> PoseEstimateImage(Image image, double confidence, double iou);
+        protected abstract ObjectResult[] ObjectDetectImage(SKImage image, double confidence, double iou);
+        protected abstract List<Segmentation> SegmentImage(SKImage image, ObjectResult[] boxes);
+        protected abstract List<PoseEstimation> PoseEstimateImage(SKImage image, double confidence, double iou);
         #endregion
 
         protected Dictionary<string, OrtValue> Tensors { get; set; } = [];
 
         public OnnxModel OnnxModel { get; init; }
+
+        public RunOptions _ortRunOptions;
 
         /// <summary>
         /// Initializes a new instance of the Yolo base class.
@@ -67,8 +78,10 @@
             _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
             _customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
 
+            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+
             if (useCuda && allocateGpuMemory)
-                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _customSizeFloatPool);
+                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _customSizeFloatPool, _imageInfo);
         }
 
         /// <summary>
@@ -79,11 +92,11 @@
         /// <param name="confidence"></param>
         /// <param name="iouThreshold"></param>
         /// <param name="expectedModel"></param>
-        protected List<T> Run<T>(Image img, double confidence, double iouThreshold, ModelType expectedModel, bool preloadGpu = false)
+        protected List<T> Run<T>(SKImage img, double confidence, double iouThreshold, ModelType expectedModel, bool preloadGpu = false)
         {
             VerifyExpectedModelType(expectedModel);
 
-            using var resizedImg = img.ResizeImage(OnnxModel.Input.Width, OnnxModel.Input.Height);
+            using var resizedImage = img.ResizeImage(_imageInfo);
 
             var tensorArrayBuffer = _customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
 
@@ -91,11 +104,7 @@
             {
                 lock (_progressLock)
                 {
-                    var tensorPixels = resizedImg.NormalizePixelsToTensor(
-                        inputBatchSize: OnnxModel.Input.BatchSize,
-                        inputChannels: OnnxModel.Input.Channels,
-                        tensorBufferSize: _tensorBufferSize,
-                        tensorArrayBuffer: tensorArrayBuffer);
+                    var tensorPixels = resizedImage.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
 
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
@@ -104,7 +113,7 @@
                         { OnnxModel.InputName, inputOrtValue }
                     };
 
-                    using var ortResults = _session.Run(new RunOptions(), inputNames, OnnxModel.OutputNames);
+                    using var ortResults = _session.Run(_runOptions, inputNames, OnnxModel.OutputNames);
 
                     Tensors = OnnxModel.OutputNames.Zip(ortResults, (output, ort) => new { output, ort })
                         .ToDictionary(item => item.output, item => item.ort);
@@ -123,7 +132,7 @@
         /// <summary>
         /// Invokes inference based on the ONNX model type, processing the input tensor and image data.
         /// </summary>
-        private object InvokeInferenceType(Image img, double confidence, double iouThreshold) => OnnxModel.ModelType switch
+        private object InvokeInferenceType(SKImage img, double confidence, double iouThreshold) => OnnxModel.ModelType switch
         {
             ModelType.Classification => ClassifyTensor((int)confidence),
             ModelType.ObjectDetection => ObjectDetectImage(img, confidence, iouThreshold).Select(x => (ObjectDetection)x).ToList(),
@@ -183,7 +192,7 @@
             _ = Parallel.For(0, totalFrames, _parallelOptions, i =>
             {
                 var frame = frames[i];
-                using var img = Image.Load<Rgba32>(frame);
+                using var img = SKImage.FromEncodedData(frame);
 
                 var results = Run<T>(img, confidence, iouThreshold, OnnxModel.ModelType);
                 batch[i] = results;
@@ -198,7 +207,6 @@
                 {
                     VideoProgressEvent?.Invoke((int)progress, null!);
                 }
-
             });
 
             return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x]);
@@ -207,32 +215,22 @@
         /// <summary>
         /// Draw labels on video frames
         /// </summary>
-        private static void DrawResultsOnVideoFrame<T>(Image<Rgba32> img, List<T> results, string savePath, VideoSettings videoSettings)
+        private static void DrawResultsOnVideoFrame<T>(SKImage img, List<T> results, string savePath, VideoSettings videoSettings)
         {
             var drawConfidence = videoSettings.DrawConfidence;
 
-            switch (results)
+            SKImage tmpImage = results switch
             {
-                case List<Classification> classifications:
-                    img.Draw(classifications, drawConfidence);
-                    break;
-                case List<ObjectDetection> objectDetections:
-                    img.Draw(objectDetections, drawConfidence);
-                    break;
-                case List<OBBDetection> obbDetections:
-                    img.Draw(obbDetections, drawConfidence);
-                    break;
-                case List<Segmentation> segmentations:
-                    img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence);
-                    break;
-                case List<PoseEstimation> poseEstimations:
-                    img.Draw(poseEstimations, videoSettings.KeyPointOptions, drawConfidence);
-                    break;
-                default:
-                    throw new NotSupportedException("Unknown or incompatible ONNX model type.");
-            }
+                List<Classification> classifications => img.Draw(classifications, drawConfidence),
+                List<ObjectDetection> objectDetections => img.Draw(objectDetections, drawConfidence),
+                List<OBBDetection> obbDetections => img.Draw(obbDetections, drawConfidence),
+                List<Segmentation> segmentations => img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence),
+                List<PoseEstimation> poseEstimations => img.Draw(poseEstimations, videoSettings.KeyPointOptions, drawConfidence),
+                _ => throw new NotSupportedException("Unknown or incompatible ONNX model type."),
+            };
 
-            img.SaveAsync(savePath).ConfigureAwait(false);
+            tmpImage.Save(savePath, SKEncodedImageFormat.Png, 100);
+            tmpImage.Dispose();
         }
 
         /// <summary>
@@ -241,22 +239,23 @@
         /// <param name="predictions">The list of object detection results to process.</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        protected static ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
+        protected ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold, bool isSkia = true)
         {
             Array.Sort(predictions, (a, b) => b.Confidence.CompareTo(a.Confidence));
             var result = new HashSet<ObjectResult>();
 
-            var span = predictions.AsSpan();
+            var predictionSpan = predictions.AsSpan();
+            var totalPredictions = predictionSpan.Length;
 
-            for (int i = 0; i < span.Length; i++)
+            for (int i = 0; i < totalPredictions; i++)
             {
-                var item = span[i];
+                var item = predictionSpan[i];
 
                 if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false)
                     result.Add(item);
             }
 
-            return [.. result];
+            return [..result];
         }
 
         /// <summary>
@@ -284,16 +283,16 @@
         /// Calculate rectangle area
         /// </summary>
         /// <param name="rect"></param>
-        protected static float CalculateArea(RectangleF rect) => rect.Width * rect.Height;
+        protected static float CalculateArea(SKRectI rect) => rect.Width * rect.Height;
 
         /// <summary>
         /// Calculate IoU (Intersection Over Union) bounding box overlap.
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        protected static float CalculateIoU(RectangleF a, RectangleF b)
+        protected static float CalculateIoU(SKRectI a, SKRectI b)
         {
-            var intersectionArea = CalculateArea(RectangleF.Intersect(a, b));
+            var intersectionArea = CalculateArea(SKRectI.Intersect(a, b));
 
             return intersectionArea == 0
                 ? 0
@@ -306,7 +305,7 @@
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
         /// <param name="model">The ONNX model containing the input dimensions.</param>
-        protected static (int, int, float) CalculateGain(Image image, OnnxModel model)
+        protected static (int, int, float) CalculateGain(SKImage image, OnnxModel model)
         {
             var (w, h) = (image.Width, image.Height);
 

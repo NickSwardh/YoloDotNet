@@ -4,9 +4,6 @@ using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
 
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-
 using YoloDotNet;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;
@@ -14,6 +11,7 @@ using ConsoleDemo.Config;
 using YoloDotNet.Extensions;
 using YoloDotNet.Test.Common;
 using YoloDotNet.Test.Common.Enums;
+using SkiaSharp;
 
 Console.CursorVisible = false;
 
@@ -45,57 +43,60 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(modelPath, cuda, primeGpu);
-    using var image = Image.Load<Rgba32>(imagePath);
+    using var image = SKImage.FromEncodedData(imagePath);
 
     var device = cuda ? "GPU" : "CPU";
     device += device == "CPU" ? "" : primeGpu ? ", primed: yes" : ", primed: no";
 
     Console.Write($"{yolo.OnnxModel.ModelType,-20}device: {device,-20}");
-
-    object results = yolo.OnnxModel.ModelType switch
-    {
-        ModelType.Classification => yolo.RunClassification(image, 5),   // Top 5 classes, default: classes = 1
-        ModelType.ObjectDetection => yolo.RunObjectDetection(image),    // Example with default confidence (0.25) and IoU (0.45) threshold;
-        ModelType.ObbDetection => yolo.RunObbDetection(image, 0.35, 0.5),
-        ModelType.Segmentation => yolo.RunSegmentation(image, 0.25, 0.5),
-        ModelType.PoseEstimation => yolo.RunPoseEstimation(image, 0.25, 0.5),
-        _ => throw new NotImplementedException()
-    };
-
-    Console.Write("done!");
     Console.WriteLine();
 
-    // Draw results and save image
-    if (results is List<Classification> classification)
+    SKImage resultImage = SKImage.Create(new SKImageInfo());
+    List<LabelModel> labels = new();
+
+    switch (yolo.OnnxModel.ModelType)
     {
-        image.Draw(classification);
+        case ModelType.Classification:
+            {
+                var result = yolo.RunClassification(image, 1);
+                labels = result.Select(x => new LabelModel { Name = x.Label }).ToList();
+                resultImage = image.Draw(result);
+                break;
+            }
+
+        case ModelType.ObjectDetection:
+            {
+                var result = yolo.RunObjectDetection(image);
+                labels = result.Select(x => x.Label).ToList();
+                resultImage = image.Draw(result);
+                break;
+            }
+        case ModelType.ObbDetection:
+            {
+                var result = yolo.RunObbDetection(image);
+                labels = result.Select(x => x.Label).ToList();
+                resultImage = image.Draw(result);
+                break;
+            }
+        case ModelType.Segmentation:
+            {
+                var result = yolo.RunSegmentation(image);
+                labels = result.Select(x => x.Label).ToList();
+
+                resultImage = image.Draw(result);
+                break;
+            }
+        case ModelType.PoseEstimation:
+            {
+                var result = yolo.RunPoseEstimation(image);
+                labels = result.Select(x => x.Label).ToList();
+                resultImage = image.Draw(result, CustomKeyPointColorMap.KeyPointOptions);
+                break;
+            }
     }
 
-    if (results is List<ObjectDetection> objectDetection)
-    {
-        DisplayDetectedLabels(objectDetection.Select(x => x.Label));
-        image.Draw(objectDetection);
-    }
-
-    if (results is List<OBBDetection> obbDetection)
-    {
-        DisplayDetectedLabels(obbDetection.Select(x => x.Label));
-        image.Draw(obbDetection);
-    }
-
-    if (results is List<Segmentation> segmentation)
-    {
-        DisplayDetectedLabels(segmentation.Select(x => x.Label));
-        image.Draw(segmentation);
-    }
-
-    if (results is List<PoseEstimation> poseEstimation)
-    {
-        DisplayDetectedLabels(poseEstimation.Select(x => x.Label));
-        image.Draw(poseEstimation, CustomKeyPointColorMap.KeyPointOptions);
-    }
-
-    image.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{yolo.OnnxModel.ModelType}.jpg"));
+    DisplayDetectedLabels(labels);
+    resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{yolo.OnnxModel.ModelType}.jpg"), SKEncodedImageFormat.Jpeg);
 }
 
 static void ObjectDetectionOnVideo()
@@ -104,8 +105,8 @@ static void ObjectDetectionOnVideo()
     {
         VideoFile = SharedConfig.GetTestImage("walking.mp4"),
         OutputDir = DemoSettings.OUTPUT_FOLDER,
-        //GenerateVideo = true,
-        //DrawLabels = true,
+        //GenerateVideo = false,
+        //DrawLabels = false,
         //FPS = 30,
         //Width = 640, // Resize video...
         //Height = -2, // -2 = automatically calculate dimensions to keep proportions
@@ -152,6 +153,9 @@ static void ObjectDetectionOnVideo()
 
 static void DisplayDetectedLabels(IEnumerable<LabelModel> labels)
 {
+    if (!labels.Any())
+        return;
+
     var ls = labels.GroupBy(x => x.Name)
         .ToDictionary(x => x.Key, x => x.Count());
 

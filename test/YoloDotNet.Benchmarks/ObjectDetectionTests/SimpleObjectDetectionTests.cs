@@ -5,12 +5,12 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
+        private readonly string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
+        private readonly string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
 
         private Yolo _cudaYolo;
         private Yolo _cpuYolo;
-        private Image _image;
+        private SKImage _image;
 
         #endregion Fields
 
@@ -19,21 +19,29 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(onnxModel: _model, cuda: true);
+            _cudaYolo = new Yolo(onnxModel: _model, cuda: true, true);
             _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load<Rgba32>(path: _testImage);
+            _image = SKImage.FromEncodedData(_testImage);
+        }
+
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            _cudaYolo.Dispose();
+            _cpuYolo.Dispose();
+            _image.Dispose();
         }
 
         [Benchmark]
         public List<ObjectDetection> RunSimpleObjectDetectionGpu()
         {
-            return _cudaYolo.RunObjectDetection(img: _image, confidence: 0.25, iou: 0.45);
+            return _cudaYolo.RunObjectDetection( _image);
         }
 
         [Benchmark]
         public List<ObjectDetection> RunSimpleObjectDetectionCpu()
         {
-            return _cpuYolo.RunObjectDetection(img: _image, confidence: 0.25, iou: 0.45);
+            return _cpuYolo.RunObjectDetection(_image);
         }
 
         #endregion Methods

@@ -5,12 +5,12 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.Segmentation);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.People);
+        private readonly string _model = SharedConfig.GetTestModel(ModelType.Segmentation);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
 
         private Yolo _cudaYolo;
         private Yolo _cpuYolo;
-        private Image _image;
+        private SKImage _image;
 
         #endregion Fields
 
@@ -19,21 +19,29 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(onnxModel: _model, cuda: true);
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load<Rgba32>(path: _testImage);
+            _cudaYolo = new Yolo(_model, true);
+            _cpuYolo = new Yolo(_model, false);
+            _image = SKImage.FromEncodedData(_testImage);
+        }
+
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _cudaYolo.Dispose();
+            _cpuYolo.Dispose();
+            _image.Dispose();
         }
 
         [Benchmark]
         public List<Segmentation> RunSimpleSegmentationGpu()
         {
-            return _cudaYolo.RunSegmentation(img: _image, confidence: 0.25, iou: 0.45);
+            return _cudaYolo.RunSegmentation(_image);
         }
 
         [Benchmark]
         public List<Segmentation> RunSimpleSegmentationCpu()
         {
-            return _cpuYolo.RunSegmentation(img: _image, confidence: 0.25, iou: 0.45);
+            return _cpuYolo.RunSegmentation(_image);
         }
 
         #endregion Methods

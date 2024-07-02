@@ -5,11 +5,11 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.Segmentation);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.People);
+        private readonly string _model = SharedConfig.GetTestModel(ModelType.Segmentation);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
 
         private Yolo _cpuYolo;
-        private Image _image;
+        private SKImage _image;
         private List<Segmentation> _segmentations;
 
         #endregion Fields
@@ -19,20 +19,25 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load(path: _testImage);
-            _segmentations = _cpuYolo.RunSegmentation(img: _image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(_model, false);
+            _image = SKImage.FromEncodedData(_testImage);
+            _segmentations = _cpuYolo.RunSegmentation(_image);
         }
 
-        [Params(true,false)]
-        public bool DrawConfidence { get; set; }
+        [GlobalCleanup]
+        public void CleanUp()
+        {
+            _cpuYolo.Dispose();
+            _image.Dispose();
+        }
+
+        [Params(DrawSegment.Default, DrawSegment.PixelMaskOnly, DrawSegment.BoundingBoxOnly)]
+        public DrawSegment DrawSegmentType { get; set; }
 
         [Benchmark]
-        public Image DrawSegmentation()
+        public SKImage DrawSegmentation()
         {
-            _image.Draw(segmentations: _segmentations, drawConfidence: DrawConfidence);
-
-            return _image;
+            return _image.Draw(_segmentations, DrawSegmentType);
         }
 
         #endregion Methods

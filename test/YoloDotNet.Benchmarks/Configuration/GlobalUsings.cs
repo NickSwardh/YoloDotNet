@@ -13,9 +13,6 @@ global using YoloDotNet.Test.Common.Enums;
 
 global using ConsoleDemo.Config;
 
-global using SixLabors.ImageSharp;
-global using SixLabors.ImageSharp.PixelFormats;
-
 global using SkiaSharp;
 
 global using BenchmarkDotNet.Configs;

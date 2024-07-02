@@ -15,7 +15,12 @@
         /// <summary>
         /// Region of interest (bounding box) of the detected object.
         /// </summary>
-        public Rectangle BoundingBox { get; set; }
+        public SKRectI BoundingBox { get; set; }
+
+        /// <summary>
+        /// Region of interest (bounding box) of the detected object for ONNX model dimensions.
+        /// </summary>
+        public SKRect BoundingBoxOrg { get; set; }
 
         /// <summary>
         /// Index of bounding box
@@ -27,6 +32,9 @@
         /// </summary>
         public Pixel[] SegmentedPixels { get; set; } = [];
 
+        /// <summary>
+        /// Confidence value, X and Y coordinates for Pose Estimation key points
+        /// </summary>
         public KeyPoint[] KeyPoints { get; set; } = [];
 
         /// <summary>

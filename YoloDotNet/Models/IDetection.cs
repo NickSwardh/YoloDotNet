@@ -4,6 +4,6 @@
     {
         LabelModel Label { get; init; }
         double Confidence { get; init; }
-        Rectangle BoundingBox { get; init; }
+        SKRectI BoundingBox { get; init; }
     }
 }

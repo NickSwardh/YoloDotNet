@@ -15,7 +15,7 @@
         /// <summary>
         /// Rectangle defining the region of interest (bounding box) of the detected object.
         /// </summary>
-        public Rectangle BoundingBox { get; init; }
+        public SKRectI BoundingBox { get; init; }
 
         /// <summary>
         /// Keypoints with x, y coordinates and confidence score

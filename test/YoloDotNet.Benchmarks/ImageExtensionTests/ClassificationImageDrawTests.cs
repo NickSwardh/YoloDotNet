@@ -5,11 +5,11 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.Classification);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Hummingbird);
+        private static string _model = SharedConfig.GetTestModel(ModelType.Classification);
+        private static string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private Yolo _cpuYolo;
-        private Image _image;
+        private SKImage _image;
         private List<Classification> _classifications;
 
         #endregion Fields
@@ -19,20 +19,25 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load(path: _testImage);
-            _classifications = _cpuYolo.RunClassification(img: _image, classes: 1);
+            _cpuYolo = new Yolo(_model, false);
+            _image = SKImage.FromEncodedData(_testImage);
+            _classifications = _cpuYolo.RunClassification(_image);
+        }
+
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            _cpuYolo.Dispose();
+            _image.Dispose();
         }
 
         [Params(true,false)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public Image DrawClassification()
+        public SKImage DrawClassification()
         {
-            _image.Draw(classifications: _classifications, drawConfidence: DrawConfidence);
-
-            return _image;
+            return _image.Draw(classifications: _classifications, drawConfidence: DrawConfidence);
         }
 
         #endregion Methods

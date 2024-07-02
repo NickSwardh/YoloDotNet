@@ -5,11 +5,11 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObbDetection);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Island);
+        private readonly string _model = SharedConfig.GetTestModel(ModelType.ObbDetection);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
 
         private Yolo _cpuYolo;
-        private Image _image;
+        private SKImage _image;
         private List<OBBDetection> _oBBDetections;
 
         #endregion Fields
@@ -19,20 +19,22 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
-            _image = Image.Load(path: _testImage);
-            _oBBDetections = _cpuYolo.RunObbDetection(img: _image, confidence: 0.25, iou: 0.45);
+            _cpuYolo = new Yolo(_model, false);
+            _image = SKImage.FromEncodedData(_testImage);
+            _oBBDetections = _cpuYolo.RunObbDetection(_image);
         }
 
-        [Params(true,false)]
-        public bool DrawConfidence { get; set; }
+        [GlobalCleanup]
+        public void Cleanup()
+        {
+            _cpuYolo.Dispose();
+            _image.Dispose();
+        }
 
         [Benchmark]
-        public Image DrawOrientedBoundingBox()
+        public SKImage DrawOrientedBoundingBox()
         {
-            _image.Draw(detections: _oBBDetections, drawConfidence: DrawConfidence);
-
-            return _image;
+            return _image.Draw(_oBBDetections);
         }
 
         #endregion Methods

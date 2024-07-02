@@ -2,7 +2,7 @@
 {
     public static class ImageConfig
     {
-        public const float DEFAULT_FONT_SIZE = 16f;
+        public const float DEFAULT_FONT_SIZE = 18f;
 
         public const float FONT_SIZE_8 = 8f;
 
@@ -12,9 +12,9 @@
 
 
 
-        public static readonly Rgba32 SHADOW_COLOR = new(0, 0, 0, 60);
+        //public static readonly Rgba32 SHADOW_COLOR = new(0, 0, 0, 60);
 
-        public static readonly Rgba32 FOREGROUND_COLOR = new(255, 255, 255);
+        //public static readonly Rgba32 FOREGROUND_COLOR = new(255, 255, 255);
 
 
 
