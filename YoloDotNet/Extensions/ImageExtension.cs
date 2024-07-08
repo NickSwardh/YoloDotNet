@@ -50,10 +50,6 @@
         public static SKImage Draw(this SKImage image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions keyPointOptions, bool drawConfidence = true)
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
 
-
-        //private static List<Task> _backgroundTasks = new List<Task>();
-        //private static SemaphoreSlim _semaphore = new SemaphoreSlim(10); // Limit to 10 concurrent tasks
-
         public static void Save<T>(this T image, string filename, SKEncodedImageFormat format, int quality = 100) where T : class
         {
             using var fileStream = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, true);
