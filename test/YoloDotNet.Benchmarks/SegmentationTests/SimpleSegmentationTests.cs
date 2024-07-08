@@ -19,8 +19,18 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(_model, true);
-            _cpuYolo = new Yolo(_model, false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                ModelType = ModelType.Segmentation,
+                Cuda = true
+            };
+
+            _cudaYolo = new Yolo(options);
+
+            options.Cuda = false;
+            _cpuYolo = new Yolo(options);
+
             _image = SKImage.FromEncodedData(_testImage);
         }
 
@@ -33,15 +43,15 @@
         }
 
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationGpu()
-        {
-            return _cudaYolo.RunSegmentation(_image);
-        }
-
-        [Benchmark]
         public List<Segmentation> RunSimpleSegmentationCpu()
         {
             return _cpuYolo.RunSegmentation(_image);
+        }
+
+        [Benchmark]
+        public List<Segmentation> RunSimpleSegmentationGpu()
+        {
+            return _cudaYolo.RunSegmentation(_image);
         }
 
         #endregion Methods

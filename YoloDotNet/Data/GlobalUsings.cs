@@ -1,6 +1,4 @@
-﻿global using System.Text;
-global using System.Buffers;
-global using System.Numerics;
+﻿global using System.Buffers;
 global using System.Diagnostics;
 global using System.Globalization;
 global using System.Runtime.Serialization;
@@ -19,6 +17,7 @@ global using SkiaSharp;
 global using YoloDotNet.Data;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
+global using YoloDotNet.Modules;
 global using YoloDotNet.Converters;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Configuration;

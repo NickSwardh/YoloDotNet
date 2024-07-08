@@ -19,22 +19,29 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(_model, false);
+            var options = new YoloOptions
+            {
+                ModelType = ModelType.ObbDetection,
+                OnnxModel = _model,
+                Cuda = false
+            };
+
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
             _oBBDetections = _cpuYolo.RunObbDetection(_image);
         }
-
+        
         [GlobalCleanup]
-        public void Cleanup()
+        public void GlobalCleanup()
         {
-            _cpuYolo.Dispose();
-            _image.Dispose();
+            _cpuYolo?.Dispose();
+            _image?.Dispose();
         }
-
+        
         [Benchmark]
-        public SKImage DrawOrientedBoundingBox()
+        public void DrawOrientedBoundingBox()
         {
-            return _image.Draw(_oBBDetections);
+            _ = _image.Draw(_oBBDetections);
         }
 
         #endregion Methods

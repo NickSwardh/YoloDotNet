@@ -13,7 +13,13 @@
             // Act
             try
             {
-                var mock = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection), useCuda);
+                var model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+                var mock = new Yolo(new YoloOptions
+                {
+                    OnnxModel = model,
+                    ModelType = ModelType.Classification,
+                    Cuda = useCuda
+                });
             }
             catch (Exception)
             {

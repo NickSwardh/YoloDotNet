@@ -29,6 +29,8 @@ DisplayOutputFolder();
 DisplayOnnxMetaDataExample();
 
 #region Helper methods
+
+
 static void CreateOutputFolder()
 {
     var outputFolder = DemoSettings.OUTPUT_FOLDER;
@@ -42,7 +44,17 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
     var modelPath = SharedConfig.GetTestModel(modelType);
     var imagePath = SharedConfig.GetTestImage(imageType);
 
-    using var yolo = new Yolo(modelPath, cuda, primeGpu);
+    using var yolo = new Yolo(new YoloOptions()
+    {
+        OnnxModel = modelPath,
+        Cuda = cuda,
+        PrimeGpu = primeGpu,
+        ModelType = modelType,
+    });
+
+    var sw = new Stopwatch();
+    sw.Start();
+
     using var image = SKImage.FromEncodedData(imagePath);
 
     var device = cuda ? "GPU" : "CPU";
@@ -53,8 +65,8 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
 
     SKImage resultImage = SKImage.Create(new SKImageInfo());
     List<LabelModel> labels = new();
-
-    switch (yolo.OnnxModel.ModelType)
+ 
+    switch (modelType)
     {
         case ModelType.Classification:
             {
@@ -96,7 +108,7 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
     }
 
     DisplayDetectedLabels(labels);
-    resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{yolo.OnnxModel.ModelType}.jpg"), SKEncodedImageFormat.Jpeg);
+    resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{modelType}.jpg"), SKEncodedImageFormat.Jpeg);
 }
 
 static void ObjectDetectionOnVideo()
@@ -120,7 +132,12 @@ static void ObjectDetectionOnVideo()
 
     Console.WriteLine();
     Console.WriteLine("Running Object Detection on video...");
-    using var yolo = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection));
+
+    using var yolo = new Yolo(new YoloOptions
+    {
+        OnnxModel = SharedConfig.GetTestModel(ModelType.ObjectDetection),
+        ModelType = ModelType.ObjectDetection
+    });
 
     int currentLineCursor = 0;
 
@@ -175,7 +192,11 @@ static void DisplayOnnxMetaDataExample()
     Console.WriteLine("Internal ONNX properties");
     Console.WriteLine(new string('-', 58));
 
-    using var yolo = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection), false);
+    using var yolo = new Yolo(new YoloOptions
+    {
+        OnnxModel = SharedConfig.GetTestModel(ModelType.ObjectDetection),
+        ModelType = ModelType.ObjectDetection
+    });
 
     // Display internal ONNX properties...
     foreach (var property in yolo.OnnxModel.GetType().GetProperties())

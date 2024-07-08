@@ -5,8 +5,8 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(ModelType.Classification);
-        private static string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+        private readonly string _model = SharedConfig.GetTestModel(ModelType.Classification);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private Yolo _cpuYolo;
         private SKImage _image;
@@ -19,13 +19,19 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(_model, false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                Cuda = false
+            };
+
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
             _classifications = _cpuYolo.RunClassification(_image);
         }
 
         [GlobalCleanup]
-        public void Cleanup()
+        public void GlobalCleanup()
         {
             _cpuYolo.Dispose();
             _image.Dispose();

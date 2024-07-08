@@ -16,13 +16,20 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(SharedConfig.GetTestModel(ModelType.ObjectDetection), false);
+            var options = new YoloOptions
+            {
+                ModelType = ModelType.ObjectDetection,
+                OnnxModel = SharedConfig.GetTestModel(ModelType.ObjectDetection),
+                Cuda = false
+            };
+
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(SharedConfig.GetTestImage(ImageType.Street));
             _objectDetections = _cpuYolo.RunObjectDetection(_image);
         }
 
         [GlobalCleanup]
-        public void Cleanup()
+        public void GlobalCleanup()
         {
             _cpuYolo.Dispose();
             _image.Dispose();

@@ -19,8 +19,17 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(onnxModel: _model, cuda: true, true);
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                ModelType = ModelType.ObjectDetection,
+                Cuda = true
+            };
+
+            _cudaYolo = new Yolo(options);
+
+            options.Cuda = false;
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
         }
 
@@ -33,15 +42,15 @@
         }
 
         [Benchmark]
-        public List<ObjectDetection> RunSimpleObjectDetectionGpu()
-        {
-            return _cudaYolo.RunObjectDetection( _image);
-        }
-
-        [Benchmark]
         public List<ObjectDetection> RunSimpleObjectDetectionCpu()
         {
             return _cpuYolo.RunObjectDetection(_image);
+        }
+
+        [Benchmark]
+        public List<ObjectDetection> RunSimpleObjectDetectionGpu()
+        {
+            return _cudaYolo.RunObjectDetection( _image);
         }
 
         #endregion Methods

@@ -50,20 +50,71 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         [GlobalSetup]
         public void Setup()
         {
-            _yoloClassificationCPU = new Yolo(_classificationModel, false);
-            _yoloClassificationGPU = new Yolo(_classificationModel, true);
+            _yoloClassificationGPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _classificationModel,
+                ModelType = ModelType.Classification,
+                Cuda = true
+            });
 
-            _yoloObjedDetectionCPU = new Yolo(_objectDetectionModel, false);
-            _yoloObjedDetectionGPU = new Yolo(_objectDetectionModel, true);
+            _yoloClassificationCPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _classificationModel,
+                ModelType = ModelType.Classification,
+                Cuda = false
+            });
 
-            _yoloSegmentationCPU = new Yolo(_segmentationModel, false);
-            _yoloSegmentationGPU = new Yolo(_segmentationModel, true);
+            _yoloObjedDetectionGPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _objectDetectionModel,
+                ModelType = ModelType.ObjectDetection,
+                Cuda = true
+            });
+            _yoloObjedDetectionCPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _objectDetectionModel,
+                ModelType = ModelType.ObjectDetection,
+                Cuda = false
+            });
 
-            _yoloPoseEstimationCPU = new Yolo(_poseEstimationModel, false);
-            _yoloPoseEstimationGPU = new Yolo(_poseEstimationModel, true);
+            _yoloSegmentationGPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _segmentationModel,
+                ModelType = ModelType.Segmentation,
+                Cuda = true
+            });
+            _yoloSegmentationCPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _segmentationModel,
+                ModelType = ModelType.Segmentation,
+                Cuda = false
+            });
 
-            _yoloObbDetectionCPU = new Yolo(_ObbDetectionModel, false);
-            _yoloObbDetectionGPU = new Yolo(_ObbDetectionModel, true);
+            _yoloPoseEstimationGPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _poseEstimationModel,
+                ModelType = ModelType.PoseEstimation,
+                Cuda = true
+            });
+            _yoloPoseEstimationCPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _poseEstimationModel,
+                ModelType = ModelType.PoseEstimation,
+                Cuda = false
+            });
+
+            _yoloObbDetectionGPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _ObbDetectionModel,
+                ModelType = ModelType.ObbDetection,
+                Cuda = true
+            });
+            _yoloObbDetectionCPU = new Yolo(new YoloOptions
+            {
+                OnnxModel = _ObbDetectionModel,
+                ModelType = ModelType.ObbDetection,
+                Cuda = false
+            });
         }
 
         [GlobalCleanup]
@@ -104,6 +155,7 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         }
 
         #endregion
+        /*
 
         #region Test: Object Detection
 
@@ -176,5 +228,7 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         }
 
         #endregion
+
+        */
     }
 }

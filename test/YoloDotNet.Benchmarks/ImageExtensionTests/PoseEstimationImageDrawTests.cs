@@ -19,7 +19,14 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(_model, false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                ModelType = ModelType.PoseEstimation,
+                Cuda = false
+            };
+
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
             _poseEstimations = _cpuYolo.RunPoseEstimation(_image);
         }

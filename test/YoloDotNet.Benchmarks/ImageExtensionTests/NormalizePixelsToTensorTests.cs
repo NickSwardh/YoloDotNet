@@ -27,7 +27,13 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                Cuda = false
+            };
+
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
 
             _skImageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);

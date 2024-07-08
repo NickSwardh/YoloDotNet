@@ -36,6 +36,7 @@
         }
 
         #region Helper methods
+
         /// <summary>
         /// Maps ONNX labels to corresponding colors for visualization.
         /// </summary>

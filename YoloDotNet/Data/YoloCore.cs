@@ -1,67 +1,40 @@
 ﻿namespace YoloDotNet.Data
 {
     /// <summary>
-    /// Abstract base class for performing image vision tasks using a YOLOv8 model in ONNX format.
+    /// Initializes a new instance of the Yolo core class.
     /// </summary>
-    public abstract class YoloBase : IDisposable
+    /// <param name="onnxModel">The path to the ONNX model file to use.</param>
+    /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
+    /// <param name="allocateGpuMemory">Indicates whether to allocate GPU memory.</param>
+    /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
+    public class YoloCore(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId) : IDisposable
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
 
-        private readonly InferenceSession _session;
-        private readonly RunOptions _runOptions;
-        private readonly OrtIoBinding _ortIoBinding;
-        protected readonly ParallelOptions _parallelOptions;
-        private readonly bool _useCuda;
-
+        private InferenceSession _session = default!;
+        private RunOptions _runOptions = default!;
+        private OrtIoBinding _ortIoBinding = default!;
         private int _tensorBufferSize;
-        private ArrayPool<float> _customSizeFloatPool;
-        protected ArrayPool<ObjectResult> _customSizeObjectResultPool;
+        public ArrayPool<float> customSizeFloatPool = default!;
+        public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
 
         private readonly object _progressLock = new();
-
         private SKImageInfo _imageInfo;
 
-        #region Contracts
-        public abstract List<Classification> RunClassification(SKImage img, int classes);
-
-        public abstract List<ObjectDetection> RunObjectDetection(SKImage img, double confidence, double iou);
-
-        public abstract List<Segmentation> RunSegmentation(SKImage img, double confidence, double iou);
-
-        public abstract List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence, double iou);
-
-        public abstract List<OBBDetection> RunObbDetection(SKImage img, double confidence, double iou);
-
-        public abstract Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes);
-        public abstract Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence, double iou);
-        public abstract Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence, double iou);
-        public abstract Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence, double iou);
-        public abstract Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence, double iou);
-
-
-        protected abstract List<Classification> ClassifyTensor(int numberOfClasses);
-        protected abstract ObjectResult[] ObjectDetectImage(SKImage image, double confidence, double iou);
-        protected abstract List<Segmentation> SegmentImage(SKImage image, ObjectResult[] boxes);
-        protected abstract List<PoseEstimation> PoseEstimateImage(SKImage image, double confidence, double iou);
-        #endregion
-
         protected Dictionary<string, OrtValue> Tensors { get; set; } = [];
+        public ParallelOptions parallelOptions = default!;
+        public OnnxModel OnnxModel { get; private set; } = default!;
 
-        public OnnxModel OnnxModel { get; init; }
-
-        public RunOptions _ortRunOptions;
+        public RunOptions _ortRunOptions = default!;
 
         /// <summary>
-        /// Initializes a new instance of the Yolo base class.
+        /// Initializes the YOLO model with the specified model type.
         /// </summary>
-        /// <param name="onnxModel">The path to the ONNX model file to use.</param>
-        /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
-        /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
-        public YoloBase(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId)
+        /// <param name="modelType">The type of the model to be initialized.</param>
+        public void InitializeYolo(ModelType modelType)
         {
-            _useCuda = useCuda;
             _session = useCuda
                 ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
                 : new InferenceSession(onnxModel);
@@ -71,34 +44,31 @@
 
             OnnxModel = _session.GetOnnxProperties();
 
-            _parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+            VerifyExpectedModelType(modelType);
+
+            parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
             _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
-            _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
-            _customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
+            customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
+            customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
 
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
             if (useCuda && allocateGpuMemory)
-                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _customSizeFloatPool, _imageInfo);
+                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, customSizeFloatPool, _imageInfo);
         }
 
         /// <summary>
-        /// Run inference on image
+        /// Runs the YOLO model on the provided image and returns the inference results.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="img"></param>
-        /// <param name="confidence"></param>
-        /// <param name="iouThreshold"></param>
-        /// <param name="expectedModel"></param>
-        protected List<T> Run<T>(SKImage img, double confidence, double iouThreshold, ModelType expectedModel, bool preloadGpu = false)
+        /// <param name="image">The input image to process.</param>
+        /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
+        public IDisposableReadOnlyCollection<OrtValue> Run(SKImage image)
         {
-            VerifyExpectedModelType(expectedModel);
+            using var resizedImage = image.ResizeImage(_imageInfo);
 
-            using var resizedImage = img.ResizeImage(_imageInfo);
-
-            var tensorArrayBuffer = _customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+            var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
 
             try
             {
@@ -113,57 +83,37 @@
                         { OnnxModel.InputName, inputOrtValue }
                     };
 
-                    using var ortResults = _session.Run(_runOptions, inputNames, OnnxModel.OutputNames);
-
-                    Tensors = OnnxModel.OutputNames.Zip(ortResults, (output, ort) => new { output, ort })
-                        .ToDictionary(item => item.output, item => item.ort);
-
-                    return InvokeInferenceType(img, confidence, iouThreshold) is List<T> results
-                        ? results
-                        : [];
+                    return _session.Run(_runOptions, inputNames, OnnxModel.OutputNames);
                 }
             }
             finally
             {
-                _customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
+                customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
             }
         }
 
         /// <summary>
-        /// Invokes inference based on the ONNX model type, processing the input tensor and image data.
+        /// Runs inference on video data using the specified options and optional thresholds.
+        /// Triggers events for progress, completion, and status changes during video processing.
         /// </summary>
-        private object InvokeInferenceType(SKImage img, double confidence, double iouThreshold) => OnnxModel.ModelType switch
-        {
-            ModelType.Classification => ClassifyTensor((int)confidence),
-            ModelType.ObjectDetection => ObjectDetectImage(img, confidence, iouThreshold).Select(x => (ObjectDetection)x).ToList(),
-            ModelType.Segmentation => SegmentImage(img, ObjectDetectImage(img, confidence, iouThreshold)),
-            ModelType.PoseEstimation => PoseEstimateImage(img, confidence, iouThreshold),
-            ModelType.ObbDetection => ObjectDetectImage(img, confidence, iouThreshold).Select(x => (OBBDetection)x).ToList(),
-            _ => throw new NotSupportedException($"Unknown ONNX model")
-        };
-
-        /// <summary>
-        /// Runs inference on video data using the specified options and optional confidence threshold.
-        /// Trigger events for progress, completion, and status changes during video processing.
-        /// </summary>
+        /// <typeparam name="T">The type of the inference results.</typeparam>
         /// <param name="options">Options for configuring video processing.</param>
         /// <param name="confidence">Confidence threshold for inference.</param>
-        /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes</param>
-        /// <param name="expectedModel">Onnx modeltype</param>
-        protected Dictionary<int, List<T>> RunVideo<T>(VideoOptions options, double confidence, double iouThreshold, ModelType expectedModel) where T : class, new()
+        /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes.</param>
+        /// <param name="func">A function that processes each frame and returns a list of inference results.</param>
+        /// <returns>A dictionary where the key is the frame index and the value is a list of inference results of type <typeparamref name="T"/>.</returns>
+        public Dictionary<int, List<T>> RunVideo<T>(VideoOptions options, double confidence, double iouThreshold, Func<SKImage, double, double, List<T>> func) where T : class, new()
         {
-            VerifyExpectedModelType(expectedModel);
-
             var output = new Dictionary<int, List<T>>();
 
-            using var _videoHandler = new VideoHandler.VideoHandler(options, _useCuda);
+            using var _videoHandler = new VideoHandler.VideoHandler(options, useCuda);
 
             _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
             _videoHandler.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
             _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
             _videoHandler.FramesExtractedEvent += (sender, e) =>
             {
-                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, iouThreshold);
+                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, iouThreshold, func);
 
                 if (options.GenerateVideo)
                     _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
@@ -179,7 +129,7 @@
         /// <summary>
         /// Runs batch inference on the extracted video frames.
         /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, double confidence, double iouThreshold) where T : class, new()
+        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, double confidence, double iouThreshold, Func<SKImage, double, double, List<T>> func) where T : class, new()
         {
             var frames = _videoHandler.GetExtractedFrames();
             int progressCounter = 0;
@@ -189,12 +139,13 @@
             var shouldDrawLabelsOnKeptFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.KeepFrames;
             var shouldDrawLabelsOnVideoFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.GenerateVideo;
 
-            _ = Parallel.For(0, totalFrames, _parallelOptions, i =>
+            _ = Parallel.For(0, totalFrames, parallelOptions, i =>
             {
                 var frame = frames[i];
                 using var img = SKImage.FromEncodedData(frame);
 
-                var results = Run<T>(img, confidence, iouThreshold, OnnxModel.ModelType);
+
+                var results = func.Invoke(img, confidence, iouThreshold);
                 batch[i] = results;
 
                 if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)
@@ -239,7 +190,7 @@
         /// <param name="predictions">The list of object detection results to process.</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        protected ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold, bool isSkia = true)
+        public ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold, bool isSkia = true)
         {
             Array.Sort(predictions, (a, b) => b.Confidence.CompareTo(a.Confidence));
             var result = new HashSet<ObjectResult>();
@@ -255,42 +206,42 @@
                     result.Add(item);
             }
 
-            return [..result];
+            return [.. result];
         }
 
         /// <summary>
         /// Squash value to a number between 0 and 1
         /// </summary>
-        protected static float Sigmoid(float value) => 1 / (1 + MathF.Exp(-value));
+        public static float Sigmoid(float value) => 1 / (1 + MathF.Exp(-value));
 
         /// <summary>
         /// Calculate pixel luminance
         /// </summary>
-        protected static byte CalculatePixelLuminance(float value) => (byte)(255 - value * 255);
+        public static byte CalculatePixelLuminance(float value) => (byte)(255 - value * 255);
 
         /// <summary>
         /// Calculate pixel by byte to confidence
         /// </summary>
-        protected static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
+        public static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
 
         /// <summary>
         /// Calculate radian to degree
         /// </summary>
         /// <param name="value"></param>
-        protected static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
+        public static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
 
         /// <summary>
         /// Calculate rectangle area
         /// </summary>
         /// <param name="rect"></param>
-        protected static float CalculateArea(SKRectI rect) => rect.Width * rect.Height;
+        public static float CalculateArea(SKRectI rect) => rect.Width * rect.Height;
 
         /// <summary>
         /// Calculate IoU (Intersection Over Union) bounding box overlap.
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        protected static float CalculateIoU(SKRectI a, SKRectI b)
+        public static float CalculateIoU(SKRectI a, SKRectI b)
         {
             var intersectionArea = CalculateArea(SKRectI.Intersect(a, b));
 
@@ -305,8 +256,10 @@
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
         /// <param name="model">The ONNX model containing the input dimensions.</param>
-        protected static (int, int, float) CalculateGain(SKImage image, OnnxModel model)
+        public (int, int, float) CalculateGain(SKImage image)
         {
+            var model = OnnxModel;
+
             var (w, h) = (image.Width, image.Height);
 
             var gain = Math.Max((float)w / model.Input.Width, (float)h / model.Input.Height);
@@ -319,11 +272,12 @@
         /// <summary>
         /// Verify that loaded model is of the expected type
         /// </summary>
-        private void VerifyExpectedModelType(ModelType expectedModelType)
+        public void VerifyExpectedModelType(ModelType expectedModelType)
         {
             if (expectedModelType.Equals(OnnxModel.ModelType) is false)
                 throw new Exception($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModelType}.");
         }
+
 
         /// <summary>
         /// Releases resources and suppresses the finalizer for the current object.
@@ -331,8 +285,8 @@
         public void Dispose()
         {
             _ortIoBinding?.Dispose();
-            _runOptions.Dispose();
-            _session.Dispose();
+            _runOptions?.Dispose();
+            _session?.Dispose();
             GC.SuppressFinalize(this);
         }
     }

@@ -1,7 +1,7 @@
 ﻿namespace YoloDotNet.Benchmarks.PoseEstimationTests
 {
     [MemoryDiagnoser]
-    public class SimplePostEstimationTests
+    public class SimplePoseEstimationTests
     {
         #region Fields
 
@@ -19,8 +19,17 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(_model, true);
-            _cpuYolo = new Yolo(_model, false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                ModelType = ModelType.PoseEstimation,
+                Cuda = true
+            };
+
+            _cudaYolo = new Yolo(options);
+
+            options.Cuda = false;
+            _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
         }
 
@@ -33,15 +42,15 @@
         }
 
         [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationGpu()
-        {
-            return _cudaYolo.RunPoseEstimation(_image);
-        }
-
-        [Benchmark]
         public List<PoseEstimation> RunSimplePoseEstimationCpu()
         {
             return _cpuYolo.RunPoseEstimation(_image);
+        }
+
+        [Benchmark]
+        public List<PoseEstimation> RunSimplePoseEstimationGpu()
+        {
+            return _cudaYolo.RunPoseEstimation(_image);
         }
 
         #endregion Methods

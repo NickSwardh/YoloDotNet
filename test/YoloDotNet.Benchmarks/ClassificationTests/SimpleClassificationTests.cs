@@ -5,13 +5,12 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.Classification);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Hummingbird);
+        private static string _model = SharedConfig.GetTestModel(ModelType.Classification);
+        private static string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private Yolo _cudaYolo;
         private Yolo _cpuYolo;
         private SKImage _image;
-        private SKImage _skiaImage;
 
         #endregion Fields
 
@@ -20,29 +19,36 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(onnxModel: _model, cuda: true, true);
-            //_cpuYolo = new Yolo(onnxModel: _model, cuda: false);
+            var options = new YoloOptions { OnnxModel = _model };
+
+            _cudaYolo = new Yolo(options);
+
+            options.Cuda = false;
+            _cpuYolo = new Yolo(options);
+
             _image = SKImage.FromEncodedData(_testImage);
-            _skiaImage = SKImage.FromEncodedData(_testImage);
         }
 
-        //[Benchmark]
-        //public void RunSimpleClassificationGpu()
-        //{
-        //    _ = _cudaYolo.RunClassification(img: _image, classes: 1);
-        //}
+        [GlobalCleanup]
+        public void GlobalCleanup()
+        {
+            _cudaYolo.Dispose();
+            _cpuYolo.Dispose();
+            _image.Dispose();
+        }
 
-        //[Benchmark]
-        //public List<Classification> RunSimpleClassificationCpu()
-        //{
-        //    return _cpuYolo.RunClassification(img: _image, classes: 1);
-        //}
+        [Benchmark]
+        public void RunSimpleClassificationCpu()
+        {
+            _ = _cpuYolo.RunClassification(_image);
+        }
 
-        //[Benchmark]
-        //public void RunSimpleObjectDetectionSkiaGpu()
-        //{
-        //    _ = _cudaYolo.RunClassification(img: _skiaImage, classes: 1);
-        //}
+        [Benchmark]
+        public void RunSimpleClassificationGpu()
+        {
+            _ = _cudaYolo.RunClassification(_image);
+        }
+
 
         #endregion Methods
     }

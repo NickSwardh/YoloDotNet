@@ -9,7 +9,12 @@
             var model  = SharedConfig.GetTestModel(ModelType.Classification);
             var testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
-            var yolo = new Yolo(model, false);
+            var yolo = new Yolo(new YoloOptions
+            {
+                OnnxModel = model,
+                ModelType = ModelType.Classification
+            });
+
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
@@ -26,7 +31,12 @@
             var model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Street);
 
-            var yolo = new Yolo(model, false);
+            var yolo = new Yolo(new YoloOptions
+            {
+                OnnxModel = model,
+                ModelType = ModelType.ObjectDetection
+            });
+
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
@@ -43,7 +53,7 @@
             var model = SharedConfig.GetTestModel(ModelType.ObbDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Island);
 
-            var yolo = new Yolo(model, false);
+            var yolo = new Yolo(new YoloOptions { OnnxModel = model, ModelType = ModelType.ObbDetection });
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
@@ -60,7 +70,12 @@
             var model = SharedConfig.GetTestModel(ModelType.Segmentation);
             var testImage = SharedConfig.GetTestImage(ImageType.People);
 
-            var yolo = new Yolo(model, false);
+            var yolo = new Yolo(new YoloOptions
+            {
+                OnnxModel = model,
+                ModelType = ModelType.Segmentation
+            });
+
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
@@ -77,7 +92,12 @@
             var model = SharedConfig.GetTestModel(ModelType.PoseEstimation);
             var testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
-            var yolo = new Yolo(model, false);
+            var yolo = new Yolo(new YoloOptions
+            {
+                OnnxModel = model,
+                ModelType = ModelType.PoseEstimation
+            });
+
             var image = SKImage.FromEncodedData(testImage);
 
             // Act

@@ -21,8 +21,18 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _cudaYolo = new Yolo(_model, true);
-            _cpuYolo = new Yolo(_model, false);
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                ModelType = ModelType.ObjectDetection,
+                Cuda = true
+            };
+
+            _cudaYolo = new Yolo(options);
+
+            options.Cuda = false;
+            _cpuYolo = new Yolo(options);
+
             _originalSizeimage = SKImage.FromEncodedData(_originalSizeimagePath);
             _modelSizeImage = SKImage.FromEncodedData(_modelSizeimagePath);
         }

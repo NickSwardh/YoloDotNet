@@ -1,22 +1,16 @@
-﻿using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Memory;
-
-namespace YoloDotNet.Benchmarks.ImageExtensionTests
+﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     [MemoryDiagnoser]
     public class ResizeImageTests
     {
         #region Fields
 
-        private static string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
-        private Image _imageSharp;
         private SKImage _image;
+        private SKImageInfo _outputImageInfo;
         private readonly int _width = 240;
         private readonly int _height = 240;
-        private SKImageInfo _imageInfo;
 
         #endregion Fields
 
@@ -25,53 +19,21 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
         [GlobalSetup]
         public void GlobalSetup()
         {
-            //_imageSharp = Image.Load<Rgba32>(_testImage);
-            //_image = SKImage.FromEncodedData(_testImage);
-            _imageInfo = new SKImageInfo(_width, _height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            _image = SKImage.FromEncodedData(_testImage);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            //_imageSharp.Dispose();
-            //_image.Dispose();
-            
-        }
-
-        //[Benchmark]
-        //public ReadOnlySpan<byte> ResizeImage()
-        //{
-        //    return _image.ResizeImage(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height);
-        //}
-
-        [Benchmark]
-        public void ResizeWithImageSharp()
-        {
-            using var image = Image.Load<Rgba32>(_testImage);
-
-            var options = new ResizeOptions
-            {
-                Size = new Size(_width, _height),
-                Mode = ResizeMode.Pad,
-                PadColor = new Color(new Rgb24(0, 0, 0))
-            };
-
-            _ = image.Clone(x => x.Resize(options)).CloneAs<Rgb24>();
+            _image.Dispose();
         }
 
         [Benchmark]
-        public void ResizeWithSkiaSharp()
+        public void ResizeImage()
         {
-            using var image = SKImage.FromEncodedData(_testImage);
-            _ = image.ResizeImage(_imageInfo);
+            _ = _image.ResizeImage(_outputImageInfo);
         }
-
-        //[Benchmark]
-        //public void ResizeImageNew()
-        //{
-        //    using var image = SKImage.FromEncodedData(_testImage);
-        //    _ = image.ResizeImageNew(_width, _height);
-        //}
 
         #endregion Methods
     }
