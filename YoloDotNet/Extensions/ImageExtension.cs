@@ -131,7 +131,7 @@
             var pixelIndex = 0;
             int offset = 0;
 
-            // Lock the pixels for direct memory access
+            // Lock the pixels for direct memory access and faster processing
             IntPtr pixelsPtr = resizedImage.GetPixels();
 
             unsafe
@@ -158,6 +158,7 @@
                 }
             }
 
+            // Due to how the ArrayPool works, tensorArrayBuffer can be larger than the actual tensor size; we need to cut it down to the correct size.
             return new DenseTensor<float>(tensorArrayBuffer.AsMemory()[..tensorBufferSize], [batchSize, colorChannels, width, height]);
         }
 
