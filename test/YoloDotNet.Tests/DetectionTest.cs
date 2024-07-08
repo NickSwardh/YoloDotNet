@@ -12,7 +12,8 @@
             var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                ModelType = ModelType.Classification
+                ModelType = ModelType.Classification,
+                Cuda = false
             });
 
             var image = SKImage.FromEncodedData(testImage);
@@ -34,7 +35,8 @@
             var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                ModelType = ModelType.ObjectDetection
+                ModelType = ModelType.ObjectDetection,
+                Cuda = false
             });
 
             var image = SKImage.FromEncodedData(testImage);
@@ -53,7 +55,13 @@
             var model = SharedConfig.GetTestModel(ModelType.ObbDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Island);
 
-            var yolo = new Yolo(new YoloOptions { OnnxModel = model, ModelType = ModelType.ObbDetection });
+            var yolo = new Yolo(new YoloOptions
+            {
+                OnnxModel = model,
+                ModelType = ModelType.ObbDetection,
+                Cuda = false
+            });
+
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
@@ -73,7 +81,8 @@
             var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                ModelType = ModelType.Segmentation
+                ModelType = ModelType.Segmentation,
+                Cuda = false
             });
 
             var image = SKImage.FromEncodedData(testImage);
@@ -95,7 +104,8 @@
             var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                ModelType = ModelType.PoseEstimation
+                ModelType = ModelType.PoseEstimation,
+                Cuda = false
             });
 
             var image = SKImage.FromEncodedData(testImage);
