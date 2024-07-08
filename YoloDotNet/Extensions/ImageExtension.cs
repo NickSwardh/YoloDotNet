@@ -437,7 +437,7 @@
             {
                 var box = detection.BoundingBox;
                 var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
-                var labelText = $"{detection.Label.Name} ({detection.Confidence.ToPercent()}%)";
+                var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
                 var labelWidth = (int)paintText.MeasureText(labelText);
 
                 labelBgPaint.Color = boxColor;
@@ -503,7 +503,7 @@
                 var radians = detection.OrientationAngle;
 
                 var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
-                var labelText = $"{detection.Label.Name} ({detection.Confidence.ToPercent()}%)";
+                var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
                 var labelWidth = (int)paintText.MeasureText(labelText);
 
                 // Set matrix center point in current bounding box
