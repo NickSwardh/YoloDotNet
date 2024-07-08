@@ -84,26 +84,26 @@
             int width = image.Width;
             int height = image.Height;
 
-            // If image is of size and correct colorspace, no need for resizing/conversion
+            // If the image is already of the correct size and color space, no resizing or conversion is needed
             if (width == modelHeight && height == modelWidth && image.ColorSpace == skInfo.ColorSpace)
                 return SKBitmap.FromImage(image);
 
-            // Calculate new image size
+            // Calculate the new image size based on the aspect ratio
             float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
             int newWidth = (int)Math.Round(width * scaleFactor); // Use integer rounding instead of Math.Round
             int newHeight = (int)Math.Round(height * scaleFactor);
 
-            // Calculate the destination rectangle for the original image
+            // Calculate the destination rectangle within the model dimensions
             int x = (modelWidth - newWidth) / 2;
             int y = (modelHeight - newHeight) / 2;
 
-            // Create a new bitmap with opaque alpha type
+            // Create a new bitmap with the specified SKImageInfo
             var resizedBitmap = new SKBitmap(skInfo);
 
             // Create a canvas to draw on the new bitmap
             using (var canvas = new SKCanvas(resizedBitmap))
             {
-                // Define the destination rectangle for the resized image within the w x h canvas
+                // Define the source and destination rectangles for resizing
                 var srcRect = new SKRect(0, 0, width, height);
                 var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
