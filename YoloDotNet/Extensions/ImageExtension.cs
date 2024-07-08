@@ -71,11 +71,10 @@
         }
 
         /// <summary>
-        /// Creates a resized clone of the input image with new width, height and padded borders to fit new size.
+        /// Creates a resized clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
         /// </summary>
         /// <param name="image">The original image to be resized.</param>
-        /// <param name="w">The desired width for the resized image.</param>
-        /// <param name="h">The desired height for the resized image.</param>
+        /// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
         /// <returns>A new image with the specified dimensions.</returns>
         public static SKBitmap ResizeImage(this SKImage image, SKImageInfo skInfo)
         {
