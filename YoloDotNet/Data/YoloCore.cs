@@ -170,7 +170,7 @@
         {
             var drawConfidence = videoSettings.DrawConfidence;
 
-            SKImage tmpImage = results switch
+            using SKImage tmpImage = results switch
             {
                 List<Classification> classifications => img.Draw(classifications, drawConfidence),
                 List<ObjectDetection> objectDetections => img.Draw(objectDetections, drawConfidence),
@@ -181,7 +181,6 @@
             };
 
             tmpImage.Save(savePath, SKEncodedImageFormat.Png, 100);
-            tmpImage.Dispose();
         }
 
         /// <summary>
