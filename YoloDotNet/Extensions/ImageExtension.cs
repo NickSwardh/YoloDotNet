@@ -50,18 +50,24 @@
         public static SKImage Draw(this SKImage image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions keyPointOptions, bool drawConfidence = true)
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
 
-        public static void Save<T>(this T image, string filename, SKEncodedImageFormat format, int quality = 100) where T : class
+        /// <summary>
+        /// Saves the SKImage to a file with the specified format and quality.
+        /// </summary>
+        /// <param name="image">The SKImage to be saved.</param>
+        /// <param name="filename">The name of the file where the image will be saved.</param>
+        /// <param name="format">The format in which the image should be saved.</param>
+        /// <param name="quality">The quality of the saved image (default is 100).</param>
+        public static void Save(this SKImage image, string filename, SKEncodedImageFormat format, int quality = 100)
         {
-            using var fileStream = new FileStream(filename, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.ReadWrite, 4096, true);
+            using var fileStream = new FileStream(
+                filename,
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite,
+                FileShare.ReadWrite,
+                4096,
+                true);
 
-            if (image is SKImage img)
-            {
-                img.Encode(format, quality).SaveTo(fileStream);
-            }
-            else if (image is SKBitmap bitmap)
-            {
-                bitmap.Encode(format, quality).SaveTo(fileStream);
-            }
+            image.Encode(format, quality).SaveTo(fileStream);
         }
 
         /// <summary>
