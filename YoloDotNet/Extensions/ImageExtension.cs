@@ -51,8 +51,8 @@
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
 
 
-        private static List<Task> _backgroundTasks = new List<Task>();
-        private static SemaphoreSlim _semaphore = new SemaphoreSlim(10); // Limit to 10 concurrent tasks
+        //private static List<Task> _backgroundTasks = new List<Task>();
+        //private static SemaphoreSlim _semaphore = new SemaphoreSlim(10); // Limit to 10 concurrent tasks
 
         public static void Save<T>(this T image, string filename, SKEncodedImageFormat format, int quality = 100) where T : class
         {
@@ -236,54 +236,7 @@
 
             return pixels.Where(x => x is not null).ToArray();
         }
-        /*
-        public static SKBitmap ResizeSegmentedArea(this SKBitmap image, SKImage originalImage)
-        {
-            var gain = Math.Min(image.Width / (float)originalImage.Width, image.Height / (float)originalImage.Height);
 
-            var x = (int)((image.Width - originalImage.Width * gain) / 2);
-            var y = (int)((image.Height - originalImage.Height * gain) / 2);
-            var w = image.Width - x * 2;
-            var h = image.Height - y * 2;
-
-            // Create a surface
-            using var surface = SKSurface.Create(new SKImageInfo(w, h, SKColorType.Gray8));
-            using var canvas = surface.Canvas;
-
-            // Cut out black borders from segmented area
-            var sourceRect = new SKRectI(x, y, x + w, y + h);
-            var destRect = new SKRect(0, 0, w, h);
-            canvas.DrawBitmap(image, sourceRect, destRect);
-
-            // Resize to original image size
-            var resizedBitmap = new SKBitmap(new SKImageInfo(originalImage.Width, originalImage.Height, SKColorType.Gray8));
-            using var resizedCanvas = new SKCanvas(resizedBitmap);
-            resizedCanvas.DrawImage(surface.Snapshot(), new SKRect(0, 0, resizedBitmap.Width, resizedBitmap.Height), new SKPaint { FilterQuality = SKFilterQuality.Low });
-
-            return resizedBitmap;
-        }
-
-        /// <summary>
-        /// Resizes a segmented image to the original image size and crops segmented area.
-        /// </summary>
-        /// <param name="image">The segmented image to be resized and cropped.</param>
-        /// <param name="originalImage">The original image used as a reference for resizing.</param>
-        /// <param name="rectangle">The rectangle specifying the area to be cropped after resizing.</param>
-        public static void CropSegmentedArea(this SKBitmap image, SKImage originalImage, SKRectI rectangle)
-        {
-            using var resizedSegmentation = image.ResizeSegmentedArea(originalImage);
-
-            using var finalBitmap = new SKBitmap(new SKImageInfo(rectangle.Width, rectangle.Height, SKColorType.Gray8));
-            using var canvas = new SKCanvas(finalBitmap);
-
-            var sourceRect = new SKRectI(rectangle.Left, rectangle.Top, rectangle.Right, rectangle.Bottom);
-            var destRect = new SKRect(0, 0, rectangle.Width, rectangle.Height);
-            canvas.DrawBitmap(resizedSegmentation, sourceRect, destRect);
-            canvas.Flush();
-
-            finalBitmap.CopyTo(image);
-        }
-        */
         #region Helper methods
 
         /// <summary>
