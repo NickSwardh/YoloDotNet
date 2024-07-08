@@ -17,7 +17,7 @@
                 var mock = new Yolo(new YoloOptions
                 {
                     OnnxModel = model,
-                    ModelType = ModelType.Classification,
+                    ModelType = ModelType.ObjectDetection,
                     Cuda = useCuda
                 });
             }
