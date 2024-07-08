@@ -21,7 +21,7 @@
         public List<Classification> ProcessImage(SKImage image, double classes, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
-            return ClassifyTensor(ortValues[0], 1);
+            return ClassifyTensor(ortValues[0], (int)classes);
         }
 
         public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double iou)
