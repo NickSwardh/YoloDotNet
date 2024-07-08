@@ -174,48 +174,47 @@
         {
             ArgumentNullException.ThrowIfNull(labels);
 
-            float x = 50;
-            float y = 50;
-            float fontSize = ImageConfig.DEFAULT_FONT_SIZE * 1.5f;
-            float margin = ImageConfig.DEFAULT_FONT_SIZE / 2;
+            float x = ImageConfig.CLASSIFICATION_TRANSPARENT_BOX_X;
+            float y = ImageConfig.CLASSIFICATION_TRANSPARENT_BOX_Y;
+            var (fontSize, _) = image.CalculateFontSize();
+            float margin = fontSize / 2;
 
             using var paint = new SKPaint
             {
-                TextSize = ImageConfig.DEFAULT_FONT_SIZE,
+                TextSize = fontSize,
                 Style = SKPaintStyle.Fill,
                 IsAntialias = true
             };
 
-            using var surface = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
-            using var canvas = surface.Canvas;
-
-            canvas.DrawImage(image, 0, 0);
-
             // Measure maximum text-length in order to determine the width of the transparent box
             float boxMaxWidth = 0;
-            float boxMaxHeight = fontSize * 2;
+            float boxMaxHeight = 0 - margin / 2;
             foreach (var label in labels)
             {
                 var lineWidth = paint.MeasureText(LabelText(label.Label, label.Confidence, drawConfidence));
                 if (lineWidth > boxMaxWidth)
                     boxMaxWidth = lineWidth;
 
-                boxMaxHeight += fontSize;
+               boxMaxHeight += fontSize + margin;
             }
+
+            using var surface = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
+            using var canvas = surface.Canvas;
+            canvas.DrawImage(image, 0, 0);
 
             // Set transparent box position
             paint.Color = new SKColor(0, 0, 0, 60);
-            canvas.DrawRect(new SKRect(x - margin, y - margin, x + boxMaxWidth + margin, boxMaxHeight), paint);
+            canvas.DrawRect(new SKRect(x, y, x + boxMaxWidth + fontSize, y + boxMaxHeight + fontSize), paint);
 
             // Draw labels
             y += paint.TextSize;
             paint.Color = SKColors.White;
             foreach (var label in labels!)
             {
-                canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x, y, paint);
-                y += fontSize;
+                canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x + margin, y + margin, paint);
+                y += fontSize + margin;
             }
-
+            
             // Finalize drawing
             canvas.Flush();
             return surface.Snapshot();
@@ -387,19 +386,21 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            var margin = (int)ImageConfig.DEFAULT_FONT_SIZE / 2;
-            var labelBoxHeight = (int)ImageConfig.DEFAULT_FONT_SIZE * 2;
-            var textOffset = (int)(ImageConfig.DEFAULT_FONT_SIZE + margin) - (int)(margin / 2);
-            var shadowOffset = 1;
-            var borderThickness = 2;
-            var labelOffset = (int)(borderThickness / 2);
-            byte textShadowAlpha = 120;
-            byte labelBoxAlpha = 160;
+            var (fontSize, borderThickness) = image.CalculateFontSize();
+
+            //float fontSize = image.CalculateFontSize(ImageConfig.DEFAULT_FONT_SIZE);
+            var margin = (int)fontSize / 2;
+            var labelBoxHeight = (int)fontSize * 2;
+            var textOffset = (int)(fontSize + margin) - (margin / 2);
+            var shadowOffset = ImageConfig.SHADOW_OFFSET;
+            var labelOffset = (int)borderThickness / 2;
+            byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
+            byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
 
             // Shadow paint
             using var paintShadow = new SKPaint
             {
-                TextSize = ImageConfig.DEFAULT_FONT_SIZE,
+                TextSize = fontSize, //ImageConfig.DEFAULT_FONT_SIZE,
                 Color = new SKColor(0, 0, 0, textShadowAlpha),
                 IsAntialias = true
             };
@@ -407,7 +408,7 @@
             // Text paint
             using var paintText = new SKPaint
             {
-                TextSize = ImageConfig.DEFAULT_FONT_SIZE,
+                TextSize = fontSize, //ImageConfig.DEFAULT_FONT_SIZE,
                 Color = SKColors.White,
                 IsAntialias = true
             };
@@ -478,16 +479,16 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            var margin = (int)ImageConfig.DEFAULT_FONT_SIZE / 2;
-            var labelBoxHeight = (int)ImageConfig.DEFAULT_FONT_SIZE * 2;
-            var textOffset = (int)(ImageConfig.DEFAULT_FONT_SIZE + margin) - (int)(margin / 2);
-            var shadowOffset = 1;
-            var borderThickness = 2;
-            byte textShadowAlpha = 120;
-            byte labelBoxAlpha = 160;
+            var (fontSize, borderThickness) = image.CalculateFontSize();
+            var margin = (int)ImageConfig.FONT_SIZE / 2;
+            var labelBoxHeight = (int)ImageConfig.FONT_SIZE * 2;
+            var textOffset = (int)(ImageConfig.FONT_SIZE + margin) - (margin / 2);
+            var shadowOffset = ImageConfig.SHADOW_OFFSET;
+            byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
+            byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
 
             // Paint buckets
-            using var paintText = new SKPaint { TextSize = ImageConfig.DEFAULT_FONT_SIZE, IsAntialias = true };
+            using var paintText = new SKPaint { TextSize = fontSize, IsAntialias = true };
             using var boxPaint = new SKPaint() { Style = SKPaintStyle.Stroke, StrokeWidth = borderThickness };
 
             // Create surface
