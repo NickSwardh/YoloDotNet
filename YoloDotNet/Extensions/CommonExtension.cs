@@ -10,33 +10,25 @@
         public static string ToPercent(this double value)
             => (value * 100).ToString("0.##", CultureInfo.InvariantCulture);
 
-        ///// <summary>
-        ///// Calculates new font size based on image DPI (dots per inch), image dimensions and the provided font size.
-        ///// If no DPI information is present in the image metadata, a default DPI of 72 is assumed.
-        ///// </summary>
-        ///// <param name="image">The image to calculate font size for.</param>
-        ///// <param name="fontSize">The original font size to be adjusted.</param>
-        ///// <returns>The adjusted font size based on DPI and image dimensions.</returns>
-        ///// <exception cref="ArgumentNullException">Thrown when the input image is null.</exception>
-        //public static float CalculateFontSizeByDpi(this Image image, float fontSize)
-        //{
-        //    ArgumentNullException.ThrowIfNull(image);
+        /// <summary>
+        /// Calculates new font size and bounding box border thickness based on the image dimensions.
+        /// </summary>
+        /// <param name="image">The image to calculate font size for.</param>
+        /// <returns>a float tuple with new font size and bounding box border thickness.</returns>
+        public static (float, float) CalculateFontSize(this SKImage image)
+        {
+            // Calculate the scale factor based on the image resolution
+            float scaleFactor = image.Width / 1280; // adjust the denominator to your desired resolution
 
-        //    var dpi = 72f; // Assume default if no DPI info is present in image metadata
+            var fontSize = ImageConfig.FONT_SIZE;
+            var strokeWidth = ImageConfig.BORDER_THICKNESS;
 
-        //    if (image.Metadata?.VerticalResolution > 1)
-        //        dpi = (float)image.Metadata.VerticalResolution;
+            fontSize *= scaleFactor;
+            fontSize = Math.Max(fontSize, ImageConfig.FONT_SIZE);
 
-        //    // Font size * dpi
-        //    var scale = fontSize * dpi;
+            strokeWidth *= scaleFactor;
 
-        //    // Get smallest ratio
-        //    var ratio = Math.Min(image.Width / scale, image.Height / scale);
-
-        //    // Calculate adjusted font size
-        //    var newFontSize = fontSize * ratio;
-
-        //    return newFontSize > fontSize ? newFontSize : fontSize;
-        //}
+            return (fontSize, strokeWidth);
+        }
     }
 }
