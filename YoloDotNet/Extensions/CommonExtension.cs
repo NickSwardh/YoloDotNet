@@ -11,24 +11,21 @@
             => (value * 100).ToString("0.##", CultureInfo.InvariantCulture);
 
         /// <summary>
-        /// Calculates new font size and bounding box border thickness based on the image dimensions.
+        /// Calculates a new dynamic size based on the image dimensions and a given scale value.
         /// </summary>
-        /// <param name="image">The image to calculate font size for.</param>
-        /// <returns>a float tuple with new font size and bounding box border thickness.</returns>
-        public static (float, float) CalculateFontSize(this SKImage image)
+        /// <param name="image">The image to calculate the dynamic size for.</param>
+        /// <param name="scale">The initial scale value to be adjusted dynamically.</param>
+        /// <returns>The new dynamically calculated size as a float value.</returns>
+        public static float CalculateDynamicSize(this SKImage image, float scale)
         {
-            // Calculate the scale factor based on the image resolution
-            float scaleFactor = image.Width / 1280; // adjust the denominator to your desired resolution
+            // Calculate the scale factor based on the image resolution and a denominator
+            float scaleFactor = image.Width / ImageConfig.SCALING_DENOMINATOR;
 
-            var fontSize = ImageConfig.FONT_SIZE;
-            var strokeWidth = ImageConfig.BORDER_THICKNESS;
+            var newSize = scale;
 
-            fontSize *= scaleFactor;
-            fontSize = Math.Max(fontSize, ImageConfig.FONT_SIZE);
+            newSize *= scaleFactor;
 
-            strokeWidth *= scaleFactor;
-
-            return (fontSize, strokeWidth);
+            return Math.Max(newSize, scale);
         }
     }
 }

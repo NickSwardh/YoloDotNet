@@ -175,7 +175,7 @@
 
             float x = ImageConfig.CLASSIFICATION_TRANSPARENT_BOX_X;
             float y = ImageConfig.CLASSIFICATION_TRANSPARENT_BOX_Y;
-            var (fontSize, _) = image.CalculateFontSize();
+            var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
             float margin = fontSize / 2;
 
             using var paint = new SKPaint
@@ -254,38 +254,38 @@
 
                     var pixelSpan = segmentation.SegmentedPixels.AsSpan();
 
-                        // Access pixel data directly from memory for higher performance
-                        byte* pixelData = (byte*)pixelsPtr.ToPointer();
+                    // Access pixel data directly from memory for higher performance
+                    byte* pixelData = (byte*)pixelsPtr.ToPointer();
 
-                        foreach (var pixel in pixelSpan)
-                        {
-                            int x = pixel.X;
-                            int y = pixel.Y;
+                    foreach (var pixel in pixelSpan)
+                    {
+                        int x = pixel.X;
+                        int y = pixel.Y;
 
-                            // Prevent any attempt to access or modify pixel data outside the valid range!
-                            if (x < 0 || x >= width || y < 0 || y >= height)
-                                continue;
+                        // Prevent any attempt to access or modify pixel data outside the valid range!
+                        if (x < 0 || x >= width || y < 0 || y >= height)
+                            continue;
 
-                            // Calculate the index for the pixel
-                            int index = y * rowBytes + x * bytesPerPixel;
+                        // Calculate the index for the pixel
+                        int index = y * rowBytes + x * bytesPerPixel;
 
-                            // Get original pixel colors
-                            byte blue = pixelData[index];
-                            byte green = pixelData[index + 1];
-                            byte red = pixelData[index + 2];
-                            byte alpha = pixelData[index + 3];
+                        // Get original pixel colors
+                        byte blue = pixelData[index];
+                        byte green = pixelData[index + 1];
+                        byte red = pixelData[index + 2];
+                        byte alpha = pixelData[index + 3];
 
-                            // Blend the overlay color with the original color
-                            byte newRed = (byte)((red * (255 - color.Alpha) + color.Red * color.Alpha) / 255);
-                            byte newGreen = (byte)((green * (255 - color.Alpha) + color.Green * color.Alpha) / 255);
-                            byte newBlue = (byte)((blue * (255 - color.Alpha) + color.Blue * color.Alpha) / 255);
+                        // Blend the overlay color with the original color
+                        byte newRed = (byte)((red * (255 - color.Alpha) + color.Red * color.Alpha) / 255);
+                        byte newGreen = (byte)((green * (255 - color.Alpha) + color.Green * color.Alpha) / 255);
+                        byte newBlue = (byte)((blue * (255 - color.Alpha) + color.Blue * color.Alpha) / 255);
 
-                            // Set the new color
-                            pixelData[index + 0] = newBlue;
-                            pixelData[index + 1] = newGreen;
-                            pixelData[index + 2] = newRed;
-                            pixelData[index + 3] = alpha; // Preserve the original alpha
-                        }
+                        // Set the new color
+                        pixelData[index + 0] = newBlue;
+                        pixelData[index + 1] = newGreen;
+                        pixelData[index + 2] = newRed;
+                        pixelData[index + 3] = alpha; // Preserve the original alpha
+                    }
                 });
             }
 
@@ -307,16 +307,15 @@
         {
             ArgumentNullException.ThrowIfNull(poseEstimations);
 
-            var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
-
-            var circleRadius = ImageConfig.FONT_SIZE_8 / 2;
-            var lineSize = 2;
+            var circleRadius = image.CalculateDynamicSize(ImageConfig.KEYPOINT_SIZE);
+            var lineSize = image.CalculateDynamicSize(ImageConfig.BORDER_THICKNESS);
             var confidenceThreshold = poseOptions.PoseConfidence;
             var hasPoseMarkers = poseOptions.PoseMarkers.Length > 0;
             var emptyPoseMarker = new KeyPointMarker();
-            var alpha = ImageConfig.POSE_ESTIMATION_MARKER_OPACITY;
+            var alpha = ImageConfig.DEFAULT_OPACITY;
 
             using var keyPointPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
+            using var keyPointLinePaint = new SKPaint { StrokeWidth = lineSize, IsAntialias = true };
 
             using var surface = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
             using var canvas = surface.Canvas;
@@ -346,7 +345,7 @@
                     keyPointPaint.Color = color;
                     canvas.DrawCircle(keyPoint.X, keyPoint.Y, circleRadius, keyPointPaint);
 
-                    // Draw lines between pose-markers
+                    // Draw lines between key-points
                     foreach (var connection in poseMap.Connections)
                     {
                         var markerDestination = poseEstimation.KeyPoints[connection.Index];
@@ -354,12 +353,12 @@
                         if (markerDestination.Confidence < confidenceThreshold)
                             continue;
 
-                        //var destination = new Point(markerDestination.X, markerDestination.Y);
-                        var lineColor = HexToRgbaSkia(connection.Color);
+                        keyPointLinePaint.Color = HexToRgbaSkia(connection.Color, alpha);
 
-                        var fromKeyPoint = new SKPoint(keyPoint.X, keyPoint.Y);
-                        var toKeyPoint = new SKPoint(markerDestination.X, markerDestination.Y);
-                        canvas.DrawLine(fromKeyPoint, toKeyPoint, new SKPaint { Color = lineColor, StrokeWidth = lineSize, IsAntialias = true });
+                        canvas.DrawLine(
+                             new SKPoint(keyPoint.X, keyPoint.Y),
+                            new SKPoint(markerDestination.X, markerDestination.Y),
+                            keyPointLinePaint);
                     }
                 }
             }
@@ -382,7 +381,8 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            var (fontSize, borderThickness) = image.CalculateFontSize();
+            var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
+            var borderThickness = image.CalculateDynamicSize(ImageConfig.BORDER_THICKNESS);
 
             //float fontSize = image.CalculateFontSize(ImageConfig.DEFAULT_FONT_SIZE);
             var margin = (int)fontSize / 2;
@@ -475,7 +475,8 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            var (fontSize, borderThickness) = image.CalculateFontSize();
+            var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
+            var borderThickness = image.CalculateDynamicSize(ImageConfig.BORDER_THICKNESS);
             var margin = (int)ImageConfig.FONT_SIZE / 2;
             var labelBoxHeight = (int)ImageConfig.FONT_SIZE * 2;
             var textOffset = (int)(ImageConfig.FONT_SIZE + margin) - (margin / 2);
