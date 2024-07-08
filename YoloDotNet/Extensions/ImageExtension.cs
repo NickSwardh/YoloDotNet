@@ -202,7 +202,7 @@
             canvas.DrawImage(image, 0, 0);
 
             // Set transparent box position
-            paint.Color = new SKColor(0, 0, 0, 60);
+            paint.Color = new SKColor(0, 0, 0, ImageConfig.CLASSIFICATION_BOX_ALPHA);
             canvas.DrawRect(new SKRect(x, y, x + boxMaxWidth + fontSize, y + boxMaxHeight + fontSize), paint);
 
             // Draw labels

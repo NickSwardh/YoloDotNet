@@ -9,6 +9,7 @@
 
         public const float CLASSIFICATION_TRANSPARENT_BOX_X = 50;
         public const float CLASSIFICATION_TRANSPARENT_BOX_Y = 50;
+        public const int CLASSIFICATION_BOX_ALPHA = 60;
 
         public const int DEFAULT_OPACITY = 128;
         public const int POSE_ESTIMATION_MARKER_OPACITY = 192;
