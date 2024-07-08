@@ -231,7 +231,7 @@
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
-        private static SKImage DrawSegmentations(this SKImage image, IEnumerable<Segmentation>? segmentations, DrawSegment draw, bool drawConfidence)
+        unsafe private static SKImage DrawSegmentations(this SKImage image, IEnumerable<Segmentation>? segmentations, DrawSegment draw, bool drawConfidence)
         {
             ArgumentNullException.ThrowIfNull(segmentations);
 
@@ -250,12 +250,10 @@
                 Parallel.ForEach(segmentations, options, segmentation =>
                 {
                     // Define the overlay color
-                    var color = HexToRgbaSkia(segmentation.Label.Color, 80);
+                    var color = HexToRgbaSkia(segmentation.Label.Color, ImageConfig.SEGMENTATION_MASK_OPACITY);
 
                     var pixelSpan = segmentation.SegmentedPixels.AsSpan();
 
-                    unsafe
-                    {
                         // Access pixel data directly from memory for higher performance
                         byte* pixelData = (byte*)pixelsPtr.ToPointer();
 
@@ -288,7 +286,6 @@
                             pixelData[index + 2] = newRed;
                             pixelData[index + 3] = alpha; // Preserve the original alpha
                         }
-                    }
                 });
             }
 

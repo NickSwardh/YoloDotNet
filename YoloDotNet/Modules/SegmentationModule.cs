@@ -81,6 +81,8 @@
             var scalingFactorW = (float)_yoloCore.OnnxModel.Outputs[1].Width / inputWidth;
             var scalingFactorH = (float)_yoloCore.OnnxModel.Outputs[1].Height / inputHeight;
 
+            var pixelThreshold = ImageConfig.SEGMENTATION_PIXEL_THRESHOLD;
+
             foreach (var box in boundingBoxes)
             {
                 var bboxWidth = box.BoundingBox.Width;
@@ -111,7 +113,7 @@
                 recanvas.DrawBitmap(croppedImage, new SKRect(0, 0, bboxWidth, bboxHeight), paint);
 
                 pixels.Clear();
-                GetPixelsFromCroppedMask(resizedBitmap, 0.65f, pixels, box);
+                GetPixelsFromCroppedMask(resizedBitmap, pixelThreshold, pixels, box);
                 box.SegmentedPixels = [.. pixels];
             }
 
