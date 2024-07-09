@@ -2,8 +2,6 @@
 {
     public static class ImageExtension
     {
-        private static readonly SKPaint _resizePaintBrush = new() { FilterQuality = SKFilterQuality.Low, IsAntialias = false };
-
         /// <summary>
         /// Draw classification labels on the given image, optionally including confidence scores.
         /// </summary>
@@ -52,6 +50,19 @@
         public static SKImage Draw(this SKImage image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions keyPointOptions, bool drawConfidence = true)
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
 
+        public static readonly SKPaint resizePaintBrush = new()
+        {
+            FilterQuality = SKFilterQuality.Low,
+            IsAntialias = false,
+            IsDither = false,
+            BlendMode = SKBlendMode.Src,
+            Shader = null,
+            MaskFilter = null,
+            PathEffect = null,
+            ImageFilter = null,
+            ColorFilter = null
+        };
+
         /// <summary>
         /// Saves the SKImage to a file with the specified format and quality.
         /// </summary>
@@ -85,9 +96,9 @@
             int width = image.Width;
             int height = image.Height;
 
-            // If the image is already of the correct size and color space, no resizing or conversion is needed
-            if (width == modelHeight && height == modelWidth && image.ColorSpace == skInfo.ColorSpace)
-                return SKBitmap.FromImage(image);
+            //// If the image is already of the correct size and color space, no resizing or conversion is needed
+            //if (width == modelHeight && height == modelWidth && image.ColorSpace == skInfo.ColorSpace)
+            //    return SKBitmap.FromImage(image);
 
             // Calculate the new image size based on the aspect ratio
             float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
@@ -109,7 +120,7 @@
                 var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
                 // Draw the original image onto the new canvas, resizing it to fit within the destination rectangle
-                canvas.DrawImage(image, srcRect, dstRect, _resizePaintBrush);
+                canvas.DrawImage(image, srcRect, dstRect, resizePaintBrush);
                 canvas.Flush();
             }
 
@@ -193,7 +204,7 @@
                 if (lineWidth > boxMaxWidth)
                     boxMaxWidth = lineWidth;
 
-               boxMaxHeight += fontSize + margin;
+                boxMaxHeight += fontSize + margin;
             }
 
             using var surface = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
@@ -212,7 +223,7 @@
                 canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x + margin, y + margin, paint);
                 y += fontSize + margin;
             }
-            
+
             // Finalize drawing
             canvas.Flush();
             return surface.Snapshot();

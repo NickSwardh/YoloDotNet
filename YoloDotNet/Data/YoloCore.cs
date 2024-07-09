@@ -286,6 +286,7 @@
             _ortIoBinding?.Dispose();
             _runOptions?.Dispose();
             _session?.Dispose();
+            ImageExtension.resizePaintBrush?.Dispose();
             GC.SuppressFinalize(this);
         }
     }
