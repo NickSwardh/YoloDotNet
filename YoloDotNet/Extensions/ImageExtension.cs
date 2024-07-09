@@ -117,15 +117,15 @@
         }
 
         /// <summary>
-        /// Extract and normalize pixel values in an image into a DenseTensor object.
+        /// Converts the pixel values of a given image into a normalized DenseTensor object.
         /// </summary>
-        /// <param name="img">The image to extract pixel values from.</param>
-        /// <returns>A tensor containing normalized pixel values extracted from the input image.</returns>
-        public static DenseTensor<float> NormalizePixelsToTensor(this SKBitmap resizedImage, long[] inputShape, int tensorBufferSize, float[] tensorArrayBuffer)
+        /// <param name="resizedImage">The image from which to extract pixel values.</param>
+        /// <param name="inputShape">The shape of the input tensor.</param>
+        /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
+        /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
+        /// <returns>A DenseTensor<float> object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
+        unsafe public static DenseTensor<float> NormalizePixelsToTensor(this SKBitmap resizedImage, long[] inputShape, int tensorBufferSize, float[] tensorArrayBuffer)
         {
-            if (resizedImage.ColorType != SKColorType.Rgb888x)
-                throw new ArgumentException("The resized image must be in Rgb888x format.");
-
             var (batchSize, colorChannels, width, height) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
             var pixelsPerChannel = tensorBufferSize / colorChannels;
 
@@ -135,27 +135,24 @@
             // Lock the pixels for direct memory access and faster processing
             IntPtr pixelsPtr = resizedImage.GetPixels();
 
-            unsafe
+            byte* pixels = (byte*)pixelsPtr;
+
+            for (int y = 0; y < height; y++)
             {
-                byte* pixels = (byte*)pixelsPtr;
-
-                for (int y = 0; y < height; y++)
+                for (int x = 0; x < width; x++, pixelIndex++, offset += 4)
                 {
-                    for (int x = 0; x < width; x++, pixelIndex++, offset += 4)
-                    {
-                        offset = (y * width + x) * 4;
+                    offset = (y * width + x) * 4;
 
-                        var r = pixels[offset];
-                        var g = pixels[offset + 1];
-                        var b = pixels[offset + 2];
+                    var r = pixels[offset];
+                    var g = pixels[offset + 1];
+                    var b = pixels[offset + 2];
 
-                        if ((r | g | b) == 0)
-                            continue;
+                    if ((r | g | b) == 0)
+                        continue;
 
-                        tensorArrayBuffer[pixelIndex] = r / 255.0f;
-                        tensorArrayBuffer[pixelIndex + pixelsPerChannel] = g / 255.0f;
-                        tensorArrayBuffer[pixelIndex + pixelsPerChannel * 2] = b / 255.0f;
-                    }
+                    tensorArrayBuffer[pixelIndex] = r / 255.0f;
+                    tensorArrayBuffer[pixelIndex + pixelsPerChannel] = g / 255.0f;
+                    tensorArrayBuffer[pixelIndex + pixelsPerChannel * 2] = b / 255.0f;
                 }
             }
 
