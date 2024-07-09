@@ -2,6 +2,8 @@
 {
     public static class ImageExtension
     {
+        private static readonly SKPaint _resizePaintBrush = new() { FilterQuality = SKFilterQuality.Low, IsAntialias = false };
+
         /// <summary>
         /// Draw classification labels on the given image, optionally including confidence scores.
         /// </summary>
@@ -107,7 +109,7 @@
                 var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
                 // Draw the original image onto the new canvas, resizing it to fit within the destination rectangle
-                canvas.DrawImage(image, srcRect, dstRect, new SKPaint { FilterQuality = SKFilterQuality.Low, IsAntialias = false });
+                canvas.DrawImage(image, srcRect, dstRect, _resizePaintBrush);
                 canvas.Flush();
             }
 
