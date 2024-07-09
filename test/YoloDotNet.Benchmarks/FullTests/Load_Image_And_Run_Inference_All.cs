@@ -1,10 +1,7 @@
-﻿using System.Reflection.Metadata;
-
-namespace YoloDotNet.Benchmarks.SkiaSharpTests
+﻿namespace YoloDotNet.Benchmarks.SkiaSharpTests
 {
-
     [MemoryDiagnoser]
-    public class SkiaSharpFullTests
+    public class Load_Image_And_Run_Inference_All
     {
         #region Test images
 
@@ -141,33 +138,32 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         #region Test: Classification
 
         [Benchmark]
-        public void FullClassificationCPU()
+        public void ClassificationCPU()
         {
             using var image = SKImage.FromEncodedData(_bird);
             _ = _yoloClassificationCPU.RunClassification(image);
         }
 
         [Benchmark]
-        public void FullClassificationGPU()
+        public void ClassificationGPU()
         {
             using var image = SKImage.FromEncodedData(_bird);
             _ = _yoloClassificationGPU.RunClassification(image);
         }
 
         #endregion
-        /*
 
         #region Test: Object Detection
 
         [Benchmark]
-        public void FullObjectDetectionCPU()
+        public void ObjectDetectionCPU()
         {
             using var image = SKImage.FromEncodedData(_street);
             _ = _yoloObjedDetectionCPU.RunObjectDetection(image);
         }
 
         [Benchmark]
-        public void FullObjectDetectionGPU()
+        public void ObjectDetectionGPU()
         {
             using var image = SKImage.FromEncodedData(_street);
             _ = _yoloObjedDetectionGPU.RunObjectDetection(image);
@@ -178,14 +174,14 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         #region Test: Segmentation
 
         [Benchmark]
-        public void FullSegmentationCPU()
+        public void SegmentationCPU()
         {
             using var image = SKImage.FromEncodedData(_people);
             _ = _yoloSegmentationCPU.RunSegmentation(image);
         }
 
         [Benchmark]
-        public void FullSegmentationGPU()
+        public void SegmentationGPU()
         {
             using var image = SKImage.FromEncodedData(_people);
             _ = _yoloSegmentationGPU.RunSegmentation(image);
@@ -196,16 +192,16 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         #region Test: Pose Estimation
 
         [Benchmark]
-        public void FullPoseEstimationCPU()
+        public void PoseEstimationCPU()
         {
-            using var image = SKImage.FromEncodedData(_street);
+            using var image = SKImage.FromEncodedData(_crosswalk);
             _ = _yoloPoseEstimationCPU.RunPoseEstimation(image);
         }
 
         [Benchmark]
-        public void FullPoseEstimationGPU()
+        public void PoseEstimationGPU()
         {
-            using var image = SKImage.FromEncodedData(_street);
+            using var image = SKImage.FromEncodedData(_crosswalk);
             _ = _yoloPoseEstimationGPU.RunPoseEstimation(image);
         }
 
@@ -214,21 +210,19 @@ namespace YoloDotNet.Benchmarks.SkiaSharpTests
         #region Test: OBB Detection
 
         [Benchmark]
-        public void FullObbDetectionCPU()
+        public void ObbDetectionCPU()
         {
-            using var image = SKImage.FromEncodedData(_street);
+            using var image = SKImage.FromEncodedData(_island);
             _ = _yoloObbDetectionCPU.RunObbDetection(image);
         }
 
         [Benchmark]
-        public void FullObbDetectionGPU()
+        public void ObbDetectionGPU()
         {
-            using var image = SKImage.FromEncodedData(_street);
+            using var image = SKImage.FromEncodedData(_island);
             _ = _yoloObbDetectionGPU.RunObbDetection(image);
         }
 
         #endregion
-
-        */
     }
 }
