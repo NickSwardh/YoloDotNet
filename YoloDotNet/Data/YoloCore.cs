@@ -13,6 +13,8 @@
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
 
+        private bool _isDisposed;
+
         private InferenceSession _session = default!;
         private RunOptions _runOptions = default!;
         private OrtIoBinding _ortIoBinding = default!;
@@ -274,16 +276,18 @@
                 throw new Exception($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModelType}.");
         }
 
-
         /// <summary>
         /// Releases resources and suppresses the finalizer for the current object.
         /// </summary>
         public void Dispose()
         {
+            if (_isDisposed) return;
+
+            _session?.Dispose();
             _ortIoBinding?.Dispose();
             _runOptions?.Dispose();
-            _session?.Dispose();
-            ImageExtension.resizePaintBrush?.Dispose();
+
+            _isDisposed = true;
             GC.SuppressFinalize(this);
         }
     }
