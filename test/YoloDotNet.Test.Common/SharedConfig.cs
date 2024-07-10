@@ -12,6 +12,12 @@
         private const string BASE_MODELS = ASSETS_FOLDER + @"\models";
         private const string BASE_MEDIA = ASSETS_FOLDER + @"\media";
 
+        /// <summary>
+        /// Test models for Yolo V8
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModel(ModelType modelType) => modelType switch
         {
             ModelType.Classification => Path.Combine(BASE_MODELS, "yolov8s-cls.onnx"),
@@ -22,6 +28,24 @@
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
+        /// <summary>
+        /// Test models for Yolo V10
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string GetTestModelV10(ModelType modelType) => modelType switch
+        {
+            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov10s.onnx"),
+            _ => throw new ArgumentException("Unknown modeltype.")
+        };
+
+        /// <summary>
+        /// Test images
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
         public static string GetTestImage(ImageType imageType) => imageType switch
         {
             ImageType.Hummingbird => Path.Combine(BASE_MEDIA, "hummingbird.jpg"),
