@@ -23,7 +23,8 @@
         public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            return PoseEstimateImage(image, ortValues[0], confidence, iou);
+            using var ort = ortValues[0];
+            return PoseEstimateImage(image, ort, confidence, iou);
         }
 
         public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double iou)
@@ -81,7 +82,13 @@
 
         public void Dispose()
         {
-            _yoloCore!.Dispose();
+            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
+            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+
+            _yoloCore?.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion

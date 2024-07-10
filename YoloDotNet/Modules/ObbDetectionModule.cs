@@ -23,7 +23,9 @@
         public List<OBBDetection> ProcessImage(SKImage image, double confidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            var objectDetectionResults = _objectDetectionModule.ObjectDetectImage(image, ortValues[0], confidence, iou);
+            using var ort = ortValues[0];
+
+            var objectDetectionResults = _objectDetectionModule.ObjectDetection(image, ort, confidence, iou);
 
             return objectDetectionResults.Select(x => (OBBDetection)x).ToList();
         }
@@ -42,7 +44,13 @@
 
         public void Dispose()
         {
+            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
+            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+
             _yoloCore?.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion

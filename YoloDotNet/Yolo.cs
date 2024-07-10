@@ -132,10 +132,12 @@
 
         public void Dispose()
         {
-            _detection?.Dispose();
             VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
             VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
             VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+
+            _detection.Dispose();
+
             GC.SuppressFinalize(this);
         }
 

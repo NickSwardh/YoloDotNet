@@ -118,9 +118,10 @@
             }
 
             // Clean up the mess
-            segmentedBitmap.Dispose();
             croppedImage.Dispose();
             resizedBitmap.Dispose();
+            ortValues[0].Dispose();
+            ortValues[1].Dispose();
 
             return boundingBoxes.Select(x => (Segmentation)x).ToList();
         }
@@ -216,7 +217,13 @@
 
         public void Dispose()
         {
+            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
+            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+
+            _objectDetectionModule?.Dispose();
             _yoloCore?.Dispose();
+            GC.SuppressFinalize(this);
         }
 
         #endregion

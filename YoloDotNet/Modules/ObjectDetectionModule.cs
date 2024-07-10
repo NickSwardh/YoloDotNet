@@ -25,8 +25,9 @@
 
         public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double iou)
         {
-            using var ortValues = _yoloCore.Run(image);
-            return ObjectDetectImage(image, ortValues[0], confidence, iou)
+            using var ortValues = _yoloCore!.Run(image);
+            using var ort = ortValues[0];
+            return ObjectDetection(image, ort, confidence, iou)
                 .Select(x => (ObjectDetection)x)
                 .ToList();
         }
@@ -120,7 +121,13 @@
 
         public void Dispose()
         {
+            VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
+            VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+
             _yoloCore?.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion

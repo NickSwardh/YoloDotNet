@@ -21,7 +21,8 @@
         public List<Classification> ProcessImage(SKImage image, double classes, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
-            return ClassifyTensor(ortValues[0], (int)classes);
+            using var ort = ortValues[0];
+            return ClassifyTensor(ort, (int)classes);
         }
 
         public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double iou)
@@ -61,11 +62,17 @@
             _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
             _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
             _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
         }
+
         public void Dispose()
         {
-            _yoloCore?.Dispose();
+            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
+            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
+
+            _yoloCore.Dispose();
+
+            GC.SuppressFinalize(this);
         }
 
         #endregion
