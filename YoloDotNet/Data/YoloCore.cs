@@ -101,7 +101,11 @@
         /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes.</param>
         /// <param name="func">A function that processes each frame and returns a list of inference results.</param>
         /// <returns>A dictionary where the key is the frame index and the value is a list of inference results of type <typeparamref name="T"/>.</returns>
-        public Dictionary<int, List<T>> RunVideo<T>(VideoOptions options, double confidence, double iouThreshold, Func<SKImage, double, double, List<T>> func) where T : class, new()
+        public Dictionary<int, List<T>> RunVideo<T>(
+            VideoOptions options,
+            double confidence,
+            double iouThreshold,
+            Func<SKImage, double, double, List<T>> func) where T : class, new()
         {
             var output = new Dictionary<int, List<T>>();
 
@@ -128,7 +132,10 @@
         /// <summary>
         /// Runs batch inference on the extracted video frames.
         /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(VideoHandler.VideoHandler _videoHandler, double confidence, double iouThreshold, Func<SKImage, double, double, List<T>> func) where T : class, new()
+        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(
+            VideoHandler.VideoHandler _videoHandler,
+            double confidence, double iouThreshold,
+            Func<SKImage, double, double, List<T>> func) where T : class, new()
         {
             var frames = _videoHandler.GetExtractedFrames();
             int progressCounter = 0;
