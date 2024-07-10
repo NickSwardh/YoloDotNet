@@ -1,22 +1,20 @@
 ﻿namespace YoloDotNet.Modules
 {
-    internal class ObbDetectionModule
-        : IDetectionModule, IModule<List<OBBDetection>, Dictionary<int, List<OBBDetection>>>
+    internal class OBBDetectionModuleV8 : IOBBDetectionModule
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
 
         private readonly YoloCore _yoloCore;
-        private readonly ObjectDetectionModule _objectDetectionModule;
+        private readonly ObjectDetectionModuleV8 _objectDetectionModule = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
-        public ObbDetectionModule(string onnxModel, bool cuda = true, bool primeGpu = false, int gpuId = 0)
+        public OBBDetectionModuleV8(YoloCore yoloCore)
         {
-            _yoloCore = new YoloCore(onnxModel, cuda, primeGpu, gpuId);
-            _objectDetectionModule = new ObjectDetectionModule(_yoloCore);
-            _yoloCore.InitializeYolo(ModelType.ObbDetection);
+            _yoloCore = yoloCore;
+            _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
             SubscribeToVideoEvents();
         }
 

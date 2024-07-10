@@ -54,13 +54,13 @@
         {
             FilterQuality = SKFilterQuality.Low,
             IsAntialias = false,
-            IsDither = false,
-            BlendMode = SKBlendMode.Src,
-            Shader = null,
-            MaskFilter = null,
-            PathEffect = null,
-            ImageFilter = null,
-            ColorFilter = null
+            IsDither = true,
+            //BlendMode = SKBlendMode.Src,
+            //Shader = null,
+            //MaskFilter = null,
+            //PathEffect = null,
+            //ImageFilter = null,
+            //ColorFilter = null
         };
 
         /// <summary>
@@ -95,10 +95,6 @@
             int modelHeight = skInfo.Height;
             int width = image.Width;
             int height = image.Height;
-
-            //// If the image is already of the correct size and color space, no resizing or conversion is needed
-            //if (width == modelHeight && height == modelWidth && image.ColorSpace == skInfo.ColorSpace)
-            //    return SKBitmap.FromImage(image);
 
             // Calculate the new image size based on the aspect ratio
             float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);

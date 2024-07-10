@@ -12,6 +12,7 @@
             var metaData = session.ModelMetadata.CustomMetadataMap;
 
             var modelType = GetModelType(metaData[NameOf(MetaData.Task)]);
+            var modelVersion = GetModelVersion(metaData[NameOf(MetaData.Description)]);
 
             var inputName = session.InputNames[0];
             var outputNames = session.OutputNames.ToList();
@@ -19,6 +20,7 @@
             return new OnnxModel()
             {
                 ModelType = modelType,
+                ModelVersion = modelVersion,
                 InputName = inputName,
                 OutputNames = outputNames,
                 CustomMetaData = metaData,
@@ -99,6 +101,18 @@
             .FirstOrDefault((x => Attribute.GetCustomAttribute(x, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute && attribute.Value == modelType)))!
             .GetValue(null)!;
 
+        /// <summary>
+        /// Get ONNX model version
+        /// </summary>
+        private static ModelVersion GetModelVersion(string modelDescription)
+        {
+            return modelDescription.ToLower() switch
+            {
+                var version when version.Contains("yolov8") => ModelVersion.V8,
+                var version when version.Contains("yolov10") => ModelVersion.V10,
+                _ => throw new NotSupportedException("Onnx model not supported!")
+            };
+        }
         #endregion
     }
 }

@@ -7,5 +7,6 @@
     {
         Task,
         Names,
+        Description
     }
 }

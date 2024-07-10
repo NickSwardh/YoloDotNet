@@ -1,0 +1,70 @@
+﻿namespace YoloDotNet.Data
+{
+    /// <summary>
+    /// Factory class to create YOLO detection modules based on model version and type.
+    /// </summary>
+    internal class ModuleFactory
+    {
+        // Dictionary mapping model versions and types to their respective module creation functions.
+        private static readonly Dictionary<ModelVersion, Dictionary<ModelType, Func<YoloCore, IModule>>> _versionModuleMap =
+        new()
+        {
+            {
+                ModelVersion.V8, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => new ClassificationModuleV8(core) },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV8(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV8(core) },
+                    { ModelType.Segmentation, core => new SegmentationModuleV8(core) },
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV8(core) }
+                }
+            },
+            {
+                ModelVersion.V10, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV10(core) },
+                    { ModelType.ObbDetection, core => throw new NotImplementedException() },
+                    { ModelType.Segmentation, core => throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            }
+        };
+
+        /// <summary>
+        /// Creates a detection module based on the specified YOLO options.
+        /// </summary>
+        /// <param name="options">The options for creating the YOLO detection module.</param>
+        /// <returns>An instance of the appropriate detection module.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the model version or type is unsupported.</exception>
+        public static IModule CreateModule(YoloOptions options)
+        {
+            var yoloCore = InitializeYoloCore(options);
+
+            // Get model version and type
+            var modelVersion = yoloCore.OnnxModel.ModelVersion;
+            var modelType = options.ModelType;
+
+            // Get dictionary from module map based on model version
+            var versionSelected = _versionModuleMap.TryGetValue(modelVersion, out var moduleMap);
+            var moduleSelected = moduleMap!.TryGetValue(modelType, out var createModule);
+
+            if (versionSelected && moduleSelected)
+                return createModule!(yoloCore);
+
+            throw new InvalidOperationException($"Unsupported detection type {modelType} or model version {modelVersion}.");
+        }
+
+        /// <summary>
+        /// Initializes the YoloCore based on the specified options.
+        /// </summary>
+        /// <param name="options">The options for initializing the Yolo model.</param>
+        /// <returns>An initialized YoloCore instance.</returns>
+        private static YoloCore InitializeYoloCore(YoloOptions options)
+        {
+            var yoloCore = new YoloCore(options.OnnxModel, options.Cuda, options.PrimeGpu, options.GpuId);
+            yoloCore.InitializeYolo(options.ModelType);
+            return yoloCore;
+        }
+    }
+}

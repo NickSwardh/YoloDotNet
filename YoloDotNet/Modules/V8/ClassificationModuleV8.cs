@@ -1,7 +1,6 @@
-﻿namespace YoloDotNet.Modules
+﻿namespace YoloDotNet.Modules.V8
 {
-    public class ClassificationModule
-        : IDetectionModule, IModule<List<Classification>, Dictionary<int, List<Classification>>>
+    public class ClassificationModuleV8 : IClassificationModule
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
@@ -11,10 +10,9 @@
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
-        public ClassificationModule(string onnxModel, bool cuda = true, bool primeGpu = false, int gpuId = 0)
+        public ClassificationModuleV8(YoloCore yoloCore)
         {
-            _yoloCore = new YoloCore(onnxModel, cuda, primeGpu, gpuId);
-            _yoloCore.InitializeYolo(ModelType.Classification);
+            _yoloCore = yoloCore;
             SubscribeToVideoEvents();
         }
 

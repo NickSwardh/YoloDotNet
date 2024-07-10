@@ -7,6 +7,8 @@
     {
         public ModelType ModelType { get; init; }
 
+        public ModelVersion ModelVersion { get; set; }
+
         /// <summary>
         /// Name of the input tensor in the ONNX model.
         /// </summary>

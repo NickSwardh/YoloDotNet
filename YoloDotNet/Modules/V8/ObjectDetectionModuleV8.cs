@@ -1,7 +1,6 @@
-﻿namespace YoloDotNet.Modules
+﻿namespace YoloDotNet.Modules.V8
 {
-    public class ObjectDetectionModule
-        : IDetectionModule, IModule<List<ObjectDetection>, Dictionary<int, List<ObjectDetection>>>
+    public class ObjectDetectionModuleV8 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
 
@@ -10,26 +9,22 @@
         public event EventHandler VideoStatusEvent = delegate { };
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
-        public ObjectDetectionModule(YoloCore yoloCore)
+
+        public ObjectDetectionModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
             SubscribeToVideoEvents();
         }
 
-        public ObjectDetectionModule(string onnxModel, bool cuda = true, bool primeGpu = false, int gpuId = 0)
-        {
-            _yoloCore = new YoloCore(onnxModel, cuda, primeGpu, gpuId);
-            _yoloCore.InitializeYolo(ModelType.ObjectDetection);
-            SubscribeToVideoEvents();
-        }
-
         public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double iou)
         {
-            using var ortValues = _yoloCore!.Run(image);
+            using var ortValues = _yoloCore.Run(image);
             using var ort = ortValues[0];
-            return ObjectDetection(image, ort, confidence, iou)
+            var results = ObjectDetection(image, ort, confidence, iou)
                 .Select(x => (ObjectDetection)x)
                 .ToList();
+
+            return results;
         }
 
         public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
@@ -44,7 +39,7 @@
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetectImage(SKImage image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        public ObjectResult[] ObjectDetection(SKImage image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
             var (xPad, yPad, gain) = _yoloCore.CalculateGain(image);
 
@@ -114,7 +109,7 @@
 
         private void SubscribeToVideoEvents()
         {
-            _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
+            _yoloCore!.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
             _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
             _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
         }

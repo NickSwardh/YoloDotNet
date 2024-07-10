@@ -1,22 +1,20 @@
-﻿namespace YoloDotNet.Modules
+﻿namespace YoloDotNet.Modules.V8
 {
-    public class SegmentationModule
-        : IDetectionModule, IModule<List<Segmentation>, Dictionary<int, List<Segmentation>>>
+    public class SegmentationModuleV8 : ISegmentationModule
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
 
         private readonly YoloCore _yoloCore;
-        private readonly ObjectDetectionModule _objectDetectionModule;
+        private readonly ObjectDetectionModuleV8 _objectDetectionModule;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
-        public SegmentationModule(string onnxModel, bool cuda = true, bool primeGpu = false, int gpuId = 0)
+        public SegmentationModuleV8(YoloCore yoloCore)
         {
-            _yoloCore = new YoloCore(onnxModel, cuda, primeGpu, gpuId);
-            _objectDetectionModule = new ObjectDetectionModule(_yoloCore);
-            _yoloCore.InitializeYolo(ModelType.Segmentation);
+            _yoloCore = yoloCore;
+            _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
             SubscribeToVideoEvents();
         }
 
@@ -64,7 +62,7 @@
         /// <returns>A list of Segmentation objects corresponding to the input bounding boxes.</returns> 
         private List<Segmentation> RunSegmentation(SKImage image, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double iou)
         {
-            var boundingBoxes = _objectDetectionModule.ObjectDetectImage(image, ortValues[0], confidence, iou);
+            var boundingBoxes = _objectDetectionModule.ObjectDetection(image, ortValues[0], confidence, iou);
             var pixels = new ConcurrentBag<Pixel>();
             var croppedImage = new SKBitmap();
             var resizedBitmap = new SKBitmap();

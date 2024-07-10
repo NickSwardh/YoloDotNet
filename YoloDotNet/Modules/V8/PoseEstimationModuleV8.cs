@@ -1,22 +1,20 @@
-﻿namespace YoloDotNet.Modules
+﻿namespace YoloDotNet.Modules.V8
 {
-    internal class PoseEstimationModule
-        : IDetectionModule, IModule<List<PoseEstimation>, Dictionary<int, List<PoseEstimation>>>
+    internal class PoseEstimationModuleV8 : IPoseEstimationModule
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
 
         private readonly YoloCore _yoloCore;
-        private readonly ObjectDetectionModule _objectDetectionModule;
+        private readonly ObjectDetectionModuleV8 _objectDetectionModule;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
-        public PoseEstimationModule(string onnxModel, bool cuda = true, bool primeGpu = false, int gpuId = 0)
+        public PoseEstimationModuleV8(YoloCore yoloCore)
         {
-            _yoloCore = new YoloCore(onnxModel, cuda, primeGpu, gpuId);
-            _objectDetectionModule = new ObjectDetectionModule(_yoloCore);
-            _yoloCore.InitializeYolo(ModelType.PoseEstimation);
+            _yoloCore = yoloCore;
+            _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
             SubscribeToVideoEvents();
         }
 
@@ -34,7 +32,7 @@
 
         public List<PoseEstimation> PoseEstimateImage(SKImage image, OrtValue ortTensor, double threshold, double overlapThrehshold)
         {
-            var boxes = _objectDetectionModule.ObjectDetectImage(image, ortTensor, threshold, overlapThrehshold);
+            var boxes = _objectDetectionModule.ObjectDetection(image, ortTensor, threshold, overlapThrehshold);
             //var boxes = ObjectDetectImage(image, threshold, overlapThrehshold);
 
 

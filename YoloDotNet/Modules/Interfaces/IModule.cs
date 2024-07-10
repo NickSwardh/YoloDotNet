@@ -1,11 +1,11 @@
-﻿namespace YoloDotNet.Modules
+﻿namespace YoloDotNet.Modules.Interfaces
 {
-    public interface IDetectionModule : IDisposable
+    public interface IModule : IDisposable
     {
+        OnnxModel OnnxModel { get; }
+
         public event EventHandler VideoStatusEvent;
         public event EventHandler VideoProgressEvent;
         public event EventHandler VideoCompleteEvent;
-
-        public OnnxModel OnnxModel { get; }
     }
 }
