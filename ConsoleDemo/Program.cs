@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using System.Diagnostics;
 using System.Collections.Generic;
-
 using YoloDotNet;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;
@@ -41,7 +40,7 @@ static void CreateOutputFolder()
 
 static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false, bool primeGpu = false)
 {
-    var modelPath = SharedConfig.GetTestModel(modelType);
+    var modelPath = SharedConfig.GetTestModel(modelType); 
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(new YoloOptions()
@@ -51,9 +50,6 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
         PrimeGpu = primeGpu,
         ModelType = modelType,
     });
-
-    var sw = new Stopwatch();
-    sw.Start();
 
     using var image = SKImage.FromEncodedData(imagePath);
 
@@ -68,6 +64,7 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
  
     switch (modelType)
     {
+        
         case ModelType.Classification:
             {
                 var result = yolo.RunClassification(image, 1);
@@ -75,7 +72,6 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
                 resultImage = image.Draw(result);
                 break;
             }
-
         case ModelType.ObjectDetection:
             {
                 var result = yolo.RunObjectDetection(image);
