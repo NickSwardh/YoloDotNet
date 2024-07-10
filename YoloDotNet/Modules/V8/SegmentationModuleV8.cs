@@ -121,7 +121,7 @@
             ortValues[0].Dispose();
             ortValues[1].Dispose();
 
-            return boundingBoxes.Select(x => (Segmentation)x).ToList();
+            return [.. boundingBoxes.Select(x => (Segmentation)x)];
         }
 
         private static SKRectI ScaleBoundingBox(ObjectResult box, float scalingFactorW, float scalingFactorH)

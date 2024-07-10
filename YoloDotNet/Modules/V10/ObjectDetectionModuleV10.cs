@@ -21,10 +21,9 @@
             using var ortValues = _yoloCore!.Run(image);
             using var ort = ortValues[0];
             var results = ObjectDetection(image, ort, confidence, iou)
-                .Select(x => (ObjectDetection)x)
-                .ToList();
+                .Select(x => (ObjectDetection)x);
 
-            return results;
+            return [.. results];
         }
 
         public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
@@ -75,9 +74,9 @@
                 _yoloCore.customSizeObjectResultPool.Return(boxes, true);
             }
 
-            var results = boxes.Where(x => x is not null).ToArray();
+            var results = boxes.Where(x => x is not null);
 
-            return _yoloCore.RemoveOverlappingBoxes(results, overlapThreshold);
+            return _yoloCore.RemoveOverlappingBoxes([.. results], overlapThreshold);
         }
 
         private void SubscribeToVideoEvents()

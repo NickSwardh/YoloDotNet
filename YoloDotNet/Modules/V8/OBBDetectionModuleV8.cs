@@ -25,7 +25,7 @@
 
             var objectDetectionResults = _objectDetectionModule.ObjectDetection(image, ort, confidence, iou);
 
-            return objectDetectionResults.Select(x => (OBBDetection)x).ToList();
+            return [.. objectDetectionResults.Select(x => (OBBDetection)x)];
         }
 
         public Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
