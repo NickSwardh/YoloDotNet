@@ -56,7 +56,7 @@
             // Create blank image for initial inference
             using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
 
-            var resizedImg = img.ResizeImage(resizeInfo);
+            using var resizedImg = img.ResizeImage(resizeInfo);
 
             // Prepare tensor buffer
             var tensorBufferSize = batchSize * channels * width * height;
@@ -82,7 +82,7 @@
             using var ortResults = session.Run(new RunOptions(), inputNames, outputNames);
 
             // Return array buffer to array pool for reuse.
-            customSizeFloatPool.Return(tensorArrayBuffer);
+            customSizeFloatPool.Return(tensorArrayBuffer, true);
         }
     }
 }
