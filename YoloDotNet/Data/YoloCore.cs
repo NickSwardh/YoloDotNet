@@ -23,11 +23,8 @@
         private readonly object _progressLock = new();
         private SKImageInfo _imageInfo;
 
-        protected Dictionary<string, OrtValue> Tensors { get; set; } = [];
         public ParallelOptions parallelOptions = default!;
         public OnnxModel OnnxModel { get; private set; } = default!;
-
-        public RunOptions _ortRunOptions = default!;
 
         /// <summary>
         /// Initializes the YOLO model with the specified model type.
@@ -88,7 +85,7 @@
             }
             finally
             {
-                customSizeFloatPool.Return(tensorArrayBuffer, clearArray: true);
+                customSizeFloatPool.Return(tensorArrayBuffer, true);
             }
         }
 
