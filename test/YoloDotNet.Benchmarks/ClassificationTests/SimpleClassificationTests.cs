@@ -5,8 +5,8 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(ModelType.Classification);
-        private static string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+        private static readonly string _model = SharedConfig.GetTestModel(ModelType.Classification);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private Yolo _cudaYolo;
         private Yolo _cpuYolo;
@@ -19,7 +19,11 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var options = new YoloOptions { OnnxModel = _model };
+            var options = new YoloOptions
+            {
+                OnnxModel = _model,
+                ModelType = ModelType.Classification
+            };
 
             _cudaYolo = new Yolo(options);
 
