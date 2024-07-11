@@ -64,7 +64,7 @@
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
-                        BoundingBox = new SKRectI((int)minX, (int)minY, (int)width, (int)height),
+                        BoundingBox = new SKRectI(minX, minY, width, height),
                         BoundingBoxIndex = i
                     };
                 }

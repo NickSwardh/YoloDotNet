@@ -195,7 +195,7 @@
         /// <param name="predictions">The list of object detection results to process.</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        public ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold, bool isSkia = true)
+        public static ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
         {
             Array.Sort(predictions, (a, b) => b.Confidence.CompareTo(a.Confidence));
             var result = new HashSet<ObjectResult>();
