@@ -96,9 +96,9 @@
                     }
                 }
 
-                var results = boxes.Where(x => x is not null).ToArray();
+                var results = boxes.Where(x => x is not null);
 
-                return _yoloCore.RemoveOverlappingBoxes(results, overlapThreshold);
+                return _yoloCore.RemoveOverlappingBoxes([.. results], overlapThreshold);
             }
             finally
             {
