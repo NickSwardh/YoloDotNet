@@ -18,8 +18,6 @@
 
         private static SKBitmap _resizedBitmap;
 
-        private SKImageInfo _skImageInfo;
-
         #endregion Fields
 
         #region Methods
@@ -37,9 +35,9 @@
             _cpuYolo = new Yolo(options);
             _image = SKImage.FromEncodedData(_testImage);
 
-            _skImageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            var imageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
-            _resizedBitmap = _image.ResizeImage(_skImageInfo);
+            _resizedBitmap = _image.ResizeImage(imageInfo);
 
             _tensorBufferSize = _cpuYolo.OnnxModel.Input.BatchSize * _cpuYolo.OnnxModel.Input.Channels * _cpuYolo.OnnxModel.Input.Width * _cpuYolo.OnnxModel.Input.Height;
             _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
@@ -49,7 +47,10 @@
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _customSizeFloatPool.Return(array: _tensorArrayBuffer);
+            _customSizeFloatPool.Return(_tensorArrayBuffer, true);
+            _resizedBitmap.Dispose();
+            _image.Dispose();
+            _cpuYolo?.Dispose();
         }
 
         [Benchmark]
