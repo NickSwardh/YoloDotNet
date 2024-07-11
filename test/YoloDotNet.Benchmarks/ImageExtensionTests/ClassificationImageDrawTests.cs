@@ -22,6 +22,7 @@
             var options = new YoloOptions
             {
                 OnnxModel = _model,
+                ModelType = ModelType.Classification,
                 Cuda = false
             };
 
