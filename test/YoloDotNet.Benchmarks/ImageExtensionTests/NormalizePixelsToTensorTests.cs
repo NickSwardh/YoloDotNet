@@ -5,8 +5,8 @@
     {
         #region Fields
 
-        private static string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private static string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
+        private static readonly string _model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
         private ArrayPool<float> _customSizeFloatPool;
 
         private int _tensorBufferSize;
@@ -40,8 +40,8 @@
             _resizedBitmap = _image.ResizeImage(imageInfo);
 
             _tensorBufferSize = _cpuYolo.OnnxModel.Input.BatchSize * _cpuYolo.OnnxModel.Input.Channels * _cpuYolo.OnnxModel.Input.Width * _cpuYolo.OnnxModel.Input.Height;
-            _customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
-            _tensorArrayBuffer = _customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+            _customSizeFloatPool = ArrayPool<float>.Create(_tensorBufferSize + 1, 10);
+            _tensorArrayBuffer = _customSizeFloatPool.Rent(_tensorBufferSize);
         }
 
         [GlobalCleanup]

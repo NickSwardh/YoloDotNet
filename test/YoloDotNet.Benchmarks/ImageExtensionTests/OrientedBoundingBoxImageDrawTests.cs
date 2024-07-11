@@ -21,8 +21,8 @@
         {
             var options = new YoloOptions
             {
-                ModelType = ModelType.ObbDetection,
                 OnnxModel = _model,
+                ModelType = ModelType.ObbDetection,
                 Cuda = false
             };
 
@@ -37,11 +37,14 @@
             _cpuYolo?.Dispose();
             _image?.Dispose();
         }
-        
+
+        [Params(false, true)]
+        public bool DrawConfidence { get; set; }
+
         [Benchmark]
         public void DrawOrientedBoundingBox()
         {
-            _ = _image.Draw(_oBBDetections);
+            _ = _image.Draw(_oBBDetections, DrawConfidence);
         }
 
         #endregion Methods

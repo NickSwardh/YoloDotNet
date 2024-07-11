@@ -44,7 +44,7 @@
         [Benchmark]
         public SKImage DrawClassification()
         {
-            return _image.Draw(classifications: _classifications, drawConfidence: DrawConfidence);
+            return _image.Draw(_classifications, DrawConfidence);
         }
 
         #endregion Methods

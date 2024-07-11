@@ -5,8 +5,8 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModel(modelType: ModelType.PoseEstimation);
-        private readonly string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Crosswalk);
+        private readonly string _model = SharedConfig.GetTestModel(ModelType.PoseEstimation);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
         private Yolo _cpuYolo;
         private SKImage _image;
@@ -38,7 +38,7 @@
             _image.Dispose();
         }
 
-        [Params(true,false)]
+        [Params(true, false)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]

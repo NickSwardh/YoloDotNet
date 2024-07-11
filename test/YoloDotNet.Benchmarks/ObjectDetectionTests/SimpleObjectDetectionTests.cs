@@ -5,8 +5,8 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModel(modelType: ModelType.ObjectDetection);
-        private readonly string _testImage = SharedConfig.GetTestImage(imageType: ImageType.Street);
+        private readonly string _model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
 
         private Yolo _cudaYolo;
         private Yolo _cpuYolo;
