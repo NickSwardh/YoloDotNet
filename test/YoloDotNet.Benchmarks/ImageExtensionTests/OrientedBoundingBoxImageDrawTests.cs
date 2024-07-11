@@ -5,7 +5,7 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModel(ModelType.ObbDetection);
+        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.ObbDetection);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
 
         private Yolo _cpuYolo;

@@ -6,7 +6,7 @@
         public void RunClassification_LabelImageCorrectly_AssertTrue()
         {
             // Arrange
-            var model  = SharedConfig.GetTestModel(ModelType.Classification);
+            var model  = SharedConfig.GetTestModelV8(ModelType.Classification);
             var testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
             var yolo = new Yolo(new YoloOptions
@@ -29,7 +29,7 @@
         public void RunObjectDetection_GetExpectedNumberOfObjects_AssertTrue()
         {
             // Arrange
-            var model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+            var model = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Street);
 
             var yolo = new Yolo(new YoloOptions
@@ -52,7 +52,7 @@
         public void RunObbDetection_GetExpectedNumberOfObjects_AssertTrue()
         {
             // Arrange
-            var model = SharedConfig.GetTestModel(ModelType.ObbDetection);
+            var model = SharedConfig.GetTestModelV8(ModelType.ObbDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Island);
 
             var yolo = new Yolo(new YoloOptions
@@ -75,7 +75,7 @@
         public void RunSegmentation_GetExpectedNumberOfSegmentations_AssertTrue()
         {
             // Arrange
-            var model = SharedConfig.GetTestModel(ModelType.Segmentation);
+            var model = SharedConfig.GetTestModelV8(ModelType.Segmentation);
             var testImage = SharedConfig.GetTestImage(ImageType.People);
 
             var yolo = new Yolo(new YoloOptions
@@ -98,7 +98,7 @@
         public void RunPoseEstimation_GetExpectedNumberOfPoseEstimations_AssertTrue()
         {
             // Arrange
-            var model = SharedConfig.GetTestModel(ModelType.PoseEstimation);
+            var model = SharedConfig.GetTestModelV8(ModelType.PoseEstimation);
             var testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
             var yolo = new Yolo(new YoloOptions

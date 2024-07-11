@@ -32,7 +32,7 @@ namespace YoloDotNet.Tests
             // Arrange
             var yolo = new Yolo(new YoloOptions
             {
-                OnnxModel = SharedConfig.GetTestModel(modelTypeToTest),
+                OnnxModel = SharedConfig.GetTestModelV8(modelTypeToTest),
                 ModelType = modelTypeToTest,
                 Cuda = false
             });

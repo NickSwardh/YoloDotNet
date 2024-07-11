@@ -5,7 +5,7 @@
     {
         #region Fields
 
-        private static readonly string _model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+        private static readonly string _model = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
         private static readonly string _originalSizeimagePath = SharedConfig.GetTestImage(ImageType.Street);
         private static readonly string _modelSizeimagePath = SharedConfig.GetTestImage("street640x640.jpg");
 

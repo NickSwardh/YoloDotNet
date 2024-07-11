@@ -13,7 +13,7 @@
             // Act
             try
             {
-                var model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+                var model = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
                 var mock = new Yolo(new YoloOptions
                 {
                     OnnxModel = model,

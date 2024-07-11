@@ -5,7 +5,7 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModel(ModelType.Classification);
+        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.Classification);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private Yolo _cpuYolo;

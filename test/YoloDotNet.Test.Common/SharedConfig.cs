@@ -18,7 +18,7 @@
         /// <param name="modelType"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
-        public static string GetTestModel(ModelType modelType) => modelType switch
+        public static string GetTestModelV8(ModelType modelType) => modelType switch
         {
             ModelType.Classification => Path.Combine(BASE_MODELS, "yolov8s-cls.onnx"),
             ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov8s.onnx"),

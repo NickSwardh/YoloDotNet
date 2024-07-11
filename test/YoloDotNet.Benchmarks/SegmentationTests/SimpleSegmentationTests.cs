@@ -5,7 +5,7 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModel(ModelType.Segmentation);
+        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.Segmentation);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
 
         private Yolo _cudaYolo;

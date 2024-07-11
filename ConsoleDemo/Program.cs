@@ -40,7 +40,7 @@ static void CreateOutputFolder()
 
 static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false, bool primeGpu = false)
 {
-    var modelPath = SharedConfig.GetTestModel(modelType); 
+    var modelPath = SharedConfig.GetTestModelV8(modelType); 
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(new YoloOptions()
@@ -131,7 +131,7 @@ static void ObjectDetectionOnVideo()
 
     using var yolo = new Yolo(new YoloOptions
     {
-        OnnxModel = SharedConfig.GetTestModel(ModelType.ObjectDetection),
+        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
         ModelType = ModelType.ObjectDetection
     });
 
@@ -190,7 +190,7 @@ static void DisplayOnnxMetaDataExample()
 
     using var yolo = new Yolo(new YoloOptions
     {
-        OnnxModel = SharedConfig.GetTestModel(ModelType.ObjectDetection),
+        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
         ModelType = ModelType.ObjectDetection
     });
 

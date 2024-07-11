@@ -5,7 +5,7 @@
     {
         #region Fields
 
-        private static readonly string _model = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+        private static readonly string _model = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
         private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
         private ArrayPool<float> _customSizeFloatPool;
 

@@ -5,7 +5,7 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModel(ModelType.PoseEstimation);
+        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.PoseEstimation);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
         private Yolo _cudaYolo;

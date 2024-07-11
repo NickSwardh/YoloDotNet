@@ -4,7 +4,7 @@
     public class YoloV8_vs_Yolov10_ObjectDetectionTests
     {
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
-        private readonly string _modelV8 = SharedConfig.GetTestModel(ModelType.ObjectDetection);
+        private readonly string _modelV8 = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
         private readonly string _modelv10 = SharedConfig.GetTestModelV10(ModelType.ObjectDetection);
 
         private Yolo _cpuYolov8;
