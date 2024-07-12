@@ -19,7 +19,7 @@ Batteries not included ;)
 
 # What's new in YoloDotNet v2.0?
 
-YoloDotNet 2.0 is a Speed Demon release where the main focus has been on supercharging performance to bring you the fastest and most efficient version yet. With major code optimizations, a switch to SkiaSharp for lightning-fast image processing, and added support for Yolov10 as a little extra ;) this release is set to redefine your YoloDotNet experience:
+YoloDotNet 2.0 is a Speed Demon release where the main focus has been on supercharging performance to bring you the fastest and most efficient version yet. With major code optimizations, a switch to SkiaSharp for lightning-fast image processing, and added support for Yolov10 as a little extra ;) this release is set to redefine your YoloDotNet experience, here's what's new:
 
 - **Speed Demon Mode:** YoloDotNet is now faster than ever!
 - **Code Overhaul:** Tinkered and tweaked under the hood for blazing-fast execution.
@@ -29,9 +29,7 @@ YoloDotNet 2.0 is a Speed Demon release where the main focus has been on superch
 - **Benchmarking** Benchmarking project added for testing and evaluating performance (thanks to louislewis2).
 - **Yolov10 Support:** Now featuring support for `Yolov10` object detection. Because why not have the latest and greatest? ;)
 
-Performance Analysis
-
-### [!NOTE] YoloDotNet v2.0 Performance Analysis
+### YoloDotNet v2.0 Performance Analysis
 **Processor:** Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz\
 **Ram:** 16GB\
 **Graphics:** NVIDIA GeForce RTX 3060 12GB\
@@ -68,19 +66,19 @@ YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
 - [Youtube Installation guide](https://www.youtube.com/watch?v=KC9-9L7FgPc)
 - Optional: [Allocate memory to the GPU for faster initial inference](#gpu)
 
-# Export Yolov8 model to ONNX
-All models must be Yolov8-models exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).
+# Export Yolo models to ONNX
+All models must be Yolo models exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).
   
-  ## Verify your model
-  
-  ```csharp
-  using YoloDotNet;
-  
-  // Instantiate a new Yolo object with your ONNX-model
-  using var yolo = new Yolo(@"path\to\model.onnx");
-  
-  Console.WriteLine(yolo.OnnxModel.ModelType); // Output modeltype...
-  ```
+## Verify your model
+
+```csharp
+using YoloDotNet;
+
+// Instantiate a new Yolo object with your ONNX-model
+using var yolo = new Yolo(@"path\to\model.onnx");
+
+Console.WriteLine(yolo.OnnxModel.ModelType); // Output modeltype...
+```
 
 # Example - Image inference
 
@@ -98,7 +96,7 @@ using var yolo = new Yolo(new YoloOptions
     ModelType = ModelType.ObjectDetection,  // Model type
     Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
     GpuId = 0                               // Select Gpu by id. Default = 0
-    PrimeGpu = false,                       // Pre-allocate GPU before first. Default = false
+    PrimeGpu = false,                       // Pre-allocate GPU before first inference. Default = false
 });
 
 // Load image
