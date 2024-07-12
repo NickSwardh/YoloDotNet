@@ -8,9 +8,9 @@
     <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOv8 &amp; YOLOv10</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;yolov10ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
+    <PackageTags>yolo;yolov8;yolov10;ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
     <PackAsTool>False</PackAsTool>
-    <PackageIcon></PackageIcon>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
     <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 and YOLOv10 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos in realtime.</Description>
     <Authors>Nick Swardh</Authors>
@@ -25,6 +25,13 @@ Memory Efficiency: Brutally more memory efficient, making the most of your syste
 Optimized GC Performance Greatly reduced GC pressure resulting in a sweet performance boost.
 Yolov10 Support: Now featuring support for Yolov10 object detection.</PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.17.3" />
