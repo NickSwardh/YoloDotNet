@@ -16,19 +16,19 @@ Console.CursorVisible = false;
 
 CreateOutputFolder();
 
-Action<ModelType, ImageType, bool, bool> runDemoAction = RunDemo;
-runDemoAction(ModelType.Classification, ImageType.Hummingbird, false, false);
-runDemoAction(ModelType.ObjectDetection, ImageType.Street, false, false);
-runDemoAction(ModelType.ObbDetection, ImageType.Island, false, false);
-runDemoAction(ModelType.Segmentation, ImageType.People, false, false);
-runDemoAction(ModelType.PoseEstimation, ImageType.Crosswalk, false, false);
+Action<ModelType, ModelVersion, ImageType, bool, bool> runDemoAction = RunDemo;
+runDemoAction(ModelType.Classification, ModelVersion.V8, ImageType.Hummingbird, false, false);
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V8, ImageType.Street, false, false);
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V10, ImageType.Street, false, false);
+runDemoAction(ModelType.ObbDetection, ModelVersion.V8, ImageType.Island, false, false);
+runDemoAction(ModelType.Segmentation, ModelVersion.V8, ImageType.People, false, false);
+runDemoAction(ModelType.PoseEstimation, ModelVersion.V8, ImageType.Crosswalk, false, false);
 
 ObjectDetectionOnVideo();
 DisplayOutputFolder();
 DisplayOnnxMetaDataExample();
 
 #region Helper methods
-
 
 static void CreateOutputFolder()
 {
@@ -38,9 +38,12 @@ static void CreateOutputFolder()
         Directory.CreateDirectory(outputFolder);
 }
 
-static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false, bool primeGpu = false)
+static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType, bool cuda = false, bool primeGpu = false)
 {
-    var modelPath = SharedConfig.GetTestModelV8(modelType); 
+    var modelPath = modelVersion == ModelVersion.V8
+        ? SharedConfig.GetTestModelV8(modelType)
+        : SharedConfig.GetTestModelV10(modelType);
+
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(new YoloOptions()
@@ -56,7 +59,7 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
     var device = cuda ? "GPU" : "CPU";
     device += device == "CPU" ? "" : primeGpu ? ", primed: yes" : ", primed: no";
 
-    Console.Write($"{yolo.OnnxModel.ModelType,-20}device: {device,-20}");
+    Console.Write($"{yolo.OnnxModel.ModelType,-16} {modelVersion, -5}device: {device}");
     Console.WriteLine();
 
     SKImage resultImage = SKImage.Create(new SKImageInfo());
@@ -64,7 +67,6 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
  
     switch (modelType)
     {
-        
         case ModelType.Classification:
             {
                 var result = yolo.RunClassification(image, 1);
@@ -104,7 +106,7 @@ static void RunDemo(ModelType modelType, ImageType imageType, bool cuda = false,
     }
 
     DisplayDetectedLabels(labels);
-    resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{modelType}.jpg"), SKEncodedImageFormat.Jpeg);
+    resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{modelType}_{modelVersion}.jpg"), SKEncodedImageFormat.Jpeg);
 }
 
 static void ObjectDetectionOnVideo()
