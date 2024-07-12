@@ -13,7 +13,7 @@
 
         public const int DEFAULT_OPACITY = 128;
 
-        public const int SEGMENTATION_MASK_OPACITY = 60;
+        public const int SEGMENTATION_MASK_OPACITY = 80;
         public const float SEGMENTATION_PIXEL_THRESHOLD = .68f;
 
         // Image size used for GPU memory allocation.
