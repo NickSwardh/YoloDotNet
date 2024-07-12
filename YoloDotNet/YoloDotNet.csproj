@@ -5,21 +5,25 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOV8</Title>
+    <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOv8 &amp; YOLOv10</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
+    <PackageTags>yolo;yolov8;yolov10ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon></PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
-    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos in realtime.</Description>
+    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 and YOLOv10 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos in realtime.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.7</Version>
+	<Version>2.0</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Minor improvements and optimizations
-Updated dependencies to latest version</PackageReleaseNotes>
+    <PackageReleaseNotes>Speed Demon Mode: YoloDotNet is now faster than ever!
+Code Overhaul: Tinkered and tweaked under the hood for blazing-fast execution.
+Out with ImageSharp, in with SkiaSharp. The result? Crazy fast image processing!
+Memory Efficiency: Brutally more memory efficient, making the most of your system's resources.
+Optimized GC Performance Greatly reduced GC pressure resulting in a sweet performance boost.
+Yolov10 Support: Now featuring support for Yolov10 object detection.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
