@@ -160,10 +160,10 @@ var results = yolo.RunObjectDetection(options, 0.25, 0.7);
 // Do further processing with 'results'...
 ```
 
-# Custom Pose-marker configuration
-[Example on how to configure PoseOptions for a Pose Estimation model](ConsoleDemo/Config/PoseSetup.cs)
+# Custom KeyPoint configuration for Pose Estimation
+[Example on how to configure Keypoints for a Pose Estimation model](ConsoleDemo/Config/KeyPointSetup.cs)
  ```csharp
-// Pass in a PoseOptions parameter to the Draw() extension method. Ex:
+// Pass in a KeyPoint options parameter to the Draw() extension method. Ex:
 image.Draw(poseEstimationResults, poseOptions);
 ```
 
