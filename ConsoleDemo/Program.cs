@@ -23,6 +23,7 @@ runDemoAction(ModelType.Classification, ModelVersion.V11, ImageType.Hummingbird,
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V8, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V9, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V10, ImageType.Street, false, false);
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V11, ImageType.Street, false, false);
 
 runDemoAction(ModelType.ObbDetection, ModelVersion.V8, ImageType.Island, false, false);
 runDemoAction(ModelType.ObbDetection, ModelVersion.V11, ImageType.Island, false, false);
