@@ -5,11 +5,16 @@
     {
         #region Fields
 
-        private static readonly string _model = SharedConfig.GetTestModelV8(ModelType.Classification);
+        private static readonly string _model8 = SharedConfig.GetTestModelV8(ModelType.Classification);
+        private static readonly string _model11 = SharedConfig.GetTestModelV11(ModelType.Classification);
         private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
-        private Yolo _cudaYolo;
-        private Yolo _cpuYolo;
+        private Yolo _gpuYolov8;
+        private Yolo _cpuYolov8;
+
+        private Yolo _gpuYolov11;
+        private Yolo _cpuYolov11;
+
         private SKImage _image;
 
         #endregion Fields
@@ -21,38 +26,67 @@
         {
             var options = new YoloOptions
             {
-                OnnxModel = _model,
                 ModelType = ModelType.Classification
             };
 
-            _cudaYolo = new Yolo(options);
+            _image = SKImage.FromEncodedData(_testImage);
+
+            // Yolov8
+            options.OnnxModel = _model8;
+            options.ModelVersion = ModelVersion.V8;
 
             options.Cuda = false;
-            _cpuYolo = new Yolo(options);
+            _cpuYolov8 = new Yolo(options);
 
-            _image = SKImage.FromEncodedData(_testImage);
+            options.Cuda = true;
+            _gpuYolov8 = new Yolo(options);
+
+            // Yolov11
+            options.OnnxModel = _model11;
+            options.ModelVersion = ModelVersion.V11;
+
+            options.Cuda = false;
+            _cpuYolov11 = new Yolo(options);
+
+            options.Cuda = true;
+            _gpuYolov11 = new Yolo(options);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cudaYolo.Dispose();
-            _cpuYolo.Dispose();
+            _cpuYolov8?.Dispose();
+            _cpuYolov11?.Dispose();
+            _gpuYolov8?.Dispose();
+            _gpuYolov11?.Dispose();
             _image.Dispose();
         }
 
+        // Yolov8
         [Benchmark]
-        public void RunSimpleClassificationCpu()
+        public void RunSimpleClassificationYolov8Cpu()
         {
-            _ = _cpuYolo.RunClassification(_image);
+            _ = _cpuYolov8.RunClassification(_image);
         }
 
         [Benchmark]
-        public void RunSimpleClassificationGpu()
+        public void RunSimpleClassificationYolov8Gpu()
         {
-            _ = _cudaYolo.RunClassification(_image);
+            _ = _gpuYolov8.RunClassification(_image);
         }
 
+        // Yolov11
+        [Benchmark]
+        public void RunSimpleClassificationYolov11Cpu()
+        {
+            _ = _cpuYolov11.RunClassification(_image);
+        }
+
+        [Benchmark]
+        public void RunSimpleClassificationYolov111Gpu()
+        {
+            _ = _gpuYolov11.RunClassification(_image);
+        }
 
         #endregion Methods
     }

@@ -5,11 +5,16 @@
     {
         #region Fields
 
-        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.ObbDetection);
+        private readonly string _model8 = SharedConfig.GetTestModelV8(ModelType.ObbDetection);
+        private readonly string _model11 = SharedConfig.GetTestModelV11(ModelType.ObbDetection);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
 
-        private Yolo _cudaYolo;
-        private Yolo _cpuYolo;
+        private Yolo _gpuYolov8;
+        private Yolo _cpuYolov8;
+
+        private Yolo _gpuYolov11;
+        private Yolo _cpuYolov11;
+
         private SKImage _image;
 
         #endregion Fields
@@ -21,36 +26,66 @@
         {
             var options = new YoloOptions
             {
-                OnnxModel = _model,
-                ModelType = ModelType.ObbDetection,
-                Cuda = true
+                ModelType = ModelType.ObbDetection
             };
 
-            _cudaYolo = new Yolo(options);
+            _image = SKImage.FromEncodedData(_testImage);
+
+            // Yolov8
+            options.OnnxModel = _model8;
+            options.ModelVersion = ModelVersion.V8;
 
             options.Cuda = false;
-            _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _cpuYolov8 = new Yolo(options);
+
+            options.Cuda = true;
+            _gpuYolov8 = new Yolo(options);
+
+            // Yolov11
+            options.OnnxModel = _model11;
+            options.ModelVersion = ModelVersion.V11;
+
+            options.Cuda = false;
+            _cpuYolov11 = new Yolo(options);
+
+            options.Cuda = true;
+            _gpuYolov11 = new Yolo(options);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cudaYolo.Dispose();
-            _cpuYolo.Dispose();
-            _image.Dispose();
+            _cpuYolov8?.Dispose();
+            _cpuYolov11?.Dispose();
+            _gpuYolov8?.Dispose();
+            _gpuYolov11?.Dispose();
+            _image?.Dispose();
+        }
+
+        // Yolov8
+        [Benchmark]
+        public List<OBBDetection> RunSimpleObbDetectionYolov8Cpu()
+        {
+            return _cpuYolov8.RunObbDetection(_image);
         }
 
         [Benchmark]
-        public List<OBBDetection> RunSimpleObbDetectionCpu()
+        public List<OBBDetection> RunSimpleObbDetectionYolov8Gpu()
         {
-            return _cpuYolo.RunObbDetection(_image);
+            return _gpuYolov8.RunObbDetection(_image);
+        }
+
+        // Yolov11
+        [Benchmark]
+        public List<OBBDetection> RunSimpleObbDetectionYolov11Cpu()
+        {
+            return _cpuYolov11.RunObbDetection(_image);
         }
 
         [Benchmark]
-        public List<OBBDetection> RunSimpleObbDetectionGpu()
+        public List<OBBDetection> RunSimpleObbDetectionYolov11Gpu()
         {
-            return _cudaYolo.RunObbDetection(_image);
+            return _gpuYolov11.RunObbDetection(_image);
         }
 
         #endregion Methods
