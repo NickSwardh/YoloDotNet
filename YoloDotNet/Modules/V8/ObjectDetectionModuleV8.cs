@@ -127,12 +127,6 @@
 
                 return _yoloCore.RemoveOverlappingBoxes([.. _result], overlapThreshold);
             }
-            catch (Exception)
-            {
-                throw new ModelVersionException(
-                    $"Model version mismatch: Expected version is {OnnxModel.ModelVersion}, but the provided model version is different. " +
-                    "Verify and load the correct model version.");
-            }
             finally
             {
                 _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: true);
