@@ -68,15 +68,14 @@
                         BoundingBoxIndex = i
                     };
                 }
+
+                var results = boxes.Where(x => x is not null);
+                return _yoloCore.RemoveOverlappingBoxes([.. results], overlapThreshold);
             }
             finally
             {
                 _yoloCore.customSizeObjectResultPool.Return(boxes, true);
             }
-
-            var results = boxes.Where(x => x is not null);
-
-            return _yoloCore.RemoveOverlappingBoxes([.. results], overlapThreshold);
         }
 
         private void SubscribeToVideoEvents()
