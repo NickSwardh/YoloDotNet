@@ -52,6 +52,11 @@
 	  <None Include="..\assets\Models\yolov8s.onnx" Link="Assets\Models\yolov8s.onnx">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+		
+	  <None Include="..\assets\Models\yolov9s.onnx" Link="Assets\Models\yolov9s.onnx">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
+		
 		<None Include="..\assets\Models\yolov10s.onnx" Link="Assets\Models\yolov10s.onnx">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>

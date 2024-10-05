@@ -29,6 +29,18 @@
         };
 
         /// <summary>
+        /// Test models for Yolo V9
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string GetTestModelV9(ModelType modelType) => modelType switch
+        {
+            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov9s.onnx"),
+            _ => throw new ArgumentException("Unknown modeltype.")
+        };
+
+        /// <summary>
         /// Test models for Yolo V10
         /// </summary>
         /// <param name="modelType"></param>

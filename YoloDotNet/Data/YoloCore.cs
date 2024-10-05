@@ -32,7 +32,7 @@
         /// Initializes the YOLO model with the specified model type.
         /// </summary>
         /// <param name="modelType">The type of the model to be initialized.</param>
-        public void InitializeYolo(ModelType modelType)
+        public void InitializeYolo(YoloOptions yoloOptions)
         {
             _session = useCuda
                 ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
@@ -41,9 +41,9 @@
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
 
-            OnnxModel = _session.GetOnnxProperties();
+            OnnxModel = _session.GetOnnxProperties(yoloOptions);
 
-            VerifyExpectedModelType(modelType);
+            VerifyExpectedModelType(yoloOptions.ModelType);
 
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
