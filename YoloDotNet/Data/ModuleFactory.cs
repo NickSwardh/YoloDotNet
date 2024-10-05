@@ -38,6 +38,16 @@
                     { ModelType.Segmentation, core => throw new NotImplementedException() },
                     { ModelType.PoseEstimation, core => throw new NotImplementedException() }
                 }
+            },
+            {
+                ModelVersion.V11, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => new ClassificationModuleV11(core) },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV11(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV8(core) },
+                    { ModelType.Segmentation, core => new SegmentationModuleV11(core) },
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV8(core) }
+                }
             }
         };
 
