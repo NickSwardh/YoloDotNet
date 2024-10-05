@@ -42,7 +42,7 @@
             _ortIoBinding = _session.CreateIoBinding();
 
             OnnxModel = _session.GetOnnxProperties(yoloOptions);
-
+            
             VerifyExpectedModelType(yoloOptions.ModelType);
 
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
@@ -207,8 +207,19 @@
             {
                 var item = predictionSpan[i];
 
-                if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false)
+                bool overlapFound = false;
+                foreach (var res in result)
+                {
+                    if (CalculateIoU(item.BoundingBox, res.BoundingBox) > iouThreshold)
+                    {
+                        overlapFound = true;
+                        break;
+                    }
+                }
+                if (!overlapFound)
+                {
                     result.Add(item);
+                }
             }
 
             return [.. result];
@@ -248,6 +259,9 @@
         /// <param name="b"></param>
         public static float CalculateIoU(SKRectI a, SKRectI b)
         {
+            if (a.IntersectsWith(b) is false) // Quick check before calculating intersection
+                return 0;
+
             var intersectionArea = CalculateArea(SKRectI.Intersect(a, b));
 
             return intersectionArea == 0

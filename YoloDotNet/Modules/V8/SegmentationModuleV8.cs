@@ -62,15 +62,15 @@
         /// <returns>A list of Segmentation objects corresponding to the input bounding boxes.</returns> 
         private List<Segmentation> RunSegmentation(SKImage image, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double iou)
         {
-            var boundingBoxes = _objectDetectionModule.ObjectDetection(image, ortValues[0], confidence, iou);
+            var ortSpan0 = ortValues[0].GetTensorDataAsSpan<float>();
+            var ortSpan1 = ortValues[1].GetTensorDataAsSpan<float>();
+
+            var boundingBoxes = _objectDetectionModule.ObjectDetection(image, ortSpan0, confidence, iou);
             var pixels = new ConcurrentBag<Pixel>();
             var croppedImage = new SKBitmap();
             var resizedBitmap = new SKBitmap();
             using var segmentedBitmap = new SKBitmap(_yoloCore.OnnxModel.Outputs[1].Width, _yoloCore.OnnxModel.Outputs[1].Height, SKColorType.Gray8, SKAlphaType.Opaque);
             using var paint = new SKPaint { FilterQuality = SKFilterQuality.Low, IsAntialias = false };
-
-            var ortSpan0 = ortValues[0].GetTensorDataAsSpan<float>();
-            var ortSpan1 = ortValues[1].GetTensorDataAsSpan<float>();
 
             var elements = _yoloCore.OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
 
@@ -126,10 +126,10 @@
 
         private static SKRectI ScaleBoundingBox(ObjectResult box, float scalingFactorW, float scalingFactorH)
         {
-            var scaledLeft = (int)Math.Round(box.BoundingBoxOrg.Left * scalingFactorW);
-            var scaledTop = (int)Math.Round(box.BoundingBoxOrg.Top * scalingFactorH);
-            var scaledRight = (int)Math.Round(box.BoundingBoxOrg.Right * scalingFactorW);
-            var scaledBottom = (int)Math.Round(box.BoundingBoxOrg.Bottom * scalingFactorH);
+            var scaledLeft = (int)Math.Round(box.BoundingBoxUnscaled.Left * scalingFactorW);
+            var scaledTop = (int)Math.Round(box.BoundingBoxUnscaled.Top * scalingFactorH);
+            var scaledRight = (int)Math.Round(box.BoundingBoxUnscaled.Right * scalingFactorW);
+            var scaledBottom = (int)Math.Round(box.BoundingBoxUnscaled.Bottom * scalingFactorH);
 
             return new SKRectI(scaledLeft, scaledTop, scaledRight, scaledBottom);
         }
@@ -221,6 +221,7 @@
 
             _objectDetectionModule?.Dispose();
             _yoloCore?.Dispose();
+
             GC.SuppressFinalize(this);
         }
 

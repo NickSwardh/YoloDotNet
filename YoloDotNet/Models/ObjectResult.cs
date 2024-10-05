@@ -20,7 +20,7 @@
         /// <summary>
         /// Region of interest (bounding box) of the detected object for ONNX model dimensions.
         /// </summary>
-        public SKRect BoundingBoxOrg { get; set; }
+        public SKRect BoundingBoxUnscaled { get; set; }
 
         /// <summary>
         /// Index of bounding box

@@ -21,8 +21,9 @@
         public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            using var ort = ortValues[0];
-            return PoseEstimateImage(image, ort, confidence, iou);
+            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>(); ;
+
+            return PoseEstimateImage(image, ortSpan, confidence, iou);
         }
 
         public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double iou)
@@ -30,16 +31,11 @@
 
         #region Helper methods
 
-        public List<PoseEstimation> PoseEstimateImage(SKImage image, OrtValue ortTensor, double threshold, double overlapThrehshold)
+        public List<PoseEstimation> PoseEstimateImage(SKImage image, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
         {
-            var boxes = _objectDetectionModule.ObjectDetection(image, ortTensor, threshold, overlapThrehshold);
-            //var boxes = ObjectDetectImage(image, threshold, overlapThrehshold);
-
+            var boxes = _objectDetectionModule.ObjectDetection(image, ortSpan, threshold, overlapThrehshold);
 
             var (xPad, yPad, gain) = _yoloCore.CalculateGain(image);
-
-            // Get tensor as a flattened Span for faster processing.
-            var ortSpan = ortTensor.GetTensorDataAsSpan<float>();
 
             var labels = _yoloCore.OnnxModel.Labels.Length;
             var ouputChannels = _yoloCore.OnnxModel.Outputs[0].Channels;
