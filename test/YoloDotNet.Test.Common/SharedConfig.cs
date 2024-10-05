@@ -53,6 +53,22 @@
         };
 
         /// <summary>
+        /// Test models for Yolo V11
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string GetTestModelV11(ModelType modelType) => modelType switch
+        {
+            ModelType.Classification => Path.Combine(BASE_MODELS, "yolov11s-cls.onnx"),
+            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov11s.onnx"),
+            ModelType.ObbDetection => Path.Combine(BASE_MODELS, "yolov11s-obb.onnx"),
+            ModelType.Segmentation => Path.Combine(BASE_MODELS, "yolov11s-seg.onnx"),
+            ModelType.PoseEstimation => Path.Combine(BASE_MODELS, "yolov11s-pose.onnx"),
+            _ => throw new ArgumentException("Unknown modeltype.")
+        };
+
+        /// <summary>
         /// Test images
         /// </summary>
         /// <param name="modelType"></param>
