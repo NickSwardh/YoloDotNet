@@ -150,7 +150,7 @@ static void ObjectDetectionOnVideo()
 
     using var yolo = new Yolo(new YoloOptions
     {
-        OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
         ModelType = ModelType.ObjectDetection,
         ModelVersion = ModelVersion.V8,
         Cuda = true
