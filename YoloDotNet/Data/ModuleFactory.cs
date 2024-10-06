@@ -20,6 +20,16 @@
                 }
             },
             {
+                ModelVersion.V9, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV9(core) },
+                    { ModelType.ObbDetection, core => throw new NotImplementedException() },
+                    { ModelType.Segmentation, core => throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            },
+            {
                 ModelVersion.V10, new Dictionary<ModelType, Func<YoloCore, IModule>>
                 {
                     { ModelType.Classification, core => throw new NotImplementedException() },
@@ -27,6 +37,16 @@
                     { ModelType.ObbDetection, core => throw new NotImplementedException() },
                     { ModelType.Segmentation, core => throw new NotImplementedException() },
                     { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            },
+            {
+                ModelVersion.V11, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => new ClassificationModuleV11(core) },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV11(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV8(core) },
+                    { ModelType.Segmentation, core => new SegmentationModuleV11(core) },
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV8(core) }
                 }
             }
         };
@@ -42,7 +62,7 @@
             var yoloCore = InitializeYoloCore(options);
 
             // Get model version and type
-            var modelVersion = yoloCore.OnnxModel.ModelVersion;
+            var modelVersion = options.ModelVersion;
             var modelType = options.ModelType;
 
             // Get dictionary from module map based on model version
@@ -63,7 +83,7 @@
         private static YoloCore InitializeYoloCore(YoloOptions options)
         {
             var yoloCore = new YoloCore(options.OnnxModel, options.Cuda, options.PrimeGpu, options.GpuId);
-            yoloCore.InitializeYolo(options.ModelType);
+            yoloCore.InitializeYolo(options);
             return yoloCore;
         }
     }

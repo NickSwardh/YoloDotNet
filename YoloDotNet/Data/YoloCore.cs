@@ -32,7 +32,7 @@
         /// Initializes the YOLO model with the specified model type.
         /// </summary>
         /// <param name="modelType">The type of the model to be initialized.</param>
-        public void InitializeYolo(ModelType modelType)
+        public void InitializeYolo(YoloOptions yoloOptions)
         {
             _session = useCuda
                 ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
@@ -41,9 +41,9 @@
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
 
-            OnnxModel = _session.GetOnnxProperties();
-
-            VerifyExpectedModelType(modelType);
+            OnnxModel = _session.GetOnnxProperties(yoloOptions);
+            
+            VerifyExpectedModelType(yoloOptions.ModelType);
 
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
@@ -207,8 +207,19 @@
             {
                 var item = predictionSpan[i];
 
-                if (result.Any(x => CalculateIoU(item.BoundingBox, x.BoundingBox) > iouThreshold) is false)
+                bool overlapFound = false;
+                foreach (var res in result)
+                {
+                    if (CalculateIoU(item.BoundingBox, res.BoundingBox) > iouThreshold)
+                    {
+                        overlapFound = true;
+                        break;
+                    }
+                }
+                if (!overlapFound)
+                {
                     result.Add(item);
+                }
             }
 
             return [.. result];
@@ -248,6 +259,9 @@
         /// <param name="b"></param>
         public static float CalculateIoU(SKRectI a, SKRectI b)
         {
+            if (a.IntersectsWith(b) is false) // Quick check before calculating intersection
+                return 0;
+
             var intersectionArea = CalculateArea(SKRectI.Intersect(a, b));
 
             return intersectionArea == 0

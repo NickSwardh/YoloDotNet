@@ -3,6 +3,12 @@
     public class ObjectDetectionModuleV8 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
+        private static List<ObjectResult> _result = default!;
+        private readonly int _labels;
+        private readonly int _channels;
+        private readonly int _channels2;
+        private readonly int _channels3;
+        private readonly int _channels4;
 
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
@@ -13,14 +19,24 @@
         public ObjectDetectionModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
+
+            _result = new ();
+
+            _labels = _yoloCore.OnnxModel.Labels.Length;
+            _channels = _yoloCore.OnnxModel.Outputs[0].Channels;
+            _channels2 = _channels * 2;
+            _channels3 = _channels * 3;
+            _channels4 = _channels * 4;
+
             SubscribeToVideoEvents();
         }
 
         public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
-            using var ort = ortValues[0];
-            var results = ObjectDetection(image, ort, confidence, iou)
+            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+
+            var results = ObjectDetection(image, ortSpan, confidence, iou)
                 .Select(x => (ObjectDetection)x);
 
             return [..results];
@@ -38,71 +54,83 @@
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetection(SKImage image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        public ObjectResult[] ObjectDetection(SKImage image, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
         {
+            if (ortSpan == null)
+                return [];
+
             var (xPad, yPad, gain) = _yoloCore.CalculateGain(image);
-
-            var labels = _yoloCore.OnnxModel.Labels.Length;
-            var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
-
-            var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels);
-
+  
+            var  boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
+            
             try
             {
-                // Get tensor as a flattened Span for faster processing.
-                var ortSpan = ortTensor.GetTensorDataAsSpan<float>();
-
-                for (int i = 0; i < channels; i++)
+                for (int i = 0; i < _channels; i++)
                 {
                     // Move forward to confidence value of first label
-                    var labelOffset = i + channels * 4;
+                    var labelOffset = i + _channels4;
 
-                    // Iterate through all labels...
-                    for (var l = 0; l < labels; l++, labelOffset += channels)
+                    float x = ortSpan[i];
+                    float y = ortSpan[i + _channels];
+                    float w = ortSpan[i + _channels2];
+                    float h = ortSpan[i + _channels3]; 
+
+                    // Scaled coordinates for original image
+                    var xMin = (int)((x - w / 2 - xPad) * gain);
+                    var yMin = (int)((y - h / 2 - yPad) * gain);
+                    var xMax = (int)((x + w / 2 - xPad) * gain);
+                    var yMax = (int)((y + h / 2 - yPad) * gain);
+
+                    // Unscaled coordinates for resized input image
+                    var sxMin = (int)(x - w / 2);
+                    var syMin = (int)(y - h / 2);
+                    var sxMax = (int)(x + w / 2);
+                    var syMax = (int)(y + h / 2);
+
+                    var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
+                    var boundingBoxUnscaled = new SKRectI(sxMin, syMin, sxMax, syMax);
+
+                    float bestConfidence = 0f;
+                    int bestLabelIndex = -1;
+
+                    // Iterate through all labels
+                    for (var l = 0; l < _labels; l++, labelOffset += _channels)
                     {
                         var boxConfidence = ortSpan[labelOffset];
 
-                        if (boxConfidence < confidenceThreshold) continue;
-
-                        float x = ortSpan[i];                   // x
-                        float y = ortSpan[i + channels];        // y
-                        float w = ortSpan[i + channels * 2];    // w
-                        float h = ortSpan[i + channels * 3];    // h
-
-                        // Scaled coordinates for original image
-                        var xMin = (int)((x - w / 2 - xPad) * gain);
-                        var yMin = (int)((y - h / 2 - yPad) * gain);
-                        var xMax = (int)((x + w / 2 - xPad) * gain);
-                        var yMax = (int)((y + h / 2 - yPad) * gain);
-
-                        // Unscaled coordinates for resized input image
-                        var sxMin = (int)(x - w / 2);
-                        var syMin = (int)(y - h / 2);
-                        var sxMax = (int)(x + w / 2);
-                        var syMax = (int)(y + h / 2);
-
-                        if (boxes[i] is null || boxConfidence > boxes[i].Confidence)
+                        if (boxConfidence > bestConfidence)
                         {
-                            boxes[i] = new ObjectResult
-                            {
-                                Label = _yoloCore.OnnxModel.Labels[l],
-                                Confidence = boxConfidence,
-                                BoundingBox = new SKRectI(xMin, yMin, xMax, yMax),
-                                BoundingBoxOrg = new SKRectI(sxMin, syMin, sxMax, syMax),
-                                BoundingBoxIndex = i,
-                                OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + channels * (4 + labels)] : 0 //CalculateRadianToDegree(ortSpan[i + channels * (4 + labels)]) : 0, // Angle (radian) for OBB is located at the end of the labels.
-                            };
+                            bestConfidence = boxConfidence;
+                            bestLabelIndex = l;
                         }
                     }
+
+                    if (bestConfidence > confidenceThreshold && bestLabelIndex != -1)
+                    {
+                        boxes[i] = new ObjectResult
+                        {
+                            Label = _yoloCore.OnnxModel.Labels[bestLabelIndex],
+                            Confidence = bestConfidence,
+                            BoundingBox = boundingBox,
+                            BoundingBoxUnscaled = boundingBoxUnscaled,
+                            BoundingBoxIndex = i,
+                            OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _channels * (4 + _labels)] : 0
+                        };
+                    }
+                }
+                
+                foreach (var item in boxes)
+                {
+                    if (item != null)
+                        _result.Add(item);
                 }
 
-                var results = boxes.Where(x => x is not null);
-
-                return _yoloCore.RemoveOverlappingBoxes([.. results], overlapThreshold);
+                return _yoloCore.RemoveOverlappingBoxes([.. _result], overlapThreshold);
             }
             finally
             {
                 _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: true);
+                _result.Clear();
             }
         }
 

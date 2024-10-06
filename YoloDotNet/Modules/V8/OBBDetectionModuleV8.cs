@@ -21,9 +21,9 @@
         public List<OBBDetection> ProcessImage(SKImage image, double confidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            using var ort = ortValues[0];
+            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
 
-            var objectDetectionResults = _objectDetectionModule.ObjectDetection(image, ort, confidence, iou);
+            var objectDetectionResults = _objectDetectionModule.ObjectDetection(image, ortSpan, confidence, iou);
 
             return [.. objectDetectionResults.Select(x => (OBBDetection)x)];
         }

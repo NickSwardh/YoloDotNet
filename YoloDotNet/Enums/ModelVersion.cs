@@ -6,6 +6,8 @@
     public enum ModelVersion
     {
         V8,
-        V10
+        V9,
+        V10,
+        V11
     }
 }

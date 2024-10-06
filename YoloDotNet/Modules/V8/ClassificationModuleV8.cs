@@ -6,6 +6,7 @@
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
 
+        private readonly ArrayPool<Classification> _classificationPool;
         private readonly YoloCore _yoloCore;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
@@ -13,6 +14,9 @@
         public ClassificationModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
+
+            _classificationPool = ArrayPool<Classification>.Create(maxArrayLength: OnnxModel.Outputs[0].Elements + 1, maxArraysPerBucket: 10);
+
             SubscribeToVideoEvents();
         }
 
@@ -34,19 +38,30 @@
         /// <param name="numberOfClasses"></param>
         private List<Classification> ClassifyTensor(OrtValue ortTensor, int numberOfClasses)
         {
-            var span = ortTensor.GetTensorDataAsSpan<float>();
-            var tmp = new Classification[span.Length];
+            var span = ortTensor.GetTensorMutableDataAsSpan<float>();
+            var len = span.Length;
 
-            for (int i = 0; i < tmp.Length; i++)
+            var tmp = _classificationPool.Rent(len);
+
+            try
             {
-                tmp[i] = new Classification
+                for (int i = 0; i < len; i++)
                 {
-                    Confidence = span[i],
-                    Label = _yoloCore.OnnxModel.Labels[i].Name
-                };
-            }
+                    tmp[i] = new Classification
+                    {
+                        Confidence = span[i],
+                        Label = _yoloCore.OnnxModel.Labels[i].Name
+                    };
+                }
 
-            return [.. tmp.OrderByDescending(x => x.Confidence).Take(numberOfClasses)];
+                // Use Array.Sort() instead of LINQ for performance
+                Array.Sort(tmp[.. len], (a, b) => b.Confidence.CompareTo(a.Confidence));
+                return [.. tmp[..numberOfClasses]];
+            }
+            finally
+            {
+                _classificationPool.Return(tmp, true);
+            }
         }
 
         #endregion

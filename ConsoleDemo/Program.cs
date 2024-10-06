@@ -18,11 +18,21 @@ CreateOutputFolder();
 
 Action<ModelType, ModelVersion, ImageType, bool, bool> runDemoAction = RunDemo;
 runDemoAction(ModelType.Classification, ModelVersion.V8, ImageType.Hummingbird, false, false);
+runDemoAction(ModelType.Classification, ModelVersion.V11, ImageType.Hummingbird, false, false);
+
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V8, ImageType.Street, false, false);
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V9, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V10, ImageType.Street, false, false);
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V11, ImageType.Street, false, false);
+
 runDemoAction(ModelType.ObbDetection, ModelVersion.V8, ImageType.Island, false, false);
+runDemoAction(ModelType.ObbDetection, ModelVersion.V11, ImageType.Island, false, false);
+
 runDemoAction(ModelType.Segmentation, ModelVersion.V8, ImageType.People, false, false);
+runDemoAction(ModelType.Segmentation, ModelVersion.V11, ImageType.People, false, false);
+
 runDemoAction(ModelType.PoseEstimation, ModelVersion.V8, ImageType.Crosswalk, false, false);
+runDemoAction(ModelType.PoseEstimation, ModelVersion.V11, ImageType.Crosswalk, false, false);
 
 ObjectDetectionOnVideo();
 DisplayOutputFolder();
@@ -40,15 +50,21 @@ static void CreateOutputFolder()
 
 static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType, bool cuda = false, bool primeGpu = false)
 {
-    var modelPath = modelVersion == ModelVersion.V8
-        ? SharedConfig.GetTestModelV8(modelType)
-        : SharedConfig.GetTestModelV10(modelType);
+    var modelPath = modelVersion switch
+    {
+        ModelVersion.V8 => SharedConfig.GetTestModelV8(modelType),
+        ModelVersion.V9 => SharedConfig.GetTestModelV9(modelType),
+        ModelVersion.V10 => SharedConfig.GetTestModelV10(modelType),
+        ModelVersion.V11 => SharedConfig.GetTestModelV11(modelType),
+        _ => throw new ArgumentException("Unkown yolo version")
+    };
 
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(new YoloOptions()
     {
         OnnxModel = modelPath,
+        ModelVersion = modelVersion,
         Cuda = cuda,
         PrimeGpu = primeGpu,
         ModelType = modelType,
@@ -64,7 +80,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
 
     SKImage resultImage = SKImage.Create(new SKImageInfo());
     List<LabelModel> labels = new();
- 
+    
     switch (modelType)
     {
         case ModelType.Classification:
@@ -107,6 +123,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
 
     DisplayDetectedLabels(labels);
     resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{modelType}_{modelVersion}.jpg"), SKEncodedImageFormat.Jpeg);
+    
 }
 
 static void ObjectDetectionOnVideo()
@@ -129,12 +146,14 @@ static void ObjectDetectionOnVideo()
     };
 
     Console.WriteLine();
-    Console.WriteLine("Running Object Detection on video...");
+    Console.WriteLine("Running Object Detection on video with Yolo v8...");
 
     using var yolo = new Yolo(new YoloOptions
     {
-        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
-        ModelType = ModelType.ObjectDetection
+        OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+        ModelType = ModelType.ObjectDetection,
+        ModelVersion = ModelVersion.V8,
+        Cuda = true
     });
 
     int currentLineCursor = 0;
@@ -147,7 +166,7 @@ static void ObjectDetectionOnVideo()
         currentLineCursor = Console.CursorTop;
     };
 
-    yolo.VideoProgressEvent += (object? sender, EventArgs e) =>
+    yolo.VideoProgressEvent += (object sender, EventArgs e) =>
     {
         Console.SetCursorPosition(20, currentLineCursor);
         Console.Write(new string(' ', 4));
@@ -155,7 +174,7 @@ static void ObjectDetectionOnVideo()
         Console.Write("{0}%", (int)sender!);
     };
 
-    yolo.VideoCompleteEvent += (object? sender, EventArgs e) =>
+    yolo.VideoCompleteEvent += (object sender, EventArgs e) =>
     {
         Console.WriteLine();
         Console.WriteLine();
