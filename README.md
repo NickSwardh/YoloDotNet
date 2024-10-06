@@ -54,7 +54,7 @@ ONNX runtime's [current compatibility with specific versions](https://onnxruntim
     - Click on ```New``` and paste in your cuDNN dll-folder path
     - Click Ok a million times to save the changes
 
-4. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue whatever you were doing ;)
+4. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue with whatever you were doing ;)
 
 # Export Yolo models to ONNX
 All models must be exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).\
