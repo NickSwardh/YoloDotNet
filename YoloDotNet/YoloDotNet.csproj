@@ -32,7 +32,9 @@ Backward Compatibility for Yolov9: Missing the good ol' Yolov9? Now you can swit
 Minor Optimizations: A sprinkle of tweaks here and there for even faster object detection, because... uh, more speed is always better!
 OnnxRuntime Update: Now featuring support for CUDA 12.x and cuDNN 9.x. The GPU will definitely be happy with this one!
 
-YoloDotNet v2.1 – faster, smarter, and packed with more Yolo goodness ;)</PackageReleaseNotes>
+YoloDotNet v2.1 – faster, smarter, and packed with more Yolo goodness ;)
+
+Repo at: https://github.com/NickSwardh/YoloDotNet</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
