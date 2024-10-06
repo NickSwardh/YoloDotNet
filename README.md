@@ -1,6 +1,6 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v2.0
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v2.1
 
-YoloDotNet is a C# .NET 8 implementation of Yolov8 & Yolov10 for real-time detection of objects in images and videos using ML.NET and ONNX runtime, with GPU acceleration using CUDA.
+YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolov8 all the way up to Yolov11 for real-time object detection in images and videos. Powered by ML.NET and ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
 
 ### YoloDotNet supports the following:
 
@@ -10,45 +10,23 @@ YoloDotNet is a C# .NET 8 implementation of Yolov8 & Yolov10 for real-time detec
 &nbsp;&nbsp;✓&nbsp;&nbsp;`   Segmentation     `&nbsp;&nbsp;Separate detected objects using pixel masks\
 &nbsp;&nbsp;✓&nbsp;&nbsp;`  Pose Estimation   `&nbsp;&nbsp;Identifying location of specific keypoints in an image
 
-Batteries not included ;)
+Batteries not included.
 
 | Classification | Object Detection | OBB Detection | Segmentation | Pose Estimation |
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
-# What's new in YoloDotNet v2.0?
+# What's new in YoloDotNet v2.1?
 
-YoloDotNet 2.0 is a Speed Demon release where the main focus has been on supercharging performance to bring you the fastest and most efficient version yet. With major code optimizations, a switch to SkiaSharp for lightning-fast image processing, and added support for Yolov10 as a little extra ;) this release is set to redefine your YoloDotNet experience, here's what's new:
+YoloDotNet 2.1 is here, packing more punch than ever! This release builds on the foundation of the previous "Speed Demon" v2.0 update and adds some exciting new features while keeping everything buttery smooth. Compatibility with older versions has been ensured, and a few tweaks were made for even faster object detection performance. Check out what's new:
 
-- **Speed Demon Mode:** YoloDotNet is now faster than ever!
-- **Code Overhaul:** Tinkered and tweaked under the hood for blazing-fast execution.
-- **Swapped Image Libraries:** Out with ImageSharp, in with SkiaSharp. The result? Crazy fast image processing!
-- **Memory Efficiency:** Brutally more memory efficient, making the most of your system's resources.
-- **Optimized GC Performance** Greatly reduced GC pressure resulting in a sweet performance boost (thanks to louislewis2).
-- **Benchmarking** Benchmarking project added for testing and evaluating performance (thanks to louislewis2).
-- **Yolov10 Support:** Now featuring support for `Yolov10` object detection. Because why not have the latest and greatest? ;)
+**Yolov11 Support:** The latest and greatest object detection model is now available. Why settle for anything less?\
+**Backward Compatibility for Yolov9:** Missing the good ol' Yolov9? Now you can switch between Yolov8-v11 versions. Yay!\
+**Minor Optimizations:** A sprinkle of tweaks here and there for even faster object detection, because... uh, more speed is always better!\
+**OnnxRuntime Update:** Now featuring support for CUDA 12.x and cuDNN 9.x. The GPU will definitely be happy with this one!
 
-### YoloDotNet v2.0 Performance Analysis
-**Processor:** Intel(R) Core(TM) i7-7700K CPU @ 4.20GHz\
-**Ram:** 16GB\
-**Graphics:** NVIDIA GeForce RTX 3060 12GB\
-**OS:** Windows 10
-
-Performance was tested using the Yolov8s models in onnx format and test-images provided in the YoloDotNet project.
-
-| Task               | v1.7 Mean (ms) | v2.0 Mean (ms) | Improvement (ms) | Improvement (%) |
-|--------------------|---------------:|---------------:|-----------------:|----------------:|
-| ClassificationCpu  |         12.730 |          5.734 |            6.996 |          54.95% |
-| ClassificationGpu  |          7.708 |          2.255 |            5.453 |          70.73% |
-| ObjectDetectionCpu |        147.487 |        113.954 |           33.533 |          22.74% |
-| ObjectDetectionGpu |         39.935 |         13.751 |           26.184 |          65.56% |
-| SegmentationCpu    |        623.313 |        178.411 |          444.902 |          71.37% |
-| SegmentationGpu    |        477.539 |         37.857 |          439.682 |          92.07% |
-| PoseEstimationCpu  |        140.823 |        116.557 |           24.266 |          17.23% |
-| PoseEstimationGpu  |         31.588 |         12.582 |           19.006 |          60.16% |
-| ObbDetectionCpu    |        401.694 |        346.193 |           55.501 |          13.82% |
-| ObbDetectionGpu    |         71.935 |         27.591 |           44.344 |          61.62% |
+YoloDotNet v2.1 – faster, smarter, and packed with more Yolo goodness ;)
 
 # Nuget
 ```
@@ -56,18 +34,31 @@ Performance was tested using the Yolov8s models in onnx format and test-images p
 ```
 
 # Install CUDA (optional)
-YoloDotNet with GPU-acceleration requires CUDA and cuDNN.
+YoloDotNet with GPU-acceleration requires CUDA Toolkit 12.x and cuDNN 9.x.
 
-:information_source: Before installing CUDA and cuDNN, make sure to verify the ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
+ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
 
-- Download and install [CUDA v11.8](https://developer.nvidia.com/cuda-toolkit-archive)
-- Download [cuDNN v8.9.7 ZIP for CUDA v11.x](https://developer.nvidia.com/rdp/cudnn-archive), unzip and copy the dll's in bin folder to your CUDA bin folder
-- Add CUDA bin folder-path to your `Path` environment variables
-- [Youtube Installation guide](https://www.youtube.com/watch?v=KC9-9L7FgPc)
-- Optional: [Allocate memory to the GPU for faster initial inference](#gpu)
+- Install [CUDA v12.x](https://developer.nvidia.com/cuda-downloads)
+- Install [cuDNN v9.x](https://developer.nvidia.com/cudnn-downloads)
+- Update your system PATH-variable
+1. Open File Explorer and navigate to the folder where the cuDNN-dll's are installed. The typical path looks like:\
+```C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v12.x``` (where x is your  version)
+
+2. Once you are in this specific folder (which contains .dll files), copy the folder path from the address bar at the top of the window.
+
+3. Add the cuDNN-Path to your System Variables:
+    - Type ```env``` in windows search
+    - Click on ```Edit the system environment variables```
+    - Click on ```Environment Variables```
+    - Under ```System Variables``` select the ```Path```-variable and click ```Edit```
+    - Click on ```New``` and paste in your cuDNN dll-folder path
+    - Click Ok a million times to save the changes
+
+4. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue whatever you where doing ;)
 
 # Export Yolo models to ONNX
-All models must be Yolo models exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).
+All models must be exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).\
+The ONNX-models included in this repo are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
   
 ## Verify your model
 
@@ -92,8 +83,9 @@ using SkiaSharp;
 // Instantiate a new Yolo object
 using var yolo = new Yolo(new YoloOptions
 {
-    OnnxModel = @"path\to\model.onnx",      // Your Yolov8 or Yolov10 model in onnx format
-    ModelType = ModelType.ObjectDetection,  // Model type
+    OnnxModel = @"path\to\model.onnx",      // Your Yolo model in onnx format
+    ModelVersion = ModelVersion.V11,        // Set the version of your yolo model. Default V8
+    ModelType = ModelType.ObjectDetection,  // Set your model type
     Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
     GpuId = 0                               // Select Gpu by id. Default = 0
     PrimeGpu = false,                       // Pre-allocate GPU before first inference. Default = false
@@ -106,10 +98,10 @@ using var image = SKImage.FromEncodedData(@"path\to\image.jpg");
 var results = yolo.RunObjectDetection(image, confidence: 0.25, iou: 0.7);
 
 // Draw results
-using var resultsImage = image.Draw(results);
+using var resultImage = image.Draw(results);
 
 // Save to file
-resultsImage.Save(@"save\as\new_image.jpg", SKEncodedImageFormat.Jpeg, 80);
+resultImage.Save(@"save\as\new_image.jpg", SKEncodedImageFormat.Jpeg, 80);
 ```
 
 # Example - Video inference
@@ -128,7 +120,8 @@ using YoloDotNet.Models;
 using var yolo = new Yolo(new YoloOptions
 {
     OnnxModel = @"path\to\model.onnx",      // Your Yolov8 or Yolov10 model in onnx format
-    ModelType = ModelType.ObjectDetection,  // Model type
+    ModelVersion = ModelVersion.V11,        // Set the version of your yolo model. Default V8
+    ModelType = ModelType.ObjectDetection,  // Set your model type
     Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
     GpuId = 0                               // Select Gpu by id. Default = 0
     PrimeGpu = false,                       // Pre-allocate GPU before first. Default = false
