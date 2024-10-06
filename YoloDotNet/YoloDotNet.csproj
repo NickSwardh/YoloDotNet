@@ -8,19 +8,39 @@
     <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOV8</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
+    <PackageTags>yolo;yolov8;yolov9;yolov10;yolov11;ONNX;ML;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;sixlabors;ffmpeg;process;core;ai</PackageTags>
     <PackAsTool>False</PackAsTool>
-    <PackageIcon></PackageIcon>
+    <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
-    <Description>YoloDotNet is a C# .NET 8.0 implementation of YOLOv8 with ONNX runtime and optional GPU (CUDA) acceleration for Classification, Object Detection, OBB (Oriented Bounding Box Detection), Segmentation and Pose Estimation in images and videos in realtime.</Description>
+    <Description>YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolov8 all the way up to Yolov11 for real-time object detection in images and videos. Powered by ML.NET and ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
+
+YoloDotNet supports the following:
+Classification
+Object Detection
+OBB Detection
+Segmentation
+Pose Estimation</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>1.7</Version>
+	<Version>2.1</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Minor improvements and optimizations
-Updated dependencies to latest version</PackageReleaseNotes>
+    <PackageReleaseNotes>YoloDotNet 2.1, packing more punch than ever! This release builds on the foundation of the previous "Speed Demon" v2.0 update and adds some exciting new features while keeping everything buttery smooth. Compatibility with older versions has been ensured, and a few tweaks were made for even faster object detection performance. Check out what's new:
+
+Yolov11 Support: The latest and greatest object detection model is now available. Why settle for anything less?
+Backward Compatibility for Yolov9: Missing the good ol' Yolov9? Now you can switch between Yolov8-v11 versions. Yay!
+Minor Optimizations: A sprinkle of tweaks here and there for even faster object detection, because... uh, more speed is always better!
+OnnxRuntime Update: Now featuring support for CUDA 12.x and cuDNN 9.x. The GPU will definitely be happy with this one!
+
+YoloDotNet v2.1 – faster, smarter, and packed with more Yolo goodness ;)</PackageReleaseNotes>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.19.2" />
