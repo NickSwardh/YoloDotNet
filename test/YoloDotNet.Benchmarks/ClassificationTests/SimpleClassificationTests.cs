@@ -83,7 +83,7 @@
         }
 
         [Benchmark]
-        public void RunSimpleClassificationYolov111Gpu()
+        public void RunSimpleClassificationYolov11Gpu()
         {
             _ = _gpuYolov11.RunClassification(_image);
         }
