@@ -266,28 +266,14 @@ The hardware these benchmarks used are detailed below, the graphics card used wa
 
 `* Summary *`
 
-BenchmarkDotNet v0.13.12, Windows 10 (10.0.19045.4529/22H2/2022Update)\
-Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores\
-.NET SDK 8.0.302\
-[Host]     : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2\
+### Starting Point, YoloDotNet v2.0
+```
+BenchmarkDotNet v0.13.12, Windows 10 (10.0.19045.4529/22H2/2022Update)
+Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores
+.NET SDK 8.0.302
+[Host]     : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2
 DefaultJob : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2
-
-### Starting Point, YoloDotNet v7.1
-
-| Method             | Mean       | Error      | StdDev     | Gen0        | Gen1      | Gen2      | Allocated |
-|--------------------|-----------:|-----------:|-----------:|------------:|----------:|----------:|----------:|
-| ClassificationCpu  |  12.730 ms |  0.2525 ms |  0.2593 ms |   1546.8750 |  125.0000 |   93.7500 |    6.4 MB |
-| ClassificationGpu  |   7.708 ms |  0.1509 ms |  0.2796 ms |   1546.8750 |  125.0000 |   93.7500 |    6.4 MB |
-| ObjectDetectionCpu | 147.487 ms |  2.6940 ms |  2.6459 ms |  18666.6667 |  333.3333 |  333.3333 |  77.97 MB |
-| ObjectDetectionGpu |  39.935 ms |  0.2201 ms |  0.2059 ms |  18846.1538 |  538.4615 |  461.5385 |  77.97 MB |
-| SegmentationCpu    | 623.313 ms | 12.0823 ms | 13.4294 ms | 187000.0000 | 7000.0000 | 1000.0000 | 763.48 MB |
-| SegmentationGpu    | 477.539 ms |  8.7532 ms |  9.3658 ms | 188000.0000 | 3000.0000 |         - | 763.41 MB |
-| PoseEstimationCpu  | 140.823 ms |  2.6669 ms |  2.4946 ms |  12333.3333 |  333.3333 |  333.3333 |  53.26 MB |
-| PoseEstimationGpu  |  31.588 ms |  0.2031 ms |  0.1900 ms |  12812.5000 |  718.7500 |  625.0000 |  53.26 MB |
-| ObbDetectionCpu    | 401.694 ms |  6.6027 ms |  9.4694 ms |  35000.0000 | 1000.0000 | 1000.0000 | 147.65 MB |
-| ObbDetectionGpu    |  71.935 ms |  0.5656 ms |  0.5291 ms |  34428.5714 |  571.4286 |  428.5714 | 147.64 MB |
-
-### Ending Point, YoloDotNet v2.0
+```
 
 | Method             | Mean       | Error     | StdDev    | Gen0      | Gen1     | Gen2     | Allocated  |
 |------------------- |-----------:|----------:|----------:|----------:|---------:|---------:|-----------:|
@@ -301,3 +287,57 @@ DefaultJob : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2
 | PoseEstimationGpu  |  12.582 ms | 0.1421 ms | 0.1187 ms |         - |        - |        - |   39.57 KB |
 | ObbDetectionCpu    | 346.193 ms | 4.7002 ms | 4.3965 ms |         - |        - |        - |   16.48 KB |
 | ObbDetectionGpu    |  27.591 ms | 0.2080 ms | 0.1844 ms |         - |        - |        - |   15.78 KB |
+
+### Ending Point, YoloDotNet v2.1
+
+```
+BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.4169/23H2/2023Update/SunValley3)
+Intel Core i7-14700KF, 1 CPU, 28 logical and 20 physical cores
+.NET SDK 8.0.400
+[Host]     : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
+DefaultJob : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
+```
+
+##### CLASSIFICATION (Input image size: 1280x844)
+| Method                    | Mean     | Error     | StdDev    | Median   | Gen0   | Allocated | Model Used
+|-------------------------- |---------:|----------:|----------:|---------:|-------:|----------:|--------------:
+| ClassificationYolov8Cpu   | 3.027 ms | 0.0603 ms | 0.1176 ms | 3.037 ms |      - |  40.17 KB | yolov8s-cls  |
+| ClassificationYolov8Gpu   | 1.451 ms | 0.0290 ms | 0.0310 ms | 1.456 ms | 1.9531 |  40.17 KB | yolov8s-cls  |
+| ClassificationYolov11Cpu  | 6.721 ms | 0.1341 ms | 0.2829 ms | 6.760 ms |      - |  41.17 KB | yolov11s-cls |
+| ClassificationYolov11Gpu  | 3.850 ms | 0.1590 ms | 0.4689 ms | 3.610 ms |      - |  41.17 KB | yolov11s-cls |
+
+##### OBJECT DETECTION (input image size: 1280x851)
+| Method                    | Mean      | Error     | StdDev    | Allocated | Model Used
+|-------------------------- |----------:|----------:|----------:|----------:|----------:
+| ObjectDetectionYolov8Cpu  | 34.462 ms | 0.6583 ms | 0.8559 ms |  34.67 KB | yolov8s  |
+| ObjectDetectionYolov8Gpu  |  8.089 ms | 0.0795 ms | 0.0705 ms |  34.63 KB | yolov8s  |
+| ObjectDetectionYolov9Cpu  | 38.676 ms | 0.7529 ms | 0.7394 ms |  29.65 KB | yolov9s  |
+| ObjectDetectionYolov9Gpu  |  9.730 ms | 0.1243 ms | 0.0971 ms |  29.61 KB | yolov9s  |
+| ObjectDetectionYolov10Cpu | 31.709 ms | 0.6309 ms | 0.5901 ms |  24.67 KB | yolov10s |
+| ObjectDetectionYolov10Gpu |  7.062 ms | 0.1392 ms | 0.1368 ms |  24.63 KB | yolov10s |
+| ObjectDetectionYolov11Cpu | 31.856 ms | 0.6252 ms | 0.7678 ms |  32.79 KB | yolov11s |
+| ObjectDetectionYolov11Gpu |  7.321 ms | 0.0445 ms | 0.0825 ms |  32.75 KB | yolov11s |
+
+##### ORIENTED OBJECT DETECTION (OBB) (input image size: 1280x720)
+| Method                 | Mean     | Error    | StdDev   | Allocated | Model Used
+|----------------------- |---------:|---------:|---------:|----------:|--------------:
+| ObbDetectionYolov8Cpu  | 91.81 ms | 1.734 ms | 1.622 ms |   8.43 KB | yolov8s-obb  |
+| ObbDetectionYolov8Gpu  | 13.39 ms | 0.041 ms | 0.036 ms |   8.37 KB | yolov8s-obb  |
+| ObbDetectionYolov11Cpu | 81.91 ms | 1.423 ms | 1.331 ms |   8.43 KB | yolov11s-obb |
+| ObbDetectionYolov11Gpu | 14.00 ms | 0.027 ms | 0.025 ms |   8.37 KB | yolov11s-obb |
+
+##### POSE ESTIMATION (input image size: 1280x720)
+| Method                   | Mean      | Error     | StdDev    | Median    | Allocated | Model Used
+|------------------------- |----------:|----------:|----------:|----------:|----------:|---------------:
+| PoseEstimationYolov8Cpu  | 35.275 ms | 0.4895 ms | 0.4579 ms | 35.180 ms |  24.14 KB | yolov8s-pose  |
+| PoseEstimationYolov8Gpu  |  7.445 ms | 0.1474 ms | 0.3415 ms |  7.586 ms |  24.11 KB | yolov8s-pose  |
+| PoseEstimationYolov11Cpu | 32.237 ms | 0.6384 ms | 0.9938 ms | 32.056 ms |  22.15 KB | yolov11s-pose |
+| PoseEstimationYolov11Gpu |  7.190 ms | 0.1401 ms | 0.1721 ms |  7.206 ms |  22.13 KB | yolov11s-pose |
+
+##### SEGMENTATION (input image size: 1280x853)
+| Method                 | Mean     | Error    | StdDev   | Gen0     | Gen1     | Gen2     | Allocated | Model Used
+|----------------------- |---------:|---------:|---------:|---------:|---------:|---------:|----------:|--------------:
+| SegmentationYolov8Cpu  | 56.79 ms | 1.121 ms | 1.246 ms | 444.4444 | 333.3333 | 111.1111 |   7.31 MB | yolov8s-seg  |
+| SegmentationYolov8Gpu  | 31.50 ms | 0.630 ms | 1.198 ms | 468.7500 | 437.5000 | 156.2500 |   7.28 MB | yolov8s-seg  |
+| SegmentationYolov11Cpu | 96.84 ms | 1.848 ms | 2.270 ms | 333.3333 | 166.6667 |        - |    6.8 MB | yolov11s-seg |
+| SegmentationYolov11Gpu | 28.97 ms | 0.293 ms | 0.274 ms | 406.2500 | 375.0000 | 125.0000 |   6.72 MB | yolov11s-seg |
