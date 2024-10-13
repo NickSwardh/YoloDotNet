@@ -16,7 +16,7 @@
             SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double iou)
+        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore!.Run(image);
             using var ort = ortValues[0];
@@ -26,8 +26,8 @@
             return [.. results];
         }
 
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 

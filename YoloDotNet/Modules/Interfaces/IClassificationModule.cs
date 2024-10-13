@@ -2,7 +2,7 @@
 {
     public interface IClassificationModule : IModule
     {
-        List<Classification> ProcessImage(SKImage image, double classes, double iou);
-        Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double iou);
+        List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence, double iou);
+        Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou);
     }
 }

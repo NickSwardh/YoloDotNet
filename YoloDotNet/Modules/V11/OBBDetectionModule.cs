@@ -7,7 +7,7 @@
         public event EventHandler VideoCompleteEvent = delegate { };
 
         private readonly YoloCore _yoloCore;
-        private readonly ObjectDetectionModuleV8 _objectDetectionModuleV8 = default!;
+        private readonly OBBDetectionModuleV8 _obbDetectionModuleV8 = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -17,23 +17,16 @@
 
             // Yolov11 has the same model input/output shapes as Yolov8
             // Use Yolov8 module
-            _objectDetectionModuleV8 = new ObjectDetectionModuleV8(_yoloCore);
+            _obbDetectionModuleV8 = new OBBDetectionModuleV8(_yoloCore);
 
             SubscribeToVideoEvents();
         }
 
-        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double iou)
-        {
-            using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+            => _obbDetectionModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-            var objectDetectionResults = _objectDetectionModuleV8.ObjectDetection(image, ortSpan, confidence, iou);
-
-            return [.. objectDetectionResults.Select(x => (OBBDetection)x)];
-        }
-
-        public Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 
@@ -50,7 +43,7 @@
             _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
             _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
 
-            _objectDetectionModuleV8?.Dispose();
+            _obbDetectionModuleV8?.Dispose();
             _yoloCore?.Dispose();
 
             GC.SuppressFinalize(this);

@@ -104,8 +104,9 @@
         public Dictionary<int, List<T>> RunVideo<T>(
             VideoOptions options,
             double confidence,
+            double pixelConfidence,
             double iouThreshold,
-            Func<SKImage, double, double, List<T>> func) where T : class, new()
+            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
         {
             var output = new Dictionary<int, List<T>>();
 
@@ -116,7 +117,7 @@
             _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
             _videoHandler.FramesExtractedEvent += (sender, e) =>
             {
-                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, iouThreshold, func);
+                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, pixelConfidence, iouThreshold, func);
 
                 if (options.GenerateVideo)
                     _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
@@ -134,8 +135,10 @@
         /// </summary>
         private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(
             VideoHandler.VideoHandler _videoHandler,
-            double confidence, double iouThreshold,
-            Func<SKImage, double, double, List<T>> func) where T : class, new()
+            double confidence,
+            double pixelConfidence,
+            double iouThreshold,
+            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
         {
             var frames = _videoHandler.GetExtractedFrames();
             int progressCounter = 0;
@@ -151,7 +154,7 @@
                 using var img = SKImage.FromEncodedData(frame);
 
 
-                var results = func.Invoke(img, confidence, iouThreshold);
+                var results = func.Invoke(img, confidence, pixelConfidence, iouThreshold);
                 batch[i] = results;
 
                 if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)

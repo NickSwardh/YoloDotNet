@@ -20,15 +20,15 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double iou)
+        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
             using var ort = ortValues[0];
             return ClassifyTensor(ort, (int)classes);
         }
 
-        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Classicifation
 
@@ -38,30 +38,19 @@
         /// <param name="numberOfClasses"></param>
         private List<Classification> ClassifyTensor(OrtValue ortTensor, int numberOfClasses)
         {
-            var span = ortTensor.GetTensorMutableDataAsSpan<float>();
-            var len = span.Length;
+            var span = ortTensor.GetTensorDataAsSpan<float>();
+            var tmp = new Classification[span.Length];
 
-            var tmp = _classificationPool.Rent(len);
-
-            try
+            for (int i = 0; i < tmp.Length; i++)
             {
-                for (int i = 0; i < len; i++)
+                tmp[i] = new Classification
                 {
-                    tmp[i] = new Classification
-                    {
-                        Confidence = span[i],
-                        Label = _yoloCore.OnnxModel.Labels[i].Name
-                    };
-                }
+                    Confidence = span[i],
+                    Label = _yoloCore.OnnxModel.Labels[i].Name
+                };
+            }
 
-                // Use Array.Sort() instead of LINQ for performance
-                Array.Sort(tmp[.. len], (a, b) => b.Confidence.CompareTo(a.Confidence));
-                return [.. tmp[..numberOfClasses]];
-            }
-            finally
-            {
-                _classificationPool.Return(tmp, true);
-            }
+            return [.. tmp.OrderByDescending(x => x.Confidence).Take(numberOfClasses)];
         }
 
         #endregion

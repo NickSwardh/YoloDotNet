@@ -22,16 +22,11 @@
             SubscribeToVideoEvents();
         }
 
-        public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double iou)
-        {
-            using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+        public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+            => _poseEstimationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-            return _poseEstimationModuleV8.ProcessImage(image, confidence, iou);
-        }
-
-        public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 

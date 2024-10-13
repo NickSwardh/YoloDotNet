@@ -22,19 +22,13 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double iou)
-        {
-            using var ortValues = _yoloCore.Run(image);
-            using var ort = ortValues[0];
+        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence,double iou)
+            => _classificationModuleV8.ProcessImage(image, classes, pixelConfidence, iou);
 
-            return _classificationModuleV8.ProcessImage(image, classes, iou);
-        }
-
-        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
-
         private void SubscribeToVideoEvents()
         {
             _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);

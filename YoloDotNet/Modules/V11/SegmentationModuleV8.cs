@@ -22,15 +22,11 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Segmentation> ProcessImage(SKImage image, double confidence, double iou)
-        {
-            using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
+        public List<Segmentation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+            => _segmentationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-            return _segmentationModuleV8.ProcessImage(image, confidence, iou);
-        }
-
-        public Dictionary<int, List<Segmentation>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<Segmentation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 

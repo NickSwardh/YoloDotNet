@@ -18,7 +18,7 @@
             SubscribeToVideoEvents();
         }
 
-        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double iou)
+        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
@@ -28,8 +28,8 @@
             return [.. objectDetectionResults.Select(x => (OBBDetection)x)];
         }
 
-        public Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 

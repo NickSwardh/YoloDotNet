@@ -22,19 +22,11 @@
             SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double iou)
-        {
-            using var ortValues = _yoloCore.Run(image);
-            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+            => _objectDetectionModule.ProcessImage(image, confidence, pixelConfidence, iou);
 
-            var results = _objectDetectionModule.ObjectDetection(image, ortSpan, confidence, iou)
-                .Select(x => (ObjectDetection)x);
-
-            return [..results];
-        }
-
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, iou, ProcessImage);
+        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         private void SubscribeToVideoEvents()
         {

@@ -41,7 +41,7 @@
         /// <param name="classes">The number of classes to return (default is 1).</param>
         /// <returns>A list of classification results.</returns>
         public List<Classification> RunClassification(SKImage img, int classes = 1)
-            => ((IClassificationModule)_detection).ProcessImage(img, classes, 0);
+            => ((IClassificationModule)_detection).ProcessImage(img, classes, 0, 0);
 
         /// <summary>
         /// Run object detection on an Image.
@@ -51,7 +51,7 @@
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of classification results.</returns>
         public List<ObjectDetection> RunObjectDetection(SKImage img, double confidence = 0.23, double iou = 0.7)
-            => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, iou);
+            => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
         
         /// <summary>
         /// Run oriented bounding bBox detection on an image.
@@ -61,7 +61,7 @@
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
         public List<OBBDetection> RunObbDetection(SKImage img, double confidence = 0.23, double iou = 0.7)
-            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, iou);
+            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         /// <summary>
         /// Run segmentation on an image.
@@ -70,8 +70,8 @@
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.23, double iou = 0.7)
-            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, iou);
+        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.23, double pixelConfedence = 0.65, double iou = 0.7)
+            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
         
         /// <summary>
         /// Run pose estimation on an image.
@@ -81,7 +81,7 @@
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
         public List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence = 0.23, double iou = 0.7)
-            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, iou);
+            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         #endregion
 
@@ -93,7 +93,7 @@
         /// <param name="options">Options for video processing.</param>
         /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
         public Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes = 1)
-            => ((IClassificationModule)_detection).ProcessVideo(options, classes, 0);
+            => ((IClassificationModule)_detection).ProcessVideo(options, classes, 0, 0);
 
         /// <summary>
         /// Run object detection on a video file.
@@ -102,7 +102,7 @@
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         public Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((IObjectDetectionModule)_detection).ProcessVideo(options, confidence, iou);  //((ObjectDetectionModule)_detection).ProcessVideo(options, confidence, iou);
+            => ((IObjectDetectionModule)_detection).ProcessVideo(options, confidence, 0, iou);  //((ObjectDetectionModule)_detection).ProcessVideo(options, confidence, iou);
         
         /// <summary>
         /// Run oriented bounding box detection on a video file.
@@ -111,7 +111,7 @@
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         public Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((IOBBDetectionModule)_detection).ProcessVideo(options, confidence, iou);
+            => ((IOBBDetectionModule)_detection).ProcessVideo(options, confidence, 0, iou);
 
         /// <summary>
         /// Run object detection on a video file.
@@ -119,8 +119,8 @@
         /// <param name="options">Options for video processing.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
-        public Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((ISegmentationModule)_detection).ProcessVideo(options, confidence, iou);
+        public Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence = 0.23, double pixelConfidence = 0.65, double iou = 0.7)
+            => ((ISegmentationModule)_detection).ProcessVideo(options, confidence, pixelConfidence, iou);
 
         /// <summary>
         /// Run pose estimation on a video file.
@@ -129,7 +129,7 @@
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         public Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((IPoseEstimationModule)_detection).ProcessVideo(options, confidence, iou);
+            => ((IPoseEstimationModule)_detection).ProcessVideo(options, confidence, 0, iou);
 
         public void Dispose()
         {
