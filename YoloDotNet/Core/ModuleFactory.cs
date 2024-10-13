@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Data
+﻿namespace YoloDotNet.Core
 {
     /// <summary>
     /// Factory class to create YOLO detection modules based on model version and type.

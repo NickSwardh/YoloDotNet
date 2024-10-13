@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Data
+﻿namespace YoloDotNet.Core
 {
     public static class YoloDotNetColors
     {

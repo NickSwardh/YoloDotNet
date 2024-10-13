@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Data
+﻿namespace YoloDotNet.Core
 {
     /// <summary>
     /// Initializes a new instance of the Yolo core class.

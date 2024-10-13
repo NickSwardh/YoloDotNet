@@ -15,7 +15,7 @@ global using Microsoft.ML.OnnxRuntime.Tensors;
 
 global using SkiaSharp;
 
-global using YoloDotNet.Data;
+global using YoloDotNet.Core;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
 global using YoloDotNet.Converters;
