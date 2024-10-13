@@ -104,21 +104,16 @@
         /// <summary>
         /// Get ONNX model version
         /// </summary>
-        private static ModelVersion GetModelVersion(string modelDescription)
+        private static ModelVersion GetModelVersion(string modelDescription) => modelDescription.ToLower() switch
         {
-            var test = modelDescription.ToLower() switch
-            {
-                var version when version.ToLower().Contains("yolo") is false => ModelVersion.V8,
-                var version when version.ToLower().StartsWith("ultralytics yolov8") => ModelVersion.V8,
-                var version when version.ToLower().StartsWith("ultralytics yolov9") => ModelVersion.V9,
-                var version when version.ToLower().StartsWith("ultralytics yolov10") => ModelVersion.V10,
-                var version when version.ToLower().StartsWith("ultralytics yolo11") => ModelVersion.V11, // Note the missing v in Yolo11
-                var version when version.ToLower().Contains("worldv2") => ModelVersion.V11,
-                _ => throw new NotSupportedException("Onnx model not supported!")
-            };
-
-             return test;
-        }
+            var version when version.Contains("yolo") is false => ModelVersion.V8,
+            var version when version.StartsWith("ultralytics yolov8") => ModelVersion.V8,
+            var version when version.StartsWith("ultralytics yolov9") => ModelVersion.V9,
+            var version when version.StartsWith("ultralytics yolov10") => ModelVersion.V10,
+            var version when version.StartsWith("ultralytics yolo11") => ModelVersion.V11, // Note the missing v in Yolo11
+            var version when version.Contains("worldv2") => ModelVersion.V11,
+            _ => throw new NotSupportedException("Onnx model not supported!")
+        };
 
         #endregion
     }
