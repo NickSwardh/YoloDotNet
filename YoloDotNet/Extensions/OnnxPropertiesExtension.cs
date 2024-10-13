@@ -113,6 +113,7 @@
                 var version when version.ToLower().StartsWith("ultralytics yolov9") => ModelVersion.V9,
                 var version when version.ToLower().StartsWith("ultralytics yolov10") => ModelVersion.V10,
                 var version when version.ToLower().StartsWith("ultralytics yolo11") => ModelVersion.V11, // Note the missing v in Yolo11
+                var version when version.ToLower().Contains("worldv2") => ModelVersion.V11,
                 _ => throw new NotSupportedException("Onnx model not supported!")
             };
 
