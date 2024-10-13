@@ -11,11 +11,6 @@
         public string OnnxModel { get; set; } = default!;
 
         /// <summary>
-        /// Gets or sets yolo version of the model.
-        /// </summary>
-        public ModelVersion ModelVersion { get; set; }
-
-        /// <summary>
         /// Gets or sets the type of the model (e.g., detection, classification).
         /// </summary>
         public ModelType ModelType { get; set; }
