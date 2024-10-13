@@ -36,7 +36,6 @@
 
             // Yolov8
             options.OnnxModel = _modelV8;
-            options.ModelVersion = ModelVersion.V8;
             _cpuYolov8 = new Yolo(options);
 
             options.Cuda = true;
@@ -44,7 +43,6 @@
 
             // Yolov9
             options.OnnxModel = _modelV9;
-            options.ModelVersion = ModelVersion.V9;
             options.Cuda = false;
 
             _cpuYolov9 = new Yolo(options);
@@ -54,7 +52,6 @@
 
             // Yolov10
             options.OnnxModel = _modelV10;
-            options.ModelVersion = ModelVersion.V10;
             options.Cuda = false;
 
             _cpuYolov10 = new Yolo(options);
@@ -64,7 +61,6 @@
 
             // Yolov11
             options.OnnxModel = _modelV11;
-            options.ModelVersion = ModelVersion.V11;
             options.Cuda = false;
 
             _cpuYolov11 = new Yolo(options);

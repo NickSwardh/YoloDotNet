@@ -13,14 +13,13 @@
             {
                 OnnxModel = model,
                 ModelType = ModelType.Segmentation,
-                ModelVersion = ModelVersion.V11,
                 Cuda = false
             });
 
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
-            var results = yolo.RunSegmentation(image, 0.25, 0.45);
+            var results = yolo.RunSegmentation(image, 0.25, 0.65, 0.45);
 
             // Assert
             Assert.Equal(17, results.Count);

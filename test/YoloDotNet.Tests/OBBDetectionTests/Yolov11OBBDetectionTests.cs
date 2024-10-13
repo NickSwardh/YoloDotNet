@@ -13,7 +13,6 @@
             {
                 OnnxModel = model,
                 ModelType = ModelType.ObbDetection,
-                ModelVersion = ModelVersion.V11,
                 Cuda = false
             });
 

@@ -13,7 +13,6 @@
             {
                 OnnxModel = model,
                 ModelType = ModelType.Classification,
-                ModelVersion = ModelVersion.V8,
                 Cuda = false
             });
 
