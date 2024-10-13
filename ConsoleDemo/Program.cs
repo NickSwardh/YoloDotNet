@@ -64,7 +64,6 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
     using var yolo = new Yolo(new YoloOptions()
     {
         OnnxModel = modelPath,
-        ModelVersion = modelVersion,
         Cuda = cuda,
         PrimeGpu = primeGpu,
         ModelType = modelType,
@@ -92,21 +91,21 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
             }
         case ModelType.ObjectDetection:
             {
-                var result = yolo.RunObjectDetection(image);
+                var result = yolo.RunObjectDetection(image, 0.23, 0.7);
                 labels = result.Select(x => x.Label).ToList();
                 resultImage = image.Draw(result);
                 break;
             }
         case ModelType.ObbDetection:
             {
-                var result = yolo.RunObbDetection(image);
+                var result = yolo.RunObbDetection(image, 0.23, 0.7);
                 labels = result.Select(x => x.Label).ToList();
                 resultImage = image.Draw(result);
                 break;
             }
         case ModelType.Segmentation:
             {
-                var result = yolo.RunSegmentation(image);
+                var result = yolo.RunSegmentation(image, 0.23, 0.65, 0.7);
                 labels = result.Select(x => x.Label).ToList();
 
                 resultImage = image.Draw(result);
@@ -114,7 +113,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
             }
         case ModelType.PoseEstimation:
             {
-                var result = yolo.RunPoseEstimation(image);
+                var result = yolo.RunPoseEstimation(image, 0.23, 0.7);
                 labels = result.Select(x => x.Label).ToList();
                 resultImage = image.Draw(result, CustomKeyPointColorMap.KeyPointOptions);
                 break;
@@ -152,7 +151,6 @@ static void ObjectDetectionOnVideo()
     {
         OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
         ModelType = ModelType.ObjectDetection,
-        ModelVersion = ModelVersion.V8,
         Cuda = true
     });
 
