@@ -48,6 +48,16 @@
                     { ModelType.Segmentation, core => new SegmentationModuleV11(core) },
                     { ModelType.PoseEstimation, core => new PoseEstimationModuleV8(core) }
                 }
+            },
+            {
+                ModelVersion.WORLDV2, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleWorldV2(core) },
+                    { ModelType.ObbDetection, core =>  throw new NotImplementedException() },
+                    { ModelType.Segmentation, core =>  throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core =>  throw new NotImplementedException() }
+                }
             }
         };
 
@@ -62,7 +72,7 @@
             var yoloCore = InitializeYoloCore(options);
 
             // Get model version and type
-            var modelVersion = options.ModelVersion;
+            var modelVersion = yoloCore.OnnxModel.ModelVersion;
             var modelType = options.ModelType;
 
             // Get dictionary from module map based on model version
