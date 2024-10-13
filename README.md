@@ -1,8 +1,11 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v2.1
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v2.2
 
-YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolov8 all the way up to Yolov11 for real-time object detection in images and videos. Powered by ML.NET and ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
+YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolo and Yolo-World models for real-time object detection in images and videos. Powered by ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
 
-### YoloDotNet supports the following:
+### Supported Versions:
+```Yolov8``` ```Yolov9``` ```Yolov10``` ```Yolov11``` ```Yolo-World```
+
+### Supported Tasks:
 
 &nbsp;&nbsp;✓&nbsp;&nbsp;`   Classification   `&nbsp;&nbsp;Categorize an image\
 &nbsp;&nbsp;✓&nbsp;&nbsp;`  Object Detection  `&nbsp;&nbsp;Detect multiple objects in a single image\
@@ -17,16 +20,12 @@ Batteries not included.
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
-# What's new in YoloDotNet v2.1?
+# What's new in YoloDotNet v2.2?
 
-YoloDotNet 2.1 is here, packing more punch than ever! This release builds on the foundation of the previous "Speed Demon" v2.0 update and adds some exciting new features while keeping everything buttery smooth. Compatibility with older versions has been ensured, and a few tweaks were made for even faster object detection performance. Check out what's new:
+Things are moving fast, YoloDotNet 2.2 is already here packed with exciting new features! Ever wanted to experiment with Yolo-World models in .NET? Now's your chance. With Open-Vocabulary detection and real-time, zero-shot object detection, the model can now find objects it hasn't even been trained on. It's a whole new level of object detection fun!
 
-**Yolov11 Support:** The latest and greatest object detection model is now available. Why settle for anything less?\
-**Backward Compatibility for Yolov9:** Missing the good ol' Yolov9? Now you can switch between Yolov8-v11 versions. Yay!\
-**Minor Optimizations:** A sprinkle of tweaks here and there for even faster object detection, because... uh, more speed is always better!\
-**OnnxRuntime Update:** Now featuring support for CUDA 12.x and cuDNN 9.x. The GPU will definitely be happy with this one!
-
-YoloDotNet v2.1 – faster, smarter, and packed with more Yolo goodness ;)
+**Yolo-World Support:** Yep, you read that right – Open-Vocabulary detection is now in the mix! Real-time, zero-shot object detection is here, so the model can spot stuff it’s never been trained on. Mind-blowing, right? [More about Yolo-World here](https://docs.ultralytics.com/models/yolo-world/).
+**Pixel Confidence for Segmentation:** Need more control? An optional pixel confidence parameter has been added for segmentation. Now it's possible to fine-tune those segmentation masks like a pro ;)
 
 # Nuget
 ```
@@ -84,7 +83,6 @@ using SkiaSharp;
 using var yolo = new Yolo(new YoloOptions
 {
     OnnxModel = @"path\to\model.onnx",      // Your Yolo model in onnx format
-    ModelVersion = ModelVersion.V11,        // Set the version of your yolo model. Default V8
     ModelType = ModelType.ObjectDetection,  // Set your model type
     Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
     GpuId = 0                               // Select Gpu by id. Default = 0
@@ -120,7 +118,6 @@ using YoloDotNet.Models;
 using var yolo = new Yolo(new YoloOptions
 {
     OnnxModel = @"path\to\model.onnx",      // Your Yolov8 or Yolov10 model in onnx format
-    ModelVersion = ModelVersion.V11,        // Set the version of your yolo model. Default V8
     ModelType = ModelType.ObjectDetection,  // Set your model type
     Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
     GpuId = 0                               // Select Gpu by id. Default = 0
