@@ -7,12 +7,12 @@
         /// </summary>
         /// <param name="session">The ONNX model inference session.</param>
         /// <returns>An instance of OnnxModel containing extracted metadata properties.</returns>
-        public static OnnxModel GetOnnxProperties(this InferenceSession session, YoloOptions yoloOptions)
+        public static OnnxModel GetOnnxProperties(this InferenceSession session)
         {
             var metaData = session.ModelMetadata.CustomMetadataMap;
 
             var modelType = GetModelType(metaData[NameOf(MetaData.Task)]);
-            var modelVersion = yoloOptions.ModelVersion;
+            var modelVersion = GetModelVersion(metaData[NameOf(MetaData.Description)]);
 
             var inputName = session.InputNames[0];
             var outputNames = session.OutputNames.ToList();
@@ -100,6 +100,24 @@
             .GetFields()
             .FirstOrDefault((x => Attribute.GetCustomAttribute(x, typeof(EnumMemberAttribute)) is EnumMemberAttribute attribute && attribute.Value == modelType)))!
             .GetValue(null)!;
+
+        /// <summary>
+        /// Get ONNX model version
+        /// </summary>
+        private static ModelVersion GetModelVersion(string modelDescription)
+        {
+            var test = modelDescription.ToLower() switch
+            {
+                var version when version.ToLower().Contains("yolo") is false => ModelVersion.V8,
+                var version when version.ToLower().StartsWith("ultralytics yolov8") => ModelVersion.V8,
+                var version when version.ToLower().StartsWith("ultralytics yolov9") => ModelVersion.V9,
+                var version when version.ToLower().StartsWith("ultralytics yolov10") => ModelVersion.V10,
+                var version when version.ToLower().StartsWith("ultralytics yolo11") => ModelVersion.V11, // Note the missing v in Yolo11
+                _ => throw new NotSupportedException("Onnx model not supported!")
+            };
+
+             return test;
+        }
 
         #endregion
     }

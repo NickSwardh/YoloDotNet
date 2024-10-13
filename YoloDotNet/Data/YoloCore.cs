@@ -41,7 +41,7 @@
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
 
-            OnnxModel = _session.GetOnnxProperties(yoloOptions);
+            OnnxModel = _session.GetOnnxProperties();
             
             VerifyExpectedModelType(yoloOptions.ModelType);
 
