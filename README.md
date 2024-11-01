@@ -104,6 +104,15 @@ resultImage.Save(@"save\as\new_image.jpg", SKEncodedImageFormat.Jpeg, 80);
 
 # Example 2 - Inference on a batch of images
 ```csharp
+using System;
+using System.IO;
+using SkiaSharp;
+using YoloDotNet;
+using YoloDotNet.Enums;
+using YoloDotNet.Models;
+using YoloDotNet.Extensions;
+using System.Threading.Tasks;
+
 // Instantiate a new yolo-object
 using var yolo = new Yolo(new YoloOptions()
 {
