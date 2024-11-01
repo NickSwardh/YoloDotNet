@@ -70,7 +70,7 @@ using var yolo = new Yolo(@"path\to\model.onnx");
 Console.WriteLine(yolo.OnnxModel.ModelType); // Output modeltype...
 ```
 
-# Example - Image inference
+# Example 1 - Image inference
 
 ```csharp
 using YoloDotNet;
@@ -102,7 +102,41 @@ using var resultImage = image.Draw(results);
 resultImage.Save(@"save\as\new_image.jpg", SKEncodedImageFormat.Jpeg, 80);
 ```
 
-# Example - Video inference
+# Example 2 - Inference on a batch of images
+```csharp
+// Instantiate a new yolo-object
+using var yolo = new Yolo(new YoloOptions()
+{
+    OnnxModel = @"path\to\model.onnx",
+    Cuda = true,
+    PrimeGpu = true,
+    ModelType = ModelType.ObjectDetection
+});
+
+// Collect images
+var images = Directory.GetFiles(@"path\to\image\folder");
+
+// Process images using parallelism for faster processing
+Parallel.ForEach(images, image =>
+{
+    // Load image
+    using var img = SKImage.FromEncodedData(image);
+
+    // Run inference
+    var results = yolo.RunObjectDetection(img, 0.25, 0.5);
+
+    // Draw results
+    using var resultImg = img.Draw(results);
+
+    // Save results
+    resultImg.Save(Path.Combine(@"path\to\save\folder", Path.GetFileName(image)));
+
+    // Do further processing if needed...
+
+});
+```
+
+# Example 3 - Video inference
 
 > [!IMPORTANT]
 > Processing video requires FFmpeg and FFProbe
