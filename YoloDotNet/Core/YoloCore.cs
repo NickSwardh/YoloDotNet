@@ -1,13 +1,13 @@
-﻿namespace YoloDotNet.Core
+﻿using System;
+
+namespace YoloDotNet.Core
 {
     /// <summary>
     /// Initializes a new instance of the Yolo core class.
     /// </summary>
     /// <param name="onnxModel">The path to the ONNX model file to use.</param>
-    /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
-    /// <param name="allocateGpuMemory">Indicates whether to allocate GPU memory.</param>
-    /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
-    public class YoloCore(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId) : IDisposable
+    /// <param name="hwAccelerator">Indicates which HW device to use for acceleration.</param>
+    public class YoloCore(string onnxModel, HwAcceleratorType hwAccelerator) : IDisposable
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
@@ -34,9 +34,15 @@
         /// <param name="modelType">The type of the model to be initialized.</param>
         public void InitializeYolo(YoloOptions yoloOptions)
         {
-            _session = useCuda
-                ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
-                : new InferenceSession(onnxModel);
+            var sessionOptions = new SessionOptions();
+
+            // apply HW accelerator
+            if (hwAccelerator == HwAcceleratorType.OpenVino)
+                sessionOptions.AppendExecutionProvider_OpenVINO(yoloOptions.OpenVinoDeviceId);
+            else if (hwAccelerator == HwAcceleratorType.Cuda)
+                sessionOptions.AppendExecutionProvider_CUDA(yoloOptions.GpuId);
+
+            _session = new InferenceSession(onnxModel, sessionOptions);
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
@@ -54,7 +60,7 @@
 
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
-            if (useCuda && allocateGpuMemory)
+            if (hwAccelerator == HwAcceleratorType.Cuda && yoloOptions.PrimeGpu)
                 _session.AllocateGpuMemory(_ortIoBinding, _runOptions, customSizeFloatPool, _imageInfo);
         }
 
@@ -110,7 +116,7 @@
         {
             var output = new Dictionary<int, List<T>>();
 
-            using var _videoHandler = new VideoHandler.VideoHandler(options, useCuda);
+            using var _videoHandler = new VideoHandler.VideoHandler(options, hwAccelerator == HwAcceleratorType.Cuda);
 
             _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
             _videoHandler.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);

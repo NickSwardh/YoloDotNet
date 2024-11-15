@@ -16,9 +16,9 @@
         public ModelType ModelType { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether to use CUDA for GPU acceleration (default is true).
+        /// Choose hardware accelerator (default is HwAcceleratorType.Cuda)
         /// </summary>
-        public bool Cuda { get; set; } = true;
+        public HwAcceleratorType HwAccelerator { get; set; } = HwAcceleratorType.Cuda;
 
         /// <summary>
         /// Gets or sets a value indicating whether to prime the GPU before inference (default is false).
@@ -29,5 +29,10 @@
         /// Gets or sets the ID of the GPU to use (default is 0).
         /// </summary>
         public int GpuId { get; set; } = 0;
+
+        /// <summary>
+        /// Gets or sets the ID of the OpenVINO device to use (default is NPU) (CPU, GPU or NPU).
+        /// </summary>
+        public string OpenVinoDeviceId = "NPU";
     }
 }
