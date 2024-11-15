@@ -7,6 +7,7 @@
     {
         None = 0,
         Cuda = 1,
-        OpenVino = 2
+        OpenVino = 2,
+        CoreML = 3
     }
 }

@@ -41,6 +41,8 @@ namespace YoloDotNet.Core
                 sessionOptions.AppendExecutionProvider_OpenVINO(yoloOptions.OpenVinoDeviceId);
             else if (hwAccelerator == HwAcceleratorType.Cuda)
                 sessionOptions.AppendExecutionProvider_CUDA(yoloOptions.GpuId);
+            else if (hwAccelerator == HwAcceleratorType.CoreML)
+                sessionOptions.AppendExecutionProvider_CoreML();
 
             _session = new InferenceSession(onnxModel, sessionOptions);
 

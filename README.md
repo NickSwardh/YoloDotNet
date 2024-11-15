@@ -30,7 +30,6 @@ Things are moving fast, YoloDotNet 2.2 is already here packed with exciting new 
 # Nuget
 ```
 > dotnet add package YoloDotNet
-> dotnet add package Microsoft.ML.OnnxRuntime
 ```
 
 # Install CUDA (optional)
@@ -71,10 +70,15 @@ ONNX runtime's [current compatibility with specific versions](https://onnxruntim
 
 4. Download latest release of [Microsoft.ML.OnnxRuntime.OpenVino](https://github.com/intel/onnxruntime/releases) shared library build and reference the package in your project. [1.19.0 with ONNXRuntime 5.4](https://github.com/intel/onnxruntime/releases/download/v5.4/Microsoft.ML.OnnxRuntime.OpenVino.1.19.0.zip)
     - preferred way is to install it via local NuGet source via the provided .nupkg from the release page linked above
-
     - Add **ONLY** `Microsoft.ML.OnnxRuntime.OpenVino @ 1.19.0` (without `Microsoft.ML.OnnxRuntime`) to your project.
 
 5. Set `HwAccelerator = HwAcceleratorType.OpenVino` in YoloDotNet's options
+
+# Use CoreML / Apple Silicon acceleration (optional)
+
+1. Add `Microsoft.ML.OnnxRuntime @ 1.19.2` to your project.
+
+2. Set `HwAccelerator = HwAcceleratorType.CoreML` in YoloDotNet's options
 
 # Export Yolo models to ONNX
 All models must be exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).\
