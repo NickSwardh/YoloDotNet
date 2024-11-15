@@ -29,7 +29,7 @@
             {
                 OnnxModel = _model,
                 ModelType = ModelType.ObjectDetection,
-                Cuda = false
+                HwAccelerator = HwAcceleratorType.None
             };
 
             _cpuYolo = new Yolo(options);

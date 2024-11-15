@@ -34,19 +34,19 @@
             // Yolov8
             options.OnnxModel = _model8;
 
-            options.Cuda = false;
+            options.HwAccelerator = HwAcceleratorType.None;
             _cpuYolov8 = new Yolo(options);
 
-            options.Cuda = true;
+            options.HwAccelerator = HwAcceleratorType.Cuda;
             _gpuYolov8 = new Yolo(options);
 
             // Yolov11
             options.OnnxModel = _model11;
 
-            options.Cuda = false;
+            options.HwAccelerator = HwAcceleratorType.None;
             _cpuYolov11 = new Yolo(options);
 
-            options.Cuda = true;
+            options.HwAccelerator = HwAcceleratorType.Cuda;
             _gpuYolov11 = new Yolo(options);
         }
 

@@ -64,7 +64,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
     using var yolo = new Yolo(new YoloOptions()
     {
         OnnxModel = modelPath,
-        Cuda = cuda,
+        HwAccelerator = cuda ? HwAcceleratorType.Cuda : HwAcceleratorType.None,
         PrimeGpu = primeGpu,
         ModelType = modelType,
     });
@@ -151,7 +151,7 @@ static void ObjectDetectionOnVideo()
     {
         OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
         ModelType = ModelType.ObjectDetection,
-        Cuda = true
+        HwAccelerator = HwAcceleratorType.Cuda
     });
 
     int currentLineCursor = 0;

@@ -13,7 +13,7 @@
             {
                 OnnxModel = model,
                 ModelType = ModelType.Segmentation,
-                Cuda = false
+                HwAccelerator = HwAcceleratorType.None
             });
 
             var image = SKImage.FromEncodedData(testImage);
