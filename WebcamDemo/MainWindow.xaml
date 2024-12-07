@@ -1,0 +1,47 @@
+﻿<Window x:Class="WebcamDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WebcamDemo"
+        xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
+        mc:Ignorable="d"
+        Title="Webcam Demo | YoloDotNet" Height="645" Width="1080"
+        Background="Black" ResizeMode="NoResize" Closing="WindowClosing">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Webcam -->
+        <skia:SKElement x:Name="WebCamFrame"
+                        Grid.Row="0"
+                        Width="1080"
+                        PaintSurface="UpdateWebcamFrame" />
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="20">
+
+            <Button x:Name="Start"
+                    Content="Start Detection"
+                    Width="120"
+                    Height="30"
+                    Padding="10,0,10,0"
+                    Margin="0,0,10,0"
+                    Click="StartClick" />
+
+            <Button x:Name="Stop"
+                    Content="Stop Detection"
+                    Width="120"
+                    Height="30"
+                    Padding="10,0,10,0"
+                    Click="StopClick" />
+
+        </StackPanel>
+
+    </Grid>
+</Window>
