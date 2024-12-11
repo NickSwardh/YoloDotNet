@@ -78,4 +78,9 @@
 	  </None>
 	</ItemGroup>
 
+	
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.19.2" />
+	</ItemGroup>
+
 </Project>

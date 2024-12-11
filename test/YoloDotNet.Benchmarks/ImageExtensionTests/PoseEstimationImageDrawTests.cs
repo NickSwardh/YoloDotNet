@@ -23,7 +23,7 @@
             {
                 OnnxModel = _model,
                 ModelType = ModelType.PoseEstimation,
-                Cuda = false
+                HwAccelerator = HwAcceleratorType.None
             };
 
             _cpuYolo = new Yolo(options);
