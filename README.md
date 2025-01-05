@@ -55,6 +55,31 @@ ONNX runtime's [current compatibility with specific versions](https://onnxruntim
 
 4. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue with whatever you were doing ;)
 
+5. Add `Microsoft.ML.OnnxRuntime @ 1.19.2` and `Microsoft.ML.OnnxRuntime.Gpu @ 1.19.2` to your project.
+
+# Install OpenVINO (optional)
+YoloDotNet with CPU/GPU/NPU-acceleration provided by OpenVINO requires OpenVINO Toolkit installed.
+
+ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/OpenVINO-ExecutionProvider.html#requirements).
+
+1. Download [OpenVINO Toolkit](https://github.com/openvinotoolkit/openvino/releases) ([Download 2024.3.0 archive](https://storage.openvinotoolkit.org/repositories/openvino/packages/2024.3/)) and extract inside `C:\Program Files (x86)\Intel\openvino_2024.3.0`
+
+2. Update your system PATH-variable to include OpenVINO [instructions](https://www.intel.com/content/www/us/en/support/articles/000033440/software/development-software.html)
+
+3. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue with whatever you were doing ;)
+
+4. Download latest release of [Microsoft.ML.OnnxRuntime.OpenVino](https://github.com/intel/onnxruntime/releases) shared library build and reference the package in your project. [1.19.0 with ONNXRuntime 5.4](https://github.com/intel/onnxruntime/releases/download/v5.4/Microsoft.ML.OnnxRuntime.OpenVino.1.19.0.zip)
+    - preferred way is to install it via local NuGet source via the provided .nupkg from the release page linked above
+    - Add **ONLY** `Microsoft.ML.OnnxRuntime.OpenVino @ 1.19.0` (without `Microsoft.ML.OnnxRuntime`) to your project.
+
+5. Set `HwAccelerator = HwAcceleratorType.OpenVino` in YoloDotNet's options
+
+# Use CoreML / Apple Silicon acceleration (optional)
+
+1. Add `Microsoft.ML.OnnxRuntime @ 1.19.2` to your project.
+
+2. Set `HwAccelerator = HwAcceleratorType.CoreML` in YoloDotNet's options
+
 # Export Yolo models to ONNX
 All models must be exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).\
 The ONNX-models included in this repo are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
@@ -84,7 +109,7 @@ using var yolo = new Yolo(new YoloOptions
 {
     OnnxModel = @"path\to\model.onnx",      // Your Yolo model in onnx format
     ModelType = ModelType.ObjectDetection,  // Set your model type
-    Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
+    HwAccelerator = HwAcceleratorType.None, // Use CPU, CUDA or OpenVINO for GPU accelerated inference. Default = CUDA
     GpuId = 0                               // Select Gpu by id. Default = 0
     PrimeGpu = false,                       // Pre-allocate GPU before first inference. Default = false
 });
@@ -117,7 +142,7 @@ using System.Threading.Tasks;
 using var yolo = new Yolo(new YoloOptions()
 {
     OnnxModel = @"path\to\model.onnx",
-    Cuda = true,
+    HwAccelerator = HwAcceleratorType.Cuda, // Use CPU, CUDA or OpenVINO for GPU accelerated inference. Default = CUDA
     PrimeGpu = true,
     ModelType = ModelType.ObjectDetection
 });
@@ -162,7 +187,7 @@ using var yolo = new Yolo(new YoloOptions
 {
     OnnxModel = @"path\to\model.onnx",      // Your Yolov8 or Yolov10 model in onnx format
     ModelType = ModelType.ObjectDetection,  // Set your model type
-    Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
+    HwAccelerator = HwAcceleratorType.None, // Use CPU, CUDA or OpenVINO for GPU accelerated inference. Default = CUDA
     GpuId = 0                               // Select Gpu by id. Default = 0
     PrimeGpu = false,                       // Pre-allocate GPU before first. Default = false
 });
@@ -273,6 +298,10 @@ for (var i = 0; i < labels.Length; i++)
 [https://paypal.me/nickswardh](https://paypal.me/nickswardh?country.x=SE&locale.x=en_US)
 
 # References & Acknowledgements
+
+https://github.com/microsoft/onnxruntime
+
+https://github.com/intel/onnxruntime
 
 https://github.com/ultralytics/ultralytics
 

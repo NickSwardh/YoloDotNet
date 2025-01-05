@@ -34,7 +34,7 @@ namespace YoloDotNet.Tests
             {
                 OnnxModel = SharedConfig.GetTestModelV8(modelTypeToTest),
                 ModelType = modelTypeToTest,
-                Cuda = false
+                HwAccelerator = HwAcceleratorType.None
             });
 
             var props = yolo.OnnxModel;

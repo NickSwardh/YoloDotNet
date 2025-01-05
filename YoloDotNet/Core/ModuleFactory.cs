@@ -92,7 +92,7 @@
         /// <returns>An initialized YoloCore instance.</returns>
         private static YoloCore InitializeYoloCore(YoloOptions options)
         {
-            var yoloCore = new YoloCore(options.OnnxModel, options.Cuda, options.PrimeGpu, options.GpuId);
+            var yoloCore = new YoloCore(options.OnnxModel, options.HwAccelerator);
             yoloCore.InitializeYolo(options);
             return yoloCore;
         }

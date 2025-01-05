@@ -18,7 +18,7 @@
                 {
                     OnnxModel = model,
                     ModelType = ModelType.ObjectDetection,
-                    Cuda = useCuda
+                    HwAccelerator = useCuda ? HwAcceleratorType.Cuda : HwAcceleratorType.None
                 });
             }
             catch (Exception)
