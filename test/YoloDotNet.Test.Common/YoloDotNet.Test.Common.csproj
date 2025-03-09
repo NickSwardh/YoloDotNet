@@ -76,6 +76,10 @@
 	  <None Include="..\assets\Models\yolov11s.onnx" Link="Assets\Models\yolov11s.onnx">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
+		
+	  <None Include="..\assets\Models\yolov12s.onnx" Link="Assets\Models\yolov12s.onnx">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	</ItemGroup>
 
 </Project>

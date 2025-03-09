@@ -19,10 +19,10 @@
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
-            var results = yolo.RunSegmentation(image, 0.25, 0.45);
+            var results = yolo.RunSegmentation(image);
 
             // Assert
-            Assert.Equal(20, results.Count);
+            Assert.Equal(21, results.Count);
         }
     }
 }

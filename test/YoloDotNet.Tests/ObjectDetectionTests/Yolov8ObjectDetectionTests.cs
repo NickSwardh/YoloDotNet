@@ -19,10 +19,10 @@
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
-            var results = yolo.RunObjectDetection(image, 0.25, 0.45);
+            var results = yolo.RunObjectDetection(image);
 
             // Assert
-            Assert.Equal(30, results.Count);
+            Assert.Equal(33, results.Count);
         }
     }
 }

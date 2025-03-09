@@ -1,12 +1,12 @@
 ﻿namespace YoloDotNet.Tests.ObjectDetectionTests
 {
-    public class Yolov11ObjectDetectionTests
+    public class Yolov12ObjectDetectionTests
     {
         [Fact]
-        public void RunObjectDetection_Yolov11_GetExpectedNumberOfObjects_AssertTrue()
+        public void RunObjectDetection_Yolov12_GetExpectedNumberOfObjects_AssertTrue()
         {
             // Arrange
-            var model = SharedConfig.GetTestModelV11(ModelType.ObjectDetection);
+            var model = SharedConfig.GetTestModelV12(ModelType.ObjectDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Street);
 
             var yolo = new Yolo(new YoloOptions
@@ -22,7 +22,7 @@
             var results = yolo.RunObjectDetection(image);
 
             // Assert
-            Assert.Equal(30, results.Count);
+            Assert.Equal(31, results.Count);
         }
     }
 }
