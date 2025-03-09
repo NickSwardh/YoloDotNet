@@ -70,7 +70,7 @@
         /// <param name="filename">The name of the file where the image will be saved.</param>
         /// <param name="format">The format in which the image should be saved.</param>
         /// <param name="quality">The quality of the saved image (default is 100).</param>
-        public static void Save(this SKImage image, string filename, SKEncodedImageFormat format, int quality = 100)
+        public static void Save(this SKImage image, string filename, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
         {
             using var fileStream = new FileStream(
                 filename,
@@ -194,8 +194,8 @@
                 byte b = pixels[offset + 2];
 
                 // If the pixel is completely black, skip normalization.
-                    if ((r | g | b) == 0)
-                        continue;
+                if ((r | g | b) == 0)
+                    continue;
 
                 // Normalize the red, green, and blue components and store them in the buffer.
                 // The buffer is arranged in "channel-first" order:
