@@ -24,6 +24,7 @@ runDemoAction(ModelType.ObjectDetection, ModelVersion.V8, ImageType.Street, fals
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V9, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V10, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V11, ImageType.Street, false, false);
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V12, ImageType.Street, false, false);
 
 runDemoAction(ModelType.ObbDetection, ModelVersion.V8, ImageType.Island, false, false);
 runDemoAction(ModelType.ObbDetection, ModelVersion.V11, ImageType.Island, false, false);
@@ -67,6 +68,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
         Cuda = cuda,
         PrimeGpu = primeGpu,
         ModelType = modelType,
+        ImageResize = ImageResize.Proportional, // default
     });
 
     using var image = SKImage.FromEncodedData(imagePath);
