@@ -32,7 +32,7 @@
         [Benchmark]
         public void ResizeImage()
         {
-            _ = _image.ResizeImage(_outputImageInfo);
+            _ = _image.ResizeImageProportional(_outputImageInfo);
         }
 
         #endregion Methods

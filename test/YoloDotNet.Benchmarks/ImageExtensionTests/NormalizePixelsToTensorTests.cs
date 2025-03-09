@@ -37,7 +37,7 @@
 
             var imageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
-            _resizedBitmap = _image.ResizeImage(imageInfo);
+            _resizedBitmap = _image.ResizeImageProportional(imageInfo);
 
             _tensorBufferSize = _cpuYolo.OnnxModel.Input.BatchSize * _cpuYolo.OnnxModel.Input.Channels * _cpuYolo.OnnxModel.Input.Width * _cpuYolo.OnnxModel.Input.Height;
             _customSizeFloatPool = ArrayPool<float>.Create(_tensorBufferSize + 1, 10);
@@ -57,6 +57,12 @@
         public void NormalizePixelsToTensor()
         {
             _ = _resizedBitmap.NormalizePixelsToTensor(_cpuYolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
+        }
+
+        [Benchmark]
+        public void NormalizePixelsToTensor2()
+        {
+            _ = _resizedBitmap.NormalizePixelsToTensor2(_cpuYolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
         }
 
         #endregion Methods

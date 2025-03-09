@@ -8,6 +8,7 @@
         private readonly string _modelV9 = SharedConfig.GetTestModelV9(ModelType.ObjectDetection);
         private readonly string _modelV10 = SharedConfig.GetTestModelV10(ModelType.ObjectDetection);
         private readonly string _modelV11 = SharedConfig.GetTestModelV11(ModelType.ObjectDetection);
+        private readonly string _modelV12 = SharedConfig.GetTestModelV12(ModelType.ObjectDetection);
 
         private Yolo _cpuYolov8;
         private Yolo _gpuYolov8;
@@ -20,6 +21,9 @@
 
         private Yolo _cpuYolov11;
         private Yolo _gpuYolov11;
+
+        private Yolo _cpuYolov12;
+        private Yolo _gpuYolov12;
 
         private SKImage _image;
 
@@ -67,6 +71,15 @@
 
             options.Cuda = true;
             _gpuYolov11 = new Yolo(options);
+
+            // Yolov12
+            options.OnnxModel = _modelV12;
+            options.Cuda = false;
+
+            _cpuYolov12 = new Yolo(options);
+
+            options.Cuda = true;
+            _gpuYolov12 = new Yolo(options);
         }
 
         [GlobalCleanup]
@@ -81,8 +94,9 @@
             _gpuYolov10?.Dispose();
             _cpuYolov11?.Dispose();
             _gpuYolov11?.Dispose();
+            _gpuYolov12?.Dispose();
         }
-
+        
         [Benchmark]
         public void ObjectDetectionYolov8Cpu()
         {
@@ -118,7 +132,7 @@
         {
             _ = _gpuYolov10.RunObjectDetection(_image);
         }
-
+        
         [Benchmark]
         public void ObjectDetectionYolov11Cpu()
         {
@@ -129,6 +143,18 @@
         public void ObjectDetectionYolov11Gpu()
         {
             _ = _gpuYolov11.RunObjectDetection(_image);
+        }
+
+        [Benchmark]
+        public void ObjectDetectionYolov12Cpu()
+        {
+            _ = _cpuYolov12.RunObjectDetection(_image);
+        }
+
+        [Benchmark]
+        public void ObjectDetectionYolov12Gpu()
+        {
+            _ = _gpuYolov12.RunObjectDetection(_image);
         }
     }
 }
