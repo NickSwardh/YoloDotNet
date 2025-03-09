@@ -27,5 +27,24 @@
 
             return Math.Max(newSize, scale);
         }
+
+        /// <summary>
+        /// Filters a list of object detection results, keeping only the objects whose labels match the specified filter classes.
+        /// </summary>
+        /// <typeparam name="T">The type of the detection results. Must be one of the supported types.</typeparam>
+        /// <param name="result">The list of detection results to filter.</param>
+        /// <param name="filterClasses">A set of class labels to retain in the filtered results.</param>
+        /// <returns>A filtered list containing only detection results where the label matches any of the specified filter classes.</returns>
+        /// <exception cref="ArgumentException">Thrown if the type <typeparamref name="T"/> is not a supported detection type.</exception>
+        public static List<T> FilterLabels<T>(this List<T> result, HashSet<string> filterClasses)
+            => [.. typeof(T) switch
+            {
+                Type t when t == typeof(Classification) => result.Cast<Classification>().Where(x => filterClasses.Contains(x.Label)).Cast<T>(),
+                Type t when t == typeof(ObjectDetection) => result.Cast<ObjectDetection>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
+                Type t when t == typeof(OBBDetection) => result.Cast<OBBDetection>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
+                Type t when t == typeof(PoseEstimation) => result.Cast<PoseEstimation>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
+                Type t when t == typeof(Segmentation) => result.Cast<Segmentation>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
+                _ => throw new ArgumentException("Invalid type", nameof(result))
+            }];
     }
 }
