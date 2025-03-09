@@ -59,10 +59,13 @@
             if (ortSpan == null)
                 return [];
 
-            var (xPad, yPad, gain) = _yoloCore.CalculateGain(image);
-  
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);
+
             var  boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
-            
+
+            var width = image.Width;
+            var height = image.Height;
+
             try
             {
                 for (int i = 0; i < _channels; i++)
@@ -73,13 +76,34 @@
                     float x = ortSpan[i];
                     float y = ortSpan[i + _channels];
                     float w = ortSpan[i + _channels2];
-                    float h = ortSpan[i + _channels3]; 
+                    float h = ortSpan[i + _channels3];
 
-                    // Scaled coordinates for original image
-                    var xMin = (int)((x - w / 2 - xPad) * gain);
-                    var yMin = (int)((y - h / 2 - yPad) * gain);
-                    var xMax = (int)((x + w / 2 - xPad) * gain);
-                    var yMax = (int)((y + h / 2 - yPad) * gain);
+                    var (xMin, yMin, xMax, yMax) = (0, 0, 0, 0);
+
+                    // Bounding box calculations are based on how the input image was resized
+                    // 'Proportional' keeps the original aspect ratio and adds padding around the image
+                    // 'Stretched' scales the image to fill the dimensions, possibly distorting the aspect ratio
+                    if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
+                    {
+                        var gain = xGain; // Scale factor for proportional resizing
+
+                        xMin = (int)((x - w / 2 - xPad) * gain);
+                        yMin = (int)((y - h / 2 - yPad) * gain);
+                        xMax = (int)((x + w / 2 - xPad) * gain);
+                        yMax = (int)((y + h / 2 - yPad) * gain);
+                    }
+                    else
+                    {
+                        var halfW = w / 2;
+                        var halfH = h / 2;
+
+                        // Calculate bounding box coordinates adjusted for stretched scaling and padding
+                        // Clamp ensures the coordinates remain within the valid bounds of the image.
+                        xMin = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
+                        yMin = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
+                        xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
+                        yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+                    }
 
                     // Unscaled coordinates for resized input image
                     var sxMin = (int)(x - w / 2);
@@ -134,6 +158,34 @@
             }
         }
 
+        /*
+        private (int, int, int, int) ScaleBoundingBoxFromStretchedImageToOriginalSize(SKImage image,
+            float x,        // bbox x coordinate
+            float y,        // bbox y coordinate
+            float w,        // bbox width
+            float h,        // bbox height
+            float xPad,       // x padding
+            float yPad,       // y padding
+            float xGain,    // x gain
+            float yGain     // y gain
+            )
+        {
+            var width = image.Width;
+            var height = image.Height;
+
+            // Scale coordinates to original image
+            var halfW = w / 2;
+            var halfH = h / 2;
+
+            int xMint = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
+            int yMint = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
+            int xMaxt = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
+            int yMaxt = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+
+            return (xMint, yMint, xMaxt, yMaxt);
+        }
+        */
+
         private void SubscribeToVideoEvents()
         {
             _yoloCore!.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
@@ -148,7 +200,6 @@
             VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
 
             _yoloCore?.Dispose();
-
             GC.SuppressFinalize(this);
         }
 

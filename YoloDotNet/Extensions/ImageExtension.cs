@@ -86,10 +86,46 @@
         /// <summary>
         /// Creates a resized clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
         /// </summary>
+
+        /// <summary>
+        /// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
+        /// The resulting image will have the specified width, height, and colorspace (RGB888x).
+        /// </summary>
+        /// <param name="image">The original image to be resized.</param>
+        /// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
+        /// <returns>A new image stretched to fit the specified dimensions.</returns>
+        public static SKBitmap ResizeImageStretched(this SKImage image, SKImageInfo skInfo)
+        {
+            int modelWidth = skInfo.Width;
+            int modelHeight = skInfo.Height;
+            int width = image.Width;
+            int height = image.Height;
+
+            // Create a new bitmap with the specified SKImageInfo
+            var resizedBitmap = new SKBitmap(skInfo);
+
+            // Create a canvas to draw on the new bitmap
+            using (var canvas = new SKCanvas(resizedBitmap))
+            {
+                // Define the source and destination rectangles for resizing
+                var srcRect = new SKRect(0, 0, width, height);
+                var dstRect = new SKRect(0, 0, modelWidth, modelHeight); // Stretch to fill the entire model dimensions
+
+                // Draw the original image onto the new canvas, stretching it to fit within the destination rectangle
+                canvas.DrawImage(image, srcRect, dstRect);
+                //canvas.Flush();
+            }
+
+            return resizedBitmap;
+        }
+
+        /// <summary>
+        /// Creates a resized proportional clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
+        /// </summary>
         /// <param name="image">The original image to be resized.</param>
         /// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
         /// <returns>A new image with the specified dimensions.</returns>
-        public static SKBitmap ResizeImage(this SKImage image, SKImageInfo skInfo)
+        public static SKBitmap ResizeImageProportional(this SKImage image, SKImageInfo skInfo)
         {
             int modelWidth = skInfo.Width;
             int modelHeight = skInfo.Height;
@@ -117,7 +153,6 @@
 
                 // Draw the original image onto the new canvas, resizing it to fit within the destination rectangle
                 canvas.DrawImage(image, srcRect, dstRect, resizePaintBrush);
-                canvas.Flush();
             }
 
             return resizedBitmap;

@@ -29,5 +29,10 @@
         /// Gets or sets the ID of the GPU to use (default is 0).
         /// </summary>
         public int GpuId { get; set; } = 0;
+
+        /// <summary>
+        /// Get or sets the type of image resizing the onnx model requires.
+        /// </summary>
+        public ImageResize ImageResize { get; set; }
     }
 }

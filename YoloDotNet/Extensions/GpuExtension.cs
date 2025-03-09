@@ -56,7 +56,7 @@
             // Create blank image for initial inference
             using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
 
-            using var resizedImg = img.ResizeImage(resizeInfo);
+            using var resizedImg = img.ResizeImageProportional(resizeInfo);
 
             // Prepare tensor buffer
             var tensorBufferSize = batchSize * channels * width * height;
