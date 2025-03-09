@@ -84,10 +84,6 @@
         }
 
         /// <summary>
-        /// Creates a resized clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
-        /// </summary>
-
-        /// <summary>
         /// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
         /// The resulting image will have the specified width, height, and colorspace (RGB888x).
         /// </summary>
