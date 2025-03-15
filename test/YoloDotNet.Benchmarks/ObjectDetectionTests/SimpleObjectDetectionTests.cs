@@ -97,7 +97,7 @@
             _cpuYolov12?.Dispose();
             _gpuYolov12?.Dispose();
         }
-        
+
         [Benchmark]
         public void ObjectDetectionYolov8Cpu()
         {
@@ -133,7 +133,7 @@
         {
             _ = _gpuYolov10.RunObjectDetection(_image);
         }
-        
+
         [Benchmark]
         public void ObjectDetectionYolov11Cpu()
         {
