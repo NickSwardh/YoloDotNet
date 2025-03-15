@@ -8,7 +8,7 @@
     <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOv8-Yolov11</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;yolov9;yolov10;yolov11;Yolo-World;ONNX;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;ffmpeg;process;core;ai</PackageTags>
+    <PackageTags>yolo;yolov8;yolov9;yolov10;yolov11;yolov12;Yolo-World;ONNX;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;ffmpeg;process;core;ai</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile></PackageReadmeFile>
@@ -24,19 +24,21 @@ OBB Detection
 Segmentation
 Pose Estimation</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>2.2</Version>
+	<Version>2.3</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Things are moving fast, YoloDotNet 2.2 is already here packed with exciting new features! Ever wanted to experiment with Yolo-World models in .NET? Now's your chance. With Open-Vocabulary detection and real-time, zero-shot object detection, the model can now find objects it hasn't even been trained on. It's a whole new level of object detection fun!
+    <PackageReleaseNotes>Hold onto your GPUs, folks! YoloDotNet 2.3 is here, and it's bringing some serious upgrades! Whether you're fine-tuning your models or pushing for peak performance, this update has got you covered. Let's dive in!
 
-In v2.2:
+Yolo v12 Support – The latest YOLO v12 model is now at your fingertips!
 
-Yolo-World Support:
-Yep, you read that right – Open-Vocabulary detection is now in the mix! Real-time, zero-shot object detection is here, so the model can spot  stuff it’s never been trained on. Mind-blowing, right? 
+Custom Image Resizing – When creating a dataset for training, preserving small details is crucial. Depending on your dataset, you might get better results by squaring images instead of resizing them proportionally. Now, you can choose between "proportional" resizing (default) to maintain aspect ratio or "stretched" resizing to match the dataset and model input exactly.
 
-Pixel Confidence for Segmentation: 
-Need more control? An optional pixel confidence parameter has been added for segmentation. Now it's possible to fine-tune those segmentation masks like a pro ;)</PackageReleaseNotes>
+SkiaSharp Sampling Options – Fine-tune image resizing like never before! This new option allows you to adjust SkiaSharp´s SamplingOptions, optimizing for either better rendering quality or faster performance. These adjustments can directly impact inference results, influencing detection accuracy and speed. You can tweak it to suit your needs or simply stick with the defaults—your call!
+
+Class Label Filtering – Tired of detecting everything? Now you can filter out unwanted classes and focus only on what matters.
+
+Performance Boosts – Pixel normalization just got even faster. Because every millisecond counts.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
