@@ -340,7 +340,8 @@
             _ortIoBinding?.Dispose();
             _runOptions?.Dispose();
 
-            _isDisposed = true;
+            ImageExtension.Dispose();
+
             GC.SuppressFinalize(this);
         }
     }

@@ -35,7 +35,7 @@
         /// </summary>
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
-        /// <param name="draw">Specifies the segments to draw, with a default value.</param>
+        /// <param name="drawSegment">Specifies the segments to draw, with a default value.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
         public static SKImage Draw(this SKImage image, IEnumerable<Segmentation>? segmentations, DrawSegment drawSegment = DrawSegment.Default, bool drawConfidence = true)
             => image.DrawSegmentations(segmentations, drawSegment, drawConfidence);
@@ -49,19 +49,6 @@
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
         public static SKImage Draw(this SKImage image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions keyPointOptions, bool drawConfidence = true)
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
-
-        public static readonly SKPaint resizePaintBrush = new()
-        {
-            FilterQuality = SKFilterQuality.Low,
-            IsAntialias = false,
-            IsDither = true,
-            //BlendMode = SKBlendMode.Src,
-            //Shader = null,
-            //MaskFilter = null,
-            //PathEffect = null,
-            //ImageFilter = null,
-            //ColorFilter = null
-        };
 
         /// <summary>
         /// Saves the SKImage to a file with the specified format and quality.
@@ -230,11 +217,16 @@
             var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
             float margin = fontSize / 2;
 
-            using var paint = new SKPaint
+            using var paint = new SKPaint()
             {
-                TextSize = fontSize,
                 Style = SKPaintStyle.Fill,
                 IsAntialias = true
+            };
+
+            using var font = new SKFont
+            {
+                Size = fontSize,
+                Typeface = SKTypeface.Default
             };
 
             // Measure maximum text-length in order to determine the width of the transparent box
@@ -242,7 +234,7 @@
             float boxMaxHeight = 0 - margin / 2;
             foreach (var label in labels)
             {
-                var lineWidth = paint.MeasureText(LabelText(label.Label, label.Confidence, drawConfidence));
+                var lineWidth = font.MeasureText(LabelText(label.Label, label.Confidence, drawConfidence));
                 if (lineWidth > boxMaxWidth)
                     boxMaxWidth = lineWidth;
 
@@ -258,16 +250,14 @@
             canvas.DrawRect(new SKRect(x, y, x + boxMaxWidth + fontSize, y + boxMaxHeight + fontSize), paint);
 
             // Draw labels
-            y += paint.TextSize;
+            y += font.Size;
             paint.Color = SKColors.White;
             foreach (var label in labels!)
             {
-                canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x + margin, y + margin, paint);
+                canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x + margin, y + margin, font, paint);
                 y += fontSize + margin;
             }
 
-            // Finalize drawing
-            canvas.Flush();
             return surface.Snapshot();
         }
 
@@ -366,7 +356,7 @@
             var emptyPoseMarker = new KeyPointMarker();
             var alpha = ImageConfig.DEFAULT_OPACITY;
 
-            using var keyPointPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
+            using var paint = new SKPaint() { Style = SKPaintStyle.Fill, IsAntialias = true };
             using var keyPointLinePaint = new SKPaint { StrokeWidth = lineSize, IsAntialias = true };
 
             using var surface = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
@@ -394,8 +384,8 @@
                         : HexToRgbaSkia(poseOptions.DefaultPoseColor, alpha);
 
                     // Draw keypoint
-                    keyPointPaint.Color = color;
-                    canvas.DrawCircle(keyPoint.X, keyPoint.Y, circleRadius, keyPointPaint);
+                    paint.Color = color;
+                    canvas.DrawCircle(keyPoint.X, keyPoint.Y, circleRadius, paint);
 
                     // Draw lines between key-points
                     foreach (var connection in poseMap.Connections)
@@ -414,8 +404,6 @@
                     }
                 }
             }
-
-            canvas.Flush();
 
             if (poseOptions.DrawBoundingBox)
                 return surface.Snapshot().DrawBoundingBoxes(poseEstimations, drawConfidence);
@@ -445,10 +433,15 @@
             byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
             byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
 
+            using var font = new SKFont
+            {
+                Size = fontSize,
+                Typeface = SKTypeface.Default
+            };
+
             // Shadow paint
             using var paintShadow = new SKPaint
             {
-                TextSize = fontSize, //ImageConfig.DEFAULT_FONT_SIZE,
                 Color = new SKColor(0, 0, 0, textShadowAlpha),
                 IsAntialias = true
             };
@@ -456,7 +449,6 @@
             // Text paint
             using var paintText = new SKPaint
             {
-                TextSize = fontSize, //ImageConfig.DEFAULT_FONT_SIZE,
                 Color = SKColors.White,
                 IsAntialias = true
             };
@@ -487,7 +479,7 @@
                 var box = detection.BoundingBox;
                 var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
                 var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
-                var labelWidth = (int)paintText.MeasureText(labelText);
+                var labelWidth = (int)font.MeasureText(labelText);
 
                 labelBgPaint.Color = boxColor;
                 boxPaint.Color = boxColor;
@@ -511,14 +503,12 @@
                 canvas.DrawRect(labelBackground, labelBgPaint);
 
                 // Text shadow
-                canvas.DrawText(labelText, text_x + shadowOffset, text_y + shadowOffset, paintShadow);
+                canvas.DrawText(labelText, text_x + shadowOffset, text_y + shadowOffset, font, paintShadow);
 
                 // Label text
-                canvas.DrawText(labelText, text_x, text_y, paintText);
-            }
+                canvas.DrawText(labelText, text_x, text_y, font, paintText);
 
-            // Execute all pending draw operations
-            canvas.Flush();
+            }
 
             return surface.Snapshot();
         }
@@ -536,8 +526,15 @@
             byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
             byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
 
+            using var font = new SKFont
+            {
+                Size = fontSize,
+                Typeface = SKTypeface.Default
+            };
+
             // Paint buckets
-            using var paintText = new SKPaint { TextSize = fontSize, IsAntialias = true };
+            //using var paintText = new SKPaint { TextSize = fontSize, IsAntialias = true };
+            using var paintText = new SKPaint { IsAntialias = true };
             using var boxPaint = new SKPaint() { Style = SKPaintStyle.Stroke, StrokeWidth = borderThickness };
 
             // Create surface
@@ -554,7 +551,8 @@
 
                 var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
                 var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
-                var labelWidth = (int)paintText.MeasureText(labelText);
+                //var labelWidth = (int)paintText.MeasureText(labelText);
+                var labelWidth = (int)font.MeasureText(labelText);
 
                 // Set matrix center point in current bounding box
                 canvas.Translate(box.MidX, box.MidY);
@@ -585,14 +583,15 @@
 
                 // Text shadow
                 paintText.Color = new SKColor(0, 0, 0, textShadowAlpha);
-                canvas.DrawText(labelText, margin + position.X + shadowOffset, textOffset + position.Y + shadowOffset, paintText);
+                canvas.DrawText(labelText, margin + position.X + shadowOffset, textOffset + position.Y + shadowOffset, font, paintText);
 
                 // Label text
                 paintText.Color = SKColors.White;
-                canvas.DrawText(labelText, margin + position.X, textOffset + position.Y, paintText);
+                canvas.DrawText(labelText, margin + position.X, textOffset + position.Y, font, paintText);
+
             }
 
-            canvas.Flush();
+            //canvas.Flush();
             return surface.Snapshot();
         }
 
@@ -619,6 +618,25 @@
             byte b = byte.Parse(hexColor.Substring(5, 2), NumberStyles.HexNumber);
 
             return new SKColor(r, g, b, (byte)alpha);
+        }
+
+        #endregion
+
+        #region Common SKPaint objects
+
+        private static readonly SKPaint resizePaintBrush = new()
+        {
+            IsAntialias = false,
+            IsDither = true
+        };
+
+        /// <summary>
+        /// Disposes of static SKPaint objects to release unmanaged resources.
+        /// Call this at application shutdown.
+        /// </summary>
+        public static void Dispose()
+        {
+            resizePaintBrush?.Dispose();
         }
 
         #endregion
