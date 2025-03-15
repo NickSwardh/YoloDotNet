@@ -90,7 +90,7 @@
         /// <param name="image">The original image to be resized.</param>
         /// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
         /// <returns>A new image stretched to fit the specified dimensions.</returns>
-        public static SKBitmap ResizeImageStretched(this SKImage image, SKImageInfo skInfo)
+        public static SKBitmap ResizeImageStretched(this SKImage image, SKImageInfo skInfo, SKSamplingOptions samplingOptions)
         {
             int modelWidth = skInfo.Width;
             int modelHeight = skInfo.Height;
@@ -108,8 +108,7 @@
                 var dstRect = new SKRect(0, 0, modelWidth, modelHeight); // Stretch to fill the entire model dimensions
 
                 // Draw the original image onto the new canvas, stretching it to fit within the destination rectangle
-                canvas.DrawImage(image, srcRect, dstRect);
-                //canvas.Flush();
+                canvas.DrawImage(image, srcRect, dstRect, samplingOptions, resizePaintBrush);
             }
 
             return resizedBitmap;
@@ -121,7 +120,7 @@
         /// <param name="image">The original image to be resized.</param>
         /// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
         /// <returns>A new image with the specified dimensions.</returns>
-        public static SKBitmap ResizeImageProportional(this SKImage image, SKImageInfo skInfo)
+        public static SKBitmap ResizeImageProportional(this SKImage image, SKImageInfo skInfo, SKSamplingOptions samplingOptions)
         {
             int modelWidth = skInfo.Width;
             int modelHeight = skInfo.Height;
@@ -148,7 +147,7 @@
                 var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
                 // Draw the original image onto the new canvas, resizing it to fit within the destination rectangle
-                canvas.DrawImage(image, srcRect, dstRect, resizePaintBrush);
+                canvas.DrawImage(image, srcRect, dstRect, samplingOptions, resizePaintBrush);
             }
 
             return resizedBitmap;

@@ -59,7 +59,11 @@
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
             if (useCuda && allocateGpuMemory)
-                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, customSizeFloatPool, _imageInfo);
+                _session.AllocateGpuMemory(_ortIoBinding,
+                    _runOptions,
+                    customSizeFloatPool,
+                    _imageInfo,
+                    YoloOptions.SamplingOptions);
         }
 
         /// <summary>
@@ -70,8 +74,8 @@
         public IDisposableReadOnlyCollection<OrtValue> Run(SKImage image)
         {
             using var resizedImage = YoloOptions.ImageResize == ImageResize.Proportional
-                ? image.ResizeImageProportional(_imageInfo)
-                : image.ResizeImageStretched(_imageInfo);
+                ? image.ResizeImageProportional(_imageInfo, YoloOptions.SamplingOptions)
+                : image.ResizeImageStretched(_imageInfo, YoloOptions.SamplingOptions);
 
             var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
 
