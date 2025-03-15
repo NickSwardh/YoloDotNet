@@ -3,7 +3,7 @@
 YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolo and Yolo-World models for real-time object detection in images and videos. Powered by ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
 
 ### Supported Versions:
-```Yolov8``` ```Yolov9``` ```Yolov10``` ```Yolov11``` ```Yolo-World```
+```Yolov8``` ```Yolov9``` ```Yolov10``` ```Yolov11``` ```Yolov12``` ```Yolo-World```
 
 ### Supported Tasks:
 
