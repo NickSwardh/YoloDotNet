@@ -94,6 +94,7 @@
             _gpuYolov10?.Dispose();
             _cpuYolov11?.Dispose();
             _gpuYolov11?.Dispose();
+            _cpuYolov12?.Dispose();
             _gpuYolov12?.Dispose();
         }
         
