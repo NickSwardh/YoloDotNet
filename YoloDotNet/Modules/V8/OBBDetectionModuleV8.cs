@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Modules
+﻿namespace YoloDotNet.Modules.V8
 {
     internal class OBBDetectionModuleV8 : IOBBDetectionModule
     {

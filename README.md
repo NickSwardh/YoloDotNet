@@ -1,4 +1,4 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v2.2
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v2.3
 
 YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolo and Yolo-World models for real-time object detection in images and videos. Powered by ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
 
@@ -20,12 +20,28 @@ Batteries not included.
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
-# What's new in YoloDotNet v2.2?
+# What's new in YoloDotNet v2.3?
 
-Things are moving fast, YoloDotNet 2.2 is already here packed with exciting new features! Ever wanted to experiment with Yolo-World models in .NET? Now's your chance. With Open-Vocabulary detection and real-time, zero-shot object detection, the model can now find objects it hasn't even been trained on. It's a whole new level of object detection fun!
+Hold onto your GPUs, folks! YoloDotNet 2.3 is here, and it's bringing some serious upgrades! Whether you're fine-tuning your models or pushing for peak performance, this update has got you covered. Let's dive in!
 
-**Yolo-World Support:** Yep, you read that right – Open-Vocabulary detection is now in the mix! Real-time, zero-shot object detection is here, so the model can spot stuff it’s never been trained on. Mind-blowing, right? [More about Yolo-World here](https://docs.ultralytics.com/models/yolo-world/).
-**Pixel Confidence for Segmentation:** Need more control? An optional pixel confidence parameter has been added for segmentation. Now it's possible to fine-tune those segmentation masks like a pro ;)
+***Yolo v12 Support*** – The latest YOLO v12 model is now at your fingertips!
+
+***Custom Image Resizing*** – When creating a dataset for training, preserving small details is crucial. Depending on your dataset, you might get better results by squaring images instead of resizing them proportionally. Now, you can choose between "proportional" resizing (default) to maintain aspect ratio or "stretched" resizing to match the dataset and model input exactly.
+
+***SkiaSharp Sampling Options*** –  Fine-tune image resizing like never before! This new option allows you to adjust SkiaSharp´s SamplingOptions, optimizing for either better rendering quality or faster performance. These adjustments can directly impact inference results, influencing detection accuracy and speed. You can tweak it to suit your needs or simply stick with the defaults—your call!\
+([See ImageResize benchmark tests for more details](https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs))
+
+***Class Label Filtering*** – Tired of detecting everything? Now you can filter out unwanted classes and focus only on what matters.\
+([See Example 1 - Image inference](#example-1---image-inference))
+
+***Performance Boosts*** – Pixel normalization just got even faster. Because every millisecond counts.
+
+***Dependency Updates*** –
+
+Updated SkiaSharp to 3.116.1\
+Updated OnnxRuntime to 1.21.0
+
+So what are you waiting for? Get out there and start detecting like a pro!
 
 # Nuget
 ```
@@ -55,8 +71,10 @@ ONNX runtime's [current compatibility with specific versions](https://onnxruntim
 
 4. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue with whatever you were doing ;)
 
-# Export Yolo models to ONNX
-All models must be exported to ONNX format. [How to export to ONNX format](https://docs.ultralytics.com/modes/export/#usage-examples).\
+# Export your Yolo models to ONNX
+All models—including your own custom models or any other YOLO model—must be exported to the ONNX format.\
+Need help? [Check out this guide](https://docs.ultralytics.com/modes/export/#usage-examples)
+
 The ONNX-models included in this repo are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
   
 ## Verify your model
@@ -82,11 +100,14 @@ using SkiaSharp;
 // Instantiate a new Yolo object
 using var yolo = new Yolo(new YoloOptions
 {
-    OnnxModel = @"path\to\model.onnx",      // Your Yolo model in onnx format
-    ModelType = ModelType.ObjectDetection,  // Set your model type
-    Cuda = false,                           // Use CPU or CUDA for GPU accelerated inference. Default = true
-    GpuId = 0                               // Select Gpu by id. Default = 0
-    PrimeGpu = false,                       // Pre-allocate GPU before first inference. Default = false
+    OnnxModel = @"path\to\model.onnx",          // Your Yolo model in onnx format
+    ModelType = ModelType.ObjectDetection,      // Set your model type
+    Cuda = false,                               // Use CPU or CUDA for GPU accelerated inference. Default = true
+    GpuId = 0,                                  // Select Gpu by id. Default = 0
+    PrimeGpu = false,                           // Pre-allocate GPU before first inference. Default = false
+
+    // ImageResize = ImageResize.Proportional   // Proportional = Default, Stretched = Squares the image
+    // SamplingOptions =  new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None) // View benchmark-test examples: https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
 });
 
 // Load image
@@ -94,6 +115,11 @@ using var image = SKImage.FromEncodedData(@"path\to\image.jpg");
 
 // Run inference and get the results
 var results = yolo.RunObjectDetection(image, confidence: 0.25, iou: 0.7);
+
+// Tip:
+// Use the extension method FilterLabels([]) on any result if you only want specific labels.
+// Example: Select only the labels you're interested in and exclude the rest.
+// var results = yolo.RunObjectDetection(image).FilterLabels(["person", "car", "cat"]);
 
 // Draw results
 using var resultImage = image.Draw(results);
@@ -116,10 +142,14 @@ using System.Threading.Tasks;
 // Instantiate a new yolo-object
 using var yolo = new Yolo(new YoloOptions()
 {
-    OnnxModel = @"path\to\model.onnx",
-    Cuda = true,
-    PrimeGpu = true,
-    ModelType = ModelType.ObjectDetection
+    OnnxModel = @"path\to\model.onnx",          // Your Yolo model in onnx format
+    ModelType = ModelType.ObjectDetection,      // Set your model type
+    Cuda = true,                                // Use CPU or CUDA for GPU accelerated inference. Default = true
+    GpuId = 0                                   // Select Gpu by id. Default = 0
+    PrimeGpu = true,                            // Pre-allocate GPU before first inference. Default = false
+
+    // ImageResize = ImageResize.Proportional   // Proportional = Default, Stretched = Squares the image
+    // SamplingOptions =  new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None) // View benchmark-test examples: https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
 });
 
 // Collect images
@@ -302,40 +332,17 @@ before updating documentation.
 Simple benchmarks were modeled around the test project. The test project uses the same images and models as the benchmarks. The benchmarks are run on the same images and models as the test project.
 These benchmarks provide a good starting point to identify bottlenecks and areas for improvement.
 
-The hardware these benchmarks used are detailed below, the graphics card used was a `NVIDIA GeForce RTX 3060 12GB`.
+The hardware these benchmarks used are detailed below, the graphics card used was a `NVIDIA GeForce RTX 4070 Ti`.
 
 `* Summary *`
 
-### Starting Point, YoloDotNet v2.0
+### Starting Point, YoloDotNet v2.2
 ```
 BenchmarkDotNet v0.13.12, Windows 10 (10.0.19045.4529/22H2/2022Update)
 Intel Core i7-7700K CPU 4.20GHz (Kaby Lake), 1 CPU, 8 logical and 4 physical cores
 .NET SDK 8.0.302
 [Host]     : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2
 DefaultJob : .NET 8.0.6 (8.0.624.26715), X64 RyuJIT AVX2
-```
-
-| Method             | Mean       | Error     | StdDev    | Gen0      | Gen1     | Gen2     | Allocated  |
-|------------------- |-----------:|----------:|----------:|----------:|---------:|---------:|-----------:|
-| ClassificationCpu  |   5.734 ms | 0.1100 ms | 0.0859 ms |    7.8125 |        - |        - |   59.98 KB |
-| ClassificationGpu  |   2.255 ms | 0.0054 ms | 0.0059 ms |   11.7188 |        - |        - |   59.98 KB |
-| ObjectDetectionCpu | 113.954 ms | 1.3054 ms | 1.0901 ms |         - |        - |        - |    67.5 KB |
-| ObjectDetectionGpu |  13.751 ms | 0.2164 ms | 0.1918 ms |   15.6250 |        - |        - |   67.37 KB |
-| SegmentationCpu    | 178.411 ms | 2.7077 ms | 2.5328 ms | 1000.0000 | 333.3333 |        - | 7453.61 KB |
-| SegmentationGpu    |  37.857 ms | 0.7501 ms | 0.9212 ms | 1214.2857 | 714.2857 | 214.2857 | 7418.45 KB |
-| PoseEstimationCpu  | 116.557 ms | 0.9387 ms | 1.1528 ms |         - |        - |        - |   39.71 KB |
-| PoseEstimationGpu  |  12.582 ms | 0.1421 ms | 0.1187 ms |         - |        - |        - |   39.57 KB |
-| ObbDetectionCpu    | 346.193 ms | 4.7002 ms | 4.3965 ms |         - |        - |        - |   16.48 KB |
-| ObbDetectionGpu    |  27.591 ms | 0.2080 ms | 0.1844 ms |         - |        - |        - |   15.78 KB |
-
-### Ending Point, YoloDotNet v2.1
-
-```
-BenchmarkDotNet v0.13.12, Windows 11 (10.0.22631.4169/23H2/2023Update/SunValley3)
-Intel Core i7-14700KF, 1 CPU, 28 logical and 20 physical cores
-.NET SDK 8.0.400
-[Host]     : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
-DefaultJob : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
 ```
 
 ##### CLASSIFICATION (Input image size: 1280x844)
@@ -381,3 +388,59 @@ DefaultJob : .NET 8.0.8 (8.0.824.36612), X64 RyuJIT AVX2
 | SegmentationYolov8Gpu  | 31.50 ms | 0.630 ms | 1.198 ms | 468.7500 | 437.5000 | 156.2500 |   7.28 MB | yolov8s-seg  |
 | SegmentationYolov11Cpu | 96.84 ms | 1.848 ms | 2.270 ms | 333.3333 | 166.6667 |        - |    6.8 MB | yolov11s-seg |
 | SegmentationYolov11Gpu | 28.97 ms | 0.293 ms | 0.274 ms | 406.2500 | 375.0000 | 125.0000 |   6.72 MB | yolov11s-seg |
+
+### Ending Point, YoloDotNet v2.2
+### Starting Point, YoloDotNet v2.3
+```
+BenchmarkDotNet v0.14.0, Windows 11 (10.0.26100.3476)
+Intel Core i7-14700KF, 1 CPU, 28 logical and 20 physical cores
+.NET SDK 9.0.103
+  [Host]     : .NET 8.0.13 (8.0.1325.6609), X64 RyuJIT AVX2
+  DefaultJob : .NET 8.0.13 (8.0.1325.6609), X64 RyuJIT AVX2
+```
+
+##### CLASSIFICATION (Input image size: 1280x844)
+| Method                    | Mean     | Error     | StdDev    | Median   | Gen0   | Allocated | Model Used
+|-------------------------- |---------:|----------:|----------:|---------:|-------:|----------:|--------------:
+| ClassificationYolov8Cpu   | 2.990 ms | 0.0475 ms | 0.0444 ms | 2.989 ms |      - |  59.92 KB | yolov8s-cls  |
+| ClassificationYolov8Gpu   | 1.157 ms | 0.0392 ms | 0.1156 ms | 1.091 ms | 1.9531 |  59.92 KB | yolov8s-cls  |
+| ClassificationYolov11Cpu  | 3.313 ms | 0.0637 ms | 0.0914 ms | 3.321 ms |      - |  59.92 KB | yolov11s-cls |
+| ClassificationYolov11Gpu  | 1.252 ms | 0.0038 ms | 0.0035 ms | 1.253 ms | 1.9531 |  59.92 KB | yolov11s-cls |
+
+##### OBJECT DETECTION (input image size: 1280x851)
+| Method                    | Mean      | Error     | StdDev    | Allocated | Model Used
+|-------------------------- |----------:|----------:|----------:|----------:|----------:
+| ObjectDetectionYolov8Cpu  | 34.893 ms | 0.4399 ms | 0.4115 ms |  34.52 KB | yolov8s  |
+| ObjectDetectionYolov8Gpu  |  6.670 ms | 0.0152 ms | 0.0142 ms |  34.47 KB | yolov8s  |
+| ObjectDetectionYolov9Cpu  | 39.623 ms | 0.7737 ms | 1.0590 ms |  29.34 KB | yolov9s  |
+| ObjectDetectionYolov9Gpu  | 10.037 ms | 0.1195 ms | 0.1117 ms |  29.32 KB | yolov9s  |
+| ObjectDetectionYolov10Cpu | 32.120 ms | 0.6222 ms | 0.7406 ms |   24.4 KB | yolov10s |
+| ObjectDetectionYolov10Gpu |  6.571 ms | 0.0377 ms | 0.0334 ms |  24.35 KB | yolov10s |
+| ObjectDetectionYolov11Cpu | 32.133 ms | 0.6097 ms | 0.6524 ms |  32.62 KB | yolov11s |
+| ObjectDetectionYolov11Gpu |  6.736 ms | 0.0241 ms | 0.0213 ms |  32.57 KB | yolov11s |
+| ObjectDetectionYolov12Cpu | 39.184 ms | 0.7626 ms | 0.9644 ms |     31 KB | yolov12s |
+| ObjectDetectionYolov12Gpu |  9.046 ms | 0.1107 ms | 0.1035 ms |  30.95 KB | yolov12s |
+
+##### ORIENTED OBJECT DETECTION (OBB) (input image size: 1280x720)
+| Method                 | Mean     | Error    | StdDev   | Allocated | Model Used
+|----------------------- |---------:|---------:|---------:|----------:|--------------:
+| ObbDetectionYolov8Cpu  | 93.61 ms | 1.086 ms | 0.963 ms |   8.39 KB | yolov8s-obb  |
+| ObbDetectionYolov8Gpu  | 13.31 ms | 0.052 ms | 0.049 ms |   8.33 KB | yolov8s-obb  |
+| ObbDetectionYolov11Cpu | 85.04 ms | 1.683 ms | 1.653 ms |   8.39 KB | yolov11s-obb |
+| ObbDetectionYolov11Gpu | 13.27 ms | 0.060 ms | 0.056 ms |   8.33 KB | yolov11s-obb |
+
+##### POSE ESTIMATION (input image size: 1280x720)
+| Method                   | Mean      | Error     | StdDev    | Allocated | Model Used
+|------------------------- |----------:|----------:|----------:|----------:|---------------:
+| PoseEstimationYolov8Cpu  | 36.508 ms | 0.3856 ms | 0.3418 ms |  23.97 KB | yolov8s-pose  |
+| PoseEstimationYolov8Gpu  |  6.617 ms | 0.0271 ms | 0.0254 ms |  23.97 KB | yolov8s-pose  |
+| PoseEstimationYolov11Cpu | 33.325 ms | 0.5708 ms | 0.5339 ms |  21.98 KB | yolov11s-pose |
+| PoseEstimationYolov11Gpu |  6.458 ms | 0.0307 ms | 0.0272 ms |  21.98 KB | yolov11s-pose |
+
+##### SEGMENTATION (input image size: 1280x853)
+| Method                 | Mean     | Error    | StdDev   | Gen0     | Gen1     | Gen2     | Allocated | Model Used
+|----------------------- |---------:|---------:|---------:|---------:|---------:|---------:|----------:|--------------:
+| SegmentationYolov8Cpu  | 60.07 ms | 1.050 ms | 0.983 ms | 444.4444 | 333.3333 | 111.1111 |   7.52 MB | yolov8s-seg  |
+| SegmentationYolov8Gpu  | 34.93 ms | 0.692 ms | 1.963 ms | 468.7500 | 437.5000 | 156.2500 |   7.51 MB | yolov8s-seg  |
+| SegmentationYolov11Cpu | 55.90 ms | 1.101 ms | 1.353 ms | 444.4444 | 333.3333 | 111.1111 |   7.01 MB | yolov11s-seg |
+| SegmentationYolov11Gpu | 24.23 ms | 0.306 ms | 0.286 ms | 468.7500 | 437.5000 | 156.2500 |   7.01 MB | yolov11s-seg |

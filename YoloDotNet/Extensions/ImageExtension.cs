@@ -35,7 +35,7 @@
         /// </summary>
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
-        /// <param name="draw">Specifies the segments to draw, with a default value.</param>
+        /// <param name="drawSegment">Specifies the segments to draw, with a default value.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
         public static SKImage Draw(this SKImage image, IEnumerable<Segmentation>? segmentations, DrawSegment drawSegment = DrawSegment.Default, bool drawConfidence = true)
             => image.DrawSegmentations(segmentations, drawSegment, drawConfidence);
@@ -50,19 +50,6 @@
         public static SKImage Draw(this SKImage image, IEnumerable<PoseEstimation>? poseEstimations, KeyPointOptions keyPointOptions, bool drawConfidence = true)
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence);
 
-        public static readonly SKPaint resizePaintBrush = new()
-        {
-            FilterQuality = SKFilterQuality.Low,
-            IsAntialias = false,
-            IsDither = true,
-            //BlendMode = SKBlendMode.Src,
-            //Shader = null,
-            //MaskFilter = null,
-            //PathEffect = null,
-            //ImageFilter = null,
-            //ColorFilter = null
-        };
-
         /// <summary>
         /// Saves the SKImage to a file with the specified format and quality.
         /// </summary>
@@ -70,7 +57,7 @@
         /// <param name="filename">The name of the file where the image will be saved.</param>
         /// <param name="format">The format in which the image should be saved.</param>
         /// <param name="quality">The quality of the saved image (default is 100).</param>
-        public static void Save(this SKImage image, string filename, SKEncodedImageFormat format, int quality = 100)
+        public static void Save(this SKImage image, string filename, SKEncodedImageFormat format = SKEncodedImageFormat.Png, int quality = 100)
         {
             using var fileStream = new FileStream(
                 filename,
@@ -84,12 +71,43 @@
         }
 
         /// <summary>
-        /// Creates a resized clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
+        /// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
+        /// The resulting image will have the specified width, height, and colorspace (RGB888x).
+        /// </summary>
+        /// <param name="image">The original image to be resized.</param>
+        /// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
+        /// <returns>A new image stretched to fit the specified dimensions.</returns>
+        public static SKBitmap ResizeImageStretched(this SKImage image, SKImageInfo skInfo, SKSamplingOptions samplingOptions)
+        {
+            int modelWidth = skInfo.Width;
+            int modelHeight = skInfo.Height;
+            int width = image.Width;
+            int height = image.Height;
+
+            // Create a new bitmap with the specified SKImageInfo
+            var resizedBitmap = new SKBitmap(skInfo);
+
+            // Create a canvas to draw on the new bitmap
+            using (var canvas = new SKCanvas(resizedBitmap))
+            {
+                // Define the source and destination rectangles for resizing
+                var srcRect = new SKRect(0, 0, width, height);
+                var dstRect = new SKRect(0, 0, modelWidth, modelHeight); // Stretch to fill the entire model dimensions
+
+                // Draw the original image onto the new canvas, stretching it to fit within the destination rectangle
+                canvas.DrawImage(image, srcRect, dstRect, samplingOptions, resizePaintBrush);
+            }
+
+            return resizedBitmap;
+        }
+
+        /// <summary>
+        /// Creates a resized proportional clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
         /// </summary>
         /// <param name="image">The original image to be resized.</param>
         /// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
         /// <returns>A new image with the specified dimensions.</returns>
-        public static SKBitmap ResizeImage(this SKImage image, SKImageInfo skInfo)
+        public static SKBitmap ResizeImageProportional(this SKImage image, SKImageInfo skInfo, SKSamplingOptions samplingOptions)
         {
             int modelWidth = skInfo.Width;
             int modelHeight = skInfo.Height;
@@ -116,8 +134,7 @@
                 var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
                 // Draw the original image onto the new canvas, resizing it to fit within the destination rectangle
-                canvas.DrawImage(image, srcRect, dstRect, resizePaintBrush);
-                canvas.Flush();
+                canvas.DrawImage(image, srcRect, dstRect, samplingOptions, resizePaintBrush);
             }
 
             return resizedBitmap;
@@ -130,41 +147,57 @@
         /// <param name="inputShape">The shape of the input tensor.</param>
         /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
         /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
-        /// <returns>A DenseTensor<float> object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
+        /// <returns>A DenseTensor&lt;float&gt; object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
         unsafe public static DenseTensor<float> NormalizePixelsToTensor(this SKBitmap resizedImage, long[] inputShape, int tensorBufferSize, float[] tensorArrayBuffer)
         {
+            // Deconstruct the input shape into batch size, number of channels, width, and height.
             var (batchSize, colorChannels, width, height) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
-            var pixelsPerChannel = tensorBufferSize / colorChannels;
 
-            var pixelIndex = 0;
-            int offset = 0;
+            // Total number of pixels in the image.
+            int totalPixels = width * height;
 
-            // Lock the pixels for direct memory access and faster processing
+            // Each color channel occupies a contiguous section in the tensor buffer.
+            int pixelsPerChannel = tensorBufferSize / colorChannels;
+
+            // Precompute the inverse multiplier constant for normalizing byte values (0-255) to the [0, 1] range.
+            // This value (1.0f / 255.0f) is a quick way to convert any byte color component into a float between 0 and 1.
+            // For example: a red component with value 128 becomes 128 * inv255 = 128 / 255 = 0.50196.
+            float inv255 = 1.0f / 255.0f;
+
+            // Lock the pixel data for fast, unsafe memory access.
             IntPtr pixelsPtr = resizedImage.GetPixels();
-
             byte* pixels = (byte*)pixelsPtr;
 
-            for (int y = 0; y < height; y++)
+            // Loop through all pixels in the image.
+            for (int i = 0; i < totalPixels; i++)
             {
-                for (int x = 0; x < width; x++, pixelIndex++, offset += 4)
-                {
-                    offset = (y * width + x) * 4;
+                // Compute the offset into the pixel array.
+                int offset = i * 4;  // Assuming pixel format is BGRA or similar with 4 bytes per pixel.
 
-                    var r = pixels[offset];
-                    var g = pixels[offset + 1];
-                    var b = pixels[offset + 2];
+                // Read the red, green, and blue components.
+                byte r = pixels[offset];
+                byte g = pixels[offset + 1];
+                byte b = pixels[offset + 2];
 
-                    if ((r | g | b) == 0)
-                        continue;
+                // If the pixel is completely black, skip normalization.
+                if ((r | g | b) == 0)
+                    continue;
 
-                    tensorArrayBuffer[pixelIndex] = r / 255.0f;
-                    tensorArrayBuffer[pixelIndex + pixelsPerChannel] = g / 255.0f;
-                    tensorArrayBuffer[pixelIndex + pixelsPerChannel * 2] = b / 255.0f;
-                }
+                // Normalize the red, green, and blue components and store them in the buffer.
+                // The buffer is arranged in "channel-first" order:
+                // - Red values go in the first section (0 to pixelsPerChannel)
+                // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
+                // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
+                tensorArrayBuffer[i] = r * inv255;
+                tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
+                tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
             }
 
-            // Due to how the ArrayPool works, tensorArrayBuffer can be larger than the actual tensor size; we need to cut it down to the correct size.
-            return new DenseTensor<float>(tensorArrayBuffer.AsMemory()[..tensorBufferSize], [batchSize, colorChannels, width, height]);
+            // Create and return a DenseTensor using the correctly sized memory slice.
+            return new DenseTensor<float>(
+                tensorArrayBuffer.AsMemory(0, tensorBufferSize),
+                new int[] { batchSize, colorChannels, width, height }
+            );
         }
 
         #region Helper methods
@@ -184,11 +217,16 @@
             var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
             float margin = fontSize / 2;
 
-            using var paint = new SKPaint
+            using var paint = new SKPaint()
             {
-                TextSize = fontSize,
                 Style = SKPaintStyle.Fill,
                 IsAntialias = true
+            };
+
+            using var font = new SKFont
+            {
+                Size = fontSize,
+                Typeface = SKTypeface.Default
             };
 
             // Measure maximum text-length in order to determine the width of the transparent box
@@ -196,7 +234,7 @@
             float boxMaxHeight = 0 - margin / 2;
             foreach (var label in labels)
             {
-                var lineWidth = paint.MeasureText(LabelText(label.Label, label.Confidence, drawConfidence));
+                var lineWidth = font.MeasureText(LabelText(label.Label, label.Confidence, drawConfidence));
                 if (lineWidth > boxMaxWidth)
                     boxMaxWidth = lineWidth;
 
@@ -212,16 +250,14 @@
             canvas.DrawRect(new SKRect(x, y, x + boxMaxWidth + fontSize, y + boxMaxHeight + fontSize), paint);
 
             // Draw labels
-            y += paint.TextSize;
+            y += font.Size;
             paint.Color = SKColors.White;
             foreach (var label in labels!)
             {
-                canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x + margin, y + margin, paint);
+                canvas.DrawText(LabelText(label.Label, label.Confidence, drawConfidence), x + margin, y + margin, font, paint);
                 y += fontSize + margin;
             }
 
-            // Finalize drawing
-            canvas.Flush();
             return surface.Snapshot();
         }
 
@@ -320,7 +356,7 @@
             var emptyPoseMarker = new KeyPointMarker();
             var alpha = ImageConfig.DEFAULT_OPACITY;
 
-            using var keyPointPaint = new SKPaint { Style = SKPaintStyle.Fill, IsAntialias = true };
+            using var paint = new SKPaint() { Style = SKPaintStyle.Fill, IsAntialias = true };
             using var keyPointLinePaint = new SKPaint { StrokeWidth = lineSize, IsAntialias = true };
 
             using var surface = SKSurface.Create(new SKImageInfo(image.Width, image.Height));
@@ -348,8 +384,8 @@
                         : HexToRgbaSkia(poseOptions.DefaultPoseColor, alpha);
 
                     // Draw keypoint
-                    keyPointPaint.Color = color;
-                    canvas.DrawCircle(keyPoint.X, keyPoint.Y, circleRadius, keyPointPaint);
+                    paint.Color = color;
+                    canvas.DrawCircle(keyPoint.X, keyPoint.Y, circleRadius, paint);
 
                     // Draw lines between key-points
                     foreach (var connection in poseMap.Connections)
@@ -368,8 +404,6 @@
                     }
                 }
             }
-
-            canvas.Flush();
 
             if (poseOptions.DrawBoundingBox)
                 return surface.Snapshot().DrawBoundingBoxes(poseEstimations, drawConfidence);
@@ -399,10 +433,15 @@
             byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
             byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
 
+            using var font = new SKFont
+            {
+                Size = fontSize,
+                Typeface = SKTypeface.Default
+            };
+
             // Shadow paint
             using var paintShadow = new SKPaint
             {
-                TextSize = fontSize, //ImageConfig.DEFAULT_FONT_SIZE,
                 Color = new SKColor(0, 0, 0, textShadowAlpha),
                 IsAntialias = true
             };
@@ -410,7 +449,6 @@
             // Text paint
             using var paintText = new SKPaint
             {
-                TextSize = fontSize, //ImageConfig.DEFAULT_FONT_SIZE,
                 Color = SKColors.White,
                 IsAntialias = true
             };
@@ -441,7 +479,7 @@
                 var box = detection.BoundingBox;
                 var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
                 var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
-                var labelWidth = (int)paintText.MeasureText(labelText);
+                var labelWidth = (int)font.MeasureText(labelText);
 
                 labelBgPaint.Color = boxColor;
                 boxPaint.Color = boxColor;
@@ -465,14 +503,12 @@
                 canvas.DrawRect(labelBackground, labelBgPaint);
 
                 // Text shadow
-                canvas.DrawText(labelText, text_x + shadowOffset, text_y + shadowOffset, paintShadow);
+                canvas.DrawText(labelText, text_x + shadowOffset, text_y + shadowOffset, font, paintShadow);
 
                 // Label text
-                canvas.DrawText(labelText, text_x, text_y, paintText);
-            }
+                canvas.DrawText(labelText, text_x, text_y, font, paintText);
 
-            // Execute all pending draw operations
-            canvas.Flush();
+            }
 
             return surface.Snapshot();
         }
@@ -490,8 +526,15 @@
             byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
             byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
 
+            using var font = new SKFont
+            {
+                Size = fontSize,
+                Typeface = SKTypeface.Default
+            };
+
             // Paint buckets
-            using var paintText = new SKPaint { TextSize = fontSize, IsAntialias = true };
+            //using var paintText = new SKPaint { TextSize = fontSize, IsAntialias = true };
+            using var paintText = new SKPaint { IsAntialias = true };
             using var boxPaint = new SKPaint() { Style = SKPaintStyle.Stroke, StrokeWidth = borderThickness };
 
             // Create surface
@@ -508,7 +551,8 @@
 
                 var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
                 var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
-                var labelWidth = (int)paintText.MeasureText(labelText);
+                //var labelWidth = (int)paintText.MeasureText(labelText);
+                var labelWidth = (int)font.MeasureText(labelText);
 
                 // Set matrix center point in current bounding box
                 canvas.Translate(box.MidX, box.MidY);
@@ -539,14 +583,15 @@
 
                 // Text shadow
                 paintText.Color = new SKColor(0, 0, 0, textShadowAlpha);
-                canvas.DrawText(labelText, margin + position.X + shadowOffset, textOffset + position.Y + shadowOffset, paintText);
+                canvas.DrawText(labelText, margin + position.X + shadowOffset, textOffset + position.Y + shadowOffset, font, paintText);
 
                 // Label text
                 paintText.Color = SKColors.White;
-                canvas.DrawText(labelText, margin + position.X, textOffset + position.Y, paintText);
+                canvas.DrawText(labelText, margin + position.X, textOffset + position.Y, font, paintText);
+
             }
 
-            canvas.Flush();
+            //canvas.Flush();
             return surface.Snapshot();
         }
 
@@ -573,6 +618,25 @@
             byte b = byte.Parse(hexColor.Substring(5, 2), NumberStyles.HexNumber);
 
             return new SKColor(r, g, b, (byte)alpha);
+        }
+
+        #endregion
+
+        #region Common SKPaint objects
+
+        private static readonly SKPaint resizePaintBrush = new()
+        {
+            IsAntialias = false,
+            IsDither = true
+        };
+
+        /// <summary>
+        /// Disposes of static SKPaint objects to release unmanaged resources.
+        /// Call this at application shutdown.
+        /// </summary>
+        public static void Dispose()
+        {
+            resizePaintBrush?.Dispose();
         }
 
         #endregion

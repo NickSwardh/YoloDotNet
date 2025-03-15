@@ -19,10 +19,10 @@
             var image = SKImage.FromEncodedData(testImage);
 
             // Act
-            var results = yolo.RunPoseEstimation(image, 0.25, 0.45);
+            var results = yolo.RunPoseEstimation(image);
 
             // Assert
-            Assert.Equal(9, results.Count);
+            Assert.Equal(10, results.Count);
         }
     }
 }

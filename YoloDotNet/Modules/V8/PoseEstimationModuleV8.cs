@@ -35,7 +35,8 @@
         {
             var boxes = _objectDetectionModule.ObjectDetection(image, ortSpan, threshold, overlapThrehshold);
 
-            var (xPad, yPad, gain) = _yoloCore.CalculateGain(image);
+            // TODO: Implement for stretched input images too.
+            var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(image);
 
             var labels = _yoloCore.OnnxModel.Labels.Length;
             var ouputChannels = _yoloCore.OnnxModel.Outputs[0].Channels;

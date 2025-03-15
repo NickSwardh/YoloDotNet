@@ -9,7 +9,8 @@
             OrtIoBinding ortIoBinding,
             RunOptions runOptions,
             ArrayPool<float> customSizeFloatPool,
-            SKImageInfo resizeInfo)
+            SKImageInfo resizeInfo,
+            SKSamplingOptions samplingOptions)
         {
             // Get input shape.
             var inputShape = Array.ConvertAll(session.InputMetadata[session.InputNames[0]].Dimensions, Convert.ToInt64);
@@ -42,10 +43,10 @@
             ortIoBinding.SynchronizeBoundOutputs();
 
             // Initialize.
-            session.InitializeGpu(customSizeFloatPool, resizeInfo);
+            session.InitializeGpu(customSizeFloatPool, resizeInfo, samplingOptions);
         }
 
-        private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool, SKImageInfo resizeInfo)
+        private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool, SKImageInfo resizeInfo, SKSamplingOptions samplingOptions)
         {
             // Get model data from session
             var inputName = session.InputNames[0];
@@ -56,7 +57,7 @@
             // Create blank image for initial inference
             using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
 
-            using var resizedImg = img.ResizeImage(resizeInfo);
+            using var resizedImg = img.ResizeImageProportional(resizeInfo, samplingOptions);
 
             // Prepare tensor buffer
             var tensorBufferSize = batchSize * channels * width * height;

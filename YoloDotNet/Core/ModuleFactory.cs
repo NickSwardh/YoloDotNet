@@ -44,9 +44,19 @@
                 {
                     { ModelType.Classification, core => new ClassificationModuleV11(core) },
                     { ModelType.ObjectDetection, core => new ObjectDetectionModuleV11(core) },
-                    { ModelType.ObbDetection, core => new OBBDetectionModuleV8(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV11(core) },
                     { ModelType.Segmentation, core => new SegmentationModuleV11(core) },
-                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV8(core) }
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV11(core) }
+                }
+            },
+            {
+                ModelVersion.V12, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => new ClassificationModuleV12(core) },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV12(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV12(core) },
+                    { ModelType.Segmentation, core => new SegmentationModuleV12(core) },
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV12(core) }
                 }
             },
             {

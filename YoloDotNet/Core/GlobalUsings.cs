@@ -22,10 +22,10 @@ global using YoloDotNet.Converters;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Configuration;
 
-global using YoloDotNet.Modules;
 global using YoloDotNet.Modules.V8;
 global using YoloDotNet.Modules.V9;
 global using YoloDotNet.Modules.V10;
 global using YoloDotNet.Modules.V11;
+global using YoloDotNet.Modules.V12;
 global using YoloDotNet.Modules.WorldV2;
 global using YoloDotNet.Modules.Interfaces;

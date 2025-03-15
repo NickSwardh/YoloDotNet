@@ -1,4 +1,6 @@
-﻿namespace YoloDotNet.Modules.V10
+﻿using System;
+
+namespace YoloDotNet.Modules.V10
 {
     public class ObjectDetectionModuleV10 : IObjectDetectionModule
     {
@@ -33,12 +35,16 @@
 
         private ObjectResult[] ObjectDetection(SKImage image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
-            var (xPad, yPad, gain) = _yoloCore!.CalculateGain(image);
+            // TODO: Implement for stretched input images too.
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);
 
             var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
 
             var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
+
+            var width = image.Width;
+            var height = image.Height;
 
             var ortSpan = ortTensor.GetTensorDataAsSpan<float>();
 
@@ -55,16 +61,33 @@
 
                     if (confidence < confidenceThreshold) continue;
 
-                    var minX = (int)((x - xPad) * gain);
-                    var minY = (int)((y - yPad) * gain);
-                    var width = (int)((w - xPad) * gain);
-                    var height = (int)((h - yPad) * gain);
+                    var (xMin, yMin, xMax, yMax) = (0, 0, 0, 0);
+
+                    if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
+                    {
+                        xMin = (int)((x - xPad) * xGain);
+                        yMin = (int)((y - yPad) * xGain);
+                        xMax = (int)((w - xPad) * xGain);
+                        yMax = (int)((h - yPad) * xGain);
+                    }
+                    else
+                    {
+                        var halfW = w / 2;
+                        var halfH = h / 2;
+
+                        // Calculate bounding box coordinates adjusted for stretched scaling and padding
+                        // Clamp ensures the coordinates remain within the valid bounds of the image.
+                        xMin = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
+                        yMin = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
+                        xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
+                        yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+                    }
 
                     boxes[i] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
-                        BoundingBox = new SKRectI(minX, minY, width, height),
+                        BoundingBox = new SKRectI(xMin, yMin, xMax, yMax),
                         BoundingBoxIndex = i
                     };
                 }

@@ -26,6 +26,8 @@
         private SKImageInfo _imageInfo;
 
         public ParallelOptions parallelOptions = default!;
+
+        public YoloOptions YoloOptions { get; private set; } = default!;
         public OnnxModel OnnxModel { get; private set; } = default!;
 
         /// <summary>
@@ -34,6 +36,8 @@
         /// <param name="modelType">The type of the model to be initialized.</param>
         public void InitializeYolo(YoloOptions yoloOptions)
         {
+            YoloOptions = yoloOptions;
+
             _session = useCuda
                 ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
                 : new InferenceSession(onnxModel);
@@ -42,7 +46,7 @@
             _ortIoBinding = _session.CreateIoBinding();
 
             OnnxModel = _session.GetOnnxProperties();
-            
+
             VerifyExpectedModelType(yoloOptions.ModelType);
 
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
@@ -55,7 +59,11 @@
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
             if (useCuda && allocateGpuMemory)
-                _session.AllocateGpuMemory(_ortIoBinding, _runOptions, customSizeFloatPool, _imageInfo);
+                _session.AllocateGpuMemory(_ortIoBinding,
+                    _runOptions,
+                    customSizeFloatPool,
+                    _imageInfo,
+                    YoloOptions.SamplingOptions);
         }
 
         /// <summary>
@@ -65,7 +73,9 @@
         /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
         public IDisposableReadOnlyCollection<OrtValue> Run(SKImage image)
         {
-            using var resizedImage = image.ResizeImage(_imageInfo);
+            using var resizedImage = YoloOptions.ImageResize == ImageResize.Proportional
+                ? image.ResizeImageProportional(_imageInfo, YoloOptions.SamplingOptions)
+                : image.ResizeImageStretched(_imageInfo, YoloOptions.SamplingOptions);
 
             var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
 
@@ -272,13 +282,16 @@
                 : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
+
+        public (float, float, float, float) CalculateGain(SKImage image)
+            => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(image) : CalculateStretchedGain(image);
+
         /// <summary>
         /// Calculates the padding and scaling factor needed to adjust the bounding box
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        /// <param name="model">The ONNX model containing the input dimensions.</param>
-        public (int, int, float) CalculateGain(SKImage image)
+        public (float, float, float, float) CalculateProportionalGain(SKImage image)
         {
             var model = OnnxModel;
 
@@ -286,9 +299,25 @@
 
             var gain = Math.Max((float)w / model.Input.Width, (float)h / model.Input.Height);
             var ratio = Math.Min(model.Input.Width / (float)image.Width, model.Input.Height / (float)image.Height);
-            var (xPad, yPad) = ((int)(model.Input.Width - w * ratio) / 2, (int)(model.Input.Height - h * ratio) / 2);
+            var (xPad, yPad) = ((model.Input.Width - w * ratio) / 2, (model.Input.Height - h * ratio) / 2);
 
-            return (xPad, yPad, gain);
+            return (xPad, yPad, gain, 0);
+        }
+
+        /// <summary>
+        /// Calculates the padding and scaling factor needed to adjust the bounding box
+        /// so that the detected object can be resized to match the original image size.
+        /// </summary>
+        /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
+        public (float, float, float, float) CalculateStretchedGain(SKImage image)
+        {
+            var model = OnnxModel;
+
+            var (w, h) = (image.Width, image.Height); // image w and h
+            var (xGain, yGain) = (model.Input.Width / (float)w, model.Input.Height / (float)h); // x, y gains
+            var (xPad, yPad) = ((model.Input.Width - w * xGain) / 2, (model.Input.Height - h * yGain) / 2); // left, right pads
+
+            return (xPad, yPad, xGain, yGain);
         }
 
         /// <summary>
@@ -311,7 +340,8 @@
             _ortIoBinding?.Dispose();
             _runOptions?.Dispose();
 
-            _isDisposed = true;
+            ImageExtension.Dispose();
+
             GC.SuppressFinalize(this);
         }
     }
