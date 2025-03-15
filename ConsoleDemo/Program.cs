@@ -57,6 +57,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
         ModelVersion.V9 => SharedConfig.GetTestModelV9(modelType),
         ModelVersion.V10 => SharedConfig.GetTestModelV10(modelType),
         ModelVersion.V11 => SharedConfig.GetTestModelV11(modelType),
+        ModelVersion.V12 => SharedConfig.GetTestModelV12(modelType),
         _ => throw new ArgumentException("Unkown yolo version")
     };
 
@@ -68,7 +69,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
         Cuda = cuda,
         PrimeGpu = primeGpu,
         ModelType = modelType,
-        ImageResize = ImageResize.Proportional, // default
+        // ImageResize = ImageResize.Proportional, // default
     });
 
     using var image = SKImage.FromEncodedData(imagePath);
