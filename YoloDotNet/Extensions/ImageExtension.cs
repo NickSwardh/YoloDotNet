@@ -214,7 +214,7 @@
 
             float x = ImageConfig.CLASSIFICATION_TRANSPARENT_BOX_X;
             float y = ImageConfig.CLASSIFICATION_TRANSPARENT_BOX_Y;
-            var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
+            var fontSize = image.CalculateDynamicSize(FontConfig.DefaultFontSize);
             float margin = fontSize / 2;
 
             using var paint = new SKPaint()
@@ -226,7 +226,7 @@
             using var font = new SKFont
             {
                 Size = fontSize,
-                Typeface = SKTypeface.Default
+                Typeface = SKTypeface.FromFamilyName(FontConfig.DefaultFontFamilyName)
             };
 
             // Measure maximum text-length in order to determine the width of the transparent box
@@ -421,7 +421,7 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
+            var fontSize = image.CalculateDynamicSize(FontConfig.DefaultFontSize);
             var borderThickness = image.CalculateDynamicSize(ImageConfig.BORDER_THICKNESS);
 
             //float fontSize = image.CalculateFontSize(ImageConfig.DEFAULT_FONT_SIZE);
@@ -436,7 +436,7 @@
             using var font = new SKFont
             {
                 Size = fontSize,
-                Typeface = SKTypeface.Default
+                Typeface = SKTypeface.FromFamilyName(FontConfig.DefaultFontFamilyName),
             };
 
             // Shadow paint
@@ -517,11 +517,11 @@
         {
             ArgumentNullException.ThrowIfNull(detections);
 
-            var fontSize = image.CalculateDynamicSize(ImageConfig.FONT_SIZE);
+            var fontSize = image.CalculateDynamicSize(FontConfig.DefaultFontSize);
             var borderThickness = image.CalculateDynamicSize(ImageConfig.BORDER_THICKNESS);
-            var margin = (int)ImageConfig.FONT_SIZE / 2;
-            var labelBoxHeight = (int)ImageConfig.FONT_SIZE * 2;
-            var textOffset = (int)(ImageConfig.FONT_SIZE + margin) - (margin / 2);
+            var margin = (int)FontConfig.DefaultFontSize / 2;
+            var labelBoxHeight = (int)FontConfig.DefaultFontSize * 2;
+            var textOffset = (int)(FontConfig.DefaultFontSize + margin) - (margin / 2);
             var shadowOffset = ImageConfig.SHADOW_OFFSET;
             byte textShadowAlpha = ImageConfig.DEFAULT_OPACITY;
             byte labelBoxAlpha = ImageConfig.DEFAULT_OPACITY;
@@ -529,7 +529,7 @@
             using var font = new SKFont
             {
                 Size = fontSize,
-                Typeface = SKTypeface.Default
+                Typeface = SKTypeface.FromFamilyName(FontConfig.DefaultFontFamilyName)
             };
 
             // Paint buckets
