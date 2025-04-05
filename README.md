@@ -71,9 +71,9 @@ ONNX runtime's [current compatibility with specific versions](https://onnxruntim
 
 4. Super-duper-important! In order for Windows to pick up the changes in your Environment Variables, make sure to close all open programs before you continue with whatever you were doing ;)
 
-# Export your Yolo models to ONNX
-All models—including your own custom models or any other YOLO model—must be exported to the ONNX format.\
-Need help? [Check out this guide](https://docs.ultralytics.com/modes/export/#usage-examples)
+# Export your Yolo models to ONNX with opset=17
+All models — including your own custom models — must be exported to the ONNX format with **`opset 17`** for best performance.\
+For more information on how to export yolo-models to onnx [read this guide](https://docs.ultralytics.com/modes/export/#usage-examples).
 
 The ONNX-models included in this repo are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
   
