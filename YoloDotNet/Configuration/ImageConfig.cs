@@ -2,7 +2,6 @@
 {
     public static class ImageConfig
     {
-        public const float FONT_SIZE = 18;
         public const float KEYPOINT_SIZE = 5;
         public const float SHADOW_OFFSET = 1;
         public const float BORDER_THICKNESS = 2;
