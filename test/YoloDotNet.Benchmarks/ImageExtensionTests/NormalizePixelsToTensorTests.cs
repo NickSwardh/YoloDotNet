@@ -13,7 +13,7 @@
 
         private Yolo _cpuYolo;
 
-        private SKImage _image;
+        private SKBitmap _image;
         private float[] _tensorArrayBuffer;
 
         private static SKBitmap _resizedBitmap;
@@ -33,7 +33,7 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
 
             var imageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
@@ -48,8 +48,8 @@
         public void GlobalCleanup()
         {
             _customSizeFloatPool.Return(_tensorArrayBuffer, true);
-            _resizedBitmap.Dispose();
-            _image.Dispose();
+            _resizedBitmap?.Dispose();
+            _image?.Dispose();
             _cpuYolo?.Dispose();
         }
 

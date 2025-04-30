@@ -9,7 +9,7 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
 
         private Yolo _cpuYolo;
-        private SKImage _image;
+        private SKBitmap _image;
         private List<OBBDetection> _oBBDetections;
 
         #endregion Fields
@@ -27,7 +27,7 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
             _oBBDetections = _cpuYolo.RunObbDetection(_image);
         }
         
@@ -44,7 +44,7 @@
         [Benchmark]
         public void DrawOrientedBoundingBox()
         {
-            _ = _image.Draw(_oBBDetections, DrawConfidence);
+            _image.Draw(_oBBDetections, DrawConfidence);
         }
 
         #endregion Methods

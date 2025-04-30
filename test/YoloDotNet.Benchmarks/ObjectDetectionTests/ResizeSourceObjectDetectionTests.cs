@@ -11,8 +11,8 @@
 
         private Yolo _cudaYolo;
         private Yolo _cpuYolo;
-        private SKImage _originalSizeimage;
-        private SKImage _modelSizeImage;
+        private SKBitmap _originalSizeimage;
+        private SKBitmap _modelSizeImage;
 
         #endregion Fields
 
@@ -33,41 +33,42 @@
             options.Cuda = true;
             _cudaYolo = new Yolo(options);
 
-            _originalSizeimage = SKImage.FromEncodedData(_originalSizeimagePath);
-            _modelSizeImage = SKImage.FromEncodedData(_modelSizeimagePath);
+            _originalSizeimage = SKBitmap.Decode(_originalSizeimagePath);
+            _modelSizeImage = SKBitmap.Decode(_modelSizeimagePath);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cudaYolo.Dispose();
-            _cpuYolo.Dispose();
-            _originalSizeimage.Dispose();
-            _modelSizeImage.Dispose();
+            _cudaYolo?.Dispose();
+            _cpuYolo?.Dispose();
+            _originalSizeimage?.Dispose();
+            _modelSizeImage?.Dispose();
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionOriginalSizeCpu()
+        public void ObjectDetectionOriginalSizeCpu()
         {
-            return _cpuYolo.RunObjectDetection(_originalSizeimage);
+            _ = _cpuYolo.RunObjectDetection(_originalSizeimage);
+
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionOriginalSizeGpu()
+        public void ObjectDetectionOriginalSizeGpu()
         {
-            return _cudaYolo.RunObjectDetection(_originalSizeimage);
+            _ = _cudaYolo.RunObjectDetection(_originalSizeimage);
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionModelSizeCpu()
+        public void ObjectDetectionModelSizeCpu()
         {
-            return _cpuYolo.RunObjectDetection(_modelSizeImage);
+            _ = _cpuYolo.RunObjectDetection(imgage);
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionModelSizeGpu()
+        public void ObjectDetectionModelSizeGpu()
         {
-            return _cudaYolo.RunObjectDetection(_modelSizeImage);
+            _ = _cudaYolo.RunObjectDetection(imgage);
         }
 
         #endregion Methods

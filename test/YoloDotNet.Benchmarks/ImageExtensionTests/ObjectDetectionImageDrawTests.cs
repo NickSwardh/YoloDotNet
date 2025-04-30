@@ -9,7 +9,7 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
 
         private Yolo _cpuYolo;
-        private SKImage _image;
+        private SKBitmap _image;
         private List<ObjectDetection> _objectDetections;
 
         #endregion Fields
@@ -27,15 +27,15 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
             _objectDetections = _cpuYolo.RunObjectDetection(_image);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cpuYolo.Dispose();
-            _image.Dispose();
+            _cpuYolo?.Dispose();
+            _image?.Dispose();
         }
 
         [Params(false, true)]
@@ -43,9 +43,9 @@
 
 
         [Benchmark(Baseline = true)]
-        public SKImage DrawObjectDetection()
+        public void DrawObjectDetection()
         {
-            return _image.Draw(_objectDetections, DrawConfidence);
+            _image.Draw(_objectDetections, DrawConfidence);
         }
 
         #endregion Methods

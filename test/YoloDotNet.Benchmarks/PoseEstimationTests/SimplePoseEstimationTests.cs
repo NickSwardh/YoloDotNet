@@ -15,7 +15,7 @@
         private Yolo _gpuYolov11;
         private Yolo _cpuYolov11;
 
-        private SKImage _image;
+        private SKBitmap _image;
 
         #endregion Fields
 
@@ -24,7 +24,7 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
 
             var options = new YoloOptions
             {

@@ -9,7 +9,7 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
         private Yolo _cpuYolo;
-        private SKImage _image;
+        private SKBitmap _image;
         private List<PoseEstimation> _poseEstimations;
 
         #endregion Fields
@@ -27,24 +27,24 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
             _poseEstimations = _cpuYolo.RunPoseEstimation(_image);
         }
 
         [GlobalCleanup]
         public void CleanUp()
         {
-            _cpuYolo.Dispose();
-            _image.Dispose();
+            _cpuYolo?.Dispose();
+            _image?.Dispose();
         }
 
         [Params(true, false)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public SKImage DrawPoseEstimation()
+        public void DrawPoseEstimation()
         {
-            return _image.Draw(_poseEstimations, CustomKeyPointColorMap.KeyPointOptions, DrawConfidence);
+            _image.Draw(_poseEstimations, CustomKeyPointColorMap.KeyPointOptions, DrawConfidence);
         }
 
         #endregion Methods

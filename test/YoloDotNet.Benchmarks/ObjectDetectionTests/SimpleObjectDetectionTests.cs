@@ -25,12 +25,12 @@
         private Yolo _cpuYolov12;
         private Yolo _gpuYolov12;
 
-        private SKImage _image;
+        private SKBitmap _image;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
 
             var options = new YoloOptions
             {
@@ -85,7 +85,7 @@
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _image.Dispose();
+            _image?.Dispose();
             _cpuYolov8?.Dispose();
             _gpuYolov8?.Dispose();
             _cpuYolov9?.Dispose();

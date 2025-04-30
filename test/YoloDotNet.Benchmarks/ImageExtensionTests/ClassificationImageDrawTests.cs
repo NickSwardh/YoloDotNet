@@ -9,7 +9,7 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private Yolo _cpuYolo;
-        private SKImage _image;
+        private SKBitmap _image;
         private List<Classification> _classifications;
 
         #endregion Fields
@@ -27,7 +27,7 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
             _classifications = _cpuYolo.RunClassification(_image);
         }
 
@@ -42,9 +42,9 @@
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public SKImage DrawClassification()
+        public void DrawClassification()
         {
-            return _image.Draw(_classifications, DrawConfidence);
+            _image.Draw(_classifications, DrawConfidence);
         }
 
         #endregion Methods

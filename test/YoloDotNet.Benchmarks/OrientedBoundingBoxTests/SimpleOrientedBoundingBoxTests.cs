@@ -15,7 +15,7 @@
         private Yolo _gpuYolov11;
         private Yolo _cpuYolov11;
 
-        private SKImage _image;
+        private SKBitmap _image;
 
         #endregion Fields
 
@@ -29,7 +29,7 @@
                 ModelType = ModelType.ObbDetection
             };
 
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
 
             // Yolov8
             options.OnnxModel = _model8;

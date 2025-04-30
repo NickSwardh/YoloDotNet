@@ -9,7 +9,7 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
 
         private Yolo _cpuYolo;
-        private SKImage _image;
+        private SKBitmap _image;
         private List<Segmentation> _segmentations;
 
         #endregion Fields
@@ -27,7 +27,7 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
             _segmentations = _cpuYolo.RunSegmentation(_image);
         }
 
@@ -42,9 +42,9 @@
         public DrawSegment DrawSegmentType { get; set; }
 
         [Benchmark]
-        public SKImage DrawSegmentation()
+        public void DrawSegmentation()
         {
-            return _image.Draw(_segmentations, DrawSegmentType);
+            _image.Draw(_segmentations, DrawSegmentType);
         }
 
         #endregion Methods
