@@ -46,6 +46,7 @@
             session.InitializeGpu(customSizeFloatPool, resizeInfo, samplingOptions);
         }
 
+        
         private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool, SKImageInfo resizeInfo, SKSamplingOptions samplingOptions)
         {
             // Get model data from session
@@ -55,7 +56,8 @@
             var (batchSize, channels, width, height) = (dimensions[0], dimensions[1], dimensions[2], dimensions[3]);
 
             // Create blank image for initial inference
-            using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
+            //using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
+            using var img = new SKBitmap(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
 
             using var resizedImg = img.ResizeImageProportional(resizeInfo, samplingOptions);
 
