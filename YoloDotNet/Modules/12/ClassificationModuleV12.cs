@@ -16,7 +16,7 @@
             _classificationModuleV8 = new ClassificationModuleV8(_yoloCore);
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence,double iou)
+        public List<Classification> ProcessImage(SKBitmap image, double classes, double pixelConfidence,double iou)
             => _classificationModuleV8.ProcessImage(image, classes, pixelConfidence, iou);
 
         #region Helper methods

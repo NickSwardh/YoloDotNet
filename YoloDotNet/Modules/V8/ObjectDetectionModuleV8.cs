@@ -25,7 +25,7 @@
             _channels4 = _channels * 4;
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
@@ -45,7 +45,7 @@
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetection(SKImage image, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
+        public ObjectResult[] ObjectDetection(SKBitmap image, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
         {
             if (ortSpan == null)
                 return [];

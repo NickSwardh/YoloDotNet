@@ -13,7 +13,7 @@
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>(); ;
@@ -24,7 +24,7 @@
 
         #region Helper methods
 
-        public List<PoseEstimation> PoseEstimateImage(SKImage image, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
+        public List<PoseEstimation> PoseEstimateImage(SKBitmap image, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
         {
             var boxes = _objectDetectionModule.ObjectDetection(image, ortSpan, threshold, overlapThrehshold);
 

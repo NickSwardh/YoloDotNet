@@ -11,10 +11,9 @@
         {
             _yoloCore = yoloCore;
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
-            SubscribeToVideoEvents();
         }
 
-        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<OBBDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();

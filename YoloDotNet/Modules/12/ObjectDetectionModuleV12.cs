@@ -20,7 +20,7 @@
             _objectDetectionModuleV8 = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
             => _objectDetectionModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
         public void Dispose()

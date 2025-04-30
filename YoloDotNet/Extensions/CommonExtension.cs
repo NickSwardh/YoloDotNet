@@ -16,7 +16,7 @@
         /// <param name="image">The image to calculate the dynamic size for.</param>
         /// <param name="scale">The initial scale value to be adjusted dynamically.</param>
         /// <returns>The new dynamically calculated size as a float value.</returns>
-        public static float CalculateDynamicSize(this SKImage image, float scale)
+        public static float CalculateDynamicSize(this SKBitmap image, float scale)
         {
             // Calculate the scale factor based on the image resolution and a denominator
             float scaleFactor = image.Width / ImageConfig.SCALING_DENOMINATOR;

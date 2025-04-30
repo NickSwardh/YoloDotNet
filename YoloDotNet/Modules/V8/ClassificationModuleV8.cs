@@ -14,7 +14,7 @@
             //_classificationPool = ArrayPool<Classification>.Create(maxArrayLength: OnnxModel.Outputs[0].Elements + 1, maxArraysPerBucket: 10);
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence, double iou)
+        public List<Classification> ProcessImage(SKBitmap image, double classes, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
             using var ort = ortValues[0];

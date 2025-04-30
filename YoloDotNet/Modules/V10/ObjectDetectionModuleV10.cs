@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace YoloDotNet.Modules.V10
+﻿namespace YoloDotNet.Modules.V10
 {
     internal class ObjectDetectionModuleV10 : IObjectDetectionModule
     {
@@ -15,10 +13,9 @@ namespace YoloDotNet.Modules.V10
         public ObjectDetectionModuleV10(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
-            SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore!.Run(image);
             using var ort = ortValues[0];
@@ -30,7 +27,7 @@ namespace YoloDotNet.Modules.V10
 
         #region Helper methods
 
-        private ObjectResult[] ObjectDetection(SKImage image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        private ObjectResult[] ObjectDetection(SKBitmap image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
             // TODO: Implement for stretched input images too.
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);

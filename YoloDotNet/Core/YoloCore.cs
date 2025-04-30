@@ -55,7 +55,7 @@
             customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
             customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
 
-            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgba8888, SKAlphaType.Opaque);
 
             if (useCuda && allocateGpuMemory)
                 _session.AllocateGpuMemory(_ortIoBinding,
@@ -63,6 +63,9 @@
                     customSizeFloatPool,
                     _imageInfo,
                     YoloOptions.SamplingOptions);
+
+            // Run frame-save service
+            FrameSaveService.Start();
         }
 
         /// <summary>
@@ -70,8 +73,10 @@
         /// </summary>
         /// <param name="image">The input image to process.</param>
         /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
-        public IDisposableReadOnlyCollection<OrtValue> Run(SKImage image)
+        public IDisposableReadOnlyCollection<OrtValue> Run(SKBitmap image)
         {
+            //_resizedBitmap.Erase(SKColors.Black);
+
             using var resizedImage = YoloOptions.ImageResize == ImageResize.Proportional
                 ? image.ResizeImageProportional(_imageInfo, YoloOptions.SamplingOptions)
                 : image.ResizeImageStretched(_imageInfo, YoloOptions.SamplingOptions);
@@ -180,8 +185,7 @@
                 : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
-
-        public (float, float, float, float) CalculateGain(SKImage image)
+        public (float, float, float, float) CalculateGain(SKBitmap image)
             => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(image) : CalculateStretchedGain(image);
 
         /// <summary>
@@ -189,7 +193,7 @@
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        public (float, float, float, float) CalculateProportionalGain(SKImage image)
+        public (float, float, float, float) CalculateProportionalGain(SKBitmap image)
         {
             var model = OnnxModel;
 
@@ -207,7 +211,7 @@
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        public (float, float, float, float) CalculateStretchedGain(SKImage image)
+        public (float, float, float, float) CalculateStretchedGain(SKBitmap image)
         {
             var model = OnnxModel;
 
@@ -232,7 +236,8 @@
         /// </summary>
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
 
             _session?.Dispose();
             _ortIoBinding?.Dispose();

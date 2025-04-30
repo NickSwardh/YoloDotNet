@@ -3,7 +3,7 @@
     internal class ObjectDetectionModuleV9 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
-        
+
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
         private readonly ObjectDetectionModuleV8 _objectDetectionModule = default!;
 
@@ -16,7 +16,7 @@
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
             => _objectDetectionModule.ProcessImage(image, confidence, pixelConfidence, iou);
 
         public void Dispose()

@@ -16,7 +16,7 @@
             _obbDetectionModuleV8 = new OBBDetectionModuleV8(_yoloCore);
         }
 
-        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<OBBDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
             => _obbDetectionModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
         #region Helper methods
