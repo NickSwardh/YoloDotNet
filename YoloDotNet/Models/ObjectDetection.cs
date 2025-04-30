@@ -20,5 +20,8 @@
         /// </summary>
         public SKRectI BoundingBox { get; init; }
 
+        public int? Id { get; set; }
+
+        public List<SKPoint>? Tail { get; set; }
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Modules.V12
 {
-    public class SegmentationModuleV12 : ISegmentationModule
+    internal class SegmentationModuleV12 : ISegmentationModule
     {
         public event EventHandler VideoStatusEvent = delegate { };
         public event EventHandler VideoProgressEvent = delegate { };
@@ -15,34 +15,18 @@
         {
             _yoloCore = yoloCore;
 
-            // Yolov11 has the same model input/output shapes as Yolov8
+            // Yolov12 has the same model input/output shapes as Yolov8
             // Use Yolov8 module
             _segmentationModuleV8 = new SegmentationModuleV8(_yoloCore);
-
-            SubscribeToVideoEvents();
         }
 
         public List<Segmentation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
             => _segmentationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-        public Dictionary<int, List<Segmentation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
-
         #region Helper methods
-
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
 
         public void Dispose()
         {
-            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _segmentationModuleV8?.Dispose();
             _yoloCore?.Dispose();
 

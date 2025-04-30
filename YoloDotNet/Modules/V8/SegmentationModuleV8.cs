@@ -1,11 +1,7 @@
 ﻿namespace YoloDotNet.Modules.V8
 {
-    public class SegmentationModuleV8 : ISegmentationModule
+    internal class SegmentationModuleV8 : ISegmentationModule
     {
-        public event EventHandler VideoStatusEvent = delegate { };
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-
         private readonly YoloCore _yoloCore;
         private readonly ObjectDetectionModuleV8 _objectDetectionModule;
 
@@ -23,9 +19,6 @@
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
             return RunSegmentation(image, ortValues, confidence, pixelConfidence, iou);
         }
-
-        public Dictionary<int, List<Segmentation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Segmentation
 
@@ -206,19 +199,8 @@
             });
         }
 
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
-
         public void Dispose()
         {
-            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _objectDetectionModule?.Dispose();
             _yoloCore?.Dispose();
 

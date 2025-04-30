@@ -7,12 +7,9 @@
     /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
     /// <param name="allocateGpuMemory">Indicates whether to allocate GPU memory.</param>
     /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
-    public class YoloCore(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId) : IDisposable
+    internal class YoloCore(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId) : IDisposable
     {
-        public event EventHandler VideoStatusEvent = delegate { };
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-
+        #region Fields
         private bool _isDisposed;
 
         private InferenceSession _session = default!;
@@ -23,9 +20,11 @@
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
 
         private readonly object _progressLock = new();
+
         private SKImageInfo _imageInfo;
 
         public ParallelOptions parallelOptions = default!;
+        #endregion
 
         public YoloOptions YoloOptions { get; private set; } = default!;
         public OnnxModel OnnxModel { get; private set; } = default!;
@@ -99,107 +98,6 @@
             {
                 customSizeFloatPool.Return(tensorArrayBuffer, true);
             }
-        }
-
-        /// <summary>
-        /// Runs inference on video data using the specified options and optional thresholds.
-        /// Triggers events for progress, completion, and status changes during video processing.
-        /// </summary>
-        /// <typeparam name="T">The type of the inference results.</typeparam>
-        /// <param name="options">Options for configuring video processing.</param>
-        /// <param name="confidence">Confidence threshold for inference.</param>
-        /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes.</param>
-        /// <param name="func">A function that processes each frame and returns a list of inference results.</param>
-        /// <returns>A dictionary where the key is the frame index and the value is a list of inference results of type <typeparamref name="T"/>.</returns>
-        public Dictionary<int, List<T>> RunVideo<T>(
-            VideoOptions options,
-            double confidence,
-            double pixelConfidence,
-            double iouThreshold,
-            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
-        {
-            var output = new Dictionary<int, List<T>>();
-
-            using var _videoHandler = new VideoHandler.VideoHandler(options, useCuda);
-
-            _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _videoHandler.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-            _videoHandler.FramesExtractedEvent += (sender, e) =>
-            {
-                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, pixelConfidence, iouThreshold, func);
-
-                if (options.GenerateVideo)
-                    _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
-                else
-                    VideoCompleteEvent?.Invoke(null, null!);
-            };
-
-            _videoHandler.ProcessVideoPipeline();
-
-            return output;
-        }
-
-        /// <summary>
-        /// Runs batch inference on the extracted video frames.
-        /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(
-            VideoHandler.VideoHandler _videoHandler,
-            double confidence,
-            double pixelConfidence,
-            double iouThreshold,
-            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
-        {
-            var frames = _videoHandler.GetExtractedFrames();
-            int progressCounter = 0;
-            int totalFrames = frames.Length;
-            var batch = new List<T>[totalFrames];
-
-            var shouldDrawLabelsOnKeptFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.KeepFrames;
-            var shouldDrawLabelsOnVideoFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.GenerateVideo;
-
-            _ = Parallel.For(0, totalFrames, parallelOptions, i =>
-            {
-                var frame = frames[i];
-                using var img = SKImage.FromEncodedData(frame);
-
-
-                var results = func.Invoke(img, confidence, pixelConfidence, iouThreshold);
-                batch[i] = results;
-
-                if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)
-                    DrawResultsOnVideoFrame(img, results, frame, _videoHandler._videoSettings);
-
-                Interlocked.Increment(ref progressCounter);
-                var progress = ((double)progressCounter / totalFrames) * 100;
-
-                lock (_progressLock)
-                {
-                    VideoProgressEvent?.Invoke((int)progress, null!);
-                }
-            });
-
-            return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x]);
-        }
-
-        /// <summary>
-        /// Draw labels on video frames
-        /// </summary>
-        private static void DrawResultsOnVideoFrame<T>(SKImage img, List<T> results, string savePath, VideoSettings videoSettings)
-        {
-            var drawConfidence = videoSettings.DrawConfidence;
-
-            using SKImage tmpImage = results switch
-            {
-                List<Classification> classifications => img.Draw(classifications, drawConfidence),
-                List<ObjectDetection> objectDetections => img.Draw(objectDetections, drawConfidence),
-                List<OBBDetection> obbDetections => img.Draw(obbDetections, drawConfidence),
-                List<Segmentation> segmentations => img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence),
-                List<PoseEstimation> poseEstimations => img.Draw(poseEstimations, videoSettings.KeyPointOptions, drawConfidence),
-                _ => throw new NotSupportedException("Unknown or incompatible ONNX model type."),
-            };
-
-            tmpImage.Save(savePath, SKEncodedImageFormat.Png, 100);
         }
 
         /// <summary>

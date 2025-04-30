@@ -16,58 +16,29 @@
         public string OutputDir { get; set; } = default!;
 
         /// <summary>
-        /// Keep frames after processing.
+        /// Set width in of output video.
         /// </summary>
-        public bool KeepFrames { get; set; } = false;
+        public int Width { get; set; }
 
         /// <summary>
-        /// Keep audio track in processed video.
+        /// Set height of output video.
         /// </summary>
-        public bool KeepAudio { get; set; } = true;
+        public int Height { get; set; }
+
+        /// <summary>
+        /// Set frames per second (FPS) of output video.
+        /// </summary>
+        public double FPS { get; set; }
+
+        /// <summary>
+        /// Compression Quality (0-51) 28 = Default.
+        /// </summary>
+        public int Quality { get; set; } = 30;
+
 
         /// <summary>
         /// Generate a new video from processed video frames.
         /// </summary>
         public bool GenerateVideo { get; set; } = true;
-
-        /// <summary>
-        /// Draw labels on processed frames
-        /// </summary>
-        public bool DrawLabels { get; set; } = true;
-
-        /// <summary>
-        /// Draw confidence scores on labels.
-        /// </summary>
-        public bool DrawConfidence { get; set; } = true;
-
-        /// <summary>
-        /// Set frames per second (FPS) of output video.
-        /// </summary>
-        public float? FPS { get; set; }
-
-        /// <summary>
-        /// Set width in of output video.
-        /// </summary>
-        public int? Width { get; set; }
-
-        /// <summary>
-        /// Set height of output video.
-        /// </summary>
-        public int? Height { get; set; }
-
-        /// <summary>
-        /// Compression Quality (0-51) 28 = Default.
-        /// </summary>
-        public int Quality { get; set; } = 28;
-
-        /// <summary>
-        /// Draw boundingboxes and/or pixelmasks on segmented objects.
-        /// </summary>
-        public DrawSegment DrawSegment { get; set; }
-
-        /// <summary>
-        /// Options for drawing pose estimation markers.
-        /// </summary>
-        public KeyPointOptions KeyPointOptions { get; set; } = new();
     }
 }

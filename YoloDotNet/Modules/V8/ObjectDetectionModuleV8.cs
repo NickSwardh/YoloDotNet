@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Modules.V8
 {
-    public class ObjectDetectionModuleV8 : IObjectDetectionModule
+    internal class ObjectDetectionModuleV8 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
         private static List<ObjectResult> _result = default!;
@@ -10,25 +10,19 @@
         private readonly int _channels3;
         private readonly int _channels4;
 
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-        public event EventHandler VideoStatusEvent = delegate { };
-
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
         public ObjectDetectionModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
 
-            _result = new ();
+            _result = [];
 
             _labels = _yoloCore.OnnxModel.Labels.Length;
             _channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             _channels2 = _channels * 2;
             _channels3 = _channels * 3;
             _channels4 = _channels * 4;
-
-            SubscribeToVideoEvents();
         }
 
         public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
@@ -41,9 +35,6 @@
 
             return [..results];
         }
-
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 
@@ -158,47 +149,8 @@
             }
         }
 
-        /*
-        private (int, int, int, int) ScaleBoundingBoxFromStretchedImageToOriginalSize(SKImage image,
-            float x,        // bbox x coordinate
-            float y,        // bbox y coordinate
-            float w,        // bbox width
-            float h,        // bbox height
-            float xPad,       // x padding
-            float yPad,       // y padding
-            float xGain,    // x gain
-            float yGain     // y gain
-            )
-        {
-            var width = image.Width;
-            var height = image.Height;
-
-            // Scale coordinates to original image
-            var halfW = w / 2;
-            var halfH = h / 2;
-
-            int xMint = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
-            int yMint = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
-            int xMaxt = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
-            int yMaxt = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
-
-            return (xMint, yMint, xMaxt, yMaxt);
-        }
-        */
-
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore!.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
-
         public void Dispose()
         {
-            VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _yoloCore?.Dispose();
             GC.SuppressFinalize(this);
         }

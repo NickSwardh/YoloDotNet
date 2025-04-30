@@ -65,26 +65,6 @@
         /// </summary>
         public bool GenerateVideo { get; set; }
 
-        /// <summary>
-        /// Draw labels on processed frames
-        /// </summary>
-        public bool DrawLabels { get; set; }
-
-        /// <summary>
-        /// Draw confidence percentage on frames
-        /// </summary>
-        public bool DrawConfidence { get; set; }
-
-        /// <summary>
-        /// Draw boundingbox and/or pixelmask for segmentation
-        /// </summary>
-        public DrawSegment DrawSegment { get; set; }
-
-        /// <summary>
-        /// Options for drawing keypoints.
-        /// </summary>
-        public KeyPointOptions KeyPointOptions { get; set; } = new();
-
         #region Mapping methods
 
         /// <summary>
@@ -100,13 +80,7 @@
             Quality = result.Quality,
             OutputFolder = result.OutputDir,
             TempFolder = Path.Combine(result.OutputDir, nameof(FolderName.Temp)),
-            KeepFrames = result.KeepFrames,
-            KeepAudio = result.KeepAudio,
             GenerateVideo = result.GenerateVideo,
-            DrawLabels = result.DrawLabels,
-            DrawConfidence = result.KeepAudio,
-            DrawSegment = result.DrawSegment,
-            KeyPointOptions = result.KeyPointOptions,
         };
 
         #endregion

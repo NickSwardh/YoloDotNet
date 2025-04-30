@@ -24,5 +24,10 @@
         /// Orientation angle of bounding box
         /// </summary>
         public float OrientationAngle { get; set; }
+
+        public int? Id { get; set; }
+
+        public List<SKPoint>? Tail { get; set; }
+
     }
 }

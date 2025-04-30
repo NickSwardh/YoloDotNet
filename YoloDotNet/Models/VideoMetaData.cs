@@ -1,24 +1,17 @@
 ﻿namespace YoloDotNet.Models
 {
-    /// <summary>
-    /// Model for holding extracted video metadata
-    /// </summary>
-    public class VideoMetaData
-    {
-        [JsonPropertyName("streams")]
-        public VideoStream[] Streams { get; set; } = [];
+    public record VideoMetadata(
+        int Width,
+        int Height,
+        int TargetWidth,
+        int TargetHeight,
+        double Duration,
+        double FPS,
+        double TargetFPS,
+        long TotalFrames,
+        long TargetTotalFrames);
 
-        [JsonPropertyName("format")]
-        public VideoFormat Format { get; set; } = new();
-    }
-
-    public class VideoFormat
-    {
-        [JsonPropertyName("bit_rate")]
-        public string Bitrate { get; set; } = default!;
-    }
-
-    public class VideoStream
+    internal class Metadata
     {
         [JsonPropertyName("width")]
         public int Width { get; set; }
@@ -26,10 +19,17 @@
         [JsonPropertyName("height")]
         public int Height { get; set; }
 
-        [JsonPropertyName("r_frame_rate")]
-        public string Framerate { get; set; } = default!;
+        [JsonPropertyName("frameratenumerator")]
+        public int FrameRateNumerator { get; set; }
+
+        [JsonPropertyName("frameratedenominator")]
+        public int FrameRateDenominator { get; set; }
 
         [JsonPropertyName("duration")]
         public double Duration { get; set; }
+
+        public double FPS => (double)FrameRateNumerator / FrameRateDenominator;
+
+        public int TotalFrames => (int)Math.Floor(FPS * Duration);
     }
 }

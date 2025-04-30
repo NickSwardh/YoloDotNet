@@ -21,5 +21,10 @@
         /// Keypoints with x, y coordinates and confidence score
         /// </summary>
         public KeyPoint[] KeyPoints { get; set; } = [];
+
+        public int? Id { get; set; }
+
+        public List<SKPoint>? Tail { get; set; }
+
     }
 }

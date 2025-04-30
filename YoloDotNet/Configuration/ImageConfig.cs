@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Configuration
 {
-    public static class ImageConfig
+    internal static class ImageConfig
     {
         public const float FONT_SIZE = 18;
         public const float KEYPOINT_SIZE = 5;
@@ -20,5 +20,8 @@
         public const int GPU_IMG_ALLOC_SIZE = 1080;
 
         public const int SCALING_DENOMINATOR = 1280;
+
+        public static readonly SKColor ClassificationBackground
+            = new(0, 0, 0, CLASSIFICATION_BOX_ALPHA);
     }
 }
