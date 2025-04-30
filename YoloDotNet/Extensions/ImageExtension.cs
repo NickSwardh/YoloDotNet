@@ -9,7 +9,7 @@
         /// <param name="classifications">An collection of classification labels and confidence scores.</param>
         /// <param name="drawConfidence">A flag indicating whether to include confidence scores in the labels.</param>
         public static void Draw(this SKBitmap image, IEnumerable<Classification>? classifications, bool drawConfidence = true, SKFont font = default!)
-            => image.DrawClassificationLabels(classifications, drawConfidence);
+            => image.DrawClassificationLabels(classifications, drawConfidence, font);
 
         /// <summary>
         /// Draw bounding boxes around detected objects on the specified image.
@@ -501,7 +501,53 @@
             }
         }
 
-            return surface.Snapshot();
+        private static void DrawTrackedTail(SKCanvas canvas, List<SKPoint>? tail, float tailThickness)
+        {
+            // Gradient from solid color to transparent
+            var startColor = SKColors.HotPink;
+            var endColor = startColor.WithAlpha(0); // Transparent red
+
+            // Bounding box paint
+            using var tailPaint = new SKPaint()
+            {
+                Style = SKPaintStyle.Stroke,
+                Color = SKColors.HotPink,
+                StrokeWidth = tailThickness * 1.2f,
+                IsAntialias = true,
+                StrokeCap = SKStrokeCap.Round,
+                StrokeJoin = SKStrokeJoin.Round
+            };
+
+            var tailLength = tail?.Count();
+            if (tail is not null && tailLength is not null && tailLength > 2)
+            {
+                // Start a new path
+                using var path = new SKPath();
+
+                using var shader = SKShader.CreateLinearGradient(
+                    tail[^1],
+                    tail[0],
+                    new[] { startColor, endColor },
+                    new float[] { 0, 1 },
+                    SKShaderTileMode.Clamp
+                );
+
+                // Move "pen" to first position
+                path.MoveTo(tail[0]);
+
+                // Move pen along the path with smooth corners
+                for (int i = 1; i < tailLength - 2; i++)
+                {
+                    var midX = (tail[i].X + tail[i + 1].X) / 2;
+                    var midY = (tail[i].Y + tail[i + 1].Y) / 2;
+                    path.QuadTo(tail[i].X, tail[i].Y, midX, midY);
+                }
+                path.QuadTo(tail[^2].X, tail[^2].Y, tail[^1].X, tail[^1].Y);
+
+                // Draw path with faded ends on canvas
+                tailPaint.Shader = shader;
+                canvas.DrawPath(path, tailPaint);
+            }
         }
 
         private static void DrawOrientedBoundingBoxes(this SKBitmap image, IEnumerable<OBBDetection>? detections, bool drawConfidence)
