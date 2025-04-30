@@ -1,34 +1,17 @@
 ﻿namespace YoloDotNet
 {
-    public class Yolo : IDisposable
-    {
-        #region Fields
-
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-        public event EventHandler VideoStatusEvent = delegate { };
-
-        private readonly IModule _detection;
-
-        public OnnxModel OnnxModel => _detection.OnnxModel;
-
-        #endregion
-
-        #region Constructor
-
         /// <summary>
         /// Initializes a new instance of the Yolo object detection model, which detects objects in an image or video based on a Yolo model in ONNX format.
         /// </summary>
         /// <param name="options">Options for initializing the YoloDotNet model.</param>
-        public Yolo(YoloOptions options)
+    public class Yolo(YoloOptions options) : IDisposable
         {
-            _detection = ModuleFactory.CreateModule(options);
+        #region Fields
 
-            // Forward events from the detection module to the facade class
-            _detection.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _detection.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _detection.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
+        private readonly IModule _detection = ModuleFactory.CreateModule(options);
+        private FFMPEGService _ffmpegService = default!;
+        public Action<SKBitmap, long> OnVideoFrameReceived = default!;
+        public OnnxModel OnnxModel => _detection.OnnxModel;
 
         #endregion
 
@@ -87,57 +70,26 @@
 
         #region Exposed methods for running inference on video
 
-        /// <summary>
-        /// Run image classification on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="classes">The number of classes to return for each frame (default is 1).</param>
-        public Dictionary<int, List<Classification>> RunClassification(VideoOptions options, int classes = 1)
-            => ((IClassificationModule)_detection).ProcessVideo(options, classes, 0, 0);
+        public void InitializeVideo(VideoOptions options)
+        {
+            _ffmpegService = new(options);
+            _ffmpegService.OnFrameReady = (frame, frameIndex) => OnVideoFrameReceived.Invoke(frame, frameIndex);
+        }
 
-        /// <summary>
-        /// Run object detection on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
-        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
-        public Dictionary<int, List<ObjectDetection>> RunObjectDetection(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((IObjectDetectionModule)_detection).ProcessVideo(options, confidence, 0, iou);  //((ObjectDetectionModule)_detection).ProcessVideo(options, confidence, iou);
+        public VideoMetadata GetVideoMetaData()
+            => _ffmpegService.VideoMetadata ?? throw new Exception(
+                "No video initialized. Please call InitializeVideo() before attempting to retrieve metadata.");
         
-        /// <summary>
-        /// Run oriented bounding box detection on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
-        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
-        public Dictionary<int, List<OBBDetection>> RunObbDetection(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((IOBBDetectionModule)_detection).ProcessVideo(options, confidence, 0, iou);
+        public void StartVideoProcessing()
+            => _ffmpegService.Start();
 
-        /// <summary>
-        /// Run object detection on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
-        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
-        public Dictionary<int, List<Segmentation>> RunSegmentation(VideoOptions options, double confidence = 0.23, double pixelConfidence = 0.65, double iou = 0.7)
-            => ((ISegmentationModule)_detection).ProcessVideo(options, confidence, pixelConfidence, iou);
-
-        /// <summary>
-        /// Run pose estimation on a video file.
-        /// </summary>
-        /// <param name="options">Options for video processing.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
-        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
-        public Dictionary<int, List<PoseEstimation>> RunPoseEstimation(VideoOptions options, double confidence = 0.23, double iou = 0.7)
-            => ((IPoseEstimationModule)_detection).ProcessVideo(options, confidence, 0, iou);
+        public void StopVideoProcessing()
+            => _ffmpegService.Stop();
 
         public void Dispose()
         {
-            VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _detection.Dispose();
+            _ffmpegService?.Dispose();
 
             GC.SuppressFinalize(this);
         }
