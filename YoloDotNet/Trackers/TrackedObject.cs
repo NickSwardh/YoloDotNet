@@ -1,0 +1,37 @@
+﻿namespace YoloDotNet.Trackers
+{
+    public class TrackedObject(IDetection boundingBox, int trackCounter, int tailLength = 30)
+    {
+        public IDetection BoundingBox { get; private set; } = boundingBox;
+        public int Age { get; set; } = 0;
+        public int TrackCounter { get; set; } = trackCounter;
+        public KalmanFilter Kalman { get; private set; } = new KalmanFilter(boundingBox.BoundingBox.MidX, boundingBox.BoundingBox.MidY);
+
+        private readonly TailTrack _tailTracker = new(tailLength);
+
+        public void TrackBoundingBox(IDetection detection, int trackCounter)
+        {
+            // Update boundingbox
+            BoundingBox = detection;
+
+            TrackCounter = trackCounter;
+
+            // Store current boundingbox center coordinate
+            var box = detection.BoundingBox;
+
+            _tailTracker.AddTailPoint(new SKPointI(box.MidX, box.MidY)); // Store center of boundingbox.
+
+            // Update Kalman filter
+            Kalman.Update(box.MidX, box.MidY);
+
+            // Update tail
+            detection.Tail = _tailTracker.GetTail();
+        }
+
+        public void KalmanPredict()
+            => Kalman.Predict();
+
+        public float[] GetPredictedState()
+            => Kalman.GetState();
+    }
+}
