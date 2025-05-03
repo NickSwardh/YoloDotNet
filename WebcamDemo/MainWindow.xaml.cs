@@ -1,8 +1,8 @@
 ﻿using Emgu.CV;
 using Emgu.CV.CvEnum;
-using Emgu.CV.Util;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 using YoloDotNet;
@@ -10,6 +10,7 @@ using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
+using YoloDotNet.Trackers;
 
 namespace WebcamDemo
 {
@@ -21,21 +22,21 @@ namespace WebcamDemo
         #region Fields
 
         private readonly Yolo _yolo = default!;
-        private SKImage _currentFrame = default!;
+        private readonly SortTrack _sortTracker = default!;
+        private SKBitmap _currentFrame = default!;
         private Dispatcher _dispatcher = default!;
 
         private bool _runDetection = false;
-
         private SKRect _rect;
+        private Stopwatch _stopwatch = default!;
 
         #endregion
 
         #region Constants
 
         const int WEBCAM_WIDTH = 1080;
-        const int WEBCAM_HEIGHT = 608;
+        const int WEBCAM_HEIGHT = 720;
         const int FPS = 30;
-        const string FRAME_FORMAT_EXTENSION = ".png";
 
         #endregion
 
@@ -43,7 +44,10 @@ namespace WebcamDemo
         {
             InitializeComponent();
 
-            // Instantiate yolo
+            _stopwatch = new Stopwatch();
+            _sortTracker = new SortTrack();
+
+            // Instantiate yolo 11
             _yolo = new Yolo(new YoloOptions()
             {
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
@@ -54,7 +58,7 @@ namespace WebcamDemo
 
             _dispatcher = Dispatcher.CurrentDispatcher;
 
-            _currentFrame = SKImage.FromBitmap(new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT));
+            _currentFrame = new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT);
             _rect = new SKRect(0, 0, WEBCAM_WIDTH, bottom: WEBCAM_HEIGHT);
 
             // Start webcam on a separate thread
@@ -65,48 +69,47 @@ namespace WebcamDemo
         {
             // Configure webcam
             using var capture = new VideoCapture(0, VideoCapture.API.DShow);
-            capture.Set(CapProp.FrameCount, FPS);
+
+            capture.Set(CapProp.Fps, FPS);
             capture.Set(CapProp.FrameWidth, WEBCAM_WIDTH);
             capture.Set(CapProp.FrameHeight, WEBCAM_HEIGHT);
 
             using var mat = new Mat();
-            using var buffer = new VectorOfByte();
 
             while (true)
             {
                 // Capture current frame from webcam
                 capture.Read(mat);
 
-                // Encode mat to a valid image format and to a buffer
-                CvInvoke.Imencode(FRAME_FORMAT_EXTENSION, mat, buffer);
-
-                // "Rewind" buffer
-                buffer.Position = 0;
-
-                // Read buffer to an SKImage
-                _currentFrame = SKImage.FromEncodedData(buffer);
-
-                // Clean up
-                buffer.Clear();
+                _stopwatch.Restart();
+                _currentFrame = mat.ToBitmap().ToSKBitmap();
 
                 if (_runDetection)
                 {
                     // Run inference on frame
-                    var results = _yolo.RunObjectDetection(_currentFrame);
+                    var results = _yolo.RunObjectDetection(_currentFrame, 0.25)
+                        .FilterLabels(["person"])
+                        .Track(_sortTracker);
 
-                    // Draw results
-                    _currentFrame = _currentFrame.Draw(results);
+                    // Update _currentFrame with drawn results
+                    _currentFrame.Draw(results);
                 }
 
+                _stopwatch.Stop();
+
                 // Update GUI
-                await _dispatcher.InvokeAsync(() => WebCamFrame.InvalidateVisual());
+                await _dispatcher.InvokeAsync(() =>
+                {
+                    WebCamFrame.InvalidateVisual(); // Notify SKiaSharp to update the frame in the GUI.
+                    FrameProcess.Text = $"Processed Frame (ms): {_stopwatch.ElapsedMilliseconds}";
+                });
             }
         }
 
         private void UpdateWebcamFrame(object sender, SKPaintSurfaceEventArgs e)
         {
             using var canvas = e.Surface.Canvas;
-            canvas.DrawImage(_currentFrame, _rect);
+            canvas.DrawBitmap(_currentFrame, _rect);
             canvas.Flush();
         }
 
@@ -118,6 +121,7 @@ namespace WebcamDemo
 
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            _runDetection = false;
             _yolo?.Dispose();
             _currentFrame?.Dispose();
         }

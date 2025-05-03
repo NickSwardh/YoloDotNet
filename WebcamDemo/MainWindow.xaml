@@ -41,6 +41,10 @@
                     Padding="10,0,10,0"
                     Click="StopClick" />
 
+            <TextBlock x:Name="FrameProcess"
+                       Foreground="white"
+                       />
+
         </StackPanel>
 
     </Grid>
