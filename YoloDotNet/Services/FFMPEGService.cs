@@ -97,6 +97,7 @@
         private void InitializeFFMPEGDecode()
             => _ffmpegDecode = Processor.Create(FFMPEG, [
                 "-i",                       $@"""{_options.VideoFile}""",
+                "-an",
                 "-vf",                      $@"""fps={_fps.ToString("", CultureInfo.InvariantCulture)},scale={_videoWidth}:{_videoHeight}""",
                 //"-vf",                      $@"""select='not(mod(n,1000))',setpts=N/FRAME_RATE/TB,scale={_videoWidth}:{_videoHeight}""",
                 "-pix_fmt",                 "bgra",
