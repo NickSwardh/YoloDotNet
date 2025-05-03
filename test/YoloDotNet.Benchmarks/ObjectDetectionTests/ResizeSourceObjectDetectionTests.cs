@@ -62,13 +62,13 @@
         [Benchmark]
         public void ObjectDetectionModelSizeCpu()
         {
-            _ = _cpuYolo.RunObjectDetection(imgage);
+            _ = _cpuYolo.RunObjectDetection(_modelSizeImage);
         }
 
         [Benchmark]
         public void ObjectDetectionModelSizeGpu()
         {
-            _ = _cudaYolo.RunObjectDetection(imgage);
+            _ = _cudaYolo.RunObjectDetection(_modelSizeImage);
         }
 
         #endregion Methods
