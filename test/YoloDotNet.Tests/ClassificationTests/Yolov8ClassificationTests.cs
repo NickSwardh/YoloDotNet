@@ -16,7 +16,7 @@
                 Cuda = false
             });
 
-            var image = SKImage.FromEncodedData(testImage);
+            using var image = SKBitmap.Decode(testImage);
 
             // Act
             var classification = yolo.RunClassification(image, 1);

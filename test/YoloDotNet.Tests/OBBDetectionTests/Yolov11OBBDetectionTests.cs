@@ -16,7 +16,8 @@
                 Cuda = false
             });
 
-            var image = SKImage.FromEncodedData(testImage);
+            //var image = SKImage.FromEncodedData(testImage);
+            using var image = SKBitmap.Decode(testImage);
 
             // Act
             var results = yolo.RunObbDetection(image, 0.25, 0.45);
