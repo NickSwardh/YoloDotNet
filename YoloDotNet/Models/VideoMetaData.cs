@@ -30,6 +30,6 @@
 
         public double FPS => (double)FrameRateNumerator / FrameRateDenominator;
 
-        public int TotalFrames => (int)Math.Floor(FPS * Duration);
+        public long TotalFrames => (int)Math.Floor(FPS * Duration);
     }
 }
