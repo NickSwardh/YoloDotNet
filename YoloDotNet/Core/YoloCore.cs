@@ -75,8 +75,6 @@
         /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
         public IDisposableReadOnlyCollection<OrtValue> Run(SKBitmap image)
         {
-            //_resizedBitmap.Erase(SKColors.Black);
-
             using var resizedImage = YoloOptions.ImageResize == ImageResize.Proportional
                 ? image.ResizeImageProportional(_imageInfo, YoloOptions.SamplingOptions)
                 : image.ResizeImageStretched(_imageInfo, YoloOptions.SamplingOptions);
