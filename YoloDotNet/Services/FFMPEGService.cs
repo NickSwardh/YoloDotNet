@@ -41,8 +41,9 @@
 
             _videoWidth = newWidth;
             _videoHeight = newHeight;
-            _fps = _options.FPS;
+            _fps = (_options.FPS > 0) ? _options.FPS : metadata.FPS;
 
+            // Give user metadata info about selected video
             VideoMetadata = new VideoMetadata(
                 metadata.Width,
                 metadata.Height,
@@ -174,8 +175,10 @@
                         frame.SetPixels((IntPtr)ptr);
                     }
 
+                    // Let user process the frame...
                     OnFrameReady?.Invoke(frame, frameIndex);
 
+                    // Encode frame back to video?
                     if (_options.GenerateVideo is true)
                     {
                         outputStream.Write(frame.Bytes);
@@ -209,6 +212,14 @@
             int originalHeight = metadata.Height;
             int targetWidth = options.Width;
             int targetHeight = options.Height;
+
+            targetWidth = (targetWidth == -2 || options.Width > 0)
+                ? options.Width
+                : originalWidth;
+
+            targetHeight = (targetHeight == -2 || options.Height > 0)
+                ? options.Height
+                : originalHeight;
 
             if (targetWidth == -2 && targetHeight == -2)
                 throw new ArgumentException("Both with and height cant be -2.");
@@ -246,9 +257,9 @@
             return (finalWidth, finalHeight);
         }
 
-        private int CalculateTargetFramesCount(Metadata metadata)
+        private long CalculateTargetFramesCount(Metadata metadata)
         {
-            var targetFps = _options.FPS;
+            var targetFps = _fps;
 
             // Look for the decimal point
             string str = targetFps.ToString("G17", CultureInfo.InvariantCulture);
@@ -258,10 +269,12 @@
                 ? str.Length - index - 1
                 : 0;
 
+            long totalFrames;
+
             // If target fps is the same as original fps
             if (targetFps == Math.Round(metadata.FPS, decimalDigits))
             {
-                return (int)Math.Floor(targetFps * metadata.Duration);
+                totalFrames = (int)Math.Floor(targetFps * metadata.Duration) - 1;
             }
             else
             {
@@ -269,8 +282,10 @@
                     ? targetFps * 1000 / metadata.FrameRateDenominator
                     : targetFps;
 
-                return (int)Math.Floor(fps * metadata.Duration);
+                totalFrames = (int)Math.Floor(fps * metadata.Duration) - 1;
             }
+
+            return totalFrames - 1;
         }
 
         public void Dispose()
