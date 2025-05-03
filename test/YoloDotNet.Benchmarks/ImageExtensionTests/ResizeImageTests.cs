@@ -46,7 +46,7 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgba8888, SKAlphaType.Opaque);
             _image = SKBitmap.Decode(_testImage);
         }
 
