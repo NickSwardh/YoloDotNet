@@ -23,5 +23,32 @@
 
         public static readonly SKColor ClassificationBackground
             = new(0, 0, 0, CLASSIFICATION_BOX_ALPHA);
+
+
+        public static readonly SKPaint PaintFill = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true
+        };
+
+        public static readonly SKPaint FontColorPaint = new()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Color = SKColors.White
+        };
+
+        public static readonly SKPaint ClassificationBackgroundPaint = new ()
+        {
+            Style = SKPaintStyle.Fill,
+            IsAntialias = true,
+            Color = ImageConfig.ClassificationBackground
+        };
+
+        public static readonly SKPaint TextShadowPaint = new ()
+        {
+            Color = new SKColor(0, 0, 0, DEFAULT_OPACITY),
+            IsAntialias = true
+        };
     }
 }
