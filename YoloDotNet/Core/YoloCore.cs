@@ -55,7 +55,7 @@
             customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
             customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
 
-            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgba8888, SKAlphaType.Opaque);
+            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
             if (useCuda && allocateGpuMemory)
                 _session.AllocateGpuMemory(_ortIoBinding,
