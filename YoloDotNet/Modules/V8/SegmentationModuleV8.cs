@@ -62,7 +62,6 @@
             var croppedImage = new SKBitmap();
             var resizedBitmap = new SKBitmap();
             using var segmentedBitmap = new SKBitmap(_yoloCore.OnnxModel.Outputs[1].Width, _yoloCore.OnnxModel.Outputs[1].Height, SKColorType.Gray8, SKAlphaType.Opaque);
-            using var paint = new SKPaint { FilterQuality = SKFilterQuality.Low, IsAntialias = false };
 
             var elements = _yoloCore.OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
 
@@ -100,7 +99,8 @@
                 resizedBitmap.Reset();
                 resizedBitmap = new SKBitmap(bboxWidth, bboxHeight, SKColorType.Gray8, SKAlphaType.Opaque);
                 using var recanvas = new SKCanvas(resizedBitmap);
-                recanvas.DrawBitmap(croppedImage, new SKRect(0, 0, bboxWidth, bboxHeight), paint);
+
+                recanvas.DrawBitmap(croppedImage.Resize(new SKSizeI(bboxWidth, bboxHeight), new SKSamplingOptions(4)), 0, 0);
 
                 pixels.Clear();
                 GetPixelsFromCroppedMask(resizedBitmap, pixelThreshold, pixels, box);
@@ -153,8 +153,8 @@
                     for (var p = 0; p < output1Channels; p++, offset += output1Width * output1Height)
                         pixelWeight += ortSpan1[offset] * maskWeights[p];
 
-                        byte* pixelData = (byte*)pixelsPtr.ToPointer();
-                        pixelData[y * output1Width + x] = YoloCore.CalculatePixelLuminance(YoloCore.Sigmoid(pixelWeight));
+                    byte* pixelData = (byte*)pixelsPtr.ToPointer();
+                    pixelData[y * output1Width + x] = YoloCore.CalculatePixelLuminance(YoloCore.Sigmoid(pixelWeight));
                 }
             }
         }
