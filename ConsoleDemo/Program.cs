@@ -1,17 +1,19 @@
-﻿using System;
+﻿using ConsoleDemo.Config;
+using SkiaSharp;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Diagnostics;
-using System.Collections.Generic;
 using YoloDotNet;
 using YoloDotNet.Enums;
-using YoloDotNet.Models;
-using ConsoleDemo.Config;
 using YoloDotNet.Extensions;
+using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
 using YoloDotNet.Test.Common.Enums;
-using SkiaSharp;
+using YoloDotNet.Trackers;
 
+int lineCounter = 0;
 Console.CursorVisible = false;
 
 CreateOutputFolder();
@@ -49,7 +51,7 @@ static void CreateOutputFolder()
         Directory.CreateDirectory(outputFolder);
 }
 
-static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType, bool cuda = false, bool primeGpu = false)
+void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType, bool cuda = false, bool primeGpu = false)
 {
     var modelPath = modelVersion switch
     {
@@ -61,6 +63,7 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
         _ => throw new ArgumentException("Unkown yolo version")
     };
 
+    //var imagePath = @"C:\Users\Nick\Desktop\pexels-clickerhappy-903972.jpg";// SharedConfig.GetTestImage(imageType);
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(new YoloOptions()
@@ -69,193 +72,205 @@ static void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType im
         Cuda = cuda,
         PrimeGpu = primeGpu,
         ModelType = modelType,
+        ImageResize = ImageResize.Proportional
         // ImageResize = ImageResize.Proportional, // default
         // SamplingOptions = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None) // default
 
-        // 💡 Tip: For usage examples of SamplingOptions and how it can be used to fine-tune  
-        // SkiaSharp rendering and performance, affecting inference results, see the YOLODotNet  
-        // benchmark examples:  
+        // 💡 Tip: For usage examples of SamplingOptions and how it can be used to fine-tune SkiaSharp rendering
+        // and performance, affecting inference results, see the YOLODotNet benchmark examples:  
         // https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
     });
 
-using var image = SKImage.FromEncodedData(imagePath);
+    using var image = SKBitmap.Decode(imagePath);
 
-var device = cuda ? "GPU" : "CPU";
-device += device == "CPU" ? "" : primeGpu ? ", primed: yes" : ", primed: no";
+    var device = cuda ? "GPU" : "CPU";
+    device += device == "CPU" ? "" : primeGpu ? ", primed: yes" : ", primed: no";
 
-Console.Write($"{yolo.OnnxModel.ModelType,-16} {modelVersion, -5}device: {device}");
-Console.WriteLine();
+    Console.Write($"{yolo.OnnxModel.ModelType,-16} {modelVersion,-5}device: {device}");
+    Console.WriteLine();
 
-SKImage resultImage = SKImage.Create(new SKImageInfo());
-List<LabelModel> labels = new();
+    List<LabelModel> labels = new();
 
-switch (modelType)
-{
-case ModelType.Classification:
+    switch (modelType)
     {
-        var result = yolo.RunClassification(image, 1);
-        labels = result.Select(x => new LabelModel { Name = x.Label }).ToList();
-        resultImage = image.Draw(result);
-        break;
+        case ModelType.Classification:
+            {
+                var result = yolo.RunClassification(image, 1);
+                labels = [.. result.Select(x => new LabelModel { Name = x.Label })];
+                image.Draw(result);
+                break;
+            }
+        case ModelType.ObjectDetection:
+            {
+                var result = yolo.RunObjectDetection(image, 0.23, 0.7);
+                labels = [.. result.Select(x => x.Label)];
+                image.Draw(result);
+                break;
+            }
+        case ModelType.ObbDetection:
+            {
+                var result = yolo.RunObbDetection(image, 0.23, 0.7);
+                labels = [.. result.Select(x => x.Label)];
+                image.Draw(result);
+                break;
+            }
+        case ModelType.Segmentation:
+            {
+                var result = yolo.RunSegmentation(image, 0.25, 0.65, 0.5);
+                labels = [.. result.Select(x => x.Label)];
+                image.Draw(result);
+                break;
+            }
+        case ModelType.PoseEstimation:
+            {
+                var result = yolo.RunPoseEstimation(image,0.23, 0.7);
+                labels = [.. result.Select(x => x.Label)];
+                image.Draw(result, CustomKeyPointColorMap.KeyPointOptions);
+                break;
+            }
     }
-case ModelType.ObjectDetection:
-    {
-        var result = yolo.RunObjectDetection(image, 0.23, 0.7);
-        labels = result.Select(x => x.Label).ToList();
-        resultImage = image.Draw(result);
-        break;
-    }
-case ModelType.ObbDetection:
-    {
-        var result = yolo.RunObbDetection(image, 0.23, 0.7);
-        labels = result.Select(x => x.Label).ToList();
-        resultImage = image.Draw(result);
-        break;
-    }
-case ModelType.Segmentation:
-    {
-        var result = yolo.RunSegmentation(image, 0.23, 0.65, 0.7);
-        labels = result.Select(x => x.Label).ToList();
 
-        resultImage = image.Draw(result);
-        break;
-    }
-case ModelType.PoseEstimation:
-    {
-        var result = yolo.RunPoseEstimation(image, 0.23, 0.7);
-        labels = result.Select(x => x.Label).ToList();
-        resultImage = image.Draw(result, CustomKeyPointColorMap.KeyPointOptions);
-        break;
-    }
-}
-
-DisplayDetectedLabels(labels);
-resultImage.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER, $"{modelType}_{modelVersion}.jpg"), SKEncodedImageFormat.Jpeg);
+    DisplayDetectedLabels(labels);
 
 }
 
-static void ObjectDetectionOnVideo()
+void ObjectDetectionOnVideo()
 {
-var videoOptions = new VideoOptions
-{
-VideoFile = SharedConfig.GetTestImage("walking.mp4"),
-OutputDir = DemoSettings.OUTPUT_FOLDER,
-//GenerateVideo = false,
-//DrawLabels = false,
-//FPS = 30,
-//Width = 640, // Resize video...
-//Height = -2, // -2 = automatically calculate dimensions to keep proportions
-//Quality = 28,
-//DrawConfidence = true,
-//KeepAudio = true,
-//KeepFrames = false,
-DrawSegment = DrawSegment.Default,
-KeyPointOptions = CustomKeyPointColorMap.KeyPointOptions
-};
+    var sortTrack = new SortTrack(0.5f, 3, 30);
 
-Console.WriteLine();
-Console.WriteLine("Running Object Detection on video with Yolo v8...");
+    // Initialize new yolo object
+    using var yolo = new Yolo(new YoloOptions
+    {
+        OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+        ModelType = ModelType.ObjectDetection,
+        Cuda = true,
+        ImageResize = ImageResize.Proportional
+    });
 
-using var yolo = new Yolo(new YoloOptions
-{
-OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
-ModelType = ModelType.ObjectDetection,
-Cuda = true
-});
+    // Initialize video
+    yolo.InitializeVideo(new VideoOptions
+    {
+        VideoFile = SharedConfig.GetTestImage("walking.mp4"),
+        OutputDir = DemoSettings.OUTPUT_FOLDER,
+        GenerateVideo = true,
+        FPS = 30,
+        Width = 640, // Resize video...
+        Height = -2, // -2 = automatically calculate dimensions to keep proportions
+        Quality = 30
+    });
 
-int currentLineCursor = 0;
+    var metadata = yolo.GetVideoMetaData();
 
-// Listen to events...
-yolo.VideoStatusEvent += (sender, e) =>
-{
-Console.WriteLine();
-Console.Write((string)sender!);
-currentLineCursor = Console.CursorTop;
-};
+    var message = "Running Object Detection on video with Yolo v11: ";
+    var messageLength = message.Length;
 
-yolo.VideoProgressEvent += (object sender, EventArgs e) =>
-{
-Console.SetCursorPosition(20, currentLineCursor);
-Console.Write(new string(' ', 4));
-Console.SetCursorPosition(20, currentLineCursor);
-Console.Write("{0}%", (int)sender!);
-};
+    Console.WriteLine();
+    Console.Write(message);
 
-yolo.VideoCompleteEvent += (object sender, EventArgs e) =>
-{
-Console.WriteLine();
-Console.WriteLine();
-Console.WriteLine("Complete!");
-};
+    lineCounter += 1;
 
-Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(videoOptions, 0.25);
-Console.WriteLine();
+    // Subscribe to event for running inference on frames
+    yolo.OnVideoFrameReceived += (SKBitmap image, long frameIndex) =>
+    {
+        // Run inference on incoming frame
+        var result = yolo.RunObjectDetection(image).FilterLabels(["person"]);
+
+        // Draw results on frame
+        image.Draw(result);
+
+        // Do some more processing if needed...
+
+        // Optional: Save frame to folder
+        // image.Save($@"path_to_folder/frame_{frameIndex}.jpg");
+
+        // Calculate progress in %
+        var progress = (int)((double)(frameIndex) / metadata.TargetTotalFrames * 100);
+
+        var str = $"{progress}% [frame {frameIndex} of {metadata.TargetTotalFrames}]";
+
+        Console.SetCursorPosition(messageLength, lineCounter);
+        Console.Write(new string(' ', str.Length));
+        Console.SetCursorPosition(messageLength, lineCounter);
+        Console.Write(str);
+    };
+
+    // Start processing video
+    yolo.StartVideoProcessing();
+
+    Console.WriteLine();
 }
 
-static void DisplayDetectedLabels(IEnumerable<LabelModel> labels)
+
+void DisplayDetectedLabels(IEnumerable<LabelModel> labels)
 {
-if (!labels.Any())
-return;
+    if (!labels.Any())
+        return;
 
-var ls = labels.GroupBy(x => x.Name)
-.ToDictionary(x => x.Key, x => x.Count());
+    var ls = labels.GroupBy(x => x.Name)
+        .ToDictionary(x => x.Key, x => x.Count());
 
-Console.WriteLine(new string('-', 33));
-Console.ForegroundColor = ConsoleColor.Blue;
+    Console.WriteLine(new string('-', 33));
+    Console.ForegroundColor = ConsoleColor.Blue;
 
-foreach (var label in ls)
-Console.WriteLine($"{label.Key,16} ({label.Value})");
+    lineCounter += 2;
 
-Console.ForegroundColor = ConsoleColor.Gray;
-Console.WriteLine();
+    foreach (var label in ls)
+    {
+        Console.WriteLine($"{label.Key,16} ({label.Value})");
+        lineCounter++;
+    }
+
+    Console.ForegroundColor = ConsoleColor.Gray;
+    Console.WriteLine();
+    lineCounter++;
 }
 
 static void DisplayOnnxMetaDataExample()
 {
-Console.WriteLine();
-Console.WriteLine("Internal ONNX properties");
-Console.WriteLine(new string('-', 58));
+    Console.WriteLine();
+    Console.WriteLine("Internal ONNX properties");
+    Console.WriteLine(new string('-', 58));
 
-using var yolo = new Yolo(new YoloOptions
-{
-OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
-ModelType = ModelType.ObjectDetection
-});
+    using var yolo = new Yolo(new YoloOptions
+    {
+        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
+        ModelType = ModelType.ObjectDetection
+    });
 
-// Display internal ONNX properties...
-foreach (var property in yolo.OnnxModel.GetType().GetProperties())
-{
-var value = property.GetValue(yolo.OnnxModel);
-Console.WriteLine($"{property.Name,-20}{value!}");
+    // Display internal ONNX properties...
+    foreach (var property in yolo.OnnxModel.GetType().GetProperties())
+    {
+        var value = property.GetValue(yolo.OnnxModel);
+        Console.WriteLine($"{property.Name,-20}{value!}");
 
-if (property.Name == nameof(yolo.OnnxModel.CustomMetaData))
-{
-    var customMetaData = (Dictionary<string, string>)value!;
+        if (property.Name == nameof(yolo.OnnxModel.CustomMetaData))
+        {
+            var customMetaData = (Dictionary<string, string>)value!;
 
-    foreach (var data in customMetaData)
-        Console.WriteLine($"{"",-20}{data.Key,-20}{data.Value}");
-}
-}
+            foreach (var data in customMetaData)
+                Console.WriteLine($"{"",-20}{data.Key,-20}{data.Value}");
+        }
+    }
 
-var labels = yolo.OnnxModel.Labels;
+    var labels = yolo.OnnxModel.Labels;
 
-Console.WriteLine();
-Console.WriteLine($"Labels ({labels.Length}):");
-Console.WriteLine(new string('-', 58));
+    Console.WriteLine();
+    Console.WriteLine($"Labels ({labels.Length}):");
+    Console.WriteLine(new string('-', 58));
 
-// Display labels and its corresponding color
-for (var i = 0; i < 3; i++)
-{
-// Capitalize first letter in label
-var label = char.ToUpper(labels[i].Name[0]) + labels[i].Name[1..];
-Console.WriteLine($"index: {i,-8} label: {label,-20} color: {labels[i].Color}");
-}
+    // Display labels and its corresponding color
+    for (var i = 0; i < 3; i++)
+    {
+        // Capitalize first letter in label
+        var label = char.ToUpper(labels[i].Name[0]) + labels[i].Name[1..];
+        Console.WriteLine($"index: {i,-8} label: {label,-20} color: {labels[i].Color}");
+    }
 
-Console.WriteLine("...");
-Console.WriteLine();
+    Console.WriteLine("...");
+    Console.WriteLine();
 }
 
 static void DisplayOutputFolder()
-=> Process.Start("explorer.exe", DemoSettings.OUTPUT_FOLDER);
+    => Process.Start("explorer.exe", DemoSettings.OUTPUT_FOLDER);
 
 #endregion
