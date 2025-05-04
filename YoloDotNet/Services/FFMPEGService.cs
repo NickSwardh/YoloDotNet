@@ -274,7 +274,7 @@
             // If target fps is the same as original fps
             if (targetFps == Math.Round(metadata.FPS, decimalDigits))
             {
-                totalFrames = (int)Math.Floor(targetFps * metadata.Duration) - 1;
+                totalFrames = (int)Math.Floor(targetFps * metadata.Duration);
             }
             else
             {
@@ -282,10 +282,10 @@
                     ? targetFps * 1000 / metadata.FrameRateDenominator
                     : targetFps;
 
-                totalFrames = (int)Math.Floor(fps * metadata.Duration) - 1;
+                totalFrames = (int)Math.Round(fps * metadata.Duration);
             }
 
-            return totalFrames - 1;
+            return totalFrames - 1; // Make sure to keep total-frames count zero-indexed.
         }
 
         public void Dispose()

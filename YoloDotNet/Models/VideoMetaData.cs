@@ -30,6 +30,6 @@
 
         public double FPS => (double)FrameRateNumerator / FrameRateDenominator;
 
-        public long TotalFrames => (int)Math.Floor(FPS * Duration);
+        public long TotalFrames => ((int)Math.Floor(FPS * Duration)) - 1; // Set -1 to keep total frames zero-index.
     }
 }
