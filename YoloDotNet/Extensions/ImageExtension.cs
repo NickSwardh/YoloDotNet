@@ -328,7 +328,7 @@
                 });
             }
 
-            if (draw == DrawSegment.BoundingBoxOnly)
+            if (draw == DrawSegment.Default || draw == DrawSegment.BoundingBoxOnly)
                 image.DrawBoundingBoxes(segmentations, drawConfidence, fontType);
         }
 
