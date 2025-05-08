@@ -131,7 +131,7 @@ void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType
     }
 
     DisplayDetectedLabels(labels);
-
+    image.Save(Path.Combine(DemoSettings.OUTPUT_FOLDER,  $"{ modelType}_{modelVersion}.jpg"));
 }
 
 void ObjectDetectionOnVideo()
