@@ -19,6 +19,7 @@
         public ArrayPool<float> customSizeFloatPool = default!;
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
 
+        private Dictionary<string, OrtValue> _inputNames = default!;
         private readonly object _progressLock = new();
 
         private SKImageInfo _imageInfo;
@@ -64,6 +65,11 @@
                     _imageInfo,
                     YoloOptions.SamplingOptions);
 
+            _inputNames = new Dictionary<string, OrtValue>
+            {
+                { OnnxModel.InputName, null! }
+            };
+
             // Run frame-save service
             FrameSaveService.Start();
         }
@@ -86,15 +92,11 @@
                 lock (_progressLock)
                 {
                     var tensorPixels = resizedImage.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
-
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
-                    var inputNames = new Dictionary<string, OrtValue>
-                    {
-                        { OnnxModel.InputName, inputOrtValue }
-                    };
+                    _inputNames[OnnxModel.InputName] = inputOrtValue;
 
-                    return _session.Run(_runOptions, inputNames, OnnxModel.OutputNames);
+                    return _session.Run(_runOptions, _inputNames, OnnxModel.OutputNames);
                 }
             }
             finally
