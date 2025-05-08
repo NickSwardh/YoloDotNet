@@ -150,7 +150,7 @@
             long[] inputShape,
             int tensorBufferSize,
             float[] tensorArrayBuffer)
-        {
+        {            
             // Deconstruct the input shape into batch size, number of channels, width, and height.
             var (batchSize, colorChannels, width, height) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
 
@@ -169,29 +169,21 @@
             IntPtr pixelsPtr = resizedImage.GetPixels();
             byte* pixels = (byte*)pixelsPtr;
 
-            // Loop through all pixels in the image.
-            for (int i = 0; i < totalPixels; i++)
+            // Use parallelism if image is larger than 224x224
+            if (width > 224 && height > 244)
             {
-                // Compute the offset into the pixel array.
-                int offset = i * 4;  // Assuming pixel format is BGRA or similar with 4 bytes per pixel.
-
-                // Read the red, green, and blue components.
-                byte r = pixels[offset];
-                byte g = pixels[offset + 1];
-                byte b = pixels[offset + 2];
-
-                // If the pixel is completely black, skip normalization.
-                if ((r | g | b) == 0)
-                    continue;
-
-                // Normalize the red, green, and blue components and store them in the buffer.
-                // The buffer is arranged in "channel-first" order:
-                // - Red values go in the first section (0 to pixelsPerChannel)
-                // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
-                // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
-                tensorArrayBuffer[i] = r * inv255;
-                tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
-                tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
+                Parallel.For(0, totalPixels, i =>
+                {
+                    ComputePixels(pixels, i, pixelsPerChannel, inv255, tensorArrayBuffer);
+                });
+            }
+            else
+            {
+                // Loop through all pixels in the image.
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    ComputePixels(pixels, i, pixelsPerChannel, inv255, tensorArrayBuffer);
+                }
             }
 
             // Create and return a DenseTensor using the correctly sized memory slice.
@@ -202,6 +194,26 @@
         }
 
         #region Helper methods
+
+        unsafe private static void ComputePixels(byte* pixels, int index, int pixelsPerChannel, float inv255, float[] buffer)
+        {
+            // Compute the offset into the pixel array.
+            int offset = index * 4;  // Assuming pixel format is RGBx or similar with 4 bytes per pixel.
+
+            // Read the red, green, and blue components.
+            byte r = pixels[offset];
+            byte g = pixels[offset + 1];
+            byte b = pixels[offset + 2];
+
+            // Normalize the red, green, and blue components and store them in the buffer.
+            // The buffer is arranged in "channel-first" order:
+            // - Red values go in the first section (0 to pixelsPerChannel)
+            // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
+            // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
+            buffer[index] = r * inv255;
+            buffer[index + pixelsPerChannel] = g * inv255;
+            buffer[index + 2 * pixelsPerChannel] = b * inv255;
+        }
 
         /// <summary>
         /// Helper method for drawing classification labels.
