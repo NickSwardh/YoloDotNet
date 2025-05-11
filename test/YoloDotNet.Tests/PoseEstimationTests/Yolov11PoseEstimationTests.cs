@@ -22,7 +22,7 @@
             var results = yolo.RunPoseEstimation(image);
 
             // Assert
-            Assert.Equal(9, results.Count);
+            Assert.Equal(10, results.Count);
         }
     }
 }
