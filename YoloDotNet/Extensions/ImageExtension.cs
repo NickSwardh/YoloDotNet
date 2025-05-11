@@ -79,52 +79,53 @@
             int quality = 100)
             => FrameSaveService.AddToQueue(image, filename, format, quality);
 
-        /// <summary>
-        /// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
-        /// The resulting image will have the specified width, height, and colorspace (RGB888x).
-        /// </summary>
-        /// <param name="image">The original image to be resized.</param>
-        /// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
-        /// <returns>A new image stretched to fit the specified dimensions.</returns>
-        public static SKBitmap ResizeImageStretched(this SKBitmap image, SKImageInfo skInfo, SKSamplingOptions samplingOptions)
-            => IsImageCompatibleWithTargetInfo(image, skInfo)
-                ? image.Copy()
-                : image.Resize(skInfo, samplingOptions);
-
-        /// <summary>
-        /// Creates a resized proportional clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
-        /// </summary>
-        /// <param name="image">The original image to be resized.</param>
-        /// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
-        /// <returns>A new image with the specified dimensions.</returns>
-        public static SKBitmap ResizeImageProportional(this SKBitmap image, SKImageInfo skInfo, SKSamplingOptions samplingOptions)
+        ///// <summary>
+        ///// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
+        ///// The resulting image will have the specified width, height, and colorspace (RGB888x).
+        ///// </summary>
+        ///// <param name="image">The original image to be resized.</param>
+        ///// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
+        ///// <returns>A new image stretched to fit the specified dimensions.</returns>
+        public static nint ResizeImageStretched(this SKBitmap skbitmap, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
-            if (IsImageCompatibleWithTargetInfo(image, skInfo))
-                return image.Copy();
+            using var image = SKImage.FromPixels(skbitmap.Info, skbitmap.GetPixels());
+            pinnedMemoryBuffer.Canvas.DrawImage(image, 0, 0, samplingOptions, ImageConfig.ResizePaint);
 
-            int modelWidth = skInfo.Width;
-            int modelHeight = skInfo.Height;
+            return pinnedMemoryBuffer.Pointer;
+        }
+
+        ///// <summary>
+        ///// Creates a resized proportional clone of the input image with new width, height, colorspace (RGB888x) and padded borders to fit the new size.
+        ///// </summary>
+        ///// <param name="image">The original image to be resized.</param>
+        ///// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
+        ///// <returns>A new image with the specified dimensions.</returns>
+        public static nint ResizeImageProportional(this SKBitmap skBitmapImage, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        {
+            using var image = SKImage.FromPixels(skBitmapImage.Info, skBitmapImage.GetPixels());
+
+            int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
+            int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
             int width = image.Width;
             int height = image.Height;
 
             // Calculate the new image size based on the aspect ratio
             float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
-            int newWidth = (int)(width * scaleFactor); // Use integer rounding instead of Math.Round
-            int newHeight = (int)(height * scaleFactor);
+            int newWidth = (int)Math.Round(width * scaleFactor); // Use integer rounding instead of Math.Round
+            int newHeight = (int)Math.Round(height * scaleFactor);
 
             // Calculate the destination rectangle within the model dimensions
             int x = (modelWidth - newWidth) / 2;
             int y = (modelHeight - newHeight) / 2;
 
-            // Create a new bitmap with the specified SKImageInfo
-            var resizedBitmap = new SKBitmap(skInfo);
+            var srcRect = new SKRect(0, 0, width, height);
+            var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
-            // Create a canvas to draw on the new bitmap
-            using var canvas = new SKCanvas(resizedBitmap);
+            //buffer.Canvas.Clear(SKColors.Black);
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions, ImageConfig.ResizePaint);
+            //buffer.Canvas.Flush();
 
-            canvas.DrawBitmap(image.Resize(new SKSizeI(newWidth, newHeight), samplingOptions), x, y);
-
-            return resizedBitmap;
+            return pinnedMemoryBuffer.Pointer;
         }
 
         private static bool IsImageCompatibleWithTargetInfo(SKBitmap image, SKImageInfo skInfo)
@@ -138,19 +139,19 @@
             return sizeMatches && colorMatches;
         }
 
-        /// <summary>
-        /// Converts the pixel values of a given image into a normalized DenseTensor object.
-        /// </summary>
-        /// <param name="resizedImage">The image from which to extract pixel values.</param>
-        /// <param name="inputShape">The shape of the input tensor.</param>
-        /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
-        /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
-        /// <returns>A DenseTensor&lt;float&gt; object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
-        unsafe public static DenseTensor<float> NormalizePixelsToTensor(this SKBitmap resizedImage,
+        ///// <summary>
+        ///// Converts the pixel values of a given image into a normalized DenseTensor object.
+        ///// </summary>
+        ///// <param name="resizedImage">The image from which to extract pixel values.</param>
+        ///// <param name="inputShape">The shape of the input tensor.</param>
+        ///// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
+        ///// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
+        ///// <returns>A DenseTensor&lt;float&gt; object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
+        unsafe public static DenseTensor<float> NormalizePixelsToTensor(this nint imagePointer,
             long[] inputShape,
             int tensorBufferSize,
             float[] tensorArrayBuffer)
-        {            
+        {
             // Deconstruct the input shape into batch size, number of channels, width, and height.
             var (batchSize, colorChannels, width, height) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
 
@@ -166,9 +167,9 @@
             float inv255 = 1.0f / 255.0f;
 
             // Lock the pixel data for fast, unsafe memory access.
-            IntPtr pixelsPtr = resizedImage.GetPixels();
+            IntPtr pixelsPtr = imagePointer;// resizedImage.GetPixels();
             byte* pixels = (byte*)pixelsPtr;
-
+            
             // Use parallelism if image is larger than 224x224
             if (width > 224 && height > 244)
             {
@@ -451,7 +452,7 @@
             };
 
             // Bounding box paint
-            using var boxPaint = new SKPaint()
+            using var boxPaint = new SKPaint
             {
                 Style = SKPaintStyle.Stroke,
                 StrokeWidth = borderThickness
@@ -655,25 +656,5 @@
         }
 
         #endregion
-
-        #region Common SKPaint objects
-
-        private static readonly SKPaint resizePaintBrush = new()
-        {
-            IsAntialias = false,
-            IsDither = true
-        };
-
-        /// <summary>
-        /// Disposes of static SKPaint objects to release unmanaged resources.
-        /// Call this at application shutdown.
-        /// </summary>
-        public static void Dispose()
-        {
-            resizePaintBrush?.Dispose();
-        }
-
-        #endregion
-
     }
 }

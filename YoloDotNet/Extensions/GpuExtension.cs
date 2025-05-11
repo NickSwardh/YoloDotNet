@@ -9,7 +9,7 @@
             OrtIoBinding ortIoBinding,
             RunOptions runOptions,
             ArrayPool<float> customSizeFloatPool,
-            SKImageInfo resizeInfo,
+            PinnedMemoryBufferPool pinnedMemoryPool,
             SKSamplingOptions samplingOptions)
         {
             // Get input shape.
@@ -43,11 +43,11 @@
             ortIoBinding.SynchronizeBoundOutputs();
 
             // Initialize.
-            session.InitializeGpu(customSizeFloatPool, resizeInfo, samplingOptions);
+            session.InitializeGpu(customSizeFloatPool, pinnedMemoryPool, samplingOptions);
         }
 
         
-        private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool, SKImageInfo resizeInfo, SKSamplingOptions samplingOptions)
+        private static void InitializeGpu(this InferenceSession session, ArrayPool<float> customSizeFloatPool, PinnedMemoryBufferPool pinnedMemoryPool, SKSamplingOptions samplingOptions)
         {
             // Get model data from session
             var inputName = session.InputNames[0];
@@ -55,37 +55,43 @@
             var dimensions = session.InputMetadata[session.InputNames[0]].Dimensions;
             var (batchSize, channels, width, height) = (dimensions[0], dimensions[1], dimensions[2], dimensions[3]);
 
-            // Create blank image for initial inference
-            //using var img = SKImage.Create(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
+            // Create blank dummy-image for initial warm-up inference
             using var img = new SKBitmap(new SKImageInfo(ImageConfig.GPU_IMG_ALLOC_SIZE, ImageConfig.GPU_IMG_ALLOC_SIZE));
-
-            using var resizedImg = img.ResizeImageProportional(resizeInfo, samplingOptions);
 
             // Prepare tensor buffer
             var tensorBufferSize = batchSize * channels * width * height;
             var tensorArrayBuffer = customSizeFloatPool.Rent(tensorBufferSize);
+            var pinnedMemoryBuffer = pinnedMemoryPool.Rent();
 
-            var normalizedTensorPixels = resizedImg.NormalizePixelsToTensor([batchSize, channels, width, height], tensorBufferSize, tensorArrayBuffer);
-
-            var inputShape = new long[]
+            try
             {
-                batchSize,  // Batches (nr of images the model can process)
-                channels,   // Total color channels the model expects
-                width,      // Required image width
-                height,     // Required image Height
-            };
+                var imagePointer = img.ResizeImageProportional(samplingOptions, pinnedMemoryBuffer);
 
-            using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, normalizedTensorPixels.Buffer, inputShape);
+                var normalizedTensorPixels = imagePointer.NormalizePixelsToTensor([batchSize, channels, width, height], tensorBufferSize, tensorArrayBuffer);
 
-            var inputNames = new Dictionary<string, OrtValue>
+                var inputShape = new long[]
+                {
+                    batchSize,  // Batches (nr of images the model can process)
+                    channels,   // Total color channels the model expects
+                    width,      // Required image width
+                    height,     // Required image Height
+                };
+
+                using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, normalizedTensorPixels.Buffer, inputShape);
+
+                var inputNames = new Dictionary<string, OrtValue>
+                {
+                    { inputName, inputOrtValue }
+                };
+
+                _ = session.Run(new RunOptions(), inputNames, outputNames);
+            }
+            finally
             {
-                { inputName, inputOrtValue }
-            };
-
-            using var ortResults = session.Run(new RunOptions(), inputNames, outputNames);
-
-            // Return array buffer to array pool for reuse.
-            customSizeFloatPool.Return(tensorArrayBuffer, true);
+                // Return buffers to pools for reuse.
+                customSizeFloatPool.Return(tensorArrayBuffer, true);
+                pinnedMemoryPool.Return(pinnedMemoryBuffer);
+            }
         }
     }
 }

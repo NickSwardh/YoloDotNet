@@ -24,6 +24,11 @@
         public static readonly SKColor ClassificationBackground
             = new(0, 0, 0, CLASSIFICATION_BOX_ALPHA);
 
+        public static readonly SKPaint ResizePaint = new()
+        {
+            IsAntialias = false,
+            IsDither = true
+        };
 
         public static readonly SKPaint PaintFill = new()
         {
@@ -42,7 +47,7 @@
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
-            Color = ImageConfig.ClassificationBackground
+            Color = ClassificationBackground
         };
 
         public static readonly SKPaint TextShadowPaint = new ()

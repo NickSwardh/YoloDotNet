@@ -18,12 +18,12 @@
         private int _tensorBufferSize;
         public ArrayPool<float> customSizeFloatPool = default!;
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
+        private PinnedMemoryBufferPool _pinnedMemoryPool = default!;
 
         private Dictionary<string, OrtValue> _inputNames = default!;
         private readonly object _progressLock = new();
 
         private SKImageInfo _imageInfo;
-
         public ParallelOptions parallelOptions = default!;
         #endregion
 
@@ -58,11 +58,13 @@
 
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
+            _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
+
             if (useCuda && allocateGpuMemory)
                 _session.AllocateGpuMemory(_ortIoBinding,
                     _runOptions,
                     customSizeFloatPool,
-                    _imageInfo,
+                    _pinnedMemoryPool,
                     YoloOptions.SamplingOptions);
 
             _inputNames = new Dictionary<string, OrtValue>
@@ -81,17 +83,19 @@
         /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
         public IDisposableReadOnlyCollection<OrtValue> Run(SKBitmap image)
         {
-            using var resizedImage = YoloOptions.ImageResize == ImageResize.Proportional
-                ? image.ResizeImageProportional(_imageInfo, YoloOptions.SamplingOptions)
-                : image.ResizeImageStretched(_imageInfo, YoloOptions.SamplingOptions);
-
             var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+            var pinnedBuffer = _pinnedMemoryPool.Rent();
 
             try
             {
                 lock (_progressLock)
                 {
-                    var tensorPixels = resizedImage.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
+
+                    var pointer = YoloOptions.ImageResize == ImageResize.Proportional
+                        ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
+                        : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
+
+                    var tensorPixels = pointer.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
                     _inputNames[OnnxModel.InputName] = inputOrtValue;
@@ -102,6 +106,7 @@
             finally
             {
                 customSizeFloatPool.Return(tensorArrayBuffer, true);
+                _pinnedMemoryPool.Return(pinnedBuffer);
             }
         }
 
@@ -242,8 +247,7 @@
             _session?.Dispose();
             _ortIoBinding?.Dispose();
             _runOptions?.Dispose();
-
-            ImageExtension.Dispose();
+            _pinnedMemoryPool?.Dispose();
 
             GC.SuppressFinalize(this);
         }

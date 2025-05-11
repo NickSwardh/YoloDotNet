@@ -18,10 +18,12 @@ global using SkiaSharp;
 global using YoloDotNet.Core;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
-global using YoloDotNet.Services;
+global using YoloDotNet.Handlers;
 global using YoloDotNet.Trackers;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Configuration;
+global using YoloDotNet.Video.Services;
+
 global using YoloDotNet.Models.Interfaces;
 
 global using YoloDotNet.Modules.V8;
