@@ -1,4 +1,6 @@
-﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
+﻿using YoloDotNet.Handlers;
+
+namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     [MemoryDiagnoser]
     public class NormalizePixelsToTensorTests
@@ -17,6 +19,9 @@
         private float[] _tensorArrayBuffer;
 
         private static SKBitmap _resizedBitmap;
+        private PinnedMemoryBufferPool _pinnedBufferPool;
+
+        private static IntPtr _imagePointer;
 
         #endregion Fields
 
@@ -37,7 +42,19 @@
 
             var imageInfo = new SKImageInfo(_cpuYolo.OnnxModel.Input.Width, _cpuYolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
-            _resizedBitmap = _image.ResizeImageProportional(imageInfo, options.SamplingOptions);
+            _pinnedBufferPool = new PinnedMemoryBufferPool(imageInfo);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _imagePointer = _image.ResizeImageProportional(options.SamplingOptions, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
+
+            //_resizedBitmap = _image.ResizeImageProportional(imageInfo, options.SamplingOptions);
 
             _tensorBufferSize = _cpuYolo.OnnxModel.Input.BatchSize * _cpuYolo.OnnxModel.Input.Channels * _cpuYolo.OnnxModel.Input.Width * _cpuYolo.OnnxModel.Input.Height;
             _customSizeFloatPool = ArrayPool<float>.Create(_tensorBufferSize + 1, 10);
@@ -51,12 +68,13 @@
             _resizedBitmap?.Dispose();
             _image?.Dispose();
             _cpuYolo?.Dispose();
+            _pinnedBufferPool?.Dispose();
         }
 
         [Benchmark]
         public void NormalizePixelsToTensor()
         {
-            _ = _resizedBitmap.NormalizePixelsToTensor(_cpuYolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
+            _ = _imagePointer.NormalizePixelsToTensor(_cpuYolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
         }
 
         #endregion Methods

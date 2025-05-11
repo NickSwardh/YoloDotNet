@@ -1,4 +1,6 @@
-﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
+﻿using YoloDotNet.Handlers;
+
+namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     [MemoryDiagnoser]
     public class ResizeImageTests
@@ -9,6 +11,7 @@
 
         private SKBitmap _image;
         private SKImageInfo _outputImageInfo;
+        private PinnedMemoryBufferPool _pinnedBufferPool;
         private readonly int _width = 240;
         private readonly int _height = 240;
 
@@ -46,7 +49,10 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgba8888, SKAlphaType.Opaque);
+
+            _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            _pinnedBufferPool = new PinnedMemoryBufferPool(_outputImageInfo);
+
             _image = SKBitmap.Decode(_testImage);
         }
 
@@ -65,7 +71,16 @@
         [Benchmark]
         public void ResizeImage_CubicMitchel()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _cubicMitchell);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_cubicMitchell, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -77,7 +92,16 @@
         [Benchmark]
         public void ResizeImage_CubicCatmullRom()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _cubicCatmullRom);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_cubicCatmullRom, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -89,7 +113,16 @@
         [Benchmark]
         public void ResizeImage_LinearWithLinearMipmap()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _linearWithLinearMipmap);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_linearWithLinearMipmap, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -101,7 +134,16 @@
         [Benchmark]
         public void ResizeImage_LinearWithNearestMipmap()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _linearWithNearestMipmap);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_linearWithNearestMipmap, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -113,7 +155,16 @@
         [Benchmark]
         public void ResizeImage_LinearNoMipmap()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _linearNoMipmap);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_linearNoMipmap, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -125,7 +176,16 @@
         [Benchmark]
         public void ResizeImage_NearestWithLinearMipmap()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _nearestWithLinearMipmap);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_nearestWithLinearMipmap, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -137,7 +197,16 @@
         [Benchmark]
         public void ResizeImage_NearestWithNearestMipmap()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _nearestWithNearestMipmap);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_nearestWithNearestMipmap, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -149,7 +218,16 @@
         [Benchmark]
         public void ResizeImage_NearestNoMipmap()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _nearestNoMipmap);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_nearestNoMipmap, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -161,7 +239,16 @@
         [Benchmark]
         public void ResizeImage_Anisotropic4x()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _anisotropic4x);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_anisotropic4x, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -173,7 +260,16 @@
         [Benchmark]
         public void ResizeImage_Anisotropic8x()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _anisotropic8x);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_anisotropic8x, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         /// <summary>
@@ -185,7 +281,16 @@
         [Benchmark]
         public void ResizeImage_Anisotropic16x()
         {
-            _ = _image.ResizeImageProportional(_outputImageInfo, _anisotropic16x);
+            var pinnedBuffer = _pinnedBufferPool.Rent();
+
+            try
+            {
+                _ = _image.ResizeImageProportional(_anisotropic16x, pinnedBuffer);
+            }
+            finally
+            {
+                _pinnedBufferPool.Return(pinnedBuffer);
+            }
         }
 
         #endregion Methods
