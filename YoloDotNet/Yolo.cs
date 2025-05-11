@@ -11,6 +11,7 @@
         private readonly IModule _detection = ModuleFactory.CreateModule(options);
         private FFmpegService _ffmpegService = default!;
         public Action<SKBitmap, long> OnVideoFrameReceived = default!;
+        public Action OnVideoEnd = default!;
         public OnnxModel OnnxModel => _detection.OnnxModel;
 
         #endregion
@@ -74,6 +75,7 @@
         {
             _ffmpegService = new(videoOptions, options);
             _ffmpegService.OnFrameReady = (frame, frameIndex) => OnVideoFrameReceived.Invoke(frame, frameIndex);
+            _ffmpegService.OnVideoEnd = () => OnVideoEnd?.Invoke();
         }
 
         public VideoMetadata GetVideoMetaData()
