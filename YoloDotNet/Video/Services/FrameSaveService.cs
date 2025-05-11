@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Services
+﻿namespace YoloDotNet.Video.Services
 {
     internal static class FrameSaveService
     {

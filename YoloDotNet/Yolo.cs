@@ -9,7 +9,7 @@
         #region Fields
 
         private readonly IModule _detection = ModuleFactory.CreateModule(options);
-        private FFMPEGService _ffmpegService = default!;
+        private FFmpegService _ffmpegService = default!;
         public Action<SKBitmap, long> OnVideoFrameReceived = default!;
         public OnnxModel OnnxModel => _detection.OnnxModel;
 
@@ -70,9 +70,9 @@
 
         #region Exposed methods for running inference on video
 
-        public void InitializeVideo(VideoOptions options)
+        public void InitializeVideo(VideoOptions videoOptions)
         {
-            _ffmpegService = new(options);
+            _ffmpegService = new(videoOptions, options);
             _ffmpegService.OnFrameReady = (frame, frameIndex) => OnVideoFrameReceived.Invoke(frame, frameIndex);
         }
 

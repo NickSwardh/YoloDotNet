@@ -1,6 +1,6 @@
-﻿namespace YoloDotNet.Services
+﻿namespace YoloDotNet.Video.Services
 {
-    internal class FFMPEGService : IDisposable
+    internal class FFmpegService : IDisposable
     {
         /// <summary>
         /// Mandatory callback that is invoked synchronously
@@ -8,6 +8,7 @@
         /// callback returns.
         /// </summary>
         public Action<SKBitmap, long>? OnFrameReady { get; set; }
+        public Action? OnVideoEnd { get; set; }
 
         private const string FFMPEG = "ffmpeg";
         private const string FFPROBE = "ffprobe";
@@ -15,7 +16,8 @@
         private Process _ffmpegDecode = default!;
         private Process _ffmpegEncode = default!;
 
-        public VideoOptions _options = default!;
+        public readonly VideoOptions _videoOptions = default!;
+        private readonly YoloOptions _yoloOptions;
         private CancellationTokenSource _cts = default!;
 
         public VideoMetadata VideoMetadata { get; set; } = default!;
@@ -24,10 +26,10 @@
         private int _videoWidth;
         private double _fps;
 
-        public FFMPEGService(VideoOptions options)
+        public FFmpegService(VideoOptions options, YoloOptions yoloOptions)
         {
-            _options = options;
-
+            _videoOptions = options;
+            _yoloOptions = yoloOptions;
             GetVideoSourceDimensions();
             InitializeFFMPEGDecode();
             InitializeFFMPEGEncode();
@@ -35,13 +37,13 @@
 
         private void GetVideoSourceDimensions()
         {
-            var metadata = GetVideoInfo(_options.VideoFile);
+            var metadata = GetVideoInfo(_videoOptions.VideoInput);
 
-            var (newWidth, newHeight) = CalculateProportionalResize(metadata, _options);
+            var (newWidth, newHeight) = CalculateProportionalResize(metadata, _videoOptions);
 
             _videoWidth = newWidth;
             _videoHeight = newHeight;
-            _fps = (_options.FPS > 0) ? _options.FPS : metadata.FPS;
+            _fps = _videoOptions.FrameRate.Value != 0 ? _videoOptions.FrameRate.Value : metadata.FPS;
 
             // Give user metadata info about selected video
             VideoMetadata = new VideoMetadata(
@@ -51,7 +53,7 @@
                 newHeight,
                 metadata.Duration,
                 metadata.FPS,
-                _options.FPS,
+                _videoOptions.FrameRate,
                 metadata.TotalFrames,
                 CalculateTargetFramesCount(metadata));
         }
@@ -81,43 +83,97 @@
 
             if (doc.RootElement.TryGetProperty("streams", out var streams))
             {
+                var test = streams.ToString();
+
                 // Prepare json string
                 var json = Regex.Replace(streams.ToString(),
-                    @"""r_frame_rate"":\s""(\d+)\/(\d+)"",\s*""duration"":\s*""(\d+(?:\.\d+)?)""",
-                    @"""frameratenumerator"": $1, ""frameratedenominator"": $2, ""duration"": $3");
+                    @"""r_frame_rate"":\s""(\d+)\/(\d+)""",
+                    @"""frameratenumerator"": $1,""frameratedenominator"": $2");
 
-                json = json.Replace("[", "")
-                    .Replace("]", "");
+                json = Regex.Replace(json.ToString(),
+                    @"(,\s*""duration"":\s*)""([1-9]\d+(?:\.\d+)?)""", "$1$2");
+
+                json = json.Replace("[", "").Replace("]", "");
 
                 return JsonSerializer.Deserialize<Metadata>(json) ?? new();
             }
-
-            return new();
+            else
+                throw new ArgumentException("The specified video stream is invalid and could not be processed. ", nameof(_videoOptions.VideoInput));
         }
 
         private void InitializeFFMPEGDecode()
-            => _ffmpegDecode = Processor.Create(FFMPEG, [
-                "-i",                       $@"""{_options.VideoFile}""",
+        {
+            var vf = _videoOptions.FrameInterval <= 0
+                ? $@"""fps={_fps.ToString("", CultureInfo.InvariantCulture)},scale={_videoWidth}:{_videoHeight}"""
+                : $@"""select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoWidth}:{_videoHeight}""";
+
+            _ffmpegDecode = Processor.Create(FFMPEG, [
+                "-i",           $@"""{_videoOptions.VideoInput}""",
                 "-an",
-                "-vf",                      $@"""fps={_fps.ToString("", CultureInfo.InvariantCulture)},scale={_videoWidth}:{_videoHeight}""",
-                //"-vf",                      $@"""select='not(mod(n,1000))',setpts=N/FRAME_RATE/TB,scale={_videoWidth}:{_videoHeight}""",
-                "-pix_fmt",                 "bgra",
-                "-vcodec",                  "rawvideo",
-                "-f",                       "image2pipe",
+                "-vf",           vf,
+                "-pix_fmt",     "bgra",
+                "-vcodec",      "rawvideo",
+                "-f",           "image2pipe",
                 "-"]); // Pipe output to YoloDotNet.
+        }
 
         private void InitializeFFMPEGEncode()
-            => _ffmpegEncode = Processor.Create(FFMPEG, [
+        {
+            // Pipe outgoing video from YoloDotNet
+            var ffmpegArgs = new List<string>
+            {
                 "-f",       "rawvideo",
                 "-pix_fmt", "bgra",
                 "-s",       $"{_videoWidth}:{_videoHeight}",
-                "-framerate", $"{_fps.ToString("", CultureInfo.InvariantCulture)}",
-                "-i",        "-", //  Pipe input from YoloDotNet.
-                "-c:v",     "h264_nvenc",
-                "-vf",      $@"""setsar=1:1""",
-                "-rc:v:0",  "vbr_hq",
-                "-cq:v",    $"{_options.Quality}",
-                "-y",       $@"""{Path.Combine(_options.OutputDir, "output.mp4")}"""]);
+            };
+
+            var framerate = $"{_fps.ToString("", CultureInfo.InvariantCulture)}";
+            var vf = $@"""setsar=1:1""";
+
+            if (_videoOptions.FrameInterval > 0)
+            {
+                framerate = $@"{(VideoMetadata.FPS / _videoOptions.FrameInterval).ToString("0.######", CultureInfo.InvariantCulture)}";
+                vf = $@"""fps={_fps},setsar=1:1""";
+            }
+
+            ffmpegArgs.AddRange([
+                "-framerate",       framerate,
+                "-i",               "-"
+                ]);
+
+            // Encode using CUDA?
+            var videoCodec = "lib264";
+            if (_yoloOptions.Cuda is true)
+            {
+                videoCodec = "h264_nvenc";
+            }
+
+            ffmpegArgs.AddRange([
+                "-c:v",         videoCodec,
+                "-vf",          vf,
+                "-rc:v:0",      "vbr_hq",
+                "-cq:v",        $"{_videoOptions.CompressionQuality}",
+                ]);
+
+            // Split video in chunks?
+            if (_videoOptions.SaveProcessedFramesToVideo == true && _videoOptions.SegmentDuration > 0)
+            {
+                ffmpegArgs.AddRange([
+                    "-g",               (_fps * 2).ToString(),
+                    "-segment_time",    _videoOptions.SegmentDuration.ToString(),
+                    "-f",               "segment",
+                    "-y",               $@"""{ Path.Combine(_videoOptions.VideoOutput, $"output_segment_%d_{DateTime.Now:yyyyMMdd_hhmmss}.mp4")}"""
+                    ]);
+            }
+            else
+            {
+                ffmpegArgs.AddRange([
+                    "-y",   $@"""{ Path.Combine(_videoOptions.VideoOutput, $"output.mp4")}"""
+                    ]);
+            }
+
+            _ffmpegEncode = Processor.Create(FFMPEG, [.. ffmpegArgs]);
+        }
 
         public void Start()
         {
@@ -137,14 +193,14 @@
             _ffmpegDecode.Start();
             _ffmpegDecode.BeginErrorReadLine();
 
-            if (_options.GenerateVideo is true)
+            if (_videoOptions.SaveProcessedFramesToVideo is true)
             {
                 _ffmpegEncode.Start();
                 _ffmpegEncode.BeginErrorReadLine();
             }
 
             using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
-            using Stream? outputStream = (_options.GenerateVideo is true)
+            using Stream? outputStream = _videoOptions.SaveProcessedFramesToVideo is true
                 ? _ffmpegEncode.StandardInput.BaseStream
                 : default!;
 
@@ -164,7 +220,10 @@
 
                         // Exit if stream reached its end.
                         if (read == 0)
+                        {
+                            OnVideoEnd?.Invoke();
                             return;
+                        }
 
                         bytesRead += read;
                     }
@@ -172,14 +231,14 @@
                     // Fill frame with pixels from ffmpeg
                     fixed (byte* ptr = buffer)
                     {
-                        frame.SetPixels((IntPtr)ptr);
+                        frame.SetPixels((nint)ptr);
                     }
 
                     // Let user process the frame...
                     OnFrameReady?.Invoke(frame, frameIndex);
 
                     // Encode frame back to video?
-                    if (_options.GenerateVideo is true)
+                    if (_videoOptions.SaveProcessedFramesToVideo is true)
                     {
                         outputStream.Write(frame.Bytes);
                     }
@@ -201,7 +260,7 @@
 
                 _ffmpegDecode.WaitForExit();
 
-                if (_options.GenerateVideo is true)
+                if (_videoOptions.SaveProcessedFramesToVideo is true)
                     _ffmpegEncode.WaitForExit();
             }
         }
@@ -213,11 +272,11 @@
             int targetWidth = options.Width;
             int targetHeight = options.Height;
 
-            targetWidth = (targetWidth == -2 || options.Width > 0)
+            targetWidth = targetWidth == -2 || options.Width > 0
                 ? options.Width
                 : originalWidth;
 
-            targetHeight = (targetHeight == -2 || options.Height > 0)
+            targetHeight = targetHeight == -2 || options.Height > 0
                 ? options.Height
                 : originalHeight;
 

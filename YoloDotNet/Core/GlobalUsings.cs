@@ -17,6 +17,7 @@ global using SkiaSharp;
 
 global using YoloDotNet.Core;
 global using YoloDotNet.Enums;
+global using YoloDotNet.Video;
 global using YoloDotNet.Models;
 global using YoloDotNet.Handlers;
 global using YoloDotNet.Trackers;
