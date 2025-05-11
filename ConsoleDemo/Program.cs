@@ -12,6 +12,7 @@ using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
 using YoloDotNet.Test.Common.Enums;
 using YoloDotNet.Trackers;
+using YoloDotNet.Video;
 
 int lineCounter = 0;
 Console.CursorVisible = false;
@@ -63,7 +64,6 @@ void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType
         _ => throw new ArgumentException("Unkown yolo version")
     };
 
-    //var imagePath = @"C:\Users\Nick\Desktop\pexels-clickerhappy-903972.jpg";// SharedConfig.GetTestImage(imageType);
     var imagePath = SharedConfig.GetTestImage(imageType);
 
     using var yolo = new Yolo(new YoloOptions()
@@ -150,13 +150,14 @@ void ObjectDetectionOnVideo()
     // Initialize video
     yolo.InitializeVideo(new VideoOptions
     {
-        VideoFile = SharedConfig.GetTestImage("walking.mp4"),
-        OutputDir = DemoSettings.OUTPUT_FOLDER,
-        GenerateVideo = true,
-        FPS = 30,
+        VideoInput = SharedConfig.GetTestImage("walking.mp4"),
+        VideoOutput = DemoSettings.OUTPUT_FOLDER,
+        SaveProcessedFramesToVideo = true,
+        FrameRate = FrameRate.AUTO,
         Width = 640, // Resize video...
         Height = -2, // -2 = automatically calculate dimensions to keep proportions
-        Quality = 30
+        CompressionQuality = 30,
+        SegmentDuration = 0,
     });
 
     var metadata = yolo.GetVideoMetaData();
@@ -169,8 +170,9 @@ void ObjectDetectionOnVideo()
 
     lineCounter += 1;
 
+    var progress = 0;
     // Subscribe to event for running inference on frames
-    yolo.OnVideoFrameReceived += (SKBitmap image, long frameIndex) =>
+    yolo.OnVideoFrameReceived = (SKBitmap image, long frameIndex) =>
     {
         // Run inference on incoming frame
         var result = yolo.RunObjectDetection(image).FilterLabels(["person"]);
@@ -184,7 +186,7 @@ void ObjectDetectionOnVideo()
         // image.Save($@"path_to_folder/frame_{frameIndex}.jpg");
 
         // Calculate progress in %
-        var progress = (int)((double)(frameIndex) / metadata.TargetTotalFrames * 100);
+        progress = (int)((double)(frameIndex) / metadata.TargetTotalFrames * 100);
 
         var str = $"{progress}% [frame {frameIndex} of {metadata.TargetTotalFrames}]";
 
@@ -192,6 +194,24 @@ void ObjectDetectionOnVideo()
         Console.Write(new string(' ', str.Length));
         Console.SetCursorPosition(messageLength, lineCounter);
         Console.Write(str);
+    };
+
+    yolo.OnVideoEnd = () =>
+    {
+        Console.WriteLine();
+
+        if (progress == 100)
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("Video processing completed successfully.");
+        }
+        else
+        {
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("Warning: Video processing did not complete successfully.");
+        }
+
+        Console.ForegroundColor = ConsoleColor.Gray;
     };
 
     // Start processing video
