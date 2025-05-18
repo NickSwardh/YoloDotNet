@@ -15,6 +15,26 @@
             => image.DrawClassificationLabels(classifications, drawConfidence, font);
 
         /// <summary>
+        /// Draws classification labels on the given <see cref="SKImage"/>, optionally including confidence scores.
+        /// This method creates and returns a new <see cref="SKBitmap"/> with the labels drawn; the original image remains unmodified.
+        /// </summary>
+        /// <param name="image">The image from which to create a bitmap before drawing the labels.</param>
+        /// <param name="classifications">A collection of classification results containing labels and confidence scores.</param>
+        /// <param name="drawConfidence">If true, confidence scores will be included in the label text.</param>
+        /// <param name="font">The typeface used to render the text. If not specified, a default font will be used.</param>
+        /// <returns>A new <see cref="SKBitmap"/> with classification labels drawn on it.</returns>
+        public static SKBitmap Draw(this SKImage image,
+            IEnumerable<Classification>? classifications,
+            bool drawConfidence = true,
+            SKTypeface font = default!)
+        {
+            var img = SKBitmap.FromImage(image);
+            img.DrawClassificationLabels(classifications, drawConfidence, font);
+
+            return img;
+        }
+
+        /// <summary>
         /// Draw bounding boxes around detected objects on the specified image.
         /// </summary>
         /// <param name="image">The image on which to draw bounding boxes.</param>
@@ -27,7 +47,30 @@
             => image.DrawBoundingBoxes(objectDetections, drawConfidence, font);
 
         /// <summary>
-        /// Draw oriented bounding boxes around detected objects on the specified image.
+        /// Draws bounding boxes around detected objects on the given <see cref="SKImage"/>, 
+        /// optionally including confidence percentages in the labels.
+        /// This method creates and returns a new <see cref="SKBitmap"/> with the boxes drawn; 
+        /// the original image remains unmodified.
+        /// </summary>
+        /// <param name="image">The image on which to draw bounding boxes.</param>
+        /// <param name="objectDetections">An enumerable collection of objects representing the detected items.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
+        /// <returns>A new <see cref="SKBitmap"/> with bounding boxes drawn on it.</returns>
+        public static SKBitmap Draw(this SKImage image,
+            IEnumerable<ObjectDetection>? objectDetections,
+            bool drawConfidence = true,
+            SKTypeface font = default!)
+        {
+            var img = SKBitmap.FromImage(image);
+            img.DrawBoundingBoxes(objectDetections, drawConfidence, font);
+
+            return img;
+        }
+
+        /// <summary>
+        /// Draws oriented bounding boxes (OBBs) around detected objects on the given <see cref="SKBitmap"/>, 
+        /// optionally including confidence percentages in the labels.
+        /// This method modifies the bitmap in place.
         /// </summary>
         /// <param name="image">The image on which to draw oriented bounding boxes.</param>
         /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
@@ -39,7 +82,31 @@
             => image.DrawOrientedBoundingBoxes(detections, drawConfidence, font);
 
         /// <summary>
-        /// Draw segmentations and bounding boxes on the specified image.
+        /// Draws oriented bounding boxes (OBBs) around detected objects on the given <see cref="SKImage"/>, 
+        /// optionally including confidence percentages in the labels.
+        /// This method creates and returns a new <see cref="SKBitmap"/> with the boxes drawn; 
+        /// the original image remains unmodified.
+        /// </summary>
+        /// <param name="image">The image on which to draw oriented bounding boxes.</param>
+        /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
+        /// <returns>
+        /// A new <see cref="SKBitmap"/> with oriented bounding boxes and optional confidence labels drawn on it.
+        /// </returns>
+        public static SKBitmap Draw(this SKImage image,
+            IEnumerable<OBBDetection>? detections,
+            bool drawConfidence = true,
+            SKTypeface font = default!)
+        {
+            var img = SKBitmap.FromImage(image);
+            img.DrawOrientedBoundingBoxes(detections, drawConfidence, font);
+
+            return img;
+        }
+
+        /// <summary>
+        /// Draws segmentation masks and bounding boxes on the specified <see cref="SKBitmap"/>.
+        /// This method modifies the bitmap in place by overlaying the selected segments and labels.
         /// </summary>
         /// <param name="image">The image on which to draw segmentations.</param>
         /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
@@ -55,6 +122,29 @@
         /// <summary>
         /// Draws pose-estimated keypoints and bounding boxes on the specified image.
         /// </summary>
+        /// <param name="image">The image on which to draw segmentations.</param>
+        /// <param name="segmentations">A list of segmentation information, including rectangles and segmented pixels.</param>
+        /// <param name="drawSegment">Specifies the segments to draw, with a default value.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
+        /// <returns>
+        /// A new <see cref="SKBitmap"/> with the selected segmentation overlays and optional confidence labels drawn.
+        /// </returns>
+        public static SKBitmap Draw(this SKImage image,
+            IEnumerable<Segmentation>? segmentations,
+            DrawSegment drawSegment = DrawSegment.Default,
+            bool drawConfidence = true,
+            SKTypeface font = default!)
+        {
+            var img = SKBitmap.FromImage(image);
+            img.DrawSegmentations(segmentations, drawSegment, drawConfidence, font);
+
+            return img;
+        }
+
+        /// <summary>
+        /// Draws pose-estimated keypoints and bounding boxes directly on the provided <see cref="SKBitmap"/>.
+        /// This method mutates the bitmap by overlaying joint points, skeleton connections, and optional bounding boxes.
+        /// </summary>
         /// <param name="image">The image on which to draw pose estimations.</param>
         /// <param name="poseEstimations">A list of pose estimations.</param>
         /// <param name="keyPointOptions">Options for drawing keypoints.</param>
@@ -65,6 +155,29 @@
             bool drawConfidence = true,
             SKTypeface font = default!)
             => image.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence, font);
+
+        /// <summary>
+        /// Draws pose-estimated keypoints and bounding boxes on a copy of the given <see cref="SKImage"/>.
+        /// This method creates and returns a new <see cref="SKBitmap"/> with the full pose visualization applied.
+        /// </summary>
+        /// <param name="image">The image on which to draw pose estimations.</param>
+        /// <param name="poseEstimations">A list of pose estimations.</param>
+        /// <param name="keyPointOptions">Options for drawing keypoints.</param>
+        /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn bounding boxes.</param>
+        /// <returns>
+        /// A new <see cref="SKBitmap"/> containing the pose estimation drawings without modifying the original <see cref="SKImage"/>.
+        /// </returns>
+        public static SKBitmap Draw(this SKImage image,
+            IEnumerable<PoseEstimation>? poseEstimations,
+            KeyPointOptions keyPointOptions,
+            bool drawConfidence = true,
+            SKTypeface font = default!)
+        {
+            var img = SKBitmap.FromImage(image);
+            img.DrawPoseEstimation(poseEstimations, keyPointOptions, drawConfidence, font);
+
+            return img;
+        }
 
         /// <summary>
         /// Saves the SKBitmap to a file with the specified format and quality.
