@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Handlers
 {
-    public class PinnedMemoryBuffer
+    public class PinnedMemoryBuffer : IDisposable
     {
         public readonly SKImageInfo ImageInfo;
         public readonly byte[] Buffer;
@@ -22,6 +22,7 @@
 
             // Wrap the pinned buffer in a SKBitmap so we can draw into it
             TargetBitmap = new SKBitmap();
+
             if (!TargetBitmap.InstallPixels(imageInfo, Pointer, imageInfo.RowBytes))
                 throw new Exception("Failed to install pixels into SKBitmap");
 

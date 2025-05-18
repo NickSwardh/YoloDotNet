@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Handlers
 {
-    public class PinnedMemoryBufferPool
+    public class PinnedMemoryBufferPool : IDisposable
     {
         internal readonly ConcurrentBag<PinnedMemoryBuffer> _pool = [];
         private readonly SKImageInfo _imageInfo;
@@ -23,14 +23,16 @@
 
         public void Return(PinnedMemoryBuffer buffer)
         {
-            buffer.TargetBitmap.Erase(SKColors.Empty);
+            //buffer.TargetBitmap.Erase(SKColors.Empty);
             _pool.Add(buffer);
         }
 
         public void Dispose()
         {
             while (_pool.TryTake(out var buffer))
-                buffer.Dispose();
+                buffer?.Dispose();
+
+            GC.SuppressFinalize(this);
         }
     }
 }
