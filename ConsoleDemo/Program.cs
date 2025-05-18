@@ -23,6 +23,7 @@ Action<ModelType, ModelVersion, ImageType, bool, bool> runDemoAction = RunDemo;
 runDemoAction(ModelType.Classification, ModelVersion.V8, ImageType.Hummingbird, false, false);
 runDemoAction(ModelType.Classification, ModelVersion.V11, ImageType.Hummingbird, false, false);
 
+runDemoAction(ModelType.ObjectDetection, ModelVersion.V5U, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V8, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V9, ImageType.Street, false, false);
 runDemoAction(ModelType.ObjectDetection, ModelVersion.V10, ImageType.Street, false, false);
@@ -56,6 +57,7 @@ void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType
 {
     var modelPath = modelVersion switch
     {
+        ModelVersion.V5U => SharedConfig.GetTestModelV5U(modelType),
         ModelVersion.V8 => SharedConfig.GetTestModelV8(modelType),
         ModelVersion.V9 => SharedConfig.GetTestModelV9(modelType),
         ModelVersion.V10 => SharedConfig.GetTestModelV10(modelType),
@@ -141,7 +143,6 @@ void ObjectDetectionOnVideo()
     using var yolo = new Yolo(new YoloOptions
     {
         OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-        ModelType = ModelType.ObjectDetection,
         Cuda = true,
         ImageResize = ImageResize.Proportional
     });
@@ -161,7 +162,7 @@ void ObjectDetectionOnVideo()
 
     var metadata = yolo.GetVideoMetaData();
 
-    var message = "Running Object Detection on video with Yolo v11: ";
+    var message = "Running Object Detection on Video with YOLOv11: ";
     var messageLength = message.Length;
 
     Console.WriteLine();
@@ -252,8 +253,7 @@ static void DisplayOnnxMetaDataExample()
 
     using var yolo = new Yolo(new YoloOptions
     {
-        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
-        ModelType = ModelType.ObjectDetection
+        OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection)
     });
 
     // Display internal ONNX properties...
