@@ -51,7 +51,6 @@ namespace WebcamDemo
             _yolo = new Yolo(new YoloOptions()
             {
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-                ModelType = ModelType.ObjectDetection,
                 Cuda = true,
                 PrimeGpu = false
             });
