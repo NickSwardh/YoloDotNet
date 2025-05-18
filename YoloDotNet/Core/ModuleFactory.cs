@@ -10,6 +10,16 @@
         new()
         {
             {
+                ModelVersion.V5U, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core =>throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV5U(core) },
+                    { ModelType.ObbDetection, core => throw new NotImplementedException() },
+                    { ModelType.Segmentation, core => throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            },
+            {
                 ModelVersion.V8, new Dictionary<ModelType, Func<YoloCore, IModule>>
                 {
                     { ModelType.Classification, core => new ClassificationModuleV8(core) },

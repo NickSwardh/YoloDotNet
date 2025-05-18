@@ -13,6 +13,18 @@
         private const string BASE_MEDIA = ASSETS_FOLDER + @"\media";
 
         /// <summary>
+        /// Test models for Yolo V5U
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string GetTestModelV5U(ModelType modelType) => modelType switch
+        {
+            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov5su.onnx"),
+            _ => throw new ArgumentException("Unknown modeltype.")
+        };
+
+        /// <summary>
         /// Test models for Yolo V8
         /// </summary>
         /// <param name="modelType"></param>

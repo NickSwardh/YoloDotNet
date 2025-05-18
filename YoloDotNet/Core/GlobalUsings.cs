@@ -27,6 +27,7 @@ global using YoloDotNet.Video.Services;
 
 global using YoloDotNet.Models.Interfaces;
 
+global using YoloDotNet.Modules.V5U;
 global using YoloDotNet.Modules.V8;
 global using YoloDotNet.Modules.V9;
 global using YoloDotNet.Modules.V10;
