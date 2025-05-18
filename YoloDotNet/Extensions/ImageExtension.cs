@@ -79,19 +79,43 @@
             int quality = 100)
             => FrameSaveService.AddToQueue(image, filename, format, quality);
 
-        ///// <summary>
-        ///// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
-        ///// The resulting image will have the specified width, height, and colorspace (RGB888x).
-        ///// </summary>
-        ///// <param name="image">The original image to be resized.</param>
-        ///// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
-        ///// <returns>A new image stretched to fit the specified dimensions.</returns>
-        public static nint ResizeImageStretched(this SKBitmap skbitmap, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        /// <summary>
+        /// Saves the SKImage to a file with the specified format and quality.
+        /// </summary>
+        /// <param name="image">The SKImage to be saved.</param>
+        /// <param name="filename">The name of the file where the image will be saved.</param>
+        /// <param name="format">The format in which the image should be saved.</param>
+        /// <param name="quality">The quality of the saved image (default is 100).</param>
+        public static void Save(this SKImage image,
+            string filename,
+            SKEncodedImageFormat format = SKEncodedImageFormat.Jpeg,
+            int quality = 100)
+            => FrameSaveService.AddToQueue(image, filename, format, quality);
+
+        /// <summary>
+        /// Resizes the input image to fit the specified dimensions by stretching it, potentially distorting the aspect ratio.
+        /// The resulting image will have the specified width, height, and colorspace (RGB888x).
+        /// </summary>
+        /// <param name="image">The original image to be resized.</param>
+        /// <param name="skInfo">The desired SKImageInfo, including the target dimensions and colorspace.</param>
+        /// <returns>A new image stretched to fit the specified dimensions.</returns>
+        public static (nint, SKSizeI) ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
-            using var image = SKImage.FromPixels(skbitmap.Info, skbitmap.GetPixels());
+            SKImage image = default!;
+
+            if (img is SKImage skImage)
+            {
+                image = skImage;
+            }
+            else if (img is SKBitmap skBitmap)
+            {
+                image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+            }
+
+            //using var image = SKImage.FromPixels(skbitmap.Info, skbitmap.GetPixels());
             pinnedMemoryBuffer.Canvas.DrawImage(image, 0, 0, samplingOptions, ImageConfig.ResizePaint);
 
-            return pinnedMemoryBuffer.Pointer;
+            return (pinnedMemoryBuffer.Pointer, new SKSizeI(image.Width, image.Height));
         }
 
         ///// <summary>
@@ -100,9 +124,18 @@
         ///// <param name="image">The original image to be resized.</param>
         ///// <param name="skInfo">The desired SKImageInfo for the resized image.</param>
         ///// <returns>A new image with the specified dimensions.</returns>
-        public static nint ResizeImageProportional(this SKBitmap skBitmapImage, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        public static (nint, SKSizeI) ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
-            using var image = SKImage.FromPixels(skBitmapImage.Info, skBitmapImage.GetPixels());
+            SKImage image = default!;
+
+            if (img is SKImage skImage)
+            {
+                image = skImage;
+            }
+            else if (img is SKBitmap skBitmap)
+            {
+                image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+            }
 
             int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
             int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
@@ -111,8 +144,10 @@
 
             // Calculate the new image size based on the aspect ratio
             float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
-            int newWidth = (int)Math.Round(width * scaleFactor); // Use integer rounding instead of Math.Round
-            int newHeight = (int)Math.Round(height * scaleFactor);
+
+            // Use integer rounding instead of Math.Round
+            int newWidth = (int)((width * scaleFactor) + 0.5f);
+            int newHeight = (int)((height * scaleFactor) + 0.5f);
 
             // Calculate the destination rectangle within the model dimensions
             int x = (modelWidth - newWidth) / 2;
@@ -121,11 +156,9 @@
             var srcRect = new SKRect(0, 0, width, height);
             var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
-            //buffer.Canvas.Clear(SKColors.Black);
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions, ImageConfig.ResizePaint);
-            //buffer.Canvas.Flush();
 
-            return pinnedMemoryBuffer.Pointer;
+            return (pinnedMemoryBuffer.Pointer, new SKSizeI(width, height));
         }
 
         private static bool IsImageCompatibleWithTargetInfo(SKBitmap image, SKImageInfo skInfo)
@@ -501,7 +534,7 @@
                 canvas.DrawText(labelText, text_x, text_y, font, ImageConfig.FontColorPaint);
 
                 // Draw tail if tracking is enabled
-                DrawTrackedTail(canvas, detection.Tail, borderThickness);
+                //DrawTrackedTail(canvas, detection.Tail, borderThickness);
             }
         }
 

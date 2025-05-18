@@ -15,6 +15,13 @@
             _frameQueue = [];
         }
 
+        /// <summary>
+        /// Add SKBitmap to queue
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="fileName"></param>
+        /// <param name="format"></param>
+        /// <param name="quality"></param>
         public static void AddToQueue(SKBitmap image,
             string fileName,
             SKEncodedImageFormat format = SKEncodedImageFormat.Jpeg,
@@ -23,6 +30,28 @@
             _memoryStream.Position = 0;
 
             image.Encode(_memoryStream, format, quality);
+            byte[] encodedBytes = _memoryStream.ToArray();
+
+            _frameQueue.Add((encodedBytes, fileName));
+        }
+
+        /// <summary>
+        /// Add SKImage to queue
+        /// </summary>
+        /// <param name="image"></param>
+        /// <param name="fileName"></param>
+        /// <param name="format"></param>
+        /// <param name="quality"></param>
+        public static void AddToQueue(SKImage image,
+            string fileName,
+            SKEncodedImageFormat format = SKEncodedImageFormat.Jpeg,
+            int quality = 100)
+        {
+            _memoryStream.Position = 0;
+
+            using var imageData = image.Encode(format, quality);
+            imageData.SaveTo(_memoryStream);
+
             byte[] encodedBytes = _memoryStream.ToArray();
 
             _frameQueue.Add((encodedBytes, fileName));

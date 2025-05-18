@@ -2,6 +2,6 @@
 {
     public interface IObjectDetectionModule : IModule
     {
-        List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence,double iou);
+        List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence,double iou);
     }
 }

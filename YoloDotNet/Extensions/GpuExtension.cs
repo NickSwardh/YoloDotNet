@@ -65,7 +65,7 @@
 
             try
             {
-                var imagePointer = img.ResizeImageProportional(samplingOptions, pinnedMemoryBuffer);
+                var (imagePointer, _) = img.ResizeImageProportional(samplingOptions, pinnedMemoryBuffer);
 
                 var normalizedTensorPixels = imagePointer.NormalizePixelsToTensor([batchSize, channels, width, height], tensorBufferSize, tensorArrayBuffer);
 

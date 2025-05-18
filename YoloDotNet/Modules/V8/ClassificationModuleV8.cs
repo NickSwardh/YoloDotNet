@@ -2,7 +2,6 @@
 {
     internal class ClassificationModuleV8 : IClassificationModule
     {
-        //private readonly ArrayPool<Classification> _classificationPool;
         private readonly YoloCore _yoloCore;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
@@ -10,13 +9,13 @@
         public ClassificationModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
-
-            //_classificationPool = ArrayPool<Classification>.Create(maxArrayLength: OnnxModel.Outputs[0].Elements + 1, maxArraysPerBucket: 10);
         }
 
-        public List<Classification> ProcessImage(SKBitmap image, double classes, double pixelConfidence, double iou)
+        public List<Classification> ProcessImage<T>(T image, double classes, double pixelConfidence, double iou)
         {
-            using var ortValues = _yoloCore.Run(image);
+            var (ortValues, _) = _yoloCore.Run(image);
+
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
             using var ort = ortValues[0];
             return ClassifyTensor(ort, (int)classes);
         }
@@ -32,12 +31,14 @@
             var span = ortTensor.GetTensorDataAsSpan<float>();
             var tmp = new Classification[span.Length];
 
+            var labels = (Span<LabelModel>)_yoloCore.OnnxModel.Labels;
+
             for (int i = 0; i < tmp.Length; i++)
             {
                 tmp[i] = new Classification
                 {
                     Confidence = span[i],
-                    Label = _yoloCore.OnnxModel.Labels[i].Name
+                    Label = labels[i].Name
                 };
             }
 

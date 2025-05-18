@@ -15,11 +15,13 @@
             _yoloCore = yoloCore;
         }
 
-        public List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using var ortValues = _yoloCore!.Run(image);
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+
             using var ort = ortValues[0];
-            var results = ObjectDetection(image, ort, confidence, iou)
+            var results = ObjectDetection(imageSize, ort, confidence, iou)
                 .Select(x => (ObjectDetection)x);
 
             return [.. results];
@@ -27,18 +29,18 @@
 
         #region Helper methods
 
-        private ObjectResult[] ObjectDetection(SKBitmap image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        private ObjectResult[] ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
             // TODO: Implement for stretched input images too.
-            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
 
             var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
 
-            var width = image.Width;
-            var height = image.Height;
+            var width = imageSize.Width;
+            var height = imageSize.Height;
 
             var ortSpan = ortTensor.GetTensorDataAsSpan<float>();
 

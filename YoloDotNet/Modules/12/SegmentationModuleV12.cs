@@ -20,7 +20,7 @@
             _segmentationModuleV8 = new SegmentationModuleV8(_yoloCore);
         }
 
-        public List<Segmentation> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
             => _segmentationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
         #region Helper methods

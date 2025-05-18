@@ -13,12 +13,14 @@
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<OBBDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
 
-            var objectDetectionResults = _objectDetectionModule.ObjectDetection(image, ortSpan, confidence, iou);
+            var objectDetectionResults = _objectDetectionModule.ObjectDetection(imageSize, ortSpan, confidence, iou);
 
             return [.. objectDetectionResults.Select(x => (OBBDetection)x)];
         }

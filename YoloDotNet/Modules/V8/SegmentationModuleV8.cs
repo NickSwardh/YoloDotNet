@@ -13,10 +13,12 @@
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<Segmentation> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            return RunSegmentation(image, ortValues, confidence, pixelConfidence, iou);
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+
+            return RunSegmentation(imageSize, ortValues, confidence, pixelConfidence, iou);
         }
 
         #region Segmentation
@@ -52,12 +54,12 @@
         /// <param name="confidence">The confidence threshold for object detection.</param>
         /// <param name="iou">The Intersection over Union (IoU) threshold for excluding bounding boxes.</param>
         /// <returns>A list of Segmentation objects corresponding to the input bounding boxes.</returns> 
-        private List<Segmentation> RunSegmentation(SKBitmap image, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double pixelConfidence, double iou)
+        private List<Segmentation> RunSegmentation(SKSizeI imageSize, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double pixelConfidence, double iou)
         {
             var ortSpan0 = ortValues[0].GetTensorDataAsSpan<float>();
             var ortSpan1 = ortValues[1].GetTensorDataAsSpan<float>();
 
-            var boundingBoxes = _objectDetectionModule.ObjectDetection(image, ortSpan0, confidence, iou);
+            var boundingBoxes = _objectDetectionModule.ObjectDetection(imageSize, ortSpan0, confidence, iou);
             var pixels = new ConcurrentBag<Pixel>();
             var croppedImage = new SKBitmap();
             var resizedBitmap = new SKBitmap();

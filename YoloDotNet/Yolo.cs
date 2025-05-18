@@ -27,6 +27,9 @@
         public List<Classification> RunClassification(SKBitmap img, int classes = 1)
             => ((IClassificationModule)_detection).ProcessImage(img, classes, 0, 0);
 
+        public List<Classification> RunClassification(SKImage img, int classes = 1)
+            => ((IClassificationModule)_detection).ProcessImage(img, classes, 0, 0);
+
         /// <summary>
         /// Run object detection on an Image.
         /// </summary>
@@ -37,6 +40,9 @@
         public List<ObjectDetection> RunObjectDetection(SKBitmap img, double confidence = 0.23, double iou = 0.7)
             => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
+        public List<ObjectDetection> RunObjectDetection(SKImage img, double confidence = 0.23, double iou = 0.7)
+             => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
+
         /// <summary>
         /// Run oriented bounding bBox detection on an image.
         /// </summary>
@@ -45,6 +51,9 @@
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
         public List<OBBDetection> RunObbDetection(SKBitmap img, double confidence = 0.23, double iou = 0.7)
+            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
+
+        public List<OBBDetection> RunObbDetection(SKImage img, double confidence = 0.23, double iou = 0.7)
             => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         /// <summary>
@@ -57,6 +66,9 @@
         public List<Segmentation> RunSegmentation(SKBitmap img, double confidence = 0.23, double pixelConfedence = 0.65, double iou = 0.7)
             => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
 
+        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.23, double pixelConfedence = 0.65, double iou = 0.7)
+            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
+
         /// <summary>
         /// Run pose estimation on an image.
         /// </summary>
@@ -67,6 +79,8 @@
         public List<PoseEstimation> RunPoseEstimation(SKBitmap img, double confidence = 0.23, double iou = 0.7)
             => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
 
+        public List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence = 0.23, double iou = 0.7)
+            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
         #endregion
 
         #region Exposed methods for running inference on video

@@ -13,23 +13,25 @@
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<PoseEstimation> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
-            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>(); ;
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
 
-            return PoseEstimateImage(image, ortSpan, confidence, iou);
+            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+
+            return PoseEstimateImage(imageSize, ortSpan, confidence, iou);
 
         }
 
         #region Helper methods
 
-        public List<PoseEstimation> PoseEstimateImage(SKBitmap image, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
+        public List<PoseEstimation> PoseEstimateImage(SKSizeI imageSize, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
         {
-            var boxes = _objectDetectionModule.ObjectDetection(image, ortSpan, threshold, overlapThrehshold);
+            var boxes = _objectDetectionModule.ObjectDetection(imageSize, ortSpan, threshold, overlapThrehshold);
 
             // TODO: Implement for stretched input images too.
-            var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(image);
+            var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(imageSize);
 
             var labels = _yoloCore.OnnxModel.Labels.Length;
             var ouputChannels = _yoloCore.OnnxModel.Outputs[0].Channels;

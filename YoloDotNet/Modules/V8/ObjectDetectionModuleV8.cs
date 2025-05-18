@@ -25,12 +25,14 @@
             _channels4 = _channels * 4;
         }
 
-        public List<ObjectDetection> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using var ortValues = _yoloCore.Run(image);
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
 
-            var results = ObjectDetection(image, ortSpan, confidence, iou)
+            var results = ObjectDetection(imageSize, ortSpan, confidence, iou)
                 .Select(x => (ObjectDetection)x);
 
             return [..results];
@@ -41,21 +43,21 @@
         /// <summary>
         /// Detects objects in a tensor and returns a ObjectDetection list.
         /// </summary>
-        /// <param name="image">The image associated with the tensor data.</param>
+        /// <param name="imageSize">The image associated with the tensor data.</param>
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetection(SKBitmap image, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
+        public ObjectResult[] ObjectDetection(SKSizeI imageSize, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
         {
             if (ortSpan == null)
                 return [];
 
-            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             var  boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
 
-            var width = image.Width;
-            var height = image.Height;
+            var width = imageSize.Width;
+            var height = imageSize.Height;
 
             try
             {

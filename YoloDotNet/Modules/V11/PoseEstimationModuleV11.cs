@@ -16,7 +16,7 @@
             _poseEstimationModuleV8 = new PoseEstimationModuleV8(_yoloCore);
         }
 
-        public List<PoseEstimation> ProcessImage(SKBitmap image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
             => _poseEstimationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
         #region Helper methods

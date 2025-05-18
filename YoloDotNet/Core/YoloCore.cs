@@ -81,7 +81,7 @@
         /// </summary>
         /// <param name="image">The input image to process.</param>
         /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
-        public IDisposableReadOnlyCollection<OrtValue> Run(SKBitmap image)
+        public (IDisposableReadOnlyCollection<OrtValue>, SKSizeI) Run<T>(T image)
         {
             var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
             var pinnedBuffer = _pinnedMemoryPool.Rent();
@@ -91,7 +91,7 @@
                 lock (_progressLock)
                 {
 
-                    var pointer = YoloOptions.ImageResize == ImageResize.Proportional
+                    var (pointer, imageSize) = YoloOptions.ImageResize == ImageResize.Proportional
                         ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
                         : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
 
@@ -99,8 +99,7 @@
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
                     _inputNames[OnnxModel.InputName] = inputOrtValue;
-
-                    return _session.Run(_runOptions, _inputNames, OnnxModel.OutputNames);
+                    return (_session.Run(_runOptions, _inputNames, OnnxModel.OutputNames), imageSize);
                 }
             }
             finally
@@ -190,22 +189,22 @@
                 : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
-        public (float, float, float, float) CalculateGain(SKBitmap image)
-            => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(image) : CalculateStretchedGain(image);
+        public (float, float, float, float) CalculateGain(SKSizeI size)
+            => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(size) : CalculateStretchedGain(size);
 
         /// <summary>
         /// Calculates the padding and scaling factor needed to adjust the bounding box
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        public (float, float, float, float) CalculateProportionalGain(SKBitmap image)
+        public (float, float, float, float) CalculateProportionalGain(SKSizeI size)
         {
             var model = OnnxModel;
 
-            var (w, h) = (image.Width, image.Height);
+            var (w, h) = (size.Width, size.Height);
 
             var gain = Math.Max((float)w / model.Input.Width, (float)h / model.Input.Height);
-            var ratio = Math.Min(model.Input.Width / (float)image.Width, model.Input.Height / (float)image.Height);
+            var ratio = Math.Min(model.Input.Width / (float)size.Width, model.Input.Height / (float)size.Height);
             var (xPad, yPad) = ((model.Input.Width - w * ratio) / 2, (model.Input.Height - h * ratio) / 2);
 
             return (xPad, yPad, gain, 0);
@@ -216,11 +215,11 @@
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        public (float, float, float, float) CalculateStretchedGain(SKBitmap image)
+        public (float, float, float, float) CalculateStretchedGain(SKSizeI size)
         {
             var model = OnnxModel;
 
-            var (w, h) = (image.Width, image.Height); // image w and h
+            var (w, h) = (size.Width, size.Height); // image w and h
             var (xGain, yGain) = (model.Input.Width / (float)w, model.Input.Height / (float)h); // x, y gains
             var (xPad, yPad) = ((model.Input.Width - w * xGain) / 2, (model.Input.Height - h * yGain) / 2); // left, right pads
 
