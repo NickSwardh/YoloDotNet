@@ -1,5 +1,8 @@
-﻿namespace YoloDotNet.Benchmarks.ClassificationTests
+﻿using Microsoft.VSDiagnostics;
+
+namespace YoloDotNet.Benchmarks.ClassificationTests
 {
+    //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
     public class SimpleClassificationTests
     {
@@ -15,7 +18,8 @@
         private Yolo _gpuYolov11;
         private Yolo _cpuYolov11;
 
-        private SKBitmap _image;
+        private SKImage _skImage;
+        private SKBitmap _skBitmap;
 
         #endregion Fields
 
@@ -26,7 +30,8 @@
         {
             var options = new YoloOptions();
 
-            _image = SKBitmap.Decode(_testImage);
+            _skBitmap = SKBitmap.Decode(_testImage);
+            _skImage = SKImage.FromEncodedData(_testImage);
 
             // Yolov8
             options.OnnxModel = _model8;
@@ -51,36 +56,68 @@
         public void GlobalCleanup()
         {
             _cpuYolov8?.Dispose();
-            _cpuYolov11?.Dispose();
             _gpuYolov8?.Dispose();
+
+            _cpuYolov11?.Dispose();
             _gpuYolov11?.Dispose();
-            _image.Dispose();
+
+            _skBitmap?.Dispose();
+            _skImage?.Dispose();
         }
 
-        // Yolov8
+        // Yolov8 CPU
         [Benchmark]
-        public void RunSimpleClassificationYolov8Cpu()
+        public void RunSimpleClassificationYolov8CpuOnSKImage()
         {
-            _ = _cpuYolov8.RunClassification(_image);
-        }
-
-        [Benchmark]
-        public void RunSimpleClassificationYolov8Gpu()
-        {
-            _ = _gpuYolov8.RunClassification(_image);
-        }
-
-        // Yolov11
-        [Benchmark]
-        public void RunSimpleClassificationYolov11Cpu()
-        {
-            _ = _cpuYolov11.RunClassification(_image);
+            _ = _cpuYolov8.RunClassification(_skImage);
         }
 
         [Benchmark]
-        public void RunSimpleClassificationYolov11Gpu()
+        public void RunSimpleClassificationYolov8CpuOnSKBitmap()
         {
-            _ = _gpuYolov11.RunClassification(_image);
+            _ = _cpuYolov8.RunClassification(_skBitmap);
+        }
+
+
+        // Yolov8 GPU
+        [Benchmark]
+        public void RunSimpleClassificationYolov8GpuOnSKImage()
+        {
+            _ = _gpuYolov8.RunClassification(_skImage);
+        }
+
+        [Benchmark]
+        public void RunSimpleClassificationYolov8GpuOnSKBitmap()
+        {
+            _ = _gpuYolov8.RunClassification(_skBitmap);
+        }
+
+
+        // Yolov11 CPU
+        [Benchmark]
+        public void RunSimpleClassificationYolov11CpuOnSKImage()
+        {
+            _ = _cpuYolov11.RunClassification(_skImage);
+        }
+
+        [Benchmark]
+        public void RunSimpleClassificationYolov11CpuOnSKBitmap()
+        {
+            _ = _cpuYolov11.RunClassification(_skBitmap);
+        }
+
+
+        // Yolov11 GPU
+        [Benchmark]
+        public void RunSimpleClassificationYolov11GpuOnSKImage()
+        {
+            _ = _gpuYolov11.RunClassification(_skImage);
+        }
+
+        [Benchmark]
+        public void RunSimpleClassificationYolov11GpuOnSKBitmap()
+        {
+            _ = _gpuYolov11.RunClassification(_skBitmap);
         }
 
         #endregion Methods
