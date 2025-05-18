@@ -18,7 +18,6 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
         private SKBitmap _image;
         private float[] _tensorArrayBuffer;
 
-        private static SKBitmap _resizedBitmap;
         private PinnedMemoryBufferPool _pinnedBufferPool;
 
         private static IntPtr _imagePointer;
@@ -46,7 +45,8 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
 
             try
             {
-                _imagePointer = _image.ResizeImageProportional(options.SamplingOptions, pinnedBuffer);
+                var (pointer, _) = _image.ResizeImageProportional(options.SamplingOptions, pinnedBuffer);
+                _imagePointer = pointer;
             }
             finally
             {
@@ -64,7 +64,7 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
         public void GlobalCleanup()
         {
             _customSizeFloatPool.Return(_tensorArrayBuffer, true);
-            _resizedBitmap?.Dispose();
+
             _image?.Dispose();
             _cpuYolo?.Dispose();
             _pinnedBufferPool?.Dispose();
