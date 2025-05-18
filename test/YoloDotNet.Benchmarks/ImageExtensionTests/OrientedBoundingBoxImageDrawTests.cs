@@ -22,7 +22,6 @@
             var options = new YoloOptions
             {
                 OnnxModel = _model,
-                ModelType = ModelType.ObbDetection,
                 Cuda = false
             };
 

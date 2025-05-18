@@ -71,7 +71,6 @@ void RunDemo(ModelType modelType, ModelVersion modelVersion, ImageType imageType
         OnnxModel = modelPath,
         Cuda = cuda,
         PrimeGpu = primeGpu,
-        ModelType = modelType,
         ImageResize = ImageResize.Proportional
         // ImageResize = ImageResize.Proportional, // default
         // SamplingOptions = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None) // default

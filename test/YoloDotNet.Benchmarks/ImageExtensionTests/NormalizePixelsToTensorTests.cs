@@ -33,7 +33,6 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
             var options = new YoloOptions
             {
                 OnnxModel = _model,
-                ModelType = ModelType.ObjectDetection,
                 Cuda = false
             };
 

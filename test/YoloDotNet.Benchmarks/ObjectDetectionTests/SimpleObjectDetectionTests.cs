@@ -34,7 +34,6 @@
 
             var options = new YoloOptions
             {
-                ModelType = ModelType.ObjectDetection,
                 Cuda = false
             };
 

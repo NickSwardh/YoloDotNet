@@ -26,10 +26,7 @@
         {
             _image = SKBitmap.Decode(_testImage);
 
-            var options = new YoloOptions
-            {
-                ModelType = ModelType.PoseEstimation,
-            };
+            var options = new YoloOptions();
 
             // Yolov8
             options.OnnxModel = _model8;

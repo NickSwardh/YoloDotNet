@@ -12,7 +12,6 @@
             var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                ModelType = ModelType.Segmentation,
                 Cuda = false
             });
 

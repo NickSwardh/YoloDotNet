@@ -3,11 +3,7 @@
     /// <summary>
     /// Initializes a new instance of the Yolo core class.
     /// </summary>
-    /// <param name="onnxModel">The path to the ONNX model file to use.</param>
-    /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
-    /// <param name="allocateGpuMemory">Indicates whether to allocate GPU memory.</param>
-    /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
-    internal class YoloCore(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId) : IDisposable
+    internal class YoloCore(YoloOptions yoloOptions) : IDisposable
     {
         #region Fields
         private bool _isDisposed;
@@ -27,27 +23,26 @@
         public ParallelOptions parallelOptions = default!;
         #endregion
 
-        public YoloOptions YoloOptions { get; private set; } = default!;
         public OnnxModel OnnxModel { get; private set; } = default!;
+        public YoloOptions YoloOptions { get => yoloOptions; init => yoloOptions = value; }
+        public ModelType ModelType => OnnxModel.ModelType;
 
         /// <summary>
         /// Initializes the YOLO model with the specified model type.
         /// </summary>
-        /// <param name="modelType">The type of the model to be initialized.</param>
-        public void InitializeYolo(YoloOptions yoloOptions)
+        public void InitializeYolo()
         {
-            YoloOptions = yoloOptions;
+            if (string.IsNullOrEmpty(YoloOptions.OnnxModel) && YoloOptions.OnnxModelBytes is null)
+                throw new ArgumentException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
 
-            _session = useCuda
-                ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
-                : new InferenceSession(onnxModel);
+            InjectModelIntoOnnxRuntime();
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
 
             OnnxModel = _session.GetOnnxProperties();
 
-            VerifyExpectedModelType(yoloOptions.ModelType);
+            VerifyExpectedModelType(ModelType);
 
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
@@ -60,7 +55,7 @@
 
             _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
 
-            if (useCuda && allocateGpuMemory)
+            if (YoloOptions.Cuda && YoloOptions.PrimeGpu)
                 _session.AllocateGpuMemory(_ortIoBinding,
                     _runOptions,
                     customSizeFloatPool,
@@ -74,6 +69,25 @@
 
             // Run frame-save service
             FrameSaveService.Start();
+        }
+
+        private void InjectModelIntoOnnxRuntime()
+        {
+            // Create session options if using CUDA
+            SessionOptions sessionOptions = new SessionOptions {
+                GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+            };
+
+            if (YoloOptions.Cuda)
+            {
+                //sessionOptions = SessionOptions.MakeSessionOptionWithCudaProvider(YoloOptions.GpuId);
+                sessionOptions.AppendExecutionProvider_CUDA(YoloOptions.GpuId);
+            }
+
+            // Create inference session from byte[] or file path
+            _session = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
+                ? new InferenceSession(YoloOptions.OnnxModelBytes, sessionOptions)
+                : new InferenceSession(YoloOptions.OnnxModel, sessionOptions);
         }
 
         /// <summary>

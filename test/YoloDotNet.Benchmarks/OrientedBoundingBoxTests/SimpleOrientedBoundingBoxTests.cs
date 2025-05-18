@@ -24,10 +24,7 @@
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var options = new YoloOptions
-            {
-                ModelType = ModelType.ObbDetection
-            };
+            var options = new YoloOptions();
 
             _image = SKBitmap.Decode(_testImage);
 
