@@ -11,9 +11,9 @@
         public string OnnxModel { get; set; } = default!;
 
         /// <summary>
-        /// Gets or sets the type of the model (e.g., detection, classification).
+        /// Gets or sets the ONNX model as a byte array.
         /// </summary>
-        public ModelType ModelType { get; set; }
+        public byte[]? OnnxModelBytes { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use CUDA for GPU acceleration (default is true).
