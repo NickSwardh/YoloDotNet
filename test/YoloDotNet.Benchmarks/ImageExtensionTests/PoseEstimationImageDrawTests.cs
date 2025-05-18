@@ -9,7 +9,8 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
         private Yolo _cpuYolo;
-        private SKBitmap _image;
+        private SKImage _skImage;
+        private SKBitmap _skBitmap;
         private List<PoseEstimation> _poseEstimations;
 
         #endregion Fields
@@ -26,24 +27,35 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKBitmap.Decode(_testImage);
-            _poseEstimations = _cpuYolo.RunPoseEstimation(_image);
+            _skBitmap = SKBitmap.Decode(_testImage);
+            _skImage = SKImage.FromEncodedData(_testImage);
+
+            // We just need one result to use for drawing.
+            _poseEstimations = _cpuYolo.RunPoseEstimation(_skImage);
         }
 
         [GlobalCleanup]
         public void CleanUp()
         {
             _cpuYolo?.Dispose();
-            _image?.Dispose();
+            _skImage?.Dispose();
+            _skBitmap?.Dispose();
         }
 
         [Params(true, false)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public void DrawPoseEstimation()
+        public void DrawPoseEstimationOnSKImage()
         {
-            _image.Draw(_poseEstimations, CustomKeyPointColorMap.KeyPointOptions, DrawConfidence);
+            // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
+            _ = _skImage.Draw(_poseEstimations, CustomKeyPointColorMap.KeyPointOptions, DrawConfidence);
+        }
+
+        [Benchmark]
+        public void DrawPoseEstimationOnSKBitmap()
+        {
+            _skBitmap.Draw(_poseEstimations, CustomKeyPointColorMap.KeyPointOptions, DrawConfidence);
         }
 
         #endregion Methods

@@ -9,7 +9,8 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
 
         private Yolo _cpuYolo;
-        private SKBitmap _image;
+        private SKImage _skImage;
+        private SKBitmap _skBitmap;
         private List<OBBDetection> _oBBDetections;
 
         #endregion Fields
@@ -26,24 +27,35 @@
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKBitmap.Decode(_testImage);
-            _oBBDetections = _cpuYolo.RunObbDetection(_image);
+            _skBitmap = SKBitmap.Decode(_testImage);
+            _skImage = SKImage.FromEncodedData(_testImage);
+
+            // We just need one result to use for drawing.
+            _oBBDetections = _cpuYolo.RunObbDetection(_skBitmap);
         }
-        
+
         [GlobalCleanup]
         public void GlobalCleanup()
         {
             _cpuYolo?.Dispose();
-            _image?.Dispose();
+            _skBitmap?.Dispose();
+            _skImage?.Dispose();
         }
 
         [Params(false, true)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
-        public void DrawOrientedBoundingBox()
+        public void DrawOrientedBoundingBoxOnSKImage()
         {
-            _image.Draw(_oBBDetections, DrawConfidence);
+            // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
+            _ = _skImage.Draw(_oBBDetections, DrawConfidence);
+        }
+
+        [Benchmark]
+        public void DrawOrientedBoundingBoxONSKBitmap()
+        {
+            _skBitmap.Draw(_oBBDetections, DrawConfidence);
         }
 
         #endregion Methods
