@@ -24,6 +24,10 @@
         public static readonly SKColor ClassificationBackground
             = new(0, 0, 0, CLASSIFICATION_BOX_ALPHA);
 
+
+        public static readonly SKColor TailPaintColorStart = SKColors.HotPink;
+        public static readonly SKColor TailPaintColorEnd = TailPaintColorStart.WithAlpha(0);
+
         public static readonly SKPaint ResizePaint = new()
         {
             IsAntialias = false,

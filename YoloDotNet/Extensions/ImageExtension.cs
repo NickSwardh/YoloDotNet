@@ -507,10 +507,6 @@
 
         private static void DrawTrackedTail(SKCanvas canvas, List<SKPoint>? tail, float tailThickness)
         {
-            // Gradient from solid color to transparent
-            var startColor = SKColors.HotPink;
-            var endColor = startColor.WithAlpha(0); // Transparent red
-
             // Bounding box paint
             using var tailPaint = new SKPaint()
             {
@@ -531,7 +527,7 @@
                 using var shader = SKShader.CreateLinearGradient(
                     tail[^1],
                     tail[0],
-                    new[] { startColor, endColor },
+                    new[] { ImageConfig.TailPaintColorStart, ImageConfig.TailPaintColorEnd }, // Gradient tail color
                     new float[] { 0, 1 },
                     SKShaderTileMode.Clamp
                 );
@@ -546,6 +542,7 @@
                     var midY = (tail[i].Y + tail[i + 1].Y) / 2;
                     path.QuadTo(tail[i].X, tail[i].Y, midX, midY);
                 }
+
                 path.QuadTo(tail[^2].X, tail[^2].Y, tail[^1].X, tail[^1].Y);
 
                 // Draw path with faded ends on canvas
