@@ -1,6 +1,7 @@
 ﻿global using System.Buffers;
 global using System.Diagnostics;
 global using System.Globalization;
+global using System.ComponentModel;
 global using System.Runtime.Serialization;
 global using System.Collections.Concurrent;
 global using System.Text.RegularExpressions;

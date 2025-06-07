@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Models
 {
-    public class Segmentation : IDetection
+    public class Segmentation : TrackingInfo, IDetection
     {
         /// <summary>
         /// Label information associated with the detected object.
@@ -21,10 +21,5 @@
         /// Segmentated pixels (x,y) with the pixel confidence value
         /// </summary>
         public Pixel[] SegmentedPixels { get; set; } = [];
-
-        public int? Id { get; set; }
-
-        public List<SKPoint>? Tail { get; set; }
-
     }
 }

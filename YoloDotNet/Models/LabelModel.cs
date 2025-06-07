@@ -14,10 +14,5 @@
         /// Name of the label.
         /// </summary>
         public string Name { get; init; } = default!;
-
-        /// <summary>
-        /// Label color in hexadecimal format.
-        /// </summary>
-        public string Color { get; init; } = default!;
     }
 }

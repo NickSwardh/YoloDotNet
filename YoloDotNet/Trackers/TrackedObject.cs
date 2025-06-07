@@ -19,13 +19,13 @@
             // Store current boundingbox center coordinate
             var box = detection.BoundingBox;
 
+            // Update tail
+            detection.Tail = _tailTracker.GetTail();
+
             _tailTracker.AddTailPoint(new SKPointI(box.MidX, box.MidY)); // Store center of boundingbox.
 
             // Update Kalman filter
             Kalman.Update(box.MidX, box.MidY);
-
-            // Update tail
-            detection.Tail = _tailTracker.GetTail();
         }
 
         public void KalmanPredict()

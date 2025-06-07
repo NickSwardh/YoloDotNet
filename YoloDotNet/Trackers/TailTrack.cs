@@ -20,6 +20,8 @@
 
         private void RemoveOldestTailPoint()
         {
+            var len = _positions.Count;
+
             if (_positions.Count >= _maxLength)
                 _positions.Dequeue(); // Remove oldest
         }

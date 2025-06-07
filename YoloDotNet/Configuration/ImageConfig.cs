@@ -16,6 +16,8 @@
         public const int SEGMENTATION_MASK_OPACITY = 80;
         public const float SEGMENTATION_PIXEL_THRESHOLD = .68f;
 
+        public const float POSE_KEYPOINT_THRESHOLD = 0.65f;
+
         // Image size used for GPU memory allocation.
         public const int GPU_IMG_ALLOC_SIZE = 1080;
 
@@ -24,9 +26,19 @@
         public static readonly SKColor ClassificationBackground
             = new(0, 0, 0, CLASSIFICATION_BOX_ALPHA);
 
-
-        public static readonly SKColor TailPaintColorStart = SKColors.HotPink;
+        public static readonly float TailThickness = 4f;
+        public static readonly SKColor TailPaintColorStart = new(255, 91, 0); // #FF5B00 - Flamboyant Tailgunner Orange
         public static readonly SKColor TailPaintColorEnd = TailPaintColorStart.WithAlpha(0);
+
+        public static readonly SKColor PoseMarkerColor = new(255, 246, 51, DEFAULT_OPACITY); // #FFF633 - Goblin Torchlight Yellow
+
+        public static readonly SKSamplingOptions DefaultSamplingOptions = new (SKFilterMode.Linear, SKMipmapMode.None);
+
+        public static readonly SKFont DefaultFont = new()
+        {
+            Size = FONT_SIZE,
+            Typeface = SKTypeface.Default
+        };
 
         public static readonly SKPaint ResizePaint = new()
         {
@@ -47,17 +59,27 @@
             Color = SKColors.White
         };
 
-        public static readonly SKPaint ClassificationBackgroundPaint = new ()
+        public static readonly SKPaint ClassificationBackgroundPaint = new()
         {
             Style = SKPaintStyle.Fill,
             IsAntialias = true,
             Color = ClassificationBackground
         };
 
-        public static readonly SKPaint TextShadowPaint = new ()
+        public static readonly SKPaint TextShadowPaint = new()
         {
             Color = new SKColor(0, 0, 0, DEFAULT_OPACITY),
             IsAntialias = true
         };
+
+        public static readonly SKPaint EdgeBlur = new ()
+        {
+            ImageFilter = SKImageFilter.CreateBlur(0.8f, 0.8f)
+        };
+
+        public static readonly ClassificationDrawingOptions DefaultClassificationDrawingOptions = new();
+        public static readonly DetectionDrawingOptions DefaultDetectionDrawingOptions = new();
+        public static readonly PoseDrawingOptions DefaultPoseDrawingOptions = new();
+        public static readonly SegmentationDrawingOptions DefaultSegmentationDrawingOptions = new();
     }
 }

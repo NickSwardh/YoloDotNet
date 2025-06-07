@@ -102,7 +102,7 @@
                 resizedBitmap = new SKBitmap(bboxWidth, bboxHeight, SKColorType.Gray8, SKAlphaType.Opaque);
                 using var recanvas = new SKCanvas(resizedBitmap);
 
-                recanvas.DrawBitmap(croppedImage.Resize(new SKSizeI(bboxWidth, bboxHeight), new SKSamplingOptions(4)), 0, 0);
+                recanvas.DrawBitmap(croppedImage.Resize(new SKSizeI(bboxWidth, bboxHeight), ImageConfig.DefaultSamplingOptions), 0, 0);
 
                 pixels.Clear();
                 GetPixelsFromCroppedMask(resizedBitmap, pixelThreshold, pixels, box);
@@ -183,11 +183,10 @@
             var boundingBoxY = box.BoundingBox.Top;
 
             IntPtr resizedPtr = resizedBitmap.GetPixels();
+            byte* resizedPixelData = (byte*)resizedPtr.ToPointer();
 
             Parallel.For(0, resizedBitmap.Height, _yoloCore.parallelOptions, y =>
             {
-                byte* resizedPixelData = (byte*)resizedPtr.ToPointer();
-
                 for (int x = 0; x < resizedBitmap.Width; x++)
                 {
                     int index = y * resizedBitmap.Width + x;

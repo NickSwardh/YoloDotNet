@@ -9,6 +9,7 @@
         /// <returns>An instance of OnnxModel containing extracted metadata properties.</returns>
         public static OnnxModel GetOnnxProperties(this InferenceSession session)
         {
+            
             var metaData = session.ModelMetadata.CustomMetadataMap;
 
             var modelType = GetModelType(metaData[NameOf(MetaData.Task)]);
@@ -52,16 +53,11 @@
                 .Select(x => x.Split(": "))
                 .ToDictionary(x => int.Parse(x[0]), x => x[1]);
 
-            var colors = modelType == ModelType.Classification
-                ? [YoloDotNetColors.Default()]
-                : YoloDotNetColors.Get();
-
-            return onnxLabels!.Select((label, index) => new LabelModel
+            return [.. onnxLabels!.Select((label, index) => new LabelModel
             {
                 Index = index,
                 Name = label.Value,
-                Color = colors[index % colors.Length] // Repeat colors if there are more labels than colors.
-            }).ToArray();
+            })];
         }
 
         private static string NameOf(dynamic metadata)
