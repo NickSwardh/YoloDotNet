@@ -176,8 +176,18 @@
             else if (img is SKBitmap skBitmap)
                 image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
 
-            pinnedMemoryBuffer.Canvas.DrawImage(image, 0, 0, samplingOptions, ImageConfig.ResizePaint);
+            int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
+            int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
 
+            var srcRect = new SKRect(0, 0, image.Width, image.Height);
+            var destRect = new SKRect(0, 0, modelWidth, modelHeight);
+
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions, ImageConfig.ResizePaint);
+
+            // Return a tuple containing:
+            // - The pointer to the resized image in memory
+            // - The original image dimensions, which are required to correctly scale bounding boxes
+            //   back to the input image size.
             return (pinnedMemoryBuffer.Pointer, new SKSizeI(image.Width, image.Height));
         }
 
@@ -222,6 +232,10 @@
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions, ImageConfig.ResizePaint);
 
+            // Return a tuple containing:
+            // - The pointer to the resized image in memory
+            // - The original image dimensions, which are required to correctly scale bounding boxes
+            //   back to the input image size.
             return (pinnedMemoryBuffer.Pointer, new SKSizeI(width, height));
         }
 
