@@ -45,7 +45,7 @@
         /// Duration of each video segment in seconds. The video will be split into chunks of this length.
         /// Default is 600 (10 minutes).
         /// </summary>
-        public int SegmentDuration { get; set; } = 600;
+        public int VideoChunkDuration { get; set; } = 600;
 
         /// <summary>
         /// Compression quality for the output video (0–51). Lower is better quality. Default is 30.
