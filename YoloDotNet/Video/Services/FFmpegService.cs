@@ -22,9 +22,9 @@
 
         public VideoMetadata VideoMetadata { get; set; } = default!;
 
-        private int _videoHeight;
-        private int _videoWidth;
-        private double _fps;
+        private int _videoTargetHeight;
+        private int _videoTargetWidth;
+        private double _videoTargetfps;
 
         public FFmpegService(VideoOptions options, YoloOptions yoloOptions)
         {
@@ -37,13 +37,36 @@
 
         private void GetVideoSourceDimensions()
         {
+            if (_videoOptions.VideoInput.Contains(":"))
+            {
+                var (deviceName, width, height, fps) = GetDeviceInfo();
+
+                _videoTargetfps = fps;
+                (_videoTargetWidth, _videoTargetHeight) = CalculateProportionalResize(new Metadata { Width = width, Height = height }, _videoOptions);
+
+                // Give user metadata info about selected video
+                VideoMetadata = new VideoMetadata(
+                    width,
+                    height,
+                    _videoTargetWidth,
+                    _videoTargetHeight,
+                    0,
+                    _videoTargetfps,
+                    _videoTargetfps,
+                    0,
+                    0,
+                    deviceName);
+
+                return;
+            }
+
             var metadata = GetVideoInfo(_videoOptions.VideoInput);
 
             var (newWidth, newHeight) = CalculateProportionalResize(metadata, _videoOptions);
 
-            _videoWidth = newWidth;
-            _videoHeight = newHeight;
-            _fps = _videoOptions.FrameRate.Value != 0 ? _videoOptions.FrameRate.Value : metadata.FPS;
+            _videoTargetWidth = newWidth;
+            _videoTargetHeight = newHeight;
+            _videoTargetfps = _videoOptions.FrameRate.Value != 0 ? _videoOptions.FrameRate.Value : metadata.FPS;
 
             // Give user metadata info about selected video
             VideoMetadata = new VideoMetadata(
@@ -56,6 +79,29 @@
                 _videoOptions.FrameRate,
                 metadata.TotalFrames,
                 CalculateTargetFramesCount(metadata));
+        }
+
+        public (string, int, int, float) GetDeviceInfo()
+        {
+            try
+            {
+                var deviceInfo = _videoOptions.VideoInput.Split(':');
+
+                var deviceName = deviceInfo[0].Trim();
+                var width = int.Parse(deviceInfo[1]);
+                var height = int.Parse(deviceInfo[2]);
+                var fps = float.Parse(deviceInfo[3]);
+
+                return (deviceName, width, height, fps);
+            }
+            catch (Exception)
+            {
+                throw new ArgumentException(
+                    $"Invalid video input format. Expected format: 'DeviceName:Width:Height:FPS'. " +
+                    $"Received: '{_videoOptions.VideoInput}'. " +
+                    $"Ensure all parts are present and correctly formatted. Example: 'Camera 1:1280:720:30'.",
+                    nameof(_videoOptions.VideoInput));
+            }
         }
 
         /// <summary>
@@ -103,18 +149,40 @@
 
         private void InitializeFFMPEGDecode()
         {
-            var vf = _videoOptions.FrameInterval <= 0
-                ? $@"""fps={_fps.ToString("", CultureInfo.InvariantCulture)},scale={_videoWidth}:{_videoHeight}"""
-                : $@"""select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoWidth}:{_videoHeight}""";
+            var ffmpegArgs = new List<string>();
 
-            _ffmpegDecode = Processor.Create(FFMPEG, [
-                "-i",           $@"""{_videoOptions.VideoInput}""",
+            string inputSource = _videoOptions.VideoInput;
+
+            if (string.IsNullOrEmpty(VideoMetadata.DeviceName) is false)
+            {
+                // Select the correct input format based on platform
+                var deviceVideoFilter = SystemPlatform.GetOS() == Platform.Windows
+                    ? "dshow" // windows: Directshow
+                    : "v4l2"; // linux: Video4Linux2
+
+                ffmpegArgs.AddRange([
+                    "-f",               deviceVideoFilter,
+                    "-video_size",     $"{VideoMetadata.Width}x{VideoMetadata.Height}"]); // Force device to use full resolution
+
+                // Update input to use device
+                inputSource = $"video={VideoMetadata.DeviceName}";
+            }
+
+            // Process all frames or every nth frame?
+            var videoFilter = _videoOptions.FrameInterval <= 0
+                ? $@"""fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)},scale={_videoTargetWidth}:{_videoTargetHeight}"""
+                : $@"""select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoTargetWidth}:{_videoTargetHeight}""";
+
+            ffmpegArgs.AddRange([
+                "-i",           $@"""{inputSource}""",
                 "-an",
-                "-vf",           vf,
+                "-vf",           videoFilter,
                 "-pix_fmt",     "bgra",
                 "-vcodec",      "rawvideo",
                 "-f",           "image2pipe",
-                "-"]); // Pipe output to YoloDotNet.
+                "-"]);          // Pipe output to YoloDotNet.
+
+            _ffmpegDecode = Processor.Create(FFMPEG, [.. ffmpegArgs]);
         }
 
         private void InitializeFFMPEGEncode()
@@ -124,21 +192,21 @@
             {
                 "-f",       "rawvideo",
                 "-pix_fmt", "bgra",
-                "-s",       $"{_videoWidth}:{_videoHeight}",
+                "-s",       $"{_videoTargetWidth}:{_videoTargetHeight}",
             };
 
-            var framerate = $"{_fps.ToString("", CultureInfo.InvariantCulture)}";
+            var framerate = $"{_videoTargetfps.ToString("", CultureInfo.InvariantCulture)}";
             var vf = $@"""setsar=1:1""";
 
             if (_videoOptions.FrameInterval > 0)
             {
                 framerate = $@"{(VideoMetadata.FPS / _videoOptions.FrameInterval).ToString("0.######", CultureInfo.InvariantCulture)}";
-                vf = $@"""fps={_fps},setsar=1:1""";
+                vf = $@"""fps={_videoTargetfps},setsar=1:1""";
             }
 
             ffmpegArgs.AddRange([
-                "-framerate",       framerate,
-                "-i",               "-"
+                "-framerate",   framerate,
+                "-i",           "-"
                 ]);
 
             // Encode using CUDA?
@@ -149,18 +217,18 @@
             }
 
             ffmpegArgs.AddRange([
-                "-c:v",         videoCodec,
-                "-vf",          vf,
-                "-rc:v:0",      "vbr_hq",
-                "-cq:v",        $"{_videoOptions.CompressionQuality}",
+                "-c:v",     videoCodec,
+                "-vf",      vf,
+                "-rc:v:0",  "vbr_hq",
+                "-cq:v",    $"{_videoOptions.CompressionQuality}",
                 ]);
 
             // Split video in chunks?
-            if (_videoOptions.SaveProcessedFramesToVideo == true && _videoOptions.SegmentDuration > 0)
+            if (_videoOptions.SaveProcessedFramesToVideo == true && _videoOptions.VideoChunkDuration > 0)
             {
                 ffmpegArgs.AddRange([
-                    "-g",               (_fps * 2).ToString(),
-                    "-segment_time",    _videoOptions.SegmentDuration.ToString(),
+                    "-g",               (_videoTargetfps * 2).ToString(),
+                    "-segment_time",    _videoOptions.VideoChunkDuration.ToString(),
                     "-f",               "segment",
                     "-y",               $@"""{ Path.Combine(_videoOptions.VideoOutput, $"output_segment_%d_{DateTime.Now:yyyyMMdd_hhmmss}.mp4")}"""
                     ]);
@@ -186,7 +254,7 @@
 
         unsafe private void Run(CancellationToken cancellationToken)
         {
-            var frameSize = _videoWidth * _videoHeight * 4;
+            var frameSize = _videoTargetWidth * _videoTargetHeight * 4;
             var buffer = new byte[frameSize];
             int frameIndex = 0;
 
@@ -204,7 +272,7 @@
                 ? _ffmpegEncode.StandardInput.BaseStream
                 : default!;
 
-            var frame = new SKBitmap(_videoWidth, _videoHeight, SKColorType.Bgra8888, SKAlphaType.Opaque);
+            var frame = new SKBitmap(_videoTargetWidth, _videoTargetHeight, SKColorType.Bgra8888, SKAlphaType.Opaque);
 
             try
             {
@@ -318,7 +386,7 @@
 
         private long CalculateTargetFramesCount(Metadata metadata)
         {
-            var targetFps = _fps;
+            var targetFps = _videoTargetfps;
 
             // Look for the decimal point
             string str = targetFps.ToString("G17", CultureInfo.InvariantCulture);
