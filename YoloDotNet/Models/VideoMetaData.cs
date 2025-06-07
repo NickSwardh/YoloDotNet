@@ -9,7 +9,8 @@
         double FPS,
         double TargetFPS,
         long TotalFrames,
-        long TargetTotalFrames);
+        long TargetTotalFrames,
+        string DeviceName = default!);
 
     internal class Metadata
     {
