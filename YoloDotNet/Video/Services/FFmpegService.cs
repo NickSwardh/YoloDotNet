@@ -37,7 +37,7 @@
 
         private void GetVideoSourceDimensions()
         {
-            if (_videoOptions.VideoInput.Contains(":"))
+            if (_videoOptions.VideoInput.StartsWith("device:", StringComparison.OrdinalIgnoreCase))
             {
                 var (deviceName, width, height, fps) = GetDeviceInfo();
 
@@ -85,7 +85,8 @@
         {
             try
             {
-                var deviceInfo = _videoOptions.VideoInput.Split(':');
+                var device = _videoOptions.VideoInput.Replace("device:", "");
+                var deviceInfo = device.Split(':');
 
                 var deviceName = deviceInfo[0].Trim();
                 var width = int.Parse(deviceInfo[1]);
