@@ -136,8 +136,8 @@
                     @"""r_frame_rate"":\s""(\d+)\/(\d+)""",
                     @"""frameratenumerator"": $1,""frameratedenominator"": $2");
 
-                json = Regex.Replace(json.ToString(),
-                    @"(,\s*""duration"":\s*)""([1-9]\d+(?:\.\d+)?)""", "$1$2");
+                json = Regex.Replace(json,
+                    @"(,\s*""duration"":\s*)""([1-9](?:\d+)?(?:\.\d+)?)""", "$1$2", RegexOptions.Singleline);
 
                 json = json.Replace("[", "").Replace("]", "");
 
