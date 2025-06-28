@@ -6,12 +6,17 @@
         /// <summary>
         /// Font used for drawing labels and confidence scores.
         /// </summary>
-        public SKFont Font { get; set; } = ImageConfig.DefaultFont;
+        public SKTypeface Font { get; set; } = SKTypeface.Default;
+
+        /// <summary>
+        /// Font size.
+        /// </summary>
+        public float FontSize { get; set; } = ImageConfig.FONT_SIZE;
 
         /// <summary>
         /// Font used for drawing labels and confidence scores.
         /// </summary>
-        public SKPaint FontColor { get; set; } = ImageConfig.FontColorPaint;
+        public SKColor FontColor { get; set; } = ImageConfig.FontColor;
 
         /// <summary>
         /// Whether to enable shadow effect behind text.
