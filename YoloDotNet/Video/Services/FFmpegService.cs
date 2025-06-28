@@ -187,6 +187,9 @@
 
         private void InitializeFFMPEGEncode()
         {
+            if (string.IsNullOrEmpty(_videoOptions.VideoOutput))
+                return;
+
             // Pipe outgoing video from YoloDotNet
             var ffmpegArgs = new List<string>
             {
