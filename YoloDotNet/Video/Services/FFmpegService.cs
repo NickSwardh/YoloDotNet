@@ -228,19 +228,24 @@
                 ]);
 
             // Split video in chunks?
-            if (_videoOptions.SaveProcessedFramesToVideo == true && _videoOptions.VideoChunkDuration > 0)
+            if (_videoOptions.VideoChunkDuration > 0)
             {
+                var fullPath = Path.GetDirectoryName(_videoOptions.VideoOutput);
+                var fileName = Path.GetFileNameWithoutExtension(_videoOptions.VideoOutput);
+                var extension = Path.GetExtension(_videoOptions.VideoOutput);
+                var videoOutput = Path.Combine(fullPath!, $"{fileName}_%d_{DateTime.Now:yyyyMMdd_hhmmss}{extension}");
+
                 ffmpegArgs.AddRange([
                     "-g",               (_videoTargetfps * 2).ToString(),
-                    "-segment_time",    _videoOptions.VideoChunkDuration.ToString(),
-                    "-f",               "segment",
-                    "-y",               $@"""{ Path.Combine(_videoOptions.VideoOutput, $"output_segment_%d_{DateTime.Now:yyyyMMdd_hhmmss}.mp4")}"""
+                "-segment_time",    _videoOptions.VideoChunkDuration.ToString(),
+                "-f",               "segment",
+                "-y",               $@"""{videoOutput}"""
                     ]);
             }
             else
             {
                 ffmpegArgs.AddRange([
-                    "-y",   $@"""{ Path.Combine(_videoOptions.VideoOutput, $"output.mp4")}"""
+                    "-y",   $@"""{_videoOptions.VideoOutput}"""
                     ]);
             }
 
@@ -262,17 +267,19 @@
             var buffer = new byte[frameSize];
             int frameIndex = 0;
 
+            var shouldCreateVideo = string.IsNullOrEmpty(_videoOptions.VideoOutput) is false;
+
             _ffmpegDecode.Start();
             _ffmpegDecode.BeginErrorReadLine();
 
-            if (_videoOptions.SaveProcessedFramesToVideo is true)
+            if (shouldCreateVideo)
             {
                 _ffmpegEncode.Start();
                 _ffmpegEncode.BeginErrorReadLine();
             }
 
             using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
-            using Stream? outputStream = _videoOptions.SaveProcessedFramesToVideo is true
+            using Stream? outputStream = shouldCreateVideo
                 ? _ffmpegEncode.StandardInput.BaseStream
                 : default!;
 
@@ -310,7 +317,7 @@
                     OnFrameReady?.Invoke(frame, frameIndex);
 
                     // Encode frame back to video?
-                    if (_videoOptions.SaveProcessedFramesToVideo is true)
+                    if (shouldCreateVideo)
                     {
                         outputStream.Write(frame.Bytes);
                     }
@@ -332,7 +339,7 @@
 
                 _ffmpegDecode.WaitForExit();
 
-                if (_videoOptions.SaveProcessedFramesToVideo is true)
+                if (shouldCreateVideo)
                     _ffmpegEncode.WaitForExit();
             }
         }
