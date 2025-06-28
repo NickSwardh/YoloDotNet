@@ -28,9 +28,9 @@
         public int BoundingBoxIndex { get; set; }
 
         /// <summary>
-        /// Segmented pixels coordinates (x,y) and pixel confidence value
+        /// Bit-packed mask where each bit represents a pixel with confidence above a threshold (1 = present, 0 = absent).
         /// </summary>
-        public Pixel[] SegmentedPixels { get; set; } = [];
+        public byte[] BitPackedPixelMask { get; set; } = [];
 
         /// <summary>
         /// Confidence value, X and Y coordinates for Pose Estimation key points
@@ -63,7 +63,7 @@
             Label = result.Label,
             Confidence = result.Confidence,
             BoundingBox = result.BoundingBox,
-            SegmentedPixels = result.SegmentedPixels
+            BitPackedPixelMask = result.BitPackedPixelMask
         };
 
         public static explicit operator PoseEstimation(ObjectResult result) => new()

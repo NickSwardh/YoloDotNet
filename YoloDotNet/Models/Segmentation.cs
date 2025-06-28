@@ -18,8 +18,9 @@
         public SKRectI BoundingBox { get; init; }
 
         /// <summary>
-        /// Segmentated pixels (x,y) with the pixel confidence value
+        /// Bit-packed mask where each bit represents a pixel with confidence above a threshold (1 = present, 0 = absent).
+        /// Can be unpacked to an <see cref="SKBitmap"/> using the <c>UnpackToBitmap</c> extension method.
         /// </summary>
-        public Pixel[] SegmentedPixels { get; set; } = [];
+        public byte[] BitPackedPixelMask { get; set; } = [];
     }
 }
