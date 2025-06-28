@@ -51,10 +51,5 @@
         /// Compression quality for the output video (0–51). Lower is better quality. Default is 30.
         /// </summary>
         public int CompressionQuality { get; set; } = 30;
-
-        /// <summary>
-        /// Save the processed frames back to a video file
-        /// </summary>
-        public bool SaveProcessedFramesToVideo { get; set; }
     }
 }
