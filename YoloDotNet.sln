@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OBBDetectionDemo", "Demo\OB
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassificationDemo", "Demo\ClassificationDemo\ClassificationDemo.csproj", "{3D6F31A3-C2DB-4F18-9117-32C885AD1ACF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoseEstimationDemo", "Demo\PoseEstimationDemo\PoseEstimationDemo.csproj", "{018E3DF2-6156-4ABF-8414-5BDE25564B1D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
