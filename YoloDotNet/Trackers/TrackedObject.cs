@@ -1,20 +1,17 @@
 ﻿namespace YoloDotNet.Trackers
 {
-    public class TrackedObject(IDetection boundingBox, int trackCounter, int tailLength = 30)
+    public class TrackedObject(IDetection boundingBox, int tailLength = 30)
     {
         public IDetection BoundingBox { get; private set; } = boundingBox;
         public int Age { get; set; } = 0;
-        public int TrackCounter { get; set; } = trackCounter;
         public KalmanFilter Kalman { get; private set; } = new KalmanFilter(boundingBox.BoundingBox.MidX, boundingBox.BoundingBox.MidY);
 
         private readonly TailTrack _tailTracker = new(tailLength);
 
-        public void TrackBoundingBox(IDetection detection, int trackCounter)
+        public void TrackBoundingBox(IDetection detection)
         {
             // Update boundingbox
             BoundingBox = detection;
-
-            TrackCounter = trackCounter;
 
             // Store current boundingbox center coordinate
             var box = detection.BoundingBox;
