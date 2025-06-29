@@ -1,4 +1,4 @@
-This project is © 2023 Nick Swardh (https://github.com/NickSwardh)
+YoloDotNet is © 2023 Nick Swardh (https://github.com/NickSwardh)
 It is licensed under the GNU General Public License, version 3 or (at your option) any later version.
 
 ------------------------------------------------------------------------
