@@ -1,3 +1,10 @@
+This project is © 2023 Nick Swardh (https://github.com/NickSwardh)
+It is licensed under the GNU General Public License, version 3 or (at your option) any later version.
+
+------------------------------------------------------------------------
+The following is the full text of the GNU General Public License v3.0:
+------------------------------------------------------------------------
+
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
