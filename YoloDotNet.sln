@@ -24,6 +24,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebcamDemo", "WebcamDemo\We
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OBBDetectionDemo", "Demo\OBBDetectionDemo\OBBDetectionDemo.csproj", "{622D9114-A76D-4EAD-B13A-5740DCD2DAD7}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClassificationDemo", "Demo\ClassificationDemo\ClassificationDemo.csproj", "{3D6F31A3-C2DB-4F18-9117-32C885AD1ACF}"
 EndProject
 Global
