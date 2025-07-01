@@ -11,8 +11,6 @@ global using YoloDotNet.Test.Common;
 global using YoloDotNet.Configuration;
 global using YoloDotNet.Test.Common.Enums;
 
-global using ConsoleDemo.Config;
-
 global using SkiaSharp;
 
 global using BenchmarkDotNet.Configs;
