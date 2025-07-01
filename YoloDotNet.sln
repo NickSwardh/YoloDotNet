@@ -20,7 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5FF17268-4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C5DF82EF-FED8-4308-A10F-F34E9B714CCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebcamDemo", "WebcamDemo\WebcamDemo.csproj", "{96728CA4-2237-42B2-A251-F701AA146508}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebcamDemo", "Demo\WebcamDemo\WebcamDemo.csproj", "{96728CA4-2237-42B2-A251-F701AA146508}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "demo", "demo", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 EndProject
@@ -33,6 +33,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoseEstimationDemo", "Demo\PoseEstimationDemo\PoseEstimationDemo.csproj", "{018E3DF2-6156-4ABF-8414-5BDE25564B1D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SegmentationDemo", "Demo\SegmentationDemo\SegmentationDemo.csproj", "{08C3B129-D8FA-4904-A2DA-27CFC5E8FD5E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoStreamDemo", "Demo\VideoStreamDemo\VideoStreamDemo.csproj", "{71839C4A-BD99-480E-B6DA-8B16CB2AD41F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
