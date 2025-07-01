@@ -29,7 +29,7 @@
             = new(0, 0, 0, CLASSIFICATION_BOX_ALPHA);
 
         public static readonly float TailThickness = 4f;
-        public static readonly SKColor TailPaintColorStart = new (255, 91, 0); // #FF5B00 - Flamboyant Tailgunner Orange
+        public static readonly SKColor TailPaintColorStart = new(255, 105, 180);  // #FF69B4 - Blazing Bubblegum Bomber Pink
         public static readonly SKColor TailPaintColorEnd = TailPaintColorStart.WithAlpha(0);
 
         public static readonly SKColor PoseMarkerColor = new (255, 246, 51, DEFAULT_OPACITY); // #FFF633 - Goblin Torchlight Yellow
