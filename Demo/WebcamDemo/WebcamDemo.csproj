@@ -12,12 +12,13 @@
   <ItemGroup>
     <PackageReference Include="Emgu.CV.Bitmap" Version="4.10.0.5680" />
     <PackageReference Include="Emgu.CV.runtime.windows" Version="4.10.0.5680" />
-    <PackageReference Include="SkiaSharp.Views.WPF" Version="2.88.9" />
+    <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\test\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
-    <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />
+    <ProjectReference Include="..\..\test\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
+    <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
   </ItemGroup>
+
 
 </Project>
