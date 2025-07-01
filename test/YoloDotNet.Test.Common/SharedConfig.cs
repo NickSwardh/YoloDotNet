@@ -11,6 +11,7 @@
         private const string ASSETS_FOLDER = @".\assets";
         private const string BASE_MODELS = ASSETS_FOLDER + @"\models";
         private const string BASE_MEDIA = ASSETS_FOLDER + @"\media";
+        private static readonly string ABSOLUTE_PATH = GetAbsolutePath();
 
         /// <summary>
         /// Test models for Yolo V5U
@@ -95,7 +96,7 @@
         /// <summary>
         /// Test images
         /// </summary>
-        /// <param name="modelType"></param>
+        /// <param name="imageType"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestImage(ImageType imageType) => imageType switch
@@ -105,8 +106,32 @@
             ImageType.People => Path.Combine(BASE_MEDIA, "people.jpg"),
             ImageType.Crosswalk => Path.Combine(BASE_MEDIA, "crosswalk.jpg"),
             ImageType.Island => Path.Combine(BASE_MEDIA, "island.jpg"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            _ => throw new ArgumentException("Unknown ImageType.")
         };
+
+        /// <summary>
+        /// Test Videos
+        /// </summary>
+        /// <param name="videoType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string GetTestVideo(VideoType videoType) => videoType switch
+        {
+            VideoType.PeopleWalking => Path.Combine(ABSOLUTE_PATH, "walking.mp4"),
+            _ => throw new ArgumentException("Unknown VideoType.")
+        };
+
+        private static string GetAbsolutePath()
+        {
+            var path = new DirectoryInfo(AppContext.BaseDirectory)
+                .Parent
+                .Parent
+                .Parent
+                .Parent
+                .Parent.FullName;
+
+            return Path.Combine(path, @"test\assets\media");
+        }
 
         public static string GetTestImage(string imageName) => Path.Combine(BASE_MEDIA, imageName);
     }
