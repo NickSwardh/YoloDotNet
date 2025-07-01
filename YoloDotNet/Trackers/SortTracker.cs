@@ -27,6 +27,10 @@
                 return;
             }
 
+            // If there is nothing to track, no further processing needed...
+            if (detections.Count == 0)
+                return;
+
             // Predict new positions using Kalman Filter
             foreach (var trackedObject in _trackedObjects.Values)
                 trackedObject.KalmanPredict();
