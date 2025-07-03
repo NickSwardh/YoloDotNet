@@ -1,6 +1,4 @@
-﻿using YoloDotNet.Handlers;
-
-namespace YoloDotNet.Benchmarks.ImageExtensionTests
+﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     //[CPUUsageDiagnoser]
     [MemoryDiagnoser]

@@ -1,5 +1,6 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
+    //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
     public class ClassificationImageDrawTests
     {
@@ -42,19 +43,19 @@
             _skBitmap?.Dispose();
         }
 
-        [Params(true,false)]
+        [Params(true, false)]
         public bool DrawConfidence { get; set; }
 
         [Benchmark]
         public void DrawClassificationOnSKImage()
         {
-            _skImage.Draw(_classifications, DrawConfidence);
+            _skImage.Draw(_classifications);
         }
 
         [Benchmark]
         public void DrawClassificationOnSKBitmap()
         {
-            _skBitmap.Draw(_classifications, DrawConfidence);
+            _skBitmap.Draw(_classifications);
         }
 
         #endregion Methods

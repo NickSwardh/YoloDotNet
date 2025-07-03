@@ -1,5 +1,6 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
+    //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
     public class OrientedBoundingBoxImageDrawTests
     {
@@ -49,13 +50,13 @@
         public void DrawOrientedBoundingBoxOnSKImage()
         {
             // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
-            _ = _skImage.Draw(_oBBDetections, DrawConfidence);
+            _ = _skImage.Draw(_oBBDetections);
         }
 
         [Benchmark]
         public void DrawOrientedBoundingBoxONSKBitmap()
         {
-            _skBitmap.Draw(_oBBDetections, DrawConfidence);
+            _skBitmap.Draw(_oBBDetections);
         }
 
         #endregion Methods

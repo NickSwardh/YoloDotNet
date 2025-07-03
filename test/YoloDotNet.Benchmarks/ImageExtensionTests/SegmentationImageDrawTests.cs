@@ -1,5 +1,6 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
+    //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
     public class SegmentationImageDrawTests
     {
@@ -42,9 +43,6 @@
             _skImage?.Dispose();
         }
 
-        [Params(DrawSegment.Default, DrawSegment.PixelMaskOnly, DrawSegment.BoundingBoxOnly)]
-        public DrawSegment DrawSegmentType { get; set; }
-
         /// <summary>
         /// Draw on an SKImage.
         /// </summary>
@@ -52,7 +50,7 @@
         public void DrawSegmentationOnSkImage()
         {
             // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
-            _ = _skImage.Draw(_segmentations, DrawSegmentType);
+            _ = _skImage.Draw(_segmentations);
         }
 
         /// <summary>
@@ -61,7 +59,7 @@
         [Benchmark]
         public void DrawSegmentationOnSKBitmap()
         {
-            _skBitmap.Draw(_segmentations, DrawSegmentType);
+            _skBitmap.Draw(_segmentations);
         }
 
         #endregion Methods

@@ -1,6 +1,4 @@
-﻿using Microsoft.VSDiagnostics;
-
-namespace YoloDotNet.Benchmarks.ClassificationTests
+﻿namespace YoloDotNet.Benchmarks.ClassificationTests
 {
     //[CPUUsageDiagnoser]
     [MemoryDiagnoser]

@@ -1,9 +1,7 @@
-﻿using Microsoft.VSDiagnostics;
-
-namespace YoloDotNet.Benchmarks.ImageExtensionTests
+﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
-    //[MemoryDiagnoser]
-    [CPUUsageDiagnoser]
+    //[CPUUsageDiagnoser]
+    [MemoryDiagnoser]
     public class ObjectDetectionImageDrawTests
     {
         #region Fields
@@ -45,21 +43,17 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
             _skImage?.Dispose();
         }
 
-        [Params(false, true)]
-        public bool DrawConfidence { get; set; }
-
-
-        [Benchmark(Baseline = true)]
+        [Benchmark]
         public void DrawObjectDetectionOnSKImage()
         {
             // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
-            _ = _skImage.Draw(_objectDetections, DrawConfidence);
+            _ = _skImage.Draw(_objectDetections);
         }
 
-        [Benchmark(Baseline = true)]
+        [Benchmark]
         public void DrawObjectDetectionOnSKBitmap()
         {
-            _skBitmap.Draw(_objectDetections, DrawConfidence);
+            _skBitmap.Draw(_objectDetections);
         }
 
         #endregion Methods

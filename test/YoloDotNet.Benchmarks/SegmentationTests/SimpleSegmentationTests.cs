@@ -1,5 +1,6 @@
 ﻿namespace YoloDotNet.Benchmarks.SegmentationTests
 {
+    //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
     public class SimpleSegmentationTests
     {
