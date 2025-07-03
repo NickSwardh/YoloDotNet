@@ -11,17 +11,23 @@ using YoloDotNet.Test.Common.Enums;
 namespace ClassificationDemo
 {
     /// <summary>
-    /// Demonstrates image classification using the YoloDotNet library.
+    /// Demonstrates image classification on static images using the YoloDotNet library.
     /// 
-    /// This demo loads a sample image, runs classification inference to identify the top class,
-    /// draws the classification result on the image, and saves the output to disk.
+    /// This demo loads a sample image, runs classification inference to identify the most probable class(es),
+    /// draws the classification labels and confidence scores on the image,
+    /// and saves the annotated image to disk.
     /// 
-    /// It showcases:
-    /// - Model initialization with custom options
-    /// - Image preprocessing and resizing
-    /// - Running classification inference
-    /// - Rendering results on images
-    /// - Saving annotated images to an output folder
+    /// Features included:
+    /// - Model initialization with configurable hardware acceleration and image preprocessing settings
+    /// - Static image classification inference with configurable top-N class results
+    /// - Rendering of classification labels and confidence scores with customizable drawing options
+    /// - Saving output images with quality control and automated output folder creation
+    /// - Console reporting of classification results with label and confidence display
+    /// 
+    /// Important notes:
+    /// - CUDA (GPU acceleration) is disabled by default but can be enabled for faster inference.
+    /// - ClassificationDrawingOptions allows customization of font, color, scaling, and label background.
+    /// - The number of classes to return can be limited to focus on the most confident predictions.
     /// </summary>
     internal class Program
     {

@@ -10,6 +10,26 @@ using YoloDotNet.Test.Common.Enums;
 
 namespace PoseEstimationDemo
 {
+    /// <summary>
+    /// Demonstrates pose estimation on static images using the YoloDotNet library.
+    /// 
+    /// This demo loads a sample image, runs pose estimation inference to detect human keypoints and skeletal structure,
+    /// draws the detected poses with keypoints, connections, bounding boxes, labels, and confidence scores,
+    /// and saves the annotated image to disk.
+    /// 
+    /// Highlights of this demo include:
+    /// - Model initialization with configurable hardware acceleration and image preprocessing options
+    /// - Static image pose estimation inference returning detailed keypoints for detected persons
+    /// - Flexible drawing options for rendering keypoints, skeleton connections, bounding boxes, labels, and confidence
+    /// - Support for custom keypoint markers and confidence thresholds
+    /// - Saving output images with quality control and automated output folder management
+    /// - Console reporting of detected poses and their confidence scores
+    /// 
+    /// Important notes:
+    /// - CUDA (GPU acceleration) is disabled by default here but can be enabled for improved performance.
+    /// - PoseDrawingOptions allows customization of font, colors, opacity, keypoint visualization, and more.
+    /// - Tail visualization for tracking motion paths is referenced but not enabled in this static image example.
+    /// </summary>
     internal class Program
     {
         private static string _outputFolder = default!;

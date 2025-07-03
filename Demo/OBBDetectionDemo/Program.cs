@@ -8,9 +8,26 @@ using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
 using YoloDotNet.Test.Common.Enums;
 
-
 namespace OBBDetectionDemo
 {
+    /// <summary>
+    /// Demonstrates oriented bounding box (OBB) detection on static images using the YoloDotNet library.
+    ///
+    /// This demo loads a sample image, runs object detection with oriented bounding boxes (OBBs),
+    /// draws the results (rotated bounding boxes, labels, confidence scores),
+    /// and saves the processed image to disk.
+    ///
+    /// It showcases:
+    /// - Model initialization with configurable hardware and preprocessing options
+    /// - Static image inference for detecting objects with OBBs
+    /// - Customizable rendering of detection results, including labels, confidence scores, and rotated boxes
+    /// - Saving annotated output to disk
+    /// - Console reporting of inference results
+    ///
+    /// Note:
+    /// - CUDA (GPU acceleration) is disabled by default but can be enabled for faster inference.
+    /// - The demo creates an output folder on the desktop to store processed results.
+    /// </summary>
     internal class Program
     {
         private static string _outputFolder = default!;

@@ -10,6 +10,24 @@ using YoloDotNet.Test.Common.Enums;
 
 namespace ObjectDetectionDemo
 {
+    /// <summary>
+    /// Demonstrates object detection on static images using the YoloDotNet library.
+    ///
+    /// This demo loads a sample image, runs object detection to detect axis-aligned bounding boxes,
+    /// draws the results (bounding boxes, labels, confidence scores),
+    /// and saves the processed image to disk.
+    ///
+    /// It showcases:
+    /// - Model initialization with configurable hardware and preprocessing options
+    /// - Static image inference for detecting objects with standard bounding boxes
+    /// - Customizable rendering of detection results, including labels, confidence scores, and boxes
+    /// - Saving annotated output to disk
+    /// - Console reporting of inference results
+    ///
+    /// Note:
+    /// - CUDA (GPU acceleration) is disabled by default but can be enabled for faster inference.
+    /// - The demo creates an output folder on the desktop to store processed results.
+    /// </summary>
     internal class Program
     {
         private static string _outputFolder = default!;

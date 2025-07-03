@@ -10,6 +10,28 @@ using YoloDotNet.Test.Common.Enums;
 
 namespace SegmentationDemo
 {
+    /// <summary>
+    /// Demonstrates semantic segmentation on static images using the YoloDotNet library.
+    /// 
+    /// This demo loads a sample image, performs segmentation inference to detect pixel-level object masks,
+    /// draws the segmentation masks along with bounding boxes, labels, and confidence scores,
+    /// and saves the annotated image to disk.
+    /// 
+    /// Key features showcased include:
+    /// - Model initialization with flexible hardware options (CPU/GPU) and image preprocessing settings
+    /// - Static image segmentation inference with adjustable confidence and mask thresholds
+    /// - Comprehensive rendering options for segmentation masks, bounding boxes, labels, and confidence scores
+    /// - Saving output images in a standard format with customizable compression
+    /// - Console output of detected objects and their confidence levels
+    /// - Automatic creation of an output folder on the desktop to store results
+    /// 
+    /// Important notes:
+    /// - CUDA (GPU acceleration) is disabled by default but can be enabled for faster inference.
+    /// - SegmentationDrawingOptions provides extensive customization for visual output,
+    ///   including font styling, colors, opacity, and mask rendering.
+    /// - Segmentation masks are drawn as pixel-level overlays, providing precise object outlines.
+    /// - Tail visualization for tracking is mentioned but not enabled in this static image demo.
+    /// </summary>
     internal class Program
     {
         private static string _outputFolder = default!;
