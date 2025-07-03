@@ -54,8 +54,6 @@
 
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
-            var  boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
-
             var width = imageSize.Width;
             var height = imageSize.Height;
 
@@ -124,7 +122,7 @@
 
                     if (bestConfidence > confidenceThreshold && bestLabelIndex != -1)
                     {
-                        boxes[i] = new ObjectResult
+                        _result.Add(new ObjectResult
                         {
                             Label = _yoloCore.OnnxModel.Labels[bestLabelIndex],
                             Confidence = bestConfidence,
@@ -132,21 +130,14 @@
                             BoundingBoxUnscaled = boundingBoxUnscaled,
                             BoundingBoxIndex = i,
                             OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _channels * (4 + _labels)] : 0
-                        };
+                        });
                     }
-                }
-                
-                foreach (var item in boxes)
-                {
-                    if (item != null)
-                        _result.Add(item);
                 }
 
                 return _yoloCore.RemoveOverlappingBoxes([.. _result], overlapThreshold);
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: true);
                 _result.Clear();
             }
         }
