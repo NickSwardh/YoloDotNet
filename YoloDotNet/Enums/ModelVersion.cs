@@ -5,6 +5,7 @@
     /// </summary>
     public enum ModelVersion
     {
+        V5U,
         V8,
         V9,
         V10,

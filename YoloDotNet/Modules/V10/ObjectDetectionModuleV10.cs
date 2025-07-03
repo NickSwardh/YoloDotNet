@@ -1,8 +1,6 @@
-﻿using System;
-
-namespace YoloDotNet.Modules.V10
+﻿namespace YoloDotNet.Modules.V10
 {
-    public class ObjectDetectionModuleV10 : IObjectDetectionModule
+    internal class ObjectDetectionModuleV10 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
 
@@ -15,36 +13,34 @@ namespace YoloDotNet.Modules.V10
         public ObjectDetectionModuleV10(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
-            SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using var ortValues = _yoloCore!.Run(image);
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+
             using var ort = ortValues[0];
-            var results = ObjectDetection(image, ort, confidence, iou)
+            var results = ObjectDetection(imageSize, ort, confidence, iou)
                 .Select(x => (ObjectDetection)x);
 
             return [.. results];
         }
 
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
-
         #region Helper methods
 
-        private ObjectResult[] ObjectDetection(SKImage image, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        private ObjectResult[] ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
             // TODO: Implement for stretched input images too.
-            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
 
             var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
 
-            var width = image.Width;
-            var height = image.Height;
+            var width = imageSize.Width;
+            var height = imageSize.Height;
 
             var ortSpan = ortTensor.GetTensorDataAsSpan<float>();
 
@@ -101,19 +97,8 @@ namespace YoloDotNet.Modules.V10
             }
         }
 
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore!.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
-
         public void Dispose()
         {
-            VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _yoloCore?.Dispose();
 
             GC.SuppressFinalize(this);

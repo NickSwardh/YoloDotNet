@@ -12,11 +12,10 @@
             var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                ModelType = ModelType.PoseEstimation,
                 Cuda = false
             });
 
-            var image = SKImage.FromEncodedData(testImage);
+            using var image = SKBitmap.Decode(testImage);
 
             // Act
             var results = yolo.RunPoseEstimation(image, 0.25, 0.45);

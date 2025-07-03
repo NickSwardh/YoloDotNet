@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Models
 {
-    public class PoseEstimation : IDetection
+    public class PoseEstimation : TrackingInfo, IDetection
     {
         /// <summary>
         /// Label information associated with the detected object.

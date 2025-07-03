@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Modules.V8
 {
-    public class ObjectDetectionModuleV8 : IObjectDetectionModule
+    internal class ObjectDetectionModuleV8 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
         private static List<ObjectResult> _result = default!;
@@ -10,61 +10,52 @@
         private readonly int _channels3;
         private readonly int _channels4;
 
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-        public event EventHandler VideoStatusEvent = delegate { };
-
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
         public ObjectDetectionModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
 
-            _result = new ();
+            _result = [];
 
             _labels = _yoloCore.OnnxModel.Labels.Length;
             _channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             _channels2 = _channels * 2;
             _channels3 = _channels * 3;
             _channels4 = _channels * 4;
-
-            SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            using var ortValues = _yoloCore.Run(image);
+            var (ortValues, imageSize) = _yoloCore.Run(image);
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
 
-            var results = ObjectDetection(image, ortSpan, confidence, iou)
+            var results = ObjectDetection(imageSize, ortSpan, confidence, iou)
                 .Select(x => (ObjectDetection)x);
 
             return [..results];
         }
-
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 
         /// <summary>
         /// Detects objects in a tensor and returns a ObjectDetection list.
         /// </summary>
-        /// <param name="image">The image associated with the tensor data.</param>
+        /// <param name="imageSize">The image associated with the tensor data.</param>
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetection(SKImage image, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
+        public ObjectResult[] ObjectDetection(SKSizeI imageSize, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
         {
             if (ortSpan == null)
                 return [];
 
-            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(image);
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
-            var  boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
-
-            var width = image.Width;
-            var height = image.Height;
+            var width = imageSize.Width;
+            var height = imageSize.Height;
 
             try
             {
@@ -131,7 +122,7 @@
 
                     if (bestConfidence > confidenceThreshold && bestLabelIndex != -1)
                     {
-                        boxes[i] = new ObjectResult
+                        _result.Add(new ObjectResult
                         {
                             Label = _yoloCore.OnnxModel.Labels[bestLabelIndex],
                             Confidence = bestConfidence,
@@ -139,66 +130,20 @@
                             BoundingBoxUnscaled = boundingBoxUnscaled,
                             BoundingBoxIndex = i,
                             OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _channels * (4 + _labels)] : 0
-                        };
+                        });
                     }
-                }
-                
-                foreach (var item in boxes)
-                {
-                    if (item != null)
-                        _result.Add(item);
                 }
 
                 return _yoloCore.RemoveOverlappingBoxes([.. _result], overlapThreshold);
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: true);
                 _result.Clear();
             }
         }
 
-        /*
-        private (int, int, int, int) ScaleBoundingBoxFromStretchedImageToOriginalSize(SKImage image,
-            float x,        // bbox x coordinate
-            float y,        // bbox y coordinate
-            float w,        // bbox width
-            float h,        // bbox height
-            float xPad,       // x padding
-            float yPad,       // y padding
-            float xGain,    // x gain
-            float yGain     // y gain
-            )
-        {
-            var width = image.Width;
-            var height = image.Height;
-
-            // Scale coordinates to original image
-            var halfW = w / 2;
-            var halfH = h / 2;
-
-            int xMint = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
-            int yMint = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
-            int xMaxt = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
-            int yMaxt = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
-
-            return (xMint, yMint, xMaxt, yMaxt);
-        }
-        */
-
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore!.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
-
         public void Dispose()
         {
-            VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _yoloCore?.Dispose();
             GC.SuppressFinalize(this);
         }

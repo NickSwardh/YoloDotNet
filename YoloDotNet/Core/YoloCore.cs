@@ -3,16 +3,9 @@
     /// <summary>
     /// Initializes a new instance of the Yolo core class.
     /// </summary>
-    /// <param name="onnxModel">The path to the ONNX model file to use.</param>
-    /// <param name="useCuda">Indicates whether to use CUDA for GPU acceleration.</param>
-    /// <param name="allocateGpuMemory">Indicates whether to allocate GPU memory.</param>
-    /// <param name="gpuId">The GPU device ID to use when CUDA is enabled.</param>
-    public class YoloCore(string onnxModel, bool useCuda, bool allocateGpuMemory, int gpuId) : IDisposable
+    internal class YoloCore(YoloOptions yoloOptions) : IDisposable
     {
-        public event EventHandler VideoStatusEvent = delegate { };
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-
+        #region Fields
         private bool _isDisposed;
 
         private InferenceSession _session = default!;
@@ -21,33 +14,35 @@
         private int _tensorBufferSize;
         public ArrayPool<float> customSizeFloatPool = default!;
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
+        private PinnedMemoryBufferPool _pinnedMemoryPool = default!;
 
+        private Dictionary<string, OrtValue> _inputNames = default!;
         private readonly object _progressLock = new();
+
         private SKImageInfo _imageInfo;
-
         public ParallelOptions parallelOptions = default!;
+        #endregion
 
-        public YoloOptions YoloOptions { get; private set; } = default!;
         public OnnxModel OnnxModel { get; private set; } = default!;
+        public YoloOptions YoloOptions { get => yoloOptions; init => yoloOptions = value; }
+        public ModelType ModelType => OnnxModel.ModelType;
 
         /// <summary>
         /// Initializes the YOLO model with the specified model type.
         /// </summary>
-        /// <param name="modelType">The type of the model to be initialized.</param>
-        public void InitializeYolo(YoloOptions yoloOptions)
+        public void InitializeYolo()
         {
-            YoloOptions = yoloOptions;
+            if (string.IsNullOrEmpty(YoloOptions.OnnxModel) && YoloOptions.OnnxModelBytes is null)
+                throw new ArgumentException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
 
-            _session = useCuda
-                ? new InferenceSession(onnxModel, SessionOptions.MakeSessionOptionWithCudaProvider(gpuId))
-                : new InferenceSession(onnxModel);
+            InjectModelIntoOnnxRuntime();
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
 
             OnnxModel = _session.GetOnnxProperties();
 
-            VerifyExpectedModelType(yoloOptions.ModelType);
+            VerifyExpectedModelType(ModelType);
 
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
@@ -58,12 +53,41 @@
 
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
 
-            if (useCuda && allocateGpuMemory)
+            _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
+
+            if (YoloOptions.Cuda && YoloOptions.PrimeGpu)
                 _session.AllocateGpuMemory(_ortIoBinding,
                     _runOptions,
                     customSizeFloatPool,
-                    _imageInfo,
+                    _pinnedMemoryPool,
                     YoloOptions.SamplingOptions);
+
+            _inputNames = new Dictionary<string, OrtValue>
+            {
+                { OnnxModel.InputName, null! }
+            };
+
+            // Run frame-save service
+            FrameSaveService.Start();
+        }
+
+        private void InjectModelIntoOnnxRuntime()
+        {
+            // Create session options if using CUDA
+            SessionOptions sessionOptions = new SessionOptions {
+                GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED
+            };
+
+            if (YoloOptions.Cuda)
+            {
+                //sessionOptions = SessionOptions.MakeSessionOptionWithCudaProvider(YoloOptions.GpuId);
+                sessionOptions.AppendExecutionProvider_CUDA(YoloOptions.GpuId);
+            }
+
+            // Create inference session from byte[] or file path
+            _session = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
+                ? new InferenceSession(YoloOptions.OnnxModelBytes, sessionOptions)
+                : new InferenceSession(YoloOptions.OnnxModel, sessionOptions);
         }
 
         /// <summary>
@@ -71,135 +95,32 @@
         /// </summary>
         /// <param name="image">The input image to process.</param>
         /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
-        public IDisposableReadOnlyCollection<OrtValue> Run(SKImage image)
+        public (IDisposableReadOnlyCollection<OrtValue>, SKSizeI) Run<T>(T image)
         {
-            using var resizedImage = YoloOptions.ImageResize == ImageResize.Proportional
-                ? image.ResizeImageProportional(_imageInfo, YoloOptions.SamplingOptions)
-                : image.ResizeImageStretched(_imageInfo, YoloOptions.SamplingOptions);
-
             var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+            var pinnedBuffer = _pinnedMemoryPool.Rent();
 
             try
             {
                 lock (_progressLock)
                 {
-                    var tensorPixels = resizedImage.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
 
+                    var (pointer, imageSize) = YoloOptions.ImageResize == ImageResize.Proportional
+                        ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
+                        : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
+
+                    var tensorPixels = pointer.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
-                    var inputNames = new Dictionary<string, OrtValue>
-                    {
-                        { OnnxModel.InputName, inputOrtValue }
-                    };
-
-                    return _session.Run(_runOptions, inputNames, OnnxModel.OutputNames);
+                    _inputNames[OnnxModel.InputName] = inputOrtValue;
+                    return (_session.Run(_runOptions, _inputNames, OnnxModel.OutputNames), imageSize);
                 }
             }
             finally
             {
                 customSizeFloatPool.Return(tensorArrayBuffer, true);
+                _pinnedMemoryPool.Return(pinnedBuffer);
             }
-        }
-
-        /// <summary>
-        /// Runs inference on video data using the specified options and optional thresholds.
-        /// Triggers events for progress, completion, and status changes during video processing.
-        /// </summary>
-        /// <typeparam name="T">The type of the inference results.</typeparam>
-        /// <param name="options">Options for configuring video processing.</param>
-        /// <param name="confidence">Confidence threshold for inference.</param>
-        /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes.</param>
-        /// <param name="func">A function that processes each frame and returns a list of inference results.</param>
-        /// <returns>A dictionary where the key is the frame index and the value is a list of inference results of type <typeparamref name="T"/>.</returns>
-        public Dictionary<int, List<T>> RunVideo<T>(
-            VideoOptions options,
-            double confidence,
-            double pixelConfidence,
-            double iouThreshold,
-            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
-        {
-            var output = new Dictionary<int, List<T>>();
-
-            using var _videoHandler = new VideoHandler.VideoHandler(options, useCuda);
-
-            _videoHandler.ProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _videoHandler.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _videoHandler.StatusChangeEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-            _videoHandler.FramesExtractedEvent += (sender, e) =>
-            {
-                output = RunBatchInferenceOnVideoFrames<T>(_videoHandler, confidence, pixelConfidence, iouThreshold, func);
-
-                if (options.GenerateVideo)
-                    _videoHandler.ProcessVideoPipeline(VideoAction.CompileFrames);
-                else
-                    VideoCompleteEvent?.Invoke(null, null!);
-            };
-
-            _videoHandler.ProcessVideoPipeline();
-
-            return output;
-        }
-
-        /// <summary>
-        /// Runs batch inference on the extracted video frames.
-        /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(
-            VideoHandler.VideoHandler _videoHandler,
-            double confidence,
-            double pixelConfidence,
-            double iouThreshold,
-            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
-        {
-            var frames = _videoHandler.GetExtractedFrames();
-            int progressCounter = 0;
-            int totalFrames = frames.Length;
-            var batch = new List<T>[totalFrames];
-
-            var shouldDrawLabelsOnKeptFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.KeepFrames;
-            var shouldDrawLabelsOnVideoFrames = _videoHandler._videoSettings.DrawLabels && _videoHandler._videoSettings.GenerateVideo;
-
-            _ = Parallel.For(0, totalFrames, parallelOptions, i =>
-            {
-                var frame = frames[i];
-                using var img = SKImage.FromEncodedData(frame);
-
-
-                var results = func.Invoke(img, confidence, pixelConfidence, iouThreshold);
-                batch[i] = results;
-
-                if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)
-                    DrawResultsOnVideoFrame(img, results, frame, _videoHandler._videoSettings);
-
-                Interlocked.Increment(ref progressCounter);
-                var progress = ((double)progressCounter / totalFrames) * 100;
-
-                lock (_progressLock)
-                {
-                    VideoProgressEvent?.Invoke((int)progress, null!);
-                }
-            });
-
-            return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x]);
-        }
-
-        /// <summary>
-        /// Draw labels on video frames
-        /// </summary>
-        private static void DrawResultsOnVideoFrame<T>(SKImage img, List<T> results, string savePath, VideoSettings videoSettings)
-        {
-            var drawConfidence = videoSettings.DrawConfidence;
-
-            using SKImage tmpImage = results switch
-            {
-                List<Classification> classifications => img.Draw(classifications, drawConfidence),
-                List<ObjectDetection> objectDetections => img.Draw(objectDetections, drawConfidence),
-                List<OBBDetection> obbDetections => img.Draw(obbDetections, drawConfidence),
-                List<Segmentation> segmentations => img.Draw(segmentations, videoSettings.DrawSegment, drawConfidence),
-                List<PoseEstimation> poseEstimations => img.Draw(poseEstimations, videoSettings.KeyPointOptions, drawConfidence),
-                _ => throw new NotSupportedException("Unknown or incompatible ONNX model type."),
-            };
-
-            tmpImage.Save(savePath, SKEncodedImageFormat.Png, 100);
         }
 
         /// <summary>
@@ -251,7 +172,8 @@
         /// <summary>
         /// Calculate pixel by byte to confidence
         /// </summary>
-        public static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
+        ///public static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
+        public static float CalculatePixelConfidence(byte value) => value / 255F;
 
         /// <summary>
         /// Calculate radian to degree
@@ -282,23 +204,22 @@
                 : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
         }
 
-
-        public (float, float, float, float) CalculateGain(SKImage image)
-            => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(image) : CalculateStretchedGain(image);
+        public (float, float, float, float) CalculateGain(SKSizeI size)
+            => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(size) : CalculateStretchedGain(size);
 
         /// <summary>
         /// Calculates the padding and scaling factor needed to adjust the bounding box
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        public (float, float, float, float) CalculateProportionalGain(SKImage image)
+        public (float, float, float, float) CalculateProportionalGain(SKSizeI size)
         {
             var model = OnnxModel;
 
-            var (w, h) = (image.Width, image.Height);
+            var (w, h) = (size.Width, size.Height);
 
             var gain = Math.Max((float)w / model.Input.Width, (float)h / model.Input.Height);
-            var ratio = Math.Min(model.Input.Width / (float)image.Width, model.Input.Height / (float)image.Height);
+            var ratio = Math.Min(model.Input.Width / (float)size.Width, model.Input.Height / (float)size.Height);
             var (xPad, yPad) = ((model.Input.Width - w * ratio) / 2, (model.Input.Height - h * ratio) / 2);
 
             return (xPad, yPad, gain, 0);
@@ -309,11 +230,11 @@
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
-        public (float, float, float, float) CalculateStretchedGain(SKImage image)
+        public (float, float, float, float) CalculateStretchedGain(SKSizeI size)
         {
             var model = OnnxModel;
 
-            var (w, h) = (image.Width, image.Height); // image w and h
+            var (w, h) = (size.Width, size.Height); // image w and h
             var (xGain, yGain) = (model.Input.Width / (float)w, model.Input.Height / (float)h); // x, y gains
             var (xPad, yPad) = ((model.Input.Width - w * xGain) / 2, (model.Input.Height - h * yGain) / 2); // left, right pads
 
@@ -334,13 +255,13 @@
         /// </summary>
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
 
             _session?.Dispose();
             _ortIoBinding?.Dispose();
             _runOptions?.Dispose();
-
-            ImageExtension.Dispose();
+            _pinnedMemoryPool?.Dispose();
 
             GC.SuppressFinalize(this);
         }

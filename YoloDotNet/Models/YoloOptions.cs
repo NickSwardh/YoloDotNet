@@ -11,9 +11,9 @@
         public string OnnxModel { get; set; } = default!;
 
         /// <summary>
-        /// Gets or sets the type of the model (e.g., detection, classification).
+        /// Gets or sets the ONNX model as a byte array.
         /// </summary>
-        public ModelType ModelType { get; set; }
+        public byte[]? OnnxModelBytes { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to use CUDA for GPU acceleration (default is true).
@@ -45,6 +45,6 @@
         /// - **Best Use Case:** Ideal when reducing image size while maintaining a balance between speed and quality.
         /// - **Modifiability:** This property can be changed at runtime to adjust filtering behavior.
         /// </remarks>
-        public SKSamplingOptions SamplingOptions { get; set; } = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
+        public SKSamplingOptions SamplingOptions { get; set; } = ImageConfig.DefaultSamplingOptions;
     }
 }

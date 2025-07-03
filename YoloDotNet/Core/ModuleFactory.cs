@@ -10,6 +10,16 @@
         new()
         {
             {
+                ModelVersion.V5U, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core =>throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV5U(core) },
+                    { ModelType.ObbDetection, core => throw new NotImplementedException() },
+                    { ModelType.Segmentation, core => throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            },
+            {
                 ModelVersion.V8, new Dictionary<ModelType, Func<YoloCore, IModule>>
                 {
                     { ModelType.Classification, core => new ClassificationModuleV8(core) },
@@ -83,7 +93,7 @@
 
             // Get model version and type
             var modelVersion = yoloCore.OnnxModel.ModelVersion;
-            var modelType = options.ModelType;
+            var modelType = yoloCore.ModelType;
 
             // Get dictionary from module map based on model version
             var versionSelected = _versionModuleMap.TryGetValue(modelVersion, out var moduleMap);
@@ -102,8 +112,9 @@
         /// <returns>An initialized YoloCore instance.</returns>
         private static YoloCore InitializeYoloCore(YoloOptions options)
         {
-            var yoloCore = new YoloCore(options.OnnxModel, options.Cuda, options.PrimeGpu, options.GpuId);
-            yoloCore.InitializeYolo(options);
+            //var yoloCore = new YoloCore(options.OnnxModel, options.Cuda, options.PrimeGpu, options.GpuId);
+            var yoloCore = new YoloCore(options);
+            yoloCore.InitializeYolo();
             return yoloCore;
         }
     }

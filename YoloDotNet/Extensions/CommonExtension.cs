@@ -16,7 +16,7 @@
         /// <param name="image">The image to calculate the dynamic size for.</param>
         /// <param name="scale">The initial scale value to be adjusted dynamically.</param>
         /// <returns>The new dynamically calculated size as a float value.</returns>
-        public static float CalculateDynamicSize(this SKImage image, float scale)
+        public static float CalculateDynamicSize(this SKBitmap image, float scale)
         {
             // Calculate the scale factor based on the image resolution and a denominator
             float scaleFactor = image.Width / ImageConfig.SCALING_DENOMINATOR;
@@ -36,15 +36,22 @@
         /// <param name="filterClasses">A set of class labels to retain in the filtered results.</param>
         /// <returns>A filtered list containing only detection results where the label matches any of the specified filter classes.</returns>
         /// <exception cref="ArgumentException">Thrown if the type <typeparamref name="T"/> is not a supported detection type.</exception>
-        public static List<T> FilterLabels<T>(this List<T> result, HashSet<string> filterClasses)
-            => [.. typeof(T) switch
+        public static List<T> FilterLabels<T>(this IEnumerable<T> result, HashSet<string> filterClasses) where T : IDetection
+        {
+            ArgumentNullException.ThrowIfNull(result);
+            ArgumentNullException.ThrowIfNull(filterClasses);
+
+            var filtered = new List<T>();
+
+            foreach (var detection in result)
             {
-                Type t when t == typeof(Classification) => result.Cast<Classification>().Where(x => filterClasses.Contains(x.Label)).Cast<T>(),
-                Type t when t == typeof(ObjectDetection) => result.Cast<ObjectDetection>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                Type t when t == typeof(OBBDetection) => result.Cast<OBBDetection>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                Type t when t == typeof(PoseEstimation) => result.Cast<PoseEstimation>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                Type t when t == typeof(Segmentation) => result.Cast<Segmentation>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                _ => throw new ArgumentException("Invalid type", nameof(result))
-            }];
+                var label = detection.Label.Name ?? detection.Label.ToString();
+
+                if (filterClasses.Contains(label))
+                    filtered.Add(detection);
+            }
+
+            return filtered;
+        }
     }
 }

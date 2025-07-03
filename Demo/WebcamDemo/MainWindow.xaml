@@ -1,0 +1,82 @@
+﻿<Window x:Class="WebcamDemo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WebcamDemo"
+        xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
+        mc:Ignorable="d"
+        Title="YoloDotNet | Webcam Demo EmguCV" Height="810" Width="1280"
+        Background="Black" Closing="WindowClosing" ResizeMode="NoResize">
+    
+    <Grid HorizontalAlignment="Center">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Webcam -->
+
+        <skia:SKElement x:Name="WebCamFrame"
+                        Width="1280"
+                        Height="720"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        PaintSurface="UpdateWebcamFrame" />
+
+        <!-- Buttons -->
+        <StackPanel Grid.Row="1"
+                    Orientation="Horizontal"
+                    HorizontalAlignment="Center"
+                    Margin="20">
+
+            <Button x:Name="Start"
+                    Content="Start Detection"
+                    Width="120"
+                    Height="30"
+                    Padding="10,0,10,0"
+                    Margin="0,0,10,0"
+                    Click="StartClick" />
+
+            <Button x:Name="Stop"
+                    Content="Stop Detection"
+                    Width="120"
+                    Height="30"
+                    Padding="10,0,10,0"
+                    Click="StopClick" />
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                <Slider x:Name="ConfidenceTreshold"
+                        Minimum="0.20"
+                        Maximum="0.99"
+                        Width="120"
+                        VerticalAlignment="Center"
+                        Margin="10,0,0,0" ValueChanged="ConfidenceTreshold_ValueChanged"/>
+
+                <TextBlock VerticalAlignment="Center"
+                           Margin="10,0,0,0"
+                           Foreground="white"
+                           Text="{Binding ElementName=ConfidenceTreshold, Path=Value, StringFormat={}{0:F2}}" />
+            </StackPanel>
+
+            <CheckBox x:Name="EnableTracking"
+                      Content="Track Objects"
+                      Foreground="white"
+                      VerticalAlignment="Center"
+                      Margin="10,0,0,0" Checked="EnableTracking_Checked" Unchecked="EnableTracking_Unchecked"/>
+
+            <CheckBox x:Name="EnableFiltering"
+                      Content="Enable Filtering ('person' only)"
+                      Foreground="white"
+                      VerticalAlignment="Center"
+                      Margin="10,0,0,0" Checked="EnableFiltering_Checked" Unchecked="EnableFiltering_Unchecked"/>
+
+            <TextBlock x:Name="FrameProcess"
+                       Foreground="white"
+                       VerticalAlignment="Center"
+                       Margin="10,0,0,0"/>
+
+        </StackPanel>
+
+    </Grid>
+</Window>

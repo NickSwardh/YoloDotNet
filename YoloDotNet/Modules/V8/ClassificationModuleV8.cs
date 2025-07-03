@@ -1,12 +1,7 @@
 ﻿namespace YoloDotNet.Modules.V8
 {
-    public class ClassificationModuleV8 : IClassificationModule
+    internal class ClassificationModuleV8 : IClassificationModule
     {
-        public event EventHandler VideoStatusEvent = delegate { };
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-
-        private readonly ArrayPool<Classification> _classificationPool;
         private readonly YoloCore _yoloCore;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
@@ -14,21 +9,16 @@
         public ClassificationModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
-
-            _classificationPool = ArrayPool<Classification>.Create(maxArrayLength: OnnxModel.Outputs[0].Elements + 1, maxArraysPerBucket: 10);
-
-            SubscribeToVideoEvents();
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence, double iou)
+        public List<Classification> ProcessImage<T>(T image, double classes, double pixelConfidence, double iou)
         {
-            using var ortValues = _yoloCore.Run(image);
+            var (ortValues, _) = _yoloCore.Run(image);
+
+            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
             using var ort = ortValues[0];
             return ClassifyTensor(ort, (int)classes);
         }
-
-        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Classicifation
 
@@ -41,12 +31,14 @@
             var span = ortTensor.GetTensorDataAsSpan<float>();
             var tmp = new Classification[span.Length];
 
+            var labels = (Span<LabelModel>)_yoloCore.OnnxModel.Labels;
+
             for (int i = 0; i < tmp.Length; i++)
             {
                 tmp[i] = new Classification
                 {
                     Confidence = span[i],
-                    Label = _yoloCore.OnnxModel.Labels[i].Name
+                    Label = labels[i].Name
                 };
             }
 
@@ -57,19 +49,8 @@
 
         #region Helper methods
 
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
-
         public void Dispose()
         {
-            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _yoloCore.Dispose();
 
             GC.SuppressFinalize(this);

@@ -15,34 +15,18 @@
         {
             _yoloCore = yoloCore;
 
-            // Yolov11 has the same model input/output shapes as Yolov8
+            // Yolov12 has the same model input/output shapes as Yolov8
             // Use Yolov8 module
             _poseEstimationModuleV8 = new PoseEstimationModuleV8(_yoloCore);
-
-            SubscribeToVideoEvents();
         }
 
-        public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
             => _poseEstimationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
-
-        public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
-            => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 
-        private void SubscribeToVideoEvents()
-        {
-            _yoloCore.VideoProgressEvent += (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent += (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent += (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-        }
-
         public void Dispose()
         {
-            _yoloCore.VideoProgressEvent -= (sender, e) => VideoProgressEvent?.Invoke(sender, e);
-            _yoloCore.VideoCompleteEvent -= (sender, e) => VideoCompleteEvent?.Invoke(sender, e);
-            _yoloCore.VideoStatusEvent -= (sender, e) => VideoStatusEvent?.Invoke(sender, e);
-
             _poseEstimationModuleV8?.Dispose();
             _yoloCore?.Dispose();
 

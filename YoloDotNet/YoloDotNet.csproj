@@ -49,8 +49,8 @@ Performance Boosts – Pixel normalization just got even faster. Because every m
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.21.0" />
-    <PackageReference Include="SkiaSharp" Version="3.116.1" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.22.0" />
+    <PackageReference Include="SkiaSharp" Version="3.119.0" />
   </ItemGroup>
 
 </Project>

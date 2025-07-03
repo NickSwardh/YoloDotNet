@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents the result of object detection, including label information, confidence score, and bounding box.
     /// </summary>
-    public class OBBDetection : IDetection
+    public class OBBDetection : TrackingInfo, IDetection
     {
         /// <summary>
         /// Label information associated with the detected object.
@@ -24,5 +24,6 @@
         /// Orientation angle of bounding box
         /// </summary>
         public float OrientationAngle { get; set; }
+
     }
 }

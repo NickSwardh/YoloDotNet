@@ -6,11 +6,12 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.14.0" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
+		<PackageReference Include="Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers" Version="18.0.36127.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\ConsoleDemo\ConsoleDemo.csproj" />
+		<ProjectReference Include="..\..\Demo\PoseEstimationDemo\PoseEstimationDemo.csproj" />
 		<ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
 		<ProjectReference Include="..\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
 	</ItemGroup>

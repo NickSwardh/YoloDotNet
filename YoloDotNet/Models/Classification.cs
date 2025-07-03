@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents the result of image classification
     /// </summary>
-    public class Classification
+    public class Classification : IClassification
     {
         /// <summary>
         /// Label of classified image.

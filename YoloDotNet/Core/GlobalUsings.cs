@@ -1,6 +1,7 @@
 ﻿global using System.Buffers;
 global using System.Diagnostics;
 global using System.Globalization;
+global using System.ComponentModel;
 global using System.Runtime.Serialization;
 global using System.Collections.Concurrent;
 global using System.Text.RegularExpressions;
@@ -17,11 +18,17 @@ global using SkiaSharp;
 
 global using YoloDotNet.Core;
 global using YoloDotNet.Enums;
+global using YoloDotNet.Video;
 global using YoloDotNet.Models;
-global using YoloDotNet.Converters;
+global using YoloDotNet.Handlers;
+global using YoloDotNet.Trackers;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Configuration;
+global using YoloDotNet.Video.Services;
 
+global using YoloDotNet.Models.Interfaces;
+
+global using YoloDotNet.Modules.V5U;
 global using YoloDotNet.Modules.V8;
 global using YoloDotNet.Modules.V9;
 global using YoloDotNet.Modules.V10;

@@ -37,10 +37,13 @@
 
 	
 	<ItemGroup>
+	  <None Include="..\assets\Models\yolov5su.onnx" Link="Assets\Models\yolov5su.onnx">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	  </None>
 	  <None Include="..\assets\Models\yolov8s-cls.onnx" Link="Assets\Models\yolov8s-cls.onnx">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
-	 <None Include="..\assets\Models\yolov8s-obb.onnx" Link="Assets\Models\yolov8s-obb.onnx">
+	  <None Include="..\assets\Models\yolov8s-obb.onnx" Link="Assets\Models\yolov8s-obb.onnx">
 	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 	  </None>
 	  <None Include="..\assets\Models\yolov8s-pose.onnx" Link="Assets\Models\yolov8s-pose.onnx">

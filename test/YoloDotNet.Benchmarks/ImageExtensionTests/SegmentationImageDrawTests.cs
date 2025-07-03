@@ -1,5 +1,6 @@
 ﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
+    //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
     public class SegmentationImageDrawTests
     {
@@ -9,7 +10,8 @@
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
 
         private Yolo _cpuYolo;
-        private SKImage _image;
+        private SKBitmap _skBitmap;
+        private SKImage _skImage;
         private List<Segmentation> _segmentations;
 
         #endregion Fields
@@ -22,29 +24,42 @@
             var options = new YoloOptions
             {
                 OnnxModel = _model,
-                ModelType = ModelType.Segmentation,
                 Cuda = false
             };
 
             _cpuYolo = new Yolo(options);
-            _image = SKImage.FromEncodedData(_testImage);
-            _segmentations = _cpuYolo.RunSegmentation(_image);
+            _skBitmap = SKBitmap.Decode(_testImage);
+            _skImage = SKImage.FromEncodedData(_testImage);
+
+            // We just need one result to use for drawing.
+            _segmentations = _cpuYolo.RunSegmentation(_skBitmap);
         }
 
         [GlobalCleanup]
         public void CleanUp()
         {
-            _cpuYolo.Dispose();
-            _image.Dispose();
+            _cpuYolo?.Dispose();
+            _skBitmap?.Dispose();
+            _skImage?.Dispose();
         }
 
-        [Params(DrawSegment.Default, DrawSegment.PixelMaskOnly, DrawSegment.BoundingBoxOnly)]
-        public DrawSegment DrawSegmentType { get; set; }
-
+        /// <summary>
+        /// Draw on an SKImage.
+        /// </summary>
         [Benchmark]
-        public SKImage DrawSegmentation()
+        public void DrawSegmentationOnSkImage()
         {
-            return _image.Draw(_segmentations, DrawSegmentType);
+            // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
+            _ = _skImage.Draw(_segmentations);
+        }
+
+        /// <summary>
+        /// Draw on an SKBitmap.
+        /// </summary>
+        [Benchmark]
+        public void DrawSegmentationOnSKBitmap()
+        {
+            _skBitmap.Draw(_segmentations);
         }
 
         #endregion Methods
