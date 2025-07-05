@@ -147,9 +147,17 @@
         /// <param name="videoOptions"></param>
         public void InitializeVideo(VideoOptions videoOptions)
         {
-            _ffmpegService = new(videoOptions, options);
-            _ffmpegService.OnFrameReady = (frame, frameIndex) => OnVideoFrameReceived.Invoke(frame, frameIndex);
-            _ffmpegService.OnVideoEnd = () => OnVideoEnd?.Invoke();
+            if (options.Cuda is false)
+                throw new ArgumentException(
+                    "Video inference requires CUDA acceleration (GPU support) and FFmpeg installed on your system. " +
+                    "Please enable CUDA by setting 'YoloOptions.Cuda = true' in your configuration, " +
+                    "and ensure FFmpeg is installed and accessible in your system PATH.");
+
+            _ffmpegService = new(videoOptions, options)
+            {
+                OnFrameReady = (frame, frameIndex) => OnVideoFrameReceived.Invoke(frame, frameIndex),
+                OnVideoEnd = () => OnVideoEnd?.Invoke()
+            };
         }
 
         /// <summary>
