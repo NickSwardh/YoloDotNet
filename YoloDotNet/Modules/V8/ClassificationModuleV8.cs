@@ -29,20 +29,42 @@
         private List<Classification> ClassifyTensor(OrtValue ortTensor, int numberOfClasses)
         {
             var span = ortTensor.GetTensorDataAsSpan<float>();
-            var tmp = new Classification[span.Length];
+            var labels = _yoloCore.OnnxModel.Labels.AsSpan();
 
-            var labels = (Span<LabelModel>)_yoloCore.OnnxModel.Labels;
+            var queue = new PriorityQueue<Classification, float>();
 
-            for (int i = 0; i < tmp.Length; i++)
+            for (int i = 0; i < span.Length; i++)
             {
-                tmp[i] = new Classification
+                var cls = new Classification
                 {
                     Confidence = span[i],
                     Label = labels[i].Name
                 };
+
+                var addToQueue = false;
+
+                if (queue.Count < numberOfClasses)
+                {
+                    addToQueue = true;
+                }
+                else if (cls.Confidence > queue.Peek().Confidence)
+                {
+                    addToQueue = true;
+                    queue.Dequeue();
+                }
+
+                if (addToQueue)
+                    queue.Enqueue(cls, (float)cls.Confidence);
             }
 
-            return [.. tmp.OrderByDescending(x => x.Confidence).Take(numberOfClasses)];
+            // Dequeue into array
+            var result = new Classification[queue.Count];
+            for (int i = result.Length - 1; i >= 0; i--)
+            {
+                result[i] = queue.Dequeue();
+            }
+
+            return [.. result];
         }
 
         #endregion
