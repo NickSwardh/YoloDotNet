@@ -73,15 +73,38 @@
 
         private void InjectModelIntoOnnxRuntime()
         {
-            // Create session options if using CUDA
-            SessionOptions sessionOptions = new SessionOptions {
-                GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_EXTENDED
-            };
+            SessionOptions sessionOptions = new();
 
+            // If CUDA is enabled, apply ONNX Runtime CUDA optimizations to squeeze out extra performance ;)
             if (YoloOptions.Cuda)
             {
-                //sessionOptions = SessionOptions.MakeSessionOptionWithCudaProvider(YoloOptions.GpuId);
-                sessionOptions.AppendExecutionProvider_CUDA(YoloOptions.GpuId);
+                sessionOptions.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
+                sessionOptions.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
+                sessionOptions.EnableCpuMemArena = true;
+
+                var cudaOptions = new OrtCUDAProviderOptions();
+                cudaOptions.UpdateOptions(new Dictionary<string, string>
+                {
+                    { "device_id", YoloOptions.GpuId.ToString() },  
+                    // Specifies which GPU device to use (default = 0 if not set).
+
+                    { "arena_extend_strategy", "kNextPowerOfTwo" }, 
+                    // Controls how the GPU memory arena grows when more memory is needed.
+                    // kNextPowerOfTwo doubles the allocation size to the next power of two,
+                    // which reduces the frequency of CUDA malloc/free calls and minimizes fragmentation 
+                    // in long-running or high-throughput inference scenarios like YOLO object detection.
+
+                    { "cudnn_conv_algo_search", "EXHAUSTIVE" },     
+                    // Forces cuDNN to benchmark all available convolution algorithms during model initialization
+                    // and select the fastest one for the hardware + model combination.
+                    // This gives optimal conv kernel performance at runtime, especially beneficial for large or custom conv layers.
+                });
+
+                sessionOptions.AppendExecutionProvider_CUDA(cudaOptions);
+            }
+            else
+            {
+                sessionOptions.EnableCpuMemArena = true;
             }
 
             // Create inference session from byte[] or file path
@@ -104,16 +127,15 @@
             {
                 lock (_progressLock)
                 {
-
-                    var (pointer, imageSize) = YoloOptions.ImageResize == ImageResize.Proportional
+                    var originalImageSize = YoloOptions.ImageResize == ImageResize.Proportional
                         ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
                         : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
 
-                    var tensorPixels = pointer.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
+                    var tensorPixels = pinnedBuffer.Pointer.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
                     _inputNames[OnnxModel.InputName] = inputOrtValue;
-                    return (_session.Run(_runOptions, _inputNames, OnnxModel.OutputNames), imageSize);
+                    return (_session.Run(_runOptions, _inputNames, OnnxModel.OutputNames), originalImageSize);
                 }
             }
             finally
