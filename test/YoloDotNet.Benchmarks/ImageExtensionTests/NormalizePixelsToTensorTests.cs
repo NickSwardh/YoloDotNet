@@ -43,8 +43,8 @@
 
             try
             {
-                var (pointer, _) = _image.ResizeImageProportional(options.SamplingOptions, pinnedBuffer);
-                _imagePointer = pointer;
+                _ = _image.ResizeImageProportional(options.SamplingOptions, pinnedBuffer);
+                _imagePointer = pinnedBuffer.Pointer;
             }
             finally
             {
