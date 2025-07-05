@@ -30,7 +30,6 @@
         {
             var boxes = _objectDetectionModule.ObjectDetection(imageSize, ortSpan, threshold, overlapThrehshold);
 
-            // TODO: Implement for stretched input images too.
             var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(imageSize);
 
             var labels = _yoloCore.OnnxModel.Labels.Length;
@@ -50,8 +49,28 @@
                     var cIndex = yIndex + ouputChannels;
                     keypointOffset += ouputChannels * 3;
 
-                    var x = (int)((ortSpan[xIndex] - xPad) * gain);
-                    var y = (int)((ortSpan[yIndex] - yPad) * gain);
+                    var x = 0;
+                    var y = 0;
+
+                    if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
+                    {
+                        x = (int)((ortSpan[xIndex] - xPad) * gain);
+                        y = (int)((ortSpan[yIndex] - yPad) * gain);
+                    }
+                    else
+                    {
+                        // Map keypoints proportionally into resized bounding box
+                        var relativeX = (ortSpan[xIndex] - box.BoundingBoxUnscaled.Left) / box.BoundingBoxUnscaled.Width;
+                        var relativeY = (ortSpan[yIndex] - box.BoundingBoxUnscaled.Top) / box.BoundingBoxUnscaled.Height;
+
+                        x = (int)(box.BoundingBox.Left + relativeX * box.BoundingBox.Width);
+                        y = (int)(box.BoundingBox.Top + relativeY * box.BoundingBox.Height);
+
+                        // Clamp to ensure keypoint is inside box
+                        x = Math.Clamp(x, box.BoundingBox.Left, box.BoundingBox.Right - 1);
+                        y = Math.Clamp(y, box.BoundingBox.Top, box.BoundingBox.Bottom - 1);
+                    }
+                    
                     var confidence = ortSpan[cIndex];
 
                     poseEstimations[j] = new KeyPoint(x, y, confidence);
