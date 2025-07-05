@@ -167,7 +167,7 @@
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
         /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
-        public static (nint, SKSizeI) ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
             SKImage image = default!;
 
@@ -184,11 +184,8 @@
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions, ImageConfig.ResizePaint);
 
-            // Return a tuple containing:
-            // - The pointer to the resized image in memory
-            // - The original image dimensions, which are required to correctly scale bounding boxes
-            //   back to the input image size.
-            return (pinnedMemoryBuffer.Pointer, new SKSizeI(image.Width, image.Height));
+            // Return the original image dimensions, which are required to correctly scale bounding boxes
+            return new SKSizeI(image.Width, image.Height);
         }
 
         /// <summary>
@@ -198,7 +195,7 @@
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
         /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
-        public static (nint, SKSizeI) ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
             SKImage image = default!;
 
@@ -232,11 +229,8 @@
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions, ImageConfig.ResizePaint);
 
-            // Return a tuple containing:
-            // - The pointer to the resized image in memory
-            // - The original image dimensions, which are required to correctly scale bounding boxes
-            //   back to the input image size.
-            return (pinnedMemoryBuffer.Pointer, new SKSizeI(width, height));
+            // Return the original image dimensions, which are required to correctly scale bounding boxes
+            return new SKSizeI(width, height);
         }
 
         private static bool IsImageCompatibleWithTargetInfo(SKBitmap image, SKImageInfo skInfo)
@@ -301,9 +295,9 @@
                 // - Red values go in the first section (0 to pixelsPerChannel)
                 // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
                 // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
-                tensorArrayBuffer[i] = r / 255.0F;// * inv255;
-                tensorArrayBuffer[i + pixelsPerChannel] = g / 255.0F;// * inv255;
-                tensorArrayBuffer[i + 2 * pixelsPerChannel] = b / 255.0F;// * inv255;
+                tensorArrayBuffer[i] = r * inv255;
+                tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
+                tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
             }
 
             // Create and return a DenseTensor using the correctly sized memory slice.
