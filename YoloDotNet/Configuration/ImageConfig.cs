@@ -34,7 +34,7 @@
 
         public static readonly SKColor PoseMarkerColor = new (255, 246, 51, DEFAULT_OPACITY); // #FFF633 - Goblin Torchlight Yellow
 
-        public static readonly SKSamplingOptions DefaultSamplingOptions = new (SKFilterMode.Nearest, SKMipmapMode.None);
+        public static readonly SKSamplingOptions DefaultSamplingOptions = new (SKFilterMode.Linear, SKMipmapMode.None);
         public static readonly SKSamplingOptions SegmentationResamplingOptions = new (SKFilterMode.Linear, SKMipmapMode.Nearest);
 
         public static readonly SKPaint ResizePaint = new()
