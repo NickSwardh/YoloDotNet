@@ -29,6 +29,7 @@
             Anisotropic16x
         }
 
+        // Invoked for each Param parameter
         [GlobalSetup]
         public void GlobalSetup()
         {
@@ -39,6 +40,7 @@
             _skImage = SKImage.FromEncodedData(_testImage);
         }
 
+        // Invoked for each Param parameter
         [GlobalCleanup]
         public void GlobalCleanup()
         {
