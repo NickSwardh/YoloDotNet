@@ -423,6 +423,12 @@
                 totalFrames = (int)Math.Round(fps * metadata.Duration);
             }
 
+            // If a custom frame interval is set to run inference on every Nth frame, recalculate total frames.
+            if (_videoOptions.FrameInterval > 0)
+            {
+                totalFrames = (long)Math.Ceiling(totalFrames  / (float)_videoOptions.FrameInterval);
+            }
+
             return totalFrames - 1; // Make sure to keep total-frames count zero-indexed.
         }
 
