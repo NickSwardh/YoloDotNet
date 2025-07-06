@@ -4,8 +4,6 @@
     [MemoryDiagnoser]
     public class ResizeImageTests
     {
-        #region Fields
-
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
         private SKBitmap _skBitmap;
@@ -16,41 +14,24 @@
         private readonly int _width = 240;
         private readonly int _height = 240;
 
-        // Best quality - Uses cubic resamplers for smoother, high-quality scaling  
-        // - ✅ Produces sharp, artifact-free images  
-        // - 🔄 Slightly slower than linear or nearest filtering  
-        private readonly SKSamplingOptions _cubicMitchell = new(SKCubicResampler.Mitchell);
-        private readonly SKSamplingOptions _cubicCatmullRom = new(SKCubicResampler.CatmullRom);
-
-        // Balanced quality and performance - Uses linear filtering with different mipmap strategies  
-        // - ✅ Good balance of sharpness and speed  
-        // - 🔄 Mipmaps improve quality when downscaling, but may slightly impact performance  
-        private readonly SKSamplingOptions _linearWithLinearMipmap = new(SKFilterMode.Linear, SKMipmapMode.Linear);
-        private readonly SKSamplingOptions _linearWithNearestMipmap = new(SKFilterMode.Linear, SKMipmapMode.Nearest);
-        private readonly SKSamplingOptions _linearNoMipmap = new(SKFilterMode.Linear, SKMipmapMode.None);               // Default in YoloDotNet  
-
-        // Fastest performance, but lower quality - Uses nearest-neighbor filtering  
-        // - ✅ Very fast, best for real-time performance  
-        // - ❌ Can introduce pixelation and jagged edges  
-        private readonly SKSamplingOptions _nearestWithLinearMipmap = new(SKFilterMode.Nearest, SKMipmapMode.Linear);
-        private readonly SKSamplingOptions _nearestWithNearestMipmap = new(SKFilterMode.Nearest, SKMipmapMode.Nearest);
-        private readonly SKSamplingOptions _nearestNoMipmap = new(SKFilterMode.Nearest, SKMipmapMode.None);
-
-        // Anisotropic filtering - Improves texture quality at oblique angles  
-        // - ✅ Reduces blurriness and distortion on angled surfaces  
-        // - 🔄 Higher levels (8x, 16x) improve quality but may reduce performance  
-        private readonly SKSamplingOptions _anisotropic4x = new(4);  // Moderate improvement  
-        private readonly SKSamplingOptions _anisotropic8x = new(8);  // Higher quality, slight performance cost  
-        private readonly SKSamplingOptions _anisotropic16x = new(16); // Best for extreme angles, highest performance cost  
-
-        #endregion Fields
-
-        #region Methods
+        public enum SamplingProfile
+        {
+            CubicMitchell,
+            CubicCatmullRom,
+            LinearWithLinearMipmap,
+            LinearWithNearestMipmap,
+            LinearNoMipmap,
+            NearestWithLinearMipmap,
+            NearestWithNearestMipmap,
+            NearestNoMipmap,
+            Anisotropic4x,
+            Anisotropic8x,
+            Anisotropic16x
+        }
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-
             _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgb888x, SKAlphaType.Opaque);
             _pinnedBufferPool = new PinnedMemoryBufferPool(_outputImageInfo);
 
@@ -65,469 +46,131 @@
             _skImage?.Dispose();
         }
 
-        /// <summary>
-        /// Benchmark for resizing using Cubic Mitchell resampler.
-        /// - **Quality:** High (smooth results, reduced aliasing).
-        /// - **Performance:** Moderate.
-        /// - **Best Use Case:** When high-quality resampling is needed.
-        /// </summary>
+        [Params(SamplingProfile.CubicMitchell,
+            SamplingProfile.CubicCatmullRom,
+            SamplingProfile.LinearWithLinearMipmap,
+            SamplingProfile.LinearWithNearestMipmap,
+            SamplingProfile.LinearNoMipmap,
+            SamplingProfile.NearestWithLinearMipmap,
+            SamplingProfile.NearestWithNearestMipmap,
+            SamplingProfile.NearestNoMipmap,
+            SamplingProfile.Anisotropic4x,
+            SamplingProfile.Anisotropic8x,
+            SamplingProfile.Anisotropic16x
+            )]
+        public SamplingProfile Profile { get; set; }
+
+        private SKSamplingOptions SamplingOptions
+        {
+            get
+            {
+                return Profile switch
+                {
+                    /// <summary>
+                    /// Cubic Mitchell resampling.
+                    /// - <b>Quality:</b> High (smooth results, reduced aliasing).
+                    /// - <b>Performance:</b> Moderate.
+                    /// - <b>Best Use Case:</b> When high-quality resampling is needed.
+                    /// </summary>
+                    SamplingProfile.CubicMitchell => new SKSamplingOptions(SKCubicResampler.Mitchell),
+
+                    /// <summary>
+                    /// Cubic Catmull-Rom resampling.
+                    /// - <b>Quality:</b> Very sharp (preserves details well but can introduce ringing artifacts).
+                    /// - <b>Performance:</b> Moderate.
+                    /// - <b>Best Use Case:</b> When sharpness is more important than smoothness.
+                    /// </summary>
+                    SamplingProfile.CubicCatmullRom => new SKSamplingOptions(SKCubicResampler.CatmullRom),
+
+                    /// <summary>
+                    /// Linear filtering with linear mipmap interpolation.
+                    /// - <b>Quality:</b> Balanced (smooth with slight blur).
+                    /// - <b>Performance:</b> Good.
+                    /// - <b>Best Use Case:</b> When scaling down with a balance of speed and quality.
+                    /// </summary>
+                    SamplingProfile.LinearWithLinearMipmap => new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear),
+
+                    /// <summary>
+                    /// Linear filtering with nearest mipmap interpolation.
+                    /// - <b>Quality:</b> Slightly sharper than linear mipmap.
+                    /// - <b>Performance:</b> Good.
+                    /// - <b>Best Use Case:</b> When performance is slightly prioritized over smoothness.
+                    /// </summary>
+                    SamplingProfile.LinearWithNearestMipmap => new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Nearest),
+
+                    /// <summary>
+                    /// Linear filtering without mipmap (default in YoloDotNet).
+                    /// - <b>Quality:</b> Decent (default option, slight blur).
+                    /// - <b>Performance:</b> Fast.
+                    /// - <b>Best Use Case:</b> General-purpose resizing with a balance of speed and quality.
+                    /// </summary>
+                    SamplingProfile.LinearNoMipmap => new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None),
+
+                    /// <summary>
+                    /// Nearest filtering with linear mipmap interpolation.
+                    /// - <b>Quality:</b> Lower (visible pixelation).
+                    /// - <b>Performance:</b> Very fast.
+                    /// - <b>Best Use Case:</b> When maximum speed is needed but mipmaps help reduce aliasing.
+                    /// </summary>
+                    SamplingProfile.NearestWithLinearMipmap => new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.Linear),
+
+                    /// <summary>
+                    /// Nearest filtering with nearest mipmap interpolation.
+                    /// - <b>Quality:</b> Low (pixelated, harsh transitions).
+                    /// - <b>Performance:</b> Very fast.
+                    /// - <b>Best Use Case:</b> When raw performance is the top priority.
+                    /// </summary>
+                    SamplingProfile.NearestWithNearestMipmap => new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.Nearest),
+
+                    /// <summary>
+                    /// Nearest filtering without mipmap.
+                    /// - <b>Quality:</b> Lowest (hard edges, pixelation).
+                    /// - <b>Performance:</b> Fastest.
+                    /// - <b>Best Use Case:</b> When performance is critical, and quality is not a concern.
+                    /// </summary>
+                    SamplingProfile.NearestNoMipmap => new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None),
+
+                    /// <summary>
+                    /// 4x Anisotropic filtering.
+                    /// - <b>Quality:</b> Good (reduces blurring on angled textures).
+                    /// - <b>Performance:</b> Moderate.
+                    /// - <b>Best Use Case:</b> When dealing with textures viewed at an angle.
+                    /// </summary>
+                    SamplingProfile.Anisotropic4x => new SKSamplingOptions(4),
+
+                    /// <summary>
+                    /// 8x Anisotropic filtering.
+                    /// - <b>Quality:</b> Very good (better sharpness on textures at an angle).
+                    /// - <b>Performance:</b> Lower than 4x but still efficient.
+                    /// - <b>Best Use Case:</b> When dealing with angled textures and need better detail.
+                    /// </summary>
+                    SamplingProfile.Anisotropic8x => new SKSamplingOptions(8),
+
+                    /// <summary>
+                    /// 16x Anisotropic filtering.
+                    /// - <b>Quality:</b> Best (preserves details on angled textures).
+                    /// - <b>Performance:</b> Slowest among anisotropic options.
+                    /// - <b>Best Use Case:</b> When the highest texture quality is required, especially for angled surfaces.
+                    /// </summary>
+                    SamplingProfile.Anisotropic16x => new SKSamplingOptions(16),
+                    _ => throw new ArgumentOutOfRangeException()
+                };
+            }
+        }
+
         [Benchmark]
-        public void ResizeSKBitmap_CubicMitchel()
+        public void ResizeBenchmark()
         {
             var pinnedBuffer = _pinnedBufferPool.Rent();
 
             try
             {
-                _ = _skBitmap.ResizeImageProportional(_cubicMitchell, pinnedBuffer);
+                _ = _skBitmap.ResizeImageProportional(SamplingOptions, pinnedBuffer);
             }
             finally
             {
                 _pinnedBufferPool.Return(pinnedBuffer);
             }
         }
-
-
-        /// <summary>
-        /// Benchmark for resizing using Cubic Mitchell resampler.
-        /// - **Quality:** High (smooth results, reduced aliasing).
-        /// - **Performance:** Moderate.
-        /// - **Best Use Case:** When high-quality resampling is needed.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_CubicMitchel()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_cubicMitchell, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Cubic Catmull-Rom resampler.
-        /// - **Quality:** Very sharp (preserves details well but can introduce ringing artifacts).
-        /// - **Performance:** Moderate.
-        /// - **Best Use Case:** When sharpness is more important than smoothness.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_CubicCatmullRom()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_cubicCatmullRom, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Cubic Catmull-Rom resampler.
-        /// - **Quality:** Very sharp (preserves details well but can introduce ringing artifacts).
-        /// - **Performance:** Moderate.
-        /// - **Best Use Case:** When sharpness is more important than smoothness.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_CubicCatmullRom()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_cubicCatmullRom, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Linear filtering with Linear Mipmap interpolation.
-        /// - **Quality:** Balanced (smooth with slight blur).
-        /// - **Performance:** Good.
-        /// - **Best Use Case:** When scaling down with a balance of speed and quality.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_LinearWithLinearMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_linearWithLinearMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Linear filtering with Linear Mipmap interpolation.
-        /// - **Quality:** Balanced (smooth with slight blur).
-        /// - **Performance:** Good.
-        /// - **Best Use Case:** When scaling down with a balance of speed and quality.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_LinearWithLinearMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_linearWithLinearMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Linear filtering with Nearest Mipmap interpolation.
-        /// - **Quality:** Slightly sharper than Linear Mipmap.
-        /// - **Performance:** Good.
-        /// - **Best Use Case:** When performance is slightly prioritized over smoothness.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_LinearWithNearestMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_linearWithNearestMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Linear filtering with Nearest Mipmap interpolation.
-        /// - **Quality:** Slightly sharper than Linear Mipmap.
-        /// - **Performance:** Good.
-        /// - **Best Use Case:** When performance is slightly prioritized over smoothness.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_LinearWithNearestMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_linearWithNearestMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Linear filtering with no Mipmap. (Default in YoloDotNet) 
-        /// - **Quality:** Decent (default option, slight blur).
-        /// - **Performance:** Fast.
-        /// - **Best Use Case:** General-purpose resizing with a balance of speed and quality.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_LinearNoMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_linearNoMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Linear filtering with no Mipmap. (Default in YoloDotNet) 
-        /// - **Quality:** Decent (default option, slight blur).
-        /// - **Performance:** Fast.
-        /// - **Best Use Case:** General-purpose resizing with a balance of speed and quality.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_LinearNoMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_linearNoMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Nearest filtering with Linear Mipmap interpolation.
-        /// - **Quality:** Lower (visible pixelation).
-        /// - **Performance:** Very fast.
-        /// - **Best Use Case:** When maximum speed is needed but mipmaps help reduce aliasing.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_NearestWithLinearMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_nearestWithLinearMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Nearest filtering with Linear Mipmap interpolation.
-        /// - **Quality:** Lower (visible pixelation).
-        /// - **Performance:** Very fast.
-        /// - **Best Use Case:** When maximum speed is needed but mipmaps help reduce aliasing.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_NearestWithLinearMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_nearestWithLinearMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Nearest filtering with Nearest Mipmap interpolation.
-        /// - **Quality:** Low (pixelated, harsh transitions).
-        /// - **Performance:** Very fast.
-        /// - **Best Use Case:** When raw performance is the top priority.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_NearestWithNearestMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_nearestWithNearestMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Nearest filtering with Nearest Mipmap interpolation.
-        /// - **Quality:** Low (pixelated, harsh transitions).
-        /// - **Performance:** Very fast.
-        /// - **Best Use Case:** When raw performance is the top priority.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_NearestWithNearestMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_nearestWithNearestMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Nearest filtering with no Mipmap.
-        /// - **Quality:** Lowest (hard edges, pixelation).
-        /// - **Performance:** Fastest.
-        /// - **Best Use Case:** When performance is critical, and quality is not a concern.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_NearestNoMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_nearestNoMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using Nearest filtering with no Mipmap.
-        /// - **Quality:** Lowest (hard edges, pixelation).
-        /// - **Performance:** Fastest.
-        /// - **Best Use Case:** When performance is critical, and quality is not a concern.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_NearestNoMipmap()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_nearestNoMipmap, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using 4x Anisotropic filtering.
-        /// - **Quality:** Good (reduces blurring on angled textures).
-        /// - **Performance:** Moderate.
-        /// - **Best Use Case:** When dealing with textures viewed at an angle.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_Anisotropic4x()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_anisotropic4x, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using 4x Anisotropic filtering.
-        /// - **Quality:** Good (reduces blurring on angled textures).
-        /// - **Performance:** Moderate.
-        /// - **Best Use Case:** When dealing with textures viewed at an angle.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_Anisotropic4x()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_anisotropic4x, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using 8x Anisotropic filtering.
-        /// - **Quality:** Very good (better sharpness on textures at an angle).
-        /// - **Performance:** Lower than 4x but still efficient.
-        /// - **Best Use Case:** When dealing with angled textures and need better detail.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_Anisotropic8x()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_anisotropic8x, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using 8x Anisotropic filtering.
-        /// - **Quality:** Very good (better sharpness on textures at an angle).
-        /// - **Performance:** Lower than 4x but still efficient.
-        /// - **Best Use Case:** When dealing with angled textures and need better detail.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_Anisotropic8x()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_anisotropic8x, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using 16x Anisotropic filtering.
-        /// - **Quality:** Best (preserves details on angled textures).
-        /// - **Performance:** Slowest among anisotropic options.
-        /// - **Best Use Case:** When the highest texture quality is required, especially for angled surfaces.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKBitmap_Anisotropic16x()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skBitmap.ResizeImageProportional(_anisotropic16x, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        /// <summary>
-        /// Benchmark for resizing using 16x Anisotropic filtering.
-        /// - **Quality:** Best (preserves details on angled textures).
-        /// - **Performance:** Slowest among anisotropic options.
-        /// - **Best Use Case:** When the highest texture quality is required, especially for angled surfaces.
-        /// </summary>
-        [Benchmark]
-        public void ResizeSKImage_Anisotropic16x()
-        {
-            var pinnedBuffer = _pinnedBufferPool.Rent();
-
-            try
-            {
-                _ = _skImage.ResizeImageProportional(_anisotropic16x, pinnedBuffer);
-            }
-            finally
-            {
-                _pinnedBufferPool.Return(pinnedBuffer);
-            }
-        }
-
-        #endregion Methods
     }
 }
