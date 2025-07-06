@@ -6,13 +6,11 @@
         private static CancellationTokenSource _cancellationTokenSource = default!;
         private static Task _backgroundTask = default!;
 
-        private static MemoryStream _memoryStream = default!;
         private static bool _isRunning;
 
         static FrameSaveService()
         {
-            _memoryStream = new MemoryStream();
-            _frameQueue = [];
+            _frameQueue = new BlockingCollection<(byte[] frameBytes, string fileName)>(100);
         }
 
         /// <summary>
@@ -27,10 +25,10 @@
             SKEncodedImageFormat format = SKEncodedImageFormat.Jpeg,
             int quality = 100)
         {
-            _memoryStream.Position = 0;
+            using var memoryStream = new MemoryStream();
 
-            image.Encode(_memoryStream, format, quality);
-            byte[] encodedBytes = _memoryStream.ToArray();
+            image.Encode(memoryStream, format, quality);
+            byte[] encodedBytes = memoryStream.ToArray();
 
             _frameQueue.Add((encodedBytes, fileName));
         }
@@ -47,12 +45,12 @@
             SKEncodedImageFormat format = SKEncodedImageFormat.Jpeg,
             int quality = 100)
         {
-            _memoryStream.Position = 0;
+            using var memoryStream = new MemoryStream();
 
             using var imageData = image.Encode(format, quality);
-            imageData.SaveTo(_memoryStream);
+            imageData.SaveTo(memoryStream);
 
-            byte[] encodedBytes = _memoryStream.ToArray();
+            byte[] encodedBytes = memoryStream.ToArray();
 
             _frameQueue.Add((encodedBytes, fileName));
         }
