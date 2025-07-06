@@ -9,7 +9,7 @@
             var model = SharedConfig.GetTestModelV11(ModelType.Classification);
             var testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
-            var yolo = new Yolo(new YoloOptions
+            using var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
                 Cuda = false

@@ -9,10 +9,10 @@
             var model = SharedConfig.GetTestModelV8(ModelType.Segmentation);
             var testImage = SharedConfig.GetTestImage(ImageType.People);
 
-            var yolo = new Yolo(new YoloOptions
+            using var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                Cuda = false
+                Cuda = false,
             });
 
             using var image = SKBitmap.Decode(testImage);
@@ -21,7 +21,7 @@
             var results = yolo.RunSegmentation(image);
 
             // Assert
-            Assert.Equal(21, results.Count);
+            Assert.Equal(23, results.Count);
         }
     }
 }

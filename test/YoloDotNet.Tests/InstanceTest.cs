@@ -14,7 +14,7 @@
             try
             {
                 var model = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
-                var mock = new Yolo(new YoloOptions
+                using var mock = new Yolo(new YoloOptions
                 {
                     OnnxModel = model,
                     Cuda = useCuda

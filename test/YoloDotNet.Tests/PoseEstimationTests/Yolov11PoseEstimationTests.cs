@@ -9,7 +9,7 @@
             var model = SharedConfig.GetTestModelV11(ModelType.PoseEstimation);
             var testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
-            var yolo = new Yolo(new YoloOptions
+            using var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
                 Cuda = false

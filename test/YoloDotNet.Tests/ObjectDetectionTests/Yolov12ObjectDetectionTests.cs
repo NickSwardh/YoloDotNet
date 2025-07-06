@@ -9,7 +9,7 @@
             var model = SharedConfig.GetTestModelV12(ModelType.ObjectDetection);
             var testImage = SharedConfig.GetTestImage(ImageType.Street);
 
-            var yolo = new Yolo(new YoloOptions
+            using var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
                 Cuda = false
