@@ -43,15 +43,6 @@
             _skBitmap?.Dispose();
         }
 
-        [Params(true, false)]
-        public bool DrawConfidence { get; set; }
-
-        [Benchmark]
-        public void DrawClassificationOnSKImage()
-        {
-            _skImage.Draw(_classifications);
-        }
-
         [Benchmark]
         public void DrawClassificationOnSKBitmap()
         {
