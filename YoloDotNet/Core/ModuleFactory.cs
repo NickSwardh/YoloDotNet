@@ -70,6 +70,16 @@
                 }
             },
             {
+                ModelVersion.V11E, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => throw new NotImplementedException() },
+                    { ModelType.ObbDetection, core => throw new NotImplementedException() },
+                    { ModelType.Segmentation, core => new SegmentationModuleV11E(core) },
+                    { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            },
+            {
                 ModelVersion.V12, new Dictionary<ModelType, Func<YoloCore, IModule>>
                 {
                     { ModelType.Classification, core => new ClassificationModuleV12(core) },
