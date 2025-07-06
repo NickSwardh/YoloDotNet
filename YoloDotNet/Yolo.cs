@@ -49,20 +49,20 @@
         /// Run object detection on an Image.
         /// </summary>
         /// <param name="img">The SKBitmap to obb detect.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of classification results.</returns>
-        public List<ObjectDetection> RunObjectDetection(SKBitmap img, double confidence = 0.23, double iou = 0.7)
+        public List<ObjectDetection> RunObjectDetection(SKBitmap img, double confidence = 0.2, double iou = 0.7)
             => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         /// <summary>
         /// Run object detection on an Image.
         /// </summary>
         /// <param name="img">The SKImage to obb detect.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of classification results.</returns>
-        public List<ObjectDetection> RunObjectDetection(SKImage img, double confidence = 0.23, double iou = 0.7)
+        public List<ObjectDetection> RunObjectDetection(SKImage img, double confidence = 0.2, double iou = 0.7)
              => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         #endregion
@@ -73,20 +73,20 @@
         /// Run oriented bounding bBox detection on an image.
         /// </summary>
         /// <param name="img">The SKBitmap to obb detect.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<OBBDetection> RunObbDetection(SKBitmap img, double confidence = 0.23, double iou = 0.7)
+        public List<OBBDetection> RunObbDetection(SKBitmap img, double confidence = 0.2, double iou = 0.7)
             => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         /// <summary>
         /// Run oriented bounding bBox detection on an image.
         /// </summary>
         /// <param name="img">The SKImage to obb detect.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<OBBDetection> RunObbDetection(SKImage img, double confidence = 0.23, double iou = 0.7)
+        public List<OBBDetection> RunObbDetection(SKImage img, double confidence = 0.2, double iou = 0.7)
             => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         #endregion
@@ -97,20 +97,20 @@
         /// Run segmentation on an image.
         /// </summary>
         /// <param name="img">The SKBitmap to segmentate.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<Segmentation> RunSegmentation(SKBitmap img, double confidence = 0.23, double pixelConfedence = 0.65, double iou = 0.7)
+        public List<Segmentation> RunSegmentation(SKBitmap img, double confidence = 0.2, double pixelConfedence = 0.65, double iou = 0.7)
             => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
 
         /// <summary>
         /// Run segmentation on an image.
         /// </summary>
         /// <param name="img">The SKImage to segmentate.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.23, double pixelConfedence = 0.65, double iou = 0.7)
+        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.2, double pixelConfedence = 0.65, double iou = 0.7)
             => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
 
         #endregion
@@ -121,20 +121,20 @@
         /// Run pose estimation on an image.
         /// </summary>
         /// <param name="img">The SKBitmap to pose estimate.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<PoseEstimation> RunPoseEstimation(SKBitmap img, double confidence = 0.23, double iou = 0.7)
+        public List<PoseEstimation> RunPoseEstimation(SKBitmap img, double confidence = 0.2, double iou = 0.7)
             => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         /// <summary>
         /// Run pose estimation on an image.
         /// </summary>
         /// <param name="img">The SKImage to pose estimate.</param>
-        /// <param name="confidence">The confidence threshold for detected objects (default is 0.23).</param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence = 0.23, double iou = 0.7)
+        public List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence = 0.2, double iou = 0.7)
             => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
 
         #endregion
