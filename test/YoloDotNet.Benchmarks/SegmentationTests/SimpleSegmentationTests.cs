@@ -11,6 +11,7 @@
         private Yolo _yolo;
         private SKBitmap _image;
 
+        // Invoked for each Param parameter
         [GlobalSetup]
         public void GlobalSetup()
         {
@@ -18,6 +19,7 @@
             _image = SKBitmap.Decode(_testImage);
         }
 
+        // Invoked for each Param parameter
         [GlobalCleanup]
         public void GlobalCleanup()
         {
