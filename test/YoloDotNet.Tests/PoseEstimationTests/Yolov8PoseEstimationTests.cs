@@ -12,16 +12,17 @@
             using var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                Cuda = false
+                Cuda = false,
+                ImageResize = ImageResize.Proportional
             });
 
             using var image = SKBitmap.Decode(testImage);
 
             // Act
-            var results = yolo.RunPoseEstimation(image, 0.25, 0.45);
+            var results = yolo.RunPoseEstimation(image, 0.23, 0.7);
 
             // Assert
-            Assert.Equal(10, results.Count);
+            Assert.Equal(11, results.Count);
         }
     }
 }
