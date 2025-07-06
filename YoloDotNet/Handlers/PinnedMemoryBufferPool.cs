@@ -5,7 +5,7 @@
         internal readonly ConcurrentBag<PinnedMemoryBuffer> _pool = [];
         private readonly SKImageInfo _imageInfo;
 
-        public PinnedMemoryBufferPool(SKImageInfo skInfo, int initialSize = 20)
+        public PinnedMemoryBufferPool(SKImageInfo skInfo, int initialSize = 60)
         {
             _imageInfo = skInfo;
 
