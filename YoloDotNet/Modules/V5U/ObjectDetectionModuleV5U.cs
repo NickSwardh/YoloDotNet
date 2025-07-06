@@ -11,8 +11,7 @@
         {
             _yoloCore = yoloCore;
 
-            // Yolov5 has the same model input/output shapes as Yolov8
-            // Use Yolov8 module
+            // Yolov5 uses the YOLOv8 model architecture.
             _objectDetectionModuleV8 = new ObjectDetectionModuleV8(_yoloCore);
         }
 

@@ -15,8 +15,7 @@
         {
             _yoloCore = yoloCore;
 
-            // Yolov12 has the same model input/output shapes as Yolov8
-            // Use Yolov8 module
+            // Yolov12 uses the YOLOv8 model architecture.
             _poseEstimationModuleV8 = new PoseEstimationModuleV8(_yoloCore);
         }
 

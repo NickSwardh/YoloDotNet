@@ -1,21 +1,17 @@
-﻿namespace YoloDotNet.Modules.V12
+﻿namespace YoloDotNet.Modules.V11E
 {
-    internal class SegmentationModuleV12 : ISegmentationModule
+    internal class SegmentationModuleV11E : ISegmentationModule
     {
-        public event EventHandler VideoStatusEvent = delegate { };
-        public event EventHandler VideoProgressEvent = delegate { };
-        public event EventHandler VideoCompleteEvent = delegate { };
-
         private readonly YoloCore _yoloCore;
         private readonly SegmentationModuleV8 _segmentationModuleV8 = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
-        public SegmentationModuleV12(YoloCore yoloCore)
+        public SegmentationModuleV11E(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
 
-            // Yolov12 uses the YOLOv8 model architecture.
+            // YOLOv11E uses the YOLOv8 model architecture
             _segmentationModuleV8 = new SegmentationModuleV8(_yoloCore);
         }
 
