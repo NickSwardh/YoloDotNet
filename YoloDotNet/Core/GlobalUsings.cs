@@ -30,6 +30,7 @@ global using YoloDotNet.Models.Interfaces;
 
 global using YoloDotNet.Modules.V5U;
 global using YoloDotNet.Modules.V8;
+global using YoloDotNet.Modules.V8E;
 global using YoloDotNet.Modules.V9;
 global using YoloDotNet.Modules.V10;
 global using YoloDotNet.Modules.V11;

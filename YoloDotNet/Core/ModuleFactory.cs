@@ -30,6 +30,16 @@
                 }
             },
             {
+                ModelVersion.V8E, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => throw new NotImplementedException() },
+                    { ModelType.ObbDetection, core => throw new NotImplementedException() },
+                    { ModelType.Segmentation, core => new SegmentationModuleV8E(core) },
+                    { ModelType.PoseEstimation, core => throw new NotImplementedException() }
+                }
+            },
+            {
                 ModelVersion.V9, new Dictionary<ModelType, Func<YoloCore, IModule>>
                 {
                     { ModelType.Classification, core => throw new NotImplementedException() },
