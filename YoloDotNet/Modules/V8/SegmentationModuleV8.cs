@@ -6,7 +6,6 @@
         private readonly ObjectDetectionModuleV8 _objectDetectionModule;
         private readonly float _scalingFactorW;
         private readonly float _scalingFactorH;
-        private readonly SKPaint _paint;
         private readonly int _maskWidth;
         private readonly int _maskHeight;
 
@@ -28,12 +27,6 @@
             // Calculate scaling factor for downscaling boundingboxes to segmentation pixelmask proportions
             _scalingFactorW = (float)_maskWidth / inputWidth;
             _scalingFactorH = (float)_maskHeight / inputHeight;
-
-            _paint = new SKPaint
-            {
-                Style = SKPaintStyle.Fill,
-                IsStroke = true
-            };
         }
 
         public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
@@ -77,8 +70,9 @@
             }
 
             // Clean up
-            ortValues[0].Dispose();
-            ortValues[1].Dispose();
+            ortValues[0]?.Dispose();
+            ortValues[1]?.Dispose();
+            ortValues?.Dispose();
 
             return [.. boundingBoxes.Select(x => (Segmentation)x)];
         }
@@ -138,11 +132,8 @@
                     // Convert confidence to alpha (opacity) byte value (0-255)
                     byte alpha = (byte)(pixelWeight * 255);
 
-                    // Set paint color to white with calculated alpha transparency
-                    _paint.Color = new SKColor(255, 255, 255, alpha);
-
                     // Draw the pixel point on the canvas
-                    canvas.DrawPoint(x, y, _paint);
+                    canvas.DrawPoint(x, y, new SKColor(255, 255, 255, alpha));
                 }
             }
         }
@@ -186,7 +177,6 @@
         {
             _objectDetectionModule?.Dispose();
             _yoloCore?.Dispose();
-            _paint?.Dispose();
 
             GC.SuppressFinalize(this);
         }
