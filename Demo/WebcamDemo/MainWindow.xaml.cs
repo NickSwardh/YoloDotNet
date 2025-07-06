@@ -80,14 +80,16 @@ namespace WebcamDemo
             {
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
                 Cuda = true,
-                PrimeGpu = false
+                PrimeGpu = false,
+                ImageResize = ImageResize.Proportional,
+                SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
             _dispatcher = Dispatcher.CurrentDispatcher;
 
             _currentFrame = new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT);
             _rect = new SKRect(0, 0, WEBCAM_WIDTH, bottom: WEBCAM_HEIGHT);
-            _imageInfo = new SKImageInfo(WEBCAM_WIDTH, WEBCAM_HEIGHT, SKColorType.Bgra8888, SKAlphaType.Unpremul);
+            _imageInfo = new SKImageInfo(WEBCAM_WIDTH, WEBCAM_HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul);
 
             // Start the webcam capture on a background thread
             Task.Run(() => WebcamAsync());
@@ -122,7 +124,7 @@ namespace WebcamDemo
                 if (_runDetection)
                 {
                     // Run object detection on the current frame
-                    var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold);
+                    var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold, iou: 0.7);
 
                     if (_isFilteringEnabled)
                         results = results.FilterLabels(["person", "cat", "plane"]);  // Optionally filter results to include only specific classes (e.g., "person", "cat", "plan")
