@@ -34,6 +34,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SegmentationDemo", "Demo\Se
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VideoStreamDemo", "Demo\VideoStreamDemo\VideoStreamDemo.csproj", "{71839C4A-BD99-480E-B6DA-8B16CB2AD41F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchDemo", "Demo\BatchDemo\BatchDemo.csproj", "{A8DC881A-CFB0-43E0-BE40-21F7CF10E999}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -80,6 +82,10 @@ Global
 		{71839C4A-BD99-480E-B6DA-8B16CB2AD41F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{71839C4A-BD99-480E-B6DA-8B16CB2AD41F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{71839C4A-BD99-480E-B6DA-8B16CB2AD41F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A8DC881A-CFB0-43E0-BE40-21F7CF10E999}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A8DC881A-CFB0-43E0-BE40-21F7CF10E999}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A8DC881A-CFB0-43E0-BE40-21F7CF10E999}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A8DC881A-CFB0-43E0-BE40-21F7CF10E999}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -95,6 +101,7 @@ Global
 		{018E3DF2-6156-4ABF-8414-5BDE25564B1D} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{08C3B129-D8FA-4904-A2DA-27CFC5E8FD5E} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{71839C4A-BD99-480E-B6DA-8B16CB2AD41F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{A8DC881A-CFB0-43E0-BE40-21F7CF10E999} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C3673E62-2658-4C27-9C6A-A3215F416E05}
