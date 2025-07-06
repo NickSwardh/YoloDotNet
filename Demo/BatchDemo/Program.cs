@@ -68,7 +68,7 @@ namespace BatchDemo
             Console.WriteLine($"Onnx Model: {yolo.OnnxModel.ModelType}");
 
             // Collect images
-            var images = Directory.GetFiles(@"C:\Users\Nick\Desktop\Misc\testaren", "*.jpg");
+            var images = Directory.GetFiles(@"path\to\image\folder");
 
             Parallel.ForEach(images, image =>
             {
