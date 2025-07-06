@@ -6,8 +6,6 @@
         private readonly ObjectDetectionModuleV8 _objectDetectionModule;
         private readonly float _scalingFactorW;
         private readonly float _scalingFactorH;
-        private readonly SKBitmap _pixelMaskBitmap;
-        private readonly SKCanvas _pixelMaskCanvas;
         private readonly SKPaint _paint;
         private readonly int _maskWidth;
         private readonly int _maskHeight;
@@ -30,10 +28,6 @@
             // Calculate scaling factor for downscaling boundingboxes to segmentation pixelmask proportions
             _scalingFactorW = (float)_maskWidth / inputWidth;
             _scalingFactorH = (float)_maskHeight / inputHeight;
-
-            // Define bitmaps for processing the pixel mask
-            _pixelMaskBitmap = new SKBitmap(_yoloCore.OnnxModel.Outputs[1].Width, _yoloCore.OnnxModel.Outputs[1].Height, SKColorType.Gray8, SKAlphaType.Opaque);
-            _pixelMaskCanvas = new SKCanvas(_pixelMaskBitmap);
 
             _paint = new SKPaint
             {
@@ -65,12 +59,13 @@
                 var maskWeights = GetMaskWeightsFromBoundingBoxArea(box, ortSpan0);
 
                 // 2) Apply pixelmask based on mask-weights to canvas
-                _pixelMaskCanvas.Clear(SKColors.Black);
-                ApplySegmentationPixelMask(_pixelMaskCanvas, box.BoundingBoxUnscaled, ortSpan1, maskWeights);
+                using var pixelMaskBitmap = new SKBitmap(_maskWidth, _maskHeight, SKColorType.Gray8, SKAlphaType.Opaque);
+                using var pixelMaskCanvas = new SKCanvas(pixelMaskBitmap);
+                ApplySegmentationPixelMask(pixelMaskCanvas, box.BoundingBoxUnscaled, ortSpan1, maskWeights);
 
                 // 3) Crop downscaled boundingbox from the pixelmask canvas
                 using var cropped = new SKBitmap();
-                _pixelMaskBitmap.ExtractSubset(cropped, downScaledBoundingBox);
+                pixelMaskBitmap.ExtractSubset(cropped, downScaledBoundingBox);
 
                 // 4) Upscale cropped pixelmask to original boundingbox size. For smother edges, use an appropriate resampling method!
                 using var resizedCrop = new SKBitmap(pixelMaskInfo);
@@ -191,9 +186,6 @@
         {
             _objectDetectionModule?.Dispose();
             _yoloCore?.Dispose();
-
-            _pixelMaskBitmap?.Dispose();
-            _pixelMaskCanvas?.Dispose();
             _paint?.Dispose();
 
             GC.SuppressFinalize(this);
