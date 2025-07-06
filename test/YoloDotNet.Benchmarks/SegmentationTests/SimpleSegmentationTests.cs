@@ -4,86 +4,56 @@
     [MemoryDiagnoser]
     public class SimpleSegmentationTests
     {
-        #region Fields
-
         private readonly string _model8 = SharedConfig.GetTestModelV8(ModelType.Segmentation);
         private readonly string _model11 = SharedConfig.GetTestModelV11(ModelType.Segmentation);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
 
-        private Yolo _gpuYolov8;
-        private Yolo _cpuYolov8;
-
-        private Yolo _gpuYolov11;
-        private Yolo _cpuYolov11;
-
+        private Yolo _yolo;
         private SKBitmap _image;
-
-        #endregion Fields
-
-        #region Methods
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var options = new YoloOptions();
-
+            _yolo = CreateYolo(YoloParam);
             _image = SKBitmap.Decode(_testImage);
-
-            // Yolov8
-            options.OnnxModel = _model8;
-
-            options.Cuda = false;
-            _cpuYolov8 = new Yolo(options);
-
-            options.Cuda = true;
-            _gpuYolov8 = new Yolo(options);
-
-            // Yolov11
-            options.OnnxModel = _model11;
-
-            options.Cuda = false;
-            _cpuYolov11 = new Yolo(options);
-
-            options.Cuda = true;
-            _gpuYolov11 = new Yolo(options);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cpuYolov8?.Dispose();
-            _cpuYolov11?.Dispose();
-            _gpuYolov8?.Dispose();
-            _gpuYolov11?.Dispose();
-            _image.Dispose();
+            _yolo?.Dispose();
+            _image?.Dispose();
         }
 
-        // Yolov8
-        [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov8Cpu()
+        public enum YoloType
         {
-            return _cpuYolov8.RunSegmentation(_image);
+            Yolov8_CPU,
+            Yolov8_GPU,
+            Yolov11_CPU,
+            Yolov11_GPU,
+        }
+
+        [Params(YoloType.Yolov8_CPU,
+            YoloType.Yolov8_GPU,
+            YoloType.Yolov11_CPU,
+            YoloType.Yolov11_GPU
+            )]
+        public YoloType YoloParam { get; set; }
+
+        private Yolo CreateYolo(YoloType type)
+        {
+            return type switch
+            {
+                YoloType.Yolov8_CPU => new Yolo(new YoloOptions { OnnxModel = _model8, Cuda = false }),
+                YoloType.Yolov8_GPU => new Yolo(new YoloOptions { OnnxModel = _model8 }),
+                YoloType.Yolov11_CPU => new Yolo(new YoloOptions { OnnxModel = _model11, Cuda = false }),
+                YoloType.Yolov11_GPU => new Yolo(new YoloOptions { OnnxModel = _model11 }),
+                _ => throw new ArgumentOutOfRangeException()
+            };
         }
 
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov8Gpu()
-        {
-            return _gpuYolov8.RunSegmentation(_image);
-        }
-
-        // Yolov11
-        [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov11Cpu()
-        {
-            return _cpuYolov11.RunSegmentation(_image);
-        }
-
-        [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov11Gpu()
-        {
-            return _gpuYolov11.RunSegmentation(_image);
-        }
-
-        #endregion Methods
+        public List<Segmentation> Segmentation()
+            => _yolo.RunSegmentation(_image);
     }
 }
