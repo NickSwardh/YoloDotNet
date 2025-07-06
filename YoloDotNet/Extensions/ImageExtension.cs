@@ -182,7 +182,7 @@
             var srcRect = new SKRect(0, 0, image.Width, image.Height);
             var destRect = new SKRect(0, 0, modelWidth, modelHeight);
 
-            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions, ImageConfig.ResizePaint);
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions);
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
             return new SKSizeI(image.Width, image.Height);
@@ -227,7 +227,7 @@
             var srcRect = new SKRect(0, 0, width, height);
             var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
-            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions, ImageConfig.ResizePaint);
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
             return new SKSizeI(width, height);
