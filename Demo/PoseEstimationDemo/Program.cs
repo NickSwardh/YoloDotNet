@@ -64,7 +64,7 @@ namespace PoseEstimationDemo
 
                 // Sampling options for resizing; affects inference speed and quality.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
-                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
+                SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
             // Load input image as SKBitmap (or SKImage)
@@ -72,7 +72,7 @@ namespace PoseEstimationDemo
             using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Crosswalk));
 
             // Run inference
-            var results = yolo.RunPoseEstimation(image);
+            var results = yolo.RunPoseEstimation(image, confidence: 0.25, iou: 0.7);
 
             // Draw results (optional)
             image.Draw(results, _drawingOptions);

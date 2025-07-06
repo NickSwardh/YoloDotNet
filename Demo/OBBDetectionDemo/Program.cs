@@ -62,7 +62,7 @@ namespace OBBDetectionDemo
 
                 // Sampling options for resizing; affects inference speed and quality.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
-                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
+                SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
             // Print model type
@@ -73,7 +73,7 @@ namespace OBBDetectionDemo
             using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Island));
 
             // Perform obb detection inference.
-            var results = yolo.RunObbDetection(image, confidence: 0.23, iou: 0.7);
+            var results = yolo.RunObbDetection(image, confidence: 0.25, iou: 0.7);
 
             // Draw results (optional)
             image.Draw(results, _drawingOptions);

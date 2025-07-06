@@ -62,11 +62,11 @@ namespace SegmentationDemo
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
                 // Set this accordingly, as it directly impacts the inference results.
-                ImageResize = ImageResize.Proportional,
+                ImageResize = ImageResize.Stretched,
 
                 // Sampling options for resizing; affects inference speed and quality.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
-                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
+                SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
             // Load input image as SKBitmap (or SKImage)
@@ -74,7 +74,7 @@ namespace SegmentationDemo
             using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.People));
 
             // Run inference
-            var results = yolo.RunSegmentation(image, 0.5, 0.5, 0.5);
+            var results = yolo.RunSegmentation(image, confidence: 0.24, pixelConfedence: 0.5, iou: 0.7);
 
             // Draw results
             image.Draw(results, _drawingOptions);
