@@ -111,12 +111,11 @@
         public static Metadata GetVideoInfo(string videoPath)
         {
             using var ffprobe = Processor.Create(FFPROBE, [
-                "-v",                       "quiet",
-                "-print_format",            "json",
-                "-select_streams",          "v:0",
-                "-show_entries",            "stream=width,height,r_frame_rate,duration",
-                "-hide_banner",
-                $@"""{videoPath}"""]);
+                "-v",                   "quiet",
+                "-print_format",        "json",
+                "-select_streams",      "v:0",
+                "-show_entries",        "stream=width,height,r_frame_rate,duration",
+                "-hide_banner",         videoPath]);
 
             ffprobe.Start();
 
@@ -157,25 +156,30 @@
             if (string.IsNullOrEmpty(VideoMetadata.DeviceName) is false)
             {
                 // Select the correct input format based on platform
-                var deviceVideoFilter = SystemPlatform.GetOS() == Platform.Windows
-                    ? "dshow" // windows: Directshow
-                    : "v4l2"; // linux: Video4Linux2
+                string? deviceVideoFilter;
+                if (SystemPlatform.GetOS() == Platform.Windows)
+                {
+                    deviceVideoFilter = "dshow"; // windows: Directshow
+                    inputSource = $"video={VideoMetadata.DeviceName}";
+                }
+                else
+                {
+                    deviceVideoFilter = "v4l2"; // linux: Video4Linux2
+                    inputSource = $"/dev/{VideoMetadata.DeviceName}"; // e.g., "video0"
+                }
 
                 ffmpegArgs.AddRange([
                     "-f",               deviceVideoFilter,
                     "-video_size",     $"{VideoMetadata.Width}x{VideoMetadata.Height}"]); // Force device to use full resolution
-
-                // Update input to use device
-                inputSource = $"video={VideoMetadata.DeviceName}";
             }
 
             // Process all frames or every nth frame?
             var videoFilter = _videoOptions.FrameInterval <= 0
-                ? $@"""fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)},scale={_videoTargetWidth}:{_videoTargetHeight}"""
-                : $@"""select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoTargetWidth}:{_videoTargetHeight}""";
+                ? $@"fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)},scale={_videoTargetWidth}:{_videoTargetHeight}"
+                : $@"select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoTargetWidth}:{_videoTargetHeight}";
 
             ffmpegArgs.AddRange([
-                "-i",           $@"""{inputSource}""",
+                "-i",           inputSource,
                 "-an",
                 "-vf",           videoFilter,
                 "-pix_fmt",     "bgra",
@@ -183,7 +187,7 @@
                 "-f",           "image2pipe",
                 "-"]);          // Pipe output to YoloDotNet.
 
-            _ffmpegDecode = Processor.Create(FFMPEG, [.. ffmpegArgs]);
+            _ffmpegDecode = Processor.Create(FFMPEG, ffmpegArgs);
         }
 
         private void InitializeFFMPEGEncode()
@@ -200,18 +204,17 @@
             };
 
             var framerate = $"{_videoTargetfps.ToString("", CultureInfo.InvariantCulture)}";
-            var vf = $@"""setsar=1:1""";
+            var vf = $@"setsar=1:1";
 
             if (_videoOptions.FrameInterval > 0)
             {
                 framerate = $@"{(VideoMetadata.FPS / _videoOptions.FrameInterval).ToString("0.######", CultureInfo.InvariantCulture)}";
-                vf = $@"""fps={_videoTargetfps},setsar=1:1""";
+                vf = $@"fps={_videoTargetfps},setsar=1:1";
             }
 
             ffmpegArgs.AddRange([
                 "-framerate",   framerate,
-                "-i",           "-"
-                ]);
+                "-i",           "-"]);
 
             // Encode using CUDA?
             var videoCodec = "lib264";
@@ -224,8 +227,7 @@
                 "-c:v",     videoCodec,
                 "-vf",      vf,
                 "-rc:v:0",  "vbr_hq",
-                "-cq:v",    $"{_videoOptions.CompressionQuality}",
-                ]);
+                "-cq:v",    $"{_videoOptions.CompressionQuality}"]);
 
             // Split video in chunks?
             if (_videoOptions.VideoChunkDuration > 0)
@@ -239,17 +241,14 @@
                     "-g",               (_videoTargetfps * 2).ToString(),
                 "-segment_time",    _videoOptions.VideoChunkDuration.ToString(),
                 "-f",               "segment",
-                "-y",               $@"""{videoOutput}"""
-                    ]);
+                    "-y",               videoOutput]);
             }
             else
             {
-                ffmpegArgs.AddRange([
-                    "-y",   $@"""{_videoOptions.VideoOutput}"""
-                    ]);
+                ffmpegArgs.AddRange(["-y", _videoOptions.VideoOutput]);
             }
 
-            _ffmpegEncode = Processor.Create(FFMPEG, [.. ffmpegArgs]);
+            _ffmpegEncode = Processor.Create(FFMPEG, ffmpegArgs);
         }
 
         public void Start()
@@ -426,7 +425,7 @@
             // If a custom frame interval is set to run inference on every Nth frame, recalculate total frames.
             if (_videoOptions.FrameInterval > 0)
             {
-                totalFrames = (long)Math.Ceiling(totalFrames  / (float)_videoOptions.FrameInterval);
+                totalFrames = (long)Math.Ceiling(totalFrames / (float)_videoOptions.FrameInterval);
             }
 
             return totalFrames - 1; // Make sure to keep total-frames count zero-indexed.
