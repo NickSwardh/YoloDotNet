@@ -28,6 +28,9 @@
 
         public FFmpegService(VideoOptions options, YoloOptions yoloOptions)
         {
+            EnsureToolIsInstalled(FFPROBE);
+            EnsureToolIsInstalled(FFMPEG);
+
             _videoOptions = options;
             _yoloOptions = yoloOptions;
             GetVideoSourceDimensions();
@@ -239,8 +242,8 @@
 
                 ffmpegArgs.AddRange([
                     "-g",               (_videoTargetfps * 2).ToString(),
-                "-segment_time",    _videoOptions.VideoChunkDuration.ToString(),
-                "-f",               "segment",
+                    "-segment_time",    _videoOptions.VideoChunkDuration.ToString(),
+                    "-f",               "segment",
                     "-y",               videoOutput]);
             }
             else
@@ -429,6 +432,28 @@
             }
 
             return totalFrames - 1; // Make sure to keep total-frames count zero-indexed.
+        }
+
+        private static bool EnsureToolIsInstalled(string fileName)
+        {
+            try
+            {
+                using var process = Processor.Create(fileName, ["-version"]);
+                process.Start();
+                process.WaitForExit(2000); // Timeout after 2 seconds
+
+                return process.ExitCode == 0;
+            }
+            catch (Win32Exception ex)
+            {
+                // Common on Windows when tool is not found
+                throw new FileNotFoundException($"Required '{fileName}' is not installed or not in PATH.", ex);
+            }
+            catch (Exception ex)
+            {
+                // Wrap any other issues into a clear higher-level message
+                throw new ApplicationException($"Failed to verify '{fileName}': {ex.Message}", ex);
+            }
         }
 
         public void Dispose()
