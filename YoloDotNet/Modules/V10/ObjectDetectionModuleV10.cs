@@ -22,16 +22,16 @@
 
             using var ort = ortValues[0];
             var results = ObjectDetection(imageSize, ort, confidence, iou)
-                .Select(x => (ObjectDetection)x);
+                .Select(x => (ObjectDetection)x)
+                .ToList();
 
-            return [.. results];
+            return results;
         }
 
         #region Helper methods
 
         private List<ObjectResult> ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
-            // TODO: Implement for stretched input images too.
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
