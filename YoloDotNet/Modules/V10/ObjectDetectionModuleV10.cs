@@ -29,7 +29,7 @@
 
         #region Helper methods
 
-        private ObjectResult[] ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        private List<ObjectResult> ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
             // TODO: Implement for stretched input images too.
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
@@ -37,6 +37,7 @@
             var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
 
+            int validBoxCount = 0;
             var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
 
             var width = imageSize.Width;
@@ -79,7 +80,7 @@
                         yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
                     }
 
-                    boxes[i] = new ObjectResult
+                    boxes[validBoxCount] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
@@ -88,8 +89,11 @@
                     };
                 }
 
-                var results = boxes.Where(x => x is not null);
-                return _yoloCore.RemoveOverlappingBoxes([.. results], overlapThreshold);
+                // Prevent overhead from temporary collections by copying to a fixed-size array.
+                var resultArray = new ObjectResult[validBoxCount];
+                boxes.AsSpan(0, validBoxCount).CopyTo(resultArray);
+
+                return _yoloCore.RemoveOverlappingBoxes(resultArray, overlapThreshold);
             }
             finally
             {
