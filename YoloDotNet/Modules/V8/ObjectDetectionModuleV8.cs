@@ -3,7 +3,6 @@
     internal class ObjectDetectionModuleV8 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
-        private static List<ObjectResult> _result = default!;
         private readonly int _labels;
         private readonly int _channels;
         private readonly int _channels2;
@@ -15,8 +14,6 @@
         public ObjectDetectionModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
-
-            _result = [];
 
             _labels = _yoloCore.OnnxModel.Labels.Length;
             _channels = _yoloCore.OnnxModel.Outputs[0].Channels;
@@ -33,9 +30,10 @@
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
 
             var results = ObjectDetection(imageSize, ortSpan, confidence, iou)
-                .Select(x => (ObjectDetection)x);
+                .Select(x => (ObjectDetection)x)
+                .ToList();
 
-            return [..results];
+            return results;
         }
 
         #region Helper methods
@@ -47,7 +45,7 @@
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetection(SKSizeI imageSize, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
+        public List<ObjectResult> ObjectDetection(SKSizeI imageSize, ReadOnlySpan<float> ortSpan, double confidenceThreshold, double overlapThreshold)
         {
             if (ortSpan == null)
                 return [];
@@ -57,6 +55,9 @@
             var width = imageSize.Width;
             var height = imageSize.Height;
 
+            int validBoxCount = 0;
+            var boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
+
             try
             {
                 for (int i = 0; i < _channels; i++)
@@ -64,6 +65,25 @@
                     // Move forward to confidence value of first label
                     var labelOffset = i + _channels4;
 
+                    float bestConfidence = 0f;
+                    int bestLabelIndex = -1;
+
+                    // Get confidence and label for current bounding box
+                    for (var l = 0; l < _labels; l++, labelOffset += _channels)
+                    {
+                        var boxConfidence = ortSpan[labelOffset];
+
+                        if (boxConfidence > bestConfidence)
+                        {
+                            bestConfidence = boxConfidence;
+                            bestLabelIndex = l;
+                        }
+                    }
+
+                    // Stop early if confidence is low
+                    if (bestConfidence < confidenceThreshold)
+                        continue;
+                        
                     float x = ortSpan[i];
                     float y = ortSpan[i + _channels];
                     float w = ortSpan[i + _channels2];
@@ -95,7 +115,7 @@
                         xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
                         yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
                     }
-
+                        
                     // Unscaled coordinates for resized input image
                     var sxMin = (int)(x - w / 2);
                     var syMin = (int)(y - h / 2);
@@ -105,40 +125,26 @@
                     var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
                     var boundingBoxUnscaled = new SKRectI(sxMin, syMin, sxMax, syMax);
 
-                    float bestConfidence = 0f;
-                    int bestLabelIndex = -1;
-
-                    // Iterate through all labels
-                    for (var l = 0; l < _labels; l++, labelOffset += _channels)
+                    boxes[validBoxCount++] = new ObjectResult
                     {
-                        var boxConfidence = ortSpan[labelOffset];
-
-                        if (boxConfidence > bestConfidence)
-                        {
-                            bestConfidence = boxConfidence;
-                            bestLabelIndex = l;
-                        }
-                    }
-
-                    if (bestConfidence > confidenceThreshold && bestLabelIndex != -1)
-                    {
-                        _result.Add(new ObjectResult
-                        {
-                            Label = _yoloCore.OnnxModel.Labels[bestLabelIndex],
-                            Confidence = bestConfidence,
-                            BoundingBox = boundingBox,
-                            BoundingBoxUnscaled = boundingBoxUnscaled,
-                            BoundingBoxIndex = i,
-                            OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _channels * (4 + _labels)] : 0
-                        });
-                    }
+                        Label = _yoloCore.OnnxModel.Labels[bestLabelIndex],
+                        Confidence = bestConfidence,
+                        BoundingBox = boundingBox,
+                        BoundingBoxUnscaled = boundingBoxUnscaled,
+                        BoundingBoxIndex = i,
+                        OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _channels * (4 + _labels)] : 0
+                    };
                 }
 
-                return _yoloCore.RemoveOverlappingBoxes([.. _result], overlapThreshold);
+                // Prevent overhead from temporary collections by copying to a fixed-size array.
+                var resultArray = new ObjectResult[validBoxCount];
+                boxes.AsSpan(0, validBoxCount).CopyTo(resultArray);
+
+                return _yoloCore.RemoveOverlappingBoxes(resultArray, overlapThreshold);
             }
             finally
             {
-                _result.Clear();
+                _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: true);
             }
         }
 
