@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Core
+﻿namespace YoloDotNet.Configuration
 {
     internal static class SystemPlatform
     {
