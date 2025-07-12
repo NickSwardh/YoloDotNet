@@ -4,61 +4,31 @@
     [MemoryDiagnoser]
     public class OrientedBoundingBoxImageDrawTests
     {
-        #region Fields
-
-        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.ObbDetection);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
 
-        private Yolo _cpuYolo;
-        private SKImage _skImage;
+        private Yolo _yolo;
         private SKBitmap _skBitmap;
-        private List<OBBDetection> _oBBDetections;
-
-        #endregion Fields
-
-        #region Methods
+        private List<OBBDetection> _obbDetections;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var options = new YoloOptions
-            {
-                OnnxModel = _model,
-                Cuda = false
-            };
-
-            _cpuYolo = new Yolo(options);
+            _yolo = YoloCreator.CreateYolo(YoloType.V8_Obb_CPU);
             _skBitmap = SKBitmap.Decode(_testImage);
-            _skImage = SKImage.FromEncodedData(_testImage);
 
             // We just need one result to use for drawing.
-            _oBBDetections = _cpuYolo.RunObbDetection(_skBitmap);
+            _obbDetections = _yolo.RunObbDetection(_skBitmap);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cpuYolo?.Dispose();
+            _yolo?.Dispose();
             _skBitmap?.Dispose();
-            _skImage?.Dispose();
-        }
-
-        [Params(false, true)]
-        public bool DrawConfidence { get; set; }
-
-        [Benchmark]
-        public void DrawOrientedBoundingBoxOnSKImage()
-        {
-            // When drawing using an SKimage, a new SKBitmap is returned with the drawn objects.
-            _ = _skImage.Draw(_oBBDetections);
         }
 
         [Benchmark]
-        public void DrawOrientedBoundingBoxONSKBitmap()
-        {
-            _skBitmap.Draw(_oBBDetections);
-        }
-
-        #endregion Methods
+        public void DrawObb()
+            => _skBitmap.Draw(_obbDetections);
     }
 }

@@ -4,51 +4,30 @@
     [MemoryDiagnoser]
     public class ClassificationImageDrawTests
     {
-        #region Fields
-
-        private readonly string _model = SharedConfig.GetTestModelV8(ModelType.Classification);
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
-        private Yolo _cpuYolo;
-        private SKImage _skImage;
+        private Yolo _yolo;
         private SKBitmap _skBitmap;
         private List<Classification> _classifications;
-
-        #endregion Fields
-
-        #region Methods
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            var options = new YoloOptions
-            {
-                OnnxModel = _model,
-                Cuda = false
-            };
-
-            _cpuYolo = new Yolo(options);
+            _yolo = YoloCreator.CreateYolo(YoloType.V8_Cls_CPU);
             _skBitmap = SKBitmap.Decode(_testImage);
-            _skImage = SKImage.FromEncodedData(_testImage);
 
-            // We just need one result to use for drawing.
-            _classifications = _cpuYolo.RunClassification(_skBitmap);
+            _classifications = _yolo.RunClassification(_skBitmap);
         }
 
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _cpuYolo?.Dispose();
-            _skImage?.Dispose();
+            _yolo?.Dispose();
             _skBitmap?.Dispose();
         }
 
         [Benchmark]
-        public void DrawClassificationOnSKBitmap()
-        {
-            _skBitmap.Draw(_classifications);
-        }
-
-        #endregion Methods
+        public void DrawClassification()
+            => _skBitmap.Draw(_classifications);
     }
 }

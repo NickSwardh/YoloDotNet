@@ -13,6 +13,7 @@ global using YoloDotNet.Handlers;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Test.Common;
 global using YoloDotNet.Configuration;
+global using YoloDotNet.Benchmarks.Setup;
 global using YoloDotNet.Test.Common.Enums;
 
 global using SkiaSharp;

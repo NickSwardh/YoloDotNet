@@ -6,8 +6,7 @@
     {
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
 
-        private SKBitmap _skBitmap;
-        private SKImage _skImage;
+        private SKBitmap _image;
 
         private SKImageInfo _outputImageInfo;
         private PinnedMemoryBufferPool _pinnedBufferPool;
@@ -29,23 +28,19 @@
             Anisotropic16x
         }
 
-        // Invoked for each Param parameter
         [GlobalSetup]
         public void GlobalSetup()
         {
             _outputImageInfo = new SKImageInfo(_width, _height, SKColorType.Rgb888x, SKAlphaType.Opaque);
             _pinnedBufferPool = new PinnedMemoryBufferPool(_outputImageInfo);
 
-            _skBitmap = SKBitmap.Decode(_testImage);
-            _skImage = SKImage.FromEncodedData(_testImage);
+            _image = SKBitmap.Decode(_testImage);
         }
 
-        // Invoked for each Param parameter
         [GlobalCleanup]
         public void GlobalCleanup()
         {
-            _skBitmap?.Dispose();
-            _skImage?.Dispose();
+            _image?.Dispose();
         }
 
         [Params(SamplingProfile.CubicMitchell,
@@ -161,13 +156,13 @@
         }
 
         [Benchmark]
-        public void ResizeBenchmark()
+        public void Resize()
         {
             var pinnedBuffer = _pinnedBufferPool.Rent();
 
             try
             {
-                _ = _skBitmap.ResizeImageProportional(SamplingOptions, pinnedBuffer);
+                _ = _image.ResizeImageProportional(SamplingOptions, pinnedBuffer);
             }
             finally
             {
