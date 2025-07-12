@@ -8,8 +8,21 @@
         private readonly float _scalingFactorH;
         private readonly int _maskWidth;
         private readonly int _maskHeight;
+        private readonly int _elements;
+        private readonly int _channelsFromOutput0;
+        private readonly int _channelsFromOutput1;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
+
+        // Represents a fixed-size float buffer of 32 elements for mask weights.
+        // Uses the InlineArray attribute to avoid heap allocations entirely.
+        // This structure is stack-allocated when used inside methods or structs,
+        // making it ideal for high-performance scenarios where per-frame allocations must be avoided.
+        [InlineArray(32)]
+        internal struct MaskWeights32
+        {
+            private float _mask;
+        }
 
         public SegmentationModuleV8(YoloCore yoloCore)
         {
@@ -23,6 +36,10 @@
             // Get model pixel mask widh and height
             _maskWidth = _yoloCore.OnnxModel.Outputs[1].Width;
             _maskHeight = _yoloCore.OnnxModel.Outputs[1].Height;
+
+            _elements = _yoloCore.OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
+            _channelsFromOutput0 = _yoloCore.OnnxModel.Outputs[0].Channels;
+            _channelsFromOutput1 = _yoloCore.OnnxModel.Outputs[1].Channels;
 
             // Calculate scaling factor for downscaling boundingboxes to segmentation pixelmask proportions
             _scalingFactorW = (float)_maskWidth / inputWidth;
@@ -77,16 +94,13 @@
             return [.. boundingBoxes.Select(x => (Segmentation)x)];
         }
 
-        private float[] GetMaskWeightsFromBoundingBoxArea(ObjectResult box, ReadOnlySpan<float> ortSpan0)
+        private MaskWeights32 GetMaskWeightsFromBoundingBoxArea(ObjectResult box, ReadOnlySpan<float> ortSpan0)
         {
-            var elements = _yoloCore.OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
-            var channelsFromOutput0 = _yoloCore.OnnxModel.Outputs[0].Channels;
-            var channelsFromOutput1 = _yoloCore.OnnxModel.Outputs[1].Channels;
+            MaskWeights32 maskWeights = default;
 
-            var maskWeights = new float[channelsFromOutput1];
-            var maskOffset = box.BoundingBoxIndex + (channelsFromOutput0 * elements);
+            var maskOffset = box.BoundingBoxIndex + (_channelsFromOutput0 * _elements);
 
-            for (var m = 0; m < channelsFromOutput1; m++, maskOffset += channelsFromOutput0)
+            for (var m = 0; m < _channelsFromOutput1; m++, maskOffset += _channelsFromOutput0)
                 maskWeights[m] = ortSpan0[maskOffset];
 
             return maskWeights;
@@ -102,7 +116,7 @@
             return new SKRectI(left, top, right, bottom);
         }
 
-        private void ApplySegmentationPixelMask(SKCanvas canvas, SKRect bbox, ReadOnlySpan<float> outputOrtSpan, float[] maskWeights)
+        private void ApplySegmentationPixelMask(SKCanvas canvas, SKRect bbox, ReadOnlySpan<float> outputOrtSpan, MaskWeights32 maskWeights)
         {
             // Convert bounding box from original coordinates to segmentation mask scale
             var scaledBoundingBox = DownscaleBoundingBoxToSegmentationOutput(bbox);

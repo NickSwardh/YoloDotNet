@@ -6,6 +6,7 @@ global using System.Runtime.Serialization;
 global using System.Collections.Concurrent;
 global using System.Text.RegularExpressions;
 global using System.Runtime.InteropServices;
+global using System.Runtime.CompilerServices;
 
 global using System.Data;
 global using System.Text.Json;
