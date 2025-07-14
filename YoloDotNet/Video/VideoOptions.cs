@@ -16,18 +16,22 @@
         public string VideoOutput{ get; set; } = default!;
 
         /// <summary>
-        /// Gets or sets the width of the output video. The default is 1080. 
-        /// Set to -2 to automatically calculate the width while maintaining the aspect ratio.
-        /// Note: Only one of width or height can be set to -2 at a time.
+        /// Gets or sets the width of the output video.
+        /// Default is 0, which means the source width is preserved.
+        /// Set to -2 to automatically calculate the width while maintaining the aspect ratio,
+        /// based on the specified height.
+        /// Note: Only one of Width or Height can be set to -2 at a time.
         /// </summary>
-        public int Width { get; set; } = 1080;
+        public int Width { get; set; }
 
         /// <summary>
-        /// Gets or sets the height of the output video. The default is -2, meaning the height will be automatically 
-        /// calculated to maintain the aspect ratio based on the width.
-        /// Note: Only one of width or height can be set to -2 at a time.
+        /// Gets or sets the height of the output video.
+        /// Default is 0, which means the source height is preserved.
+        /// Set to -2 to automatically calculate the height while maintaining the aspect ratio,
+        /// based on the specified width.
+        /// Note: Only one of Width or Height can be set to -2 at a time.
         /// </summary>
-        public int Height { get; set; } = -2;
+        public int Height { get; set; }
 
         /// <summary>
         /// Set frames per second (FPS) of output video.
