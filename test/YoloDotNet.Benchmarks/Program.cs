@@ -9,25 +9,34 @@ namespace YoloDotNet.Benchmarks
         static void Main(string[] args)
         {
 #if DEBUG
-            //var imageDrawTests = new ObjectDetectionImageDrawTests();
-            //imageDrawTests.GlobalSetup();
-            //imageDrawTests.IterationSetup();
-            //imageDrawTests.DrawObjectDetection();
+            Console.WriteLine(
+                "NOTE! You are running in DEBUG mode.\n" +
+                "This mode is intended for development and debugging purposes only.\n" +
+                "To obtain accurate and meaningful performance measurements, please run in RELEASE mode."
+            );
 
-            //var simpleObjectDetectionTests = new SimpleObjectDetectionTests();
-            //simpleObjectDetectionTests.GlobalSetup();
-            //simpleObjectDetectionTests.RunSimpleObjectDetectionGpu();
+            // Uncomment below code to run in debug during development.
 
-            //var resizeSourceObjectDetectionTests = new ResizeSourceObjectDetectionTests();
-            //resizeSourceObjectDetectionTests.GlobalSetup();
+            //DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator);
 
-            var summary = BenchmarkRunner.Run<ObjectDetectionTests.SimpleObjectDetectionTests>(config:
-                DefaultConfig.Instance
-                .WithOptions(ConfigOptions.DisableOptimizationsValidator));
+            //var benchmark = new SimpleObjectDetectionTests
+            //{
+            //    YoloParam = YoloType.V8_Obj_GPU
+            //};
+
+            //benchmark.GlobalSetup();
+            //benchmark.ObjectDetection();
+            //benchmark.GlobalCleanup();
 #else
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, DefaultConfig.Instance
+            var config = DefaultConfig.Instance
                 .WithOptions(ConfigOptions.DisableOptimizationsValidator)
-                .WithSummaryStyle(summaryStyle: SummaryStyle.Default.WithRatioStyle(ratioStyle: BenchmarkDotNet.Columns.RatioStyle.Trend)));
+                .WithSummaryStyle(
+                    SummaryStyle.Default.WithRatioStyle(BenchmarkDotNet.Columns.RatioStyle.Trend)
+                );
+
+            BenchmarkSwitcher
+                .FromAssembly(typeof(Program).Assembly)
+                .Run(args, config);
 #endif
         }
     }
