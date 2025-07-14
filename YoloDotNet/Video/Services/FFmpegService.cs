@@ -101,9 +101,14 @@
             catch (Exception)
             {
                 throw new ArgumentException(
-                    $"Invalid video input format. Expected format: 'DeviceName:Width:Height:FPS'. " +
-                    $"Received: '{_videoOptions.VideoInput}'. " +
-                    $"Ensure all parts are present and correctly formatted. Example: 'Camera 1:1280:720:30'.",
+                    $"Invalid video device input format: '{_videoOptions.VideoInput}'.\n" +
+                    $"Expected format: 'DeviceName:Width:Height:FPS'.\n" +
+                    $"Each part must be separated by a colon and must include:\n" +
+                    $"  - DeviceName (e.g., Logitech BRIO)\n" +
+                    $"  - Width (e.g., 1280)\n" +
+                    $"  - Height (e.g., 720)\n" +
+                    $"  - FPS (e.g., 30)\n" +
+                    $"Example: 'Logitech BRIO:1280:720:30'.",
                     nameof(_videoOptions.VideoInput));
             }
         }
