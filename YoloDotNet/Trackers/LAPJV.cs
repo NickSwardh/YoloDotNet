@@ -1,4 +1,8 @@
-﻿namespace YoloDotNet.Trackers
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+namespace YoloDotNet.Trackers
 {
     /// <summary>
     /// LAPJV (Linear Assignment Problem using Jonker-Volgenant algorithm) solver for rectangular cost matrices.

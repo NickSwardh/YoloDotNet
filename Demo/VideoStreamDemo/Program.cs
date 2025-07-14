@@ -1,4 +1,8 @@
-﻿using SkiaSharp;
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+using SkiaSharp;
 using System.Diagnostics;
 using YoloDotNet;
 using YoloDotNet.Enums;

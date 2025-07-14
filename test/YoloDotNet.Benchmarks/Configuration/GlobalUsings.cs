@@ -1,4 +1,8 @@
-﻿global using System;
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2024-2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+global using System;
 global using System.IO;
 global using System.Buffers;
 global using System.Globalization;

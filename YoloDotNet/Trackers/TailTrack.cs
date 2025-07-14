@@ -1,4 +1,8 @@
-﻿namespace YoloDotNet.Trackers
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+namespace YoloDotNet.Trackers
 {
     /// <summary>
     /// Stores a fixed-length queue of tail points to track and visualize the movement tail of an object.

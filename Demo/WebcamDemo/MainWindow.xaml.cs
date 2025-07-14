@@ -1,4 +1,8 @@
-﻿using Emgu.CV;
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2024-2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+using Emgu.CV;
 using Emgu.CV.CvEnum;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;

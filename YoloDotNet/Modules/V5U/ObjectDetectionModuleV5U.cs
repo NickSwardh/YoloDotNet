@@ -1,4 +1,8 @@
-﻿namespace YoloDotNet.Modules.V5U
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+namespace YoloDotNet.Modules.V5U
 {
     internal class ObjectDetectionModuleV5U : IObjectDetectionModule
     {
