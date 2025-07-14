@@ -8,40 +8,43 @@
     <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOv8-Yolov11</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov8;yolov9;yolov10;yolov11;yolov12;Yolo-World;ONNX;CUDA;GPU;classification;object;detection;segmentation;pose;estimation;oriented;image;vision;video;media;convert;encode;imagesharp;ffmpeg;process;core;ai</PackageTags>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;cuda;gpu;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;ffmpeg;skiasharp;imagesharp;tracking;machine-learning;real-time;inference</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile></PackageReadmeFile>
-    <Description>YoloDotNet is a blazing-fast C# .NET 8 implementation of Yolo and Yolo-World models for real-time object detection in images and videos. Powered by ONNX Runtime, and supercharged with GPU acceleration using CUDA, this app is all about detecting objects at lightning speed!
-
-Supported Versions:
-Yolov8, Yolov9, Yolov10, Yolov11, Yolo-World
-
-Supported Tasks:
-Classification
-Object Detection
-OBB Detection
-Segmentation
-Pose Estimation</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>YoloDotNet is a blazing-fast, modern C# library for real-time object detection, classification, segmentation, OBB, pose estimation — and tracking. Powered by ONNX Runtime and CUDA acceleration, it effortlessly handles images and video streams. Supports a wide range of cutting-edge models including YOLOv5u, YOLOv8, YOLOv9, YOLOv10, YOLOv11, YOLOv12, Yolo-World, and YOLO-E. Whether you’re building smart cameras, analytics dashboards, or unlocking real-time machine vision, YoloDotNet has you covered.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>2.3</Version>
+	<Version>3.0</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
-    <PackageReleaseNotes>Hold onto your GPUs, folks! YoloDotNet 2.3 is here, and it's bringing some serious upgrades! Whether you're fine-tuning your models or pushing for peak performance, this update has got you covered. Let's dive in!
+    <PackageReleaseNotes>YoloDotNet 3.0 is here with significant improvements across the board. After careful optimization and refinement, this release delivers faster performance, broader model support, and enhanced usability — making your real-time vision projects smoother and more efficient.
 
-Yolo v12 Support – The latest YOLO v12 model is now at your fingertips!
+Performance Improvements:
+Enjoy up to 70% faster inference and over 90% reduction in memory usage on GPU for segmentation. Other tasks aren’t far behind, with classification running up to 28% faster and memory use cut by nearly 50%, detection speeding up by 25%, and pose estimation boosted by over 27% — all helping your apps run faster and leaner than ever.
 
-Custom Image Resizing – When creating a dataset for training, preserving small details is crucial. Depending on your dataset, you might get better results by squaring images instead of resizing them proportionally. Now, you can choose between "proportional" resizing (default) to maintain aspect ratio or "stretched" resizing to match the dataset and model input exactly.
+Expanded Model Support:
+Now supporting a wide range of modern YOLO models, including YOLOv5u through YOLOv12, plus Yolo-World and YOLO-E zero-shot detection, so you can work with the latest and most versatile models available.
 
-SkiaSharp Sampling Options – Fine-tune image resizing like never before! This new option allows you to adjust SkiaSharp´s SamplingOptions, optimizing for either better rendering quality or faster performance. These adjustments can directly impact inference results, influencing detection accuracy and speed. You can tweak it to suit your needs or simply stick with the defaults—your call!
+Video Processing &amp; Tracking Enhancements:
+Video stream handling is simpler and more flexible. Split videos into chunks for batch processing, customize frame intervals to suit your needs, and keep track of objects across frames with the new SORT tracking feature.
 
-Class Label Filtering – Tired of detecting everything? Now you can filter out unwanted classes and focus only on what matters.
+Customizable Visual Output:
+Tailor your bounding boxes and labels with custom colors and fonts to better fit your project’s style and presentation.
 
-Performance Boosts – Pixel normalization just got even faster. Because every millisecond counts.</PackageReleaseNotes>
+Improved Inference Pipeline:
+Run inference directly on SkiaSharp’s SKBitmap and SKImage objects to reduce overhead. Enhanced image resizing and sampling controls help you balance speed and accuracy.
+
+Developer-Friendly Features:
+Load ONNX models directly from byte arrays for greater deployment flexibility. Cleaner APIs and helpful inline comments make integration straightforward.</PackageReleaseNotes>
+    <Copyright>Copyright © 2023 Nick Swardh</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
     <None Include="D:\Documents\Yolodotnet Icon\icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
