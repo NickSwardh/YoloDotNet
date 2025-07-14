@@ -166,12 +166,53 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
 
             try
             {
-                //_ = _image.ResizeImageProportional(SamplingOptions, pinnedBuffer);
+                _ = ResizeImageProportional<SKBitmap>(_image, SamplingOptions, pinnedBuffer);
             }
             finally
             {
                 _pinnedBufferPool.Return(pinnedBuffer);
             }
+        }
+
+        /// <summary>
+        /// Due to internal restritctions, this Copy of the ResizeImageProportional extension method.
+        /// </summary>
+        public static SKSizeI ResizeImageProportional<T>(T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        {
+            SKImage image = default!;
+
+            if (img is SKImage skImage)
+            {
+                image = skImage;
+            }
+            else if (img is SKBitmap skBitmap)
+            {
+                image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+            }
+
+            int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
+            int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
+            int width = image.Width;
+            int height = image.Height;
+
+            // Calculate the new image size based on the aspect ratio
+            float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
+
+            // Use integer rounding instead of Math.Round
+            int newWidth = (int)((width * scaleFactor) + 0.5f);
+            int newHeight = (int)((height * scaleFactor) + 0.5f);
+
+            // Calculate the destination rectangle within the model dimensions
+            int x = (modelWidth - newWidth) / 2;
+            int y = (modelHeight - newHeight) / 2;
+
+            var srcRect = new SKRect(0, 0, width, height);
+            var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
+
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
+
+            // Return the original image dimensions, which are required to correctly scale bounding boxes
+            return new SKSizeI(width, height);
         }
     }
 }
