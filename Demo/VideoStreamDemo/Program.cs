@@ -33,6 +33,7 @@ namespace VideoStreamDemo
     ///
     /// Note:
     /// - CUDA acceleration is required.
+    /// - FFmpeg and FFprobe must be added to your system PATH variable. Download and install: https://ffmpeg.org/download.html
     /// - The demo creates an output folder on the desktop to store processed results.
     /// </summary>
     internal class Program
