@@ -220,7 +220,7 @@
                 "-i",           "-"]);
 
             // Encode using CUDA?
-            var videoCodec = "lib264";
+            var videoCodec = "libx264";
             if (_yoloOptions.Cuda is true)
             {
                 videoCodec = "h264_nvenc";
