@@ -15,18 +15,34 @@ It showcases:
 - Saving processed video output and optionally splitting into chunks
 - Progress reporting and end-of-stream handling with customizable callbacks
 
-Example video sources:
-- Local file        (e.g., C:\videos\test.mp4)
-- Livestream        (e.g., rtmp://your.server/stream)
-- Webcam (Windows)  (e.g., device:Logitech BRIO)
-- Webcam (Linux)    (e.g., "device:/dev/video0)
+## Example Video Sources and Input Syntax
 
-Note:
+- **Local video file path:**  
+  Example: `C:\videos\test.mp4`
+
+- **Livestream URL** (e.g., RTMP, HTTP):  
+  Example: `rtmp://your.server/stream`
+
+- **Video capture device (webcam) with explicit resolution and frame rate:**  
+  Format: `device=<DeviceName>:<Width>:<Height>:<FPS>`
+
+  - Windows example:  
+    `device=Logitech BRIO:1920:1080:30`
+
+  - Linux example:  
+    `device=/dev/video0:1280:720:30`
+
+  > **Note:**  
+  > - The `Width`, `Height`, and `FPS` must match a valid capture mode supported by your camera hardware.  
+  > - Use `yolo.GetVideoDevices()` to list available video device names on your system. This method does **not** list supported resolutions or frame rates.  
+  > - To determine valid resolution and framerate combinations, consult your device specifications or manufacturer documentation.
+
+### Other
 - CUDA acceleration is required.
 - FFmpeg and FFprobe must be added to your system PATH variable -> [Download and install](https://ffmpeg.org/download.html)
-- The demo creates an output folder on the desktop to store processed results.
+- The demo creates an output folder on the desktop to store processed results. (optional)
 
-# Example Use Cases
+## Example Use Cases
 This demo can be used for virtually any application involving real-time video object detection and tracking — from personal experiments to production-grade systems. Below are some practical examples of how you might use it:
 
 ### 🛡️ Surveillance and Security

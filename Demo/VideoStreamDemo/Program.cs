@@ -26,11 +26,20 @@ namespace VideoStreamDemo
     /// - Saving processed video output and optionally splitting into chunks
     /// - Progress reporting and end-of-stream handling with customizable callbacks
     ///
-    /// Example video sources:
-    /// - Local file        (e.g., C:\videos\test.mp4)
-    /// - Livestream        (e.g., rtmp://your.server/stream)
-    /// - Webcam (Windows)  (e.g., device:Logitech BRIO)
-    /// - Webcam (Linux)    (e.g., "device:/dev/video0)
+    /// Example video source inputs:
+    /// - Local video file path:
+    ///     Example: @"C:\videos\test.mp4"
+    ///
+    /// - Livestream URL (RTMP, HTTP, etc.):
+    ///     Example: "rtmp://your.server/stream"
+    ///
+    /// - Video capture device (webcam) with explicit resolution and frame rate:
+    ///     Format: "device=<DeviceName>:<Width>:<Height>:<FPS>"
+    ///
+    ///     Windows example: "device=Logitech BRIO:1920:1080:30"
+    ///     Linux example:   "device=/dev/video0:1280:720:30"
+    ///
+    ///     Note: Width, Height, and FPS must match a capture mode supported by your device.
     ///
     /// Note:
     /// - CUDA acceleration is required.
@@ -98,16 +107,30 @@ namespace VideoStreamDemo
             // Set the video options.
             yolo.InitializeVideo(new VideoOptions
             {
-                // 💡 The input video source. This can be:
-                // - A file path to a local video file.
-                // - A URL to a livestream (e.g., RTMP, HTTP).
-                // - A video device (e.g., webcam) using the format "device:<device_name>".
+                // 💡 Input video source. Accepted formats:
+                // 
+                // 1. Local video file:
+                //    Example: @"C:\videos\test.mp4"
                 //
-                // Examples:
-                // VideoInput = @"C:\videos\test.mp4"
-                // VideoInput = "rtmp://your.rtmp.server/stream"
-                // VideoInput = "device:Logitech BRIO"  (Windows)
-                // VideoInput = "device:/dev/video0"    (Linux)
+                // 2. Livestream URL (e.g., RTMP, HTTP):
+                //    Example: "rtmp://your.rtmp.server/stream"
+                //
+                // 3. Video capture device (e.g., webcam):
+                //    Format: "device=<DeviceName>:<Width>:<Height>:<FPS>"
+                //
+                //    ⮞ On Windows:
+                //       Example: "device=Logitech BRIO:1920:1080:30"
+                //
+                //    ⮞ On Linux:
+                //       Example: "device=/dev/video0:1280:720:30"
+                //
+                // 📌 The Width, Height, and FPS values must match a valid capture mode supported by your camera.
+                //
+                // 🔍 To discover available video devices:
+                //    Use `yolo.GetVideoDevices()` — this method lists the names of available video capture devices.
+                //    It does NOT list supported resolutions or framerates.
+                //
+                //    To determine valid width/height/fps combinations, refer to your device specifications
                 VideoInput = SharedConfig.GetTestVideo(VideoType.PeopleWalking),
 
                 // 💡 Optional: Path to save the processed output video file.
