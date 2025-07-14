@@ -29,7 +29,10 @@
 
             // If there is nothing to track, no further processing needed...
             if (detections.Count == 0)
+            {
+                RemoveOldTrackedObjects();
                 return;
+            }
 
             // Predict new positions using Kalman Filter
             foreach (var trackedObject in _trackedObjects.Values)
@@ -37,6 +40,12 @@
 
             // Get previous boundingboxes based on previous _trackCounter
             var activeTracks = _trackedObjects.Where(x => x.Value.Age < _maxAge).ToList();
+
+            if (activeTracks.Count == 0)
+            {
+                RemoveOldTrackedObjects();
+                return;
+            }
 
             var costMatrix = CalculateCostMatrix(activeTracks, detections);
 
@@ -55,9 +64,11 @@
             {
                 if (assignedDetections.Contains(i) is false)
                 {
-                    int newId = _nextId++;
-                    detections[i].Id = newId;
-                    _trackedObjects[newId] = new TrackedObject(detections[i], _tailLength);
+                    _nextId++;
+                    detections[i].Id = _nextId;
+
+                    // Add new tracked item with a new id (incremented _nextId)
+                    _trackedObjects[_nextId] = new TrackedObject(detections[i], _tailLength);
                 }
             }
         }
