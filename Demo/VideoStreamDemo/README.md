@@ -16,9 +16,10 @@ It showcases:
 - Progress reporting and end-of-stream handling with customizable callbacks
 
 Example video sources:
-- Local file (e.g., C:\videos\test.mp4)
-- Livestream (e.g., rtmp://your.server/stream)
-- Webcam (e.g., device:Your_Webcam_Name)
+- Local file        (e.g., C:\videos\test.mp4)
+- Livestream        (e.g., rtmp://your.server/stream)
+- Webcam (Windows)  (e.g., device:Logitech BRIO)
+- Webcam (Linux)    (e.g., "device:/dev/video0)
 
 Note:
 - CUDA acceleration is required.

@@ -27,9 +27,10 @@ namespace VideoStreamDemo
     /// - Progress reporting and end-of-stream handling with customizable callbacks
     ///
     /// Example video sources:
-    /// - Local file (e.g., C:\videos\test.mp4)
-    /// - Livestream (e.g., rtmp://your.server/stream)
-    /// - Webcam (e.g., device:Your_Webcam_Name)
+    /// - Local file        (e.g., C:\videos\test.mp4)
+    /// - Livestream        (e.g., rtmp://your.server/stream)
+    /// - Webcam (Windows)  (e.g., device:Logitech BRIO)
+    /// - Webcam (Linux)    (e.g., "device:/dev/video0)
     ///
     /// Note:
     /// - CUDA acceleration is required.
@@ -81,6 +82,19 @@ namespace VideoStreamDemo
             // Print model type.
             Console.WriteLine($"Onnx Model: {yolo.OnnxModel.ModelType}");
 
+            // List all available video input devices detected on the system.
+            var devices = Yolo.GetVideoDevices();
+            Console.WriteLine();
+            Console.WriteLine("Detected video input devices (usable with VideoOptions):");
+
+            if (devices.Count != 0)
+            {
+                foreach (string device in devices)
+                    Console.WriteLine($"  {device}");
+            }
+            else
+                Console.WriteLine("No input devices found");
+
             // Set the video options.
             yolo.InitializeVideo(new VideoOptions
             {
@@ -92,7 +106,8 @@ namespace VideoStreamDemo
                 // Examples:
                 // VideoInput = @"C:\videos\test.mp4"
                 // VideoInput = "rtmp://your.rtmp.server/stream"
-                // VideoInput = "device:Realtek_Webcam"
+                // VideoInput = "device:Logitech BRIO"  (Windows)
+                // VideoInput = "device:/dev/video0"    (Linux)
                 VideoInput = SharedConfig.GetTestVideo(VideoType.PeopleWalking),
 
                 // 💡 Optional: Path to save the processed output video file.
@@ -135,9 +150,11 @@ namespace VideoStreamDemo
             var metadata = yolo.GetVideoMetaData();
             PrintMetaData(metadata);
 
+            var listedDevices = devices.Count == 0 ? 1 : devices.Count;
+
             var progressStats = "Progress: ";
             var progressStatsLength = progressStats.Length;
-            var textRow = 15;
+            var textRow = 17 + listedDevices; // What row in the console window to draw progress
             var progress = 0;
 
             Console.WriteLine();
