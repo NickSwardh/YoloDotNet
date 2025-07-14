@@ -38,6 +38,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BatchDemo", "Demo\BatchDemo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebcamDemo", "Demo\WebcamDemo\WebcamDemo.csproj", "{F9095BB2-394F-7EA1-B975-A991699DCFF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoloE_SegmentationDemo", "Demo\YoloE_SegmentationDemo\YoloE_SegmentationDemo.csproj", "{B25FF78B-2632-957F-F0F5-5DA2019D92AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -92,6 +94,10 @@ Global
 		{F9095BB2-394F-7EA1-B975-A991699DCFF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F9095BB2-394F-7EA1-B975-A991699DCFF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F9095BB2-394F-7EA1-B975-A991699DCFF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B25FF78B-2632-957F-F0F5-5DA2019D92AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B25FF78B-2632-957F-F0F5-5DA2019D92AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B25FF78B-2632-957F-F0F5-5DA2019D92AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B25FF78B-2632-957F-F0F5-5DA2019D92AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +115,7 @@ Global
 		{71839C4A-BD99-480E-B6DA-8B16CB2AD41F} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{A8DC881A-CFB0-43E0-BE40-21F7CF10E999} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{F9095BB2-394F-7EA1-B975-A991699DCFF0} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{B25FF78B-2632-957F-F0F5-5DA2019D92AD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C3673E62-2658-4C27-9C6A-A3215F416E05}
