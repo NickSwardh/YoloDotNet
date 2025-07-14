@@ -456,6 +456,48 @@
             }
         }
 
+        public static List<string> GetVideoDevicesOnSystem()
+        {
+            EnsureToolIsInstalled(FFMPEG);
+
+            // Detect the platform(Windows or Linux)
+            var isLinux = SystemPlatform.GetOS() == Platform.Linux;
+
+            // Set input format and regex pattern based on platform
+            string format = isLinux ? "v4l2" : "dshow";
+            string pattern = isLinux
+                ? @"/dev/video\d+:\s+[^\n]+"        // Linux: Capture both device path and name
+                : @"[^""]+(?=""\s+\(video\))";      // Windows: Capture device name in quotes only
+
+            try
+            {
+                using var ffmpeg = Processor.Create(FFMPEG, [
+                    "-f",               format,
+                    "-list_devices",    "true",
+                    "-i",               "dummy"]);
+
+                ffmpeg.Start();
+                string ffmpegOutput = ffmpeg.StandardError.ReadToEnd();
+
+                ffmpeg.WaitForExit(2000);
+
+                var devices = Regex.Matches(ffmpegOutput, pattern)
+                    .Select(x => x.Value)
+                    .ToList();
+
+                return devices;
+            }
+            catch (Win32Exception ex)
+            {
+                throw new FileNotFoundException($"FFmpeg is not installed or not in PATH.", ex);
+            }
+            catch (Exception ex)
+            {
+                throw new ApplicationException($"Failed to get devices: {ex.Message}", ex);
+            }
+
+        }
+
         public void Dispose()
         {
             _cts?.Cancel();

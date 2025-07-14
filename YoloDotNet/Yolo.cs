@@ -161,9 +161,16 @@
         }
 
         /// <summary>
+        /// Retrieves a list of available video input devices detected on the current system.
+        /// </summary>
+        /// <exception cref="Exception"></exception>
+        public static List<string> GetVideoDevices()
+            => FFmpegService.GetVideoDevicesOnSystem() ?? throw new Exception(
+                "No video initialized. Please call InitializeVideo() before attempting to retrieve metadata.");
+
+        /// <summary>
         /// Retrieves metadata about the stream or initialized video, such as duration, frame rate, and resolution.
         /// </summary>
-        /// <returns></returns>
         /// <exception cref="Exception"></exception>
         public VideoMetadata GetVideoMetaData()
             => _ffmpegService.VideoMetadata ?? throw new Exception(
