@@ -23,7 +23,11 @@
 
         public void Return(PinnedMemoryBuffer buffer)
         {
-            //buffer.TargetBitmap.Erase(SKColors.Empty);
+            // IMPORTANT: Clear the bitmap before reuse to prevent visual artifacts.
+            // This avoids leaking old frame data into subsequent frames.
+            // Using SKColors.Empty fills with transparent black (0,0,0,0).
+            buffer.TargetBitmap.Erase(SKColors.Empty);
+
             _pool.Add(buffer);
         }
 
