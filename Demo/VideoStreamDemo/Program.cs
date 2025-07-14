@@ -143,12 +143,14 @@ namespace VideoStreamDemo
 
                 // 💡 Output video width in pixels.
                 // Leave unset (0) to use the original width.
+                // Set to -2 to automatically calculate the width while maintaining the aspect ratio, based on the specified height.
+                // Note: Only one of Width or Height can be set to -2 at a time.
                 Width = 720,
 
                 // 💡 Output video height in pixels.
                 // Leave unset (0) to use the original height.
-                // Set to:
-                //   -2  : Automatically calculate to preserve aspect ratio based on Width
+                // Set to -2 to automatically calculate the height while maintaining the aspect ratio, based on the specified width.
+                // Note: Only one of Width or Height can be set to -2 at a time.
                 Height = -2,
 
                 // 💡 Compression quality for the output video (1-51).
@@ -204,7 +206,7 @@ namespace VideoStreamDemo
 
                     // 💡 (Optional) Filter results to include only specified class labels.
                     // In this case: keep only detections of "person".
-                    .FilterLabels([ "person" ])
+                    //.FilterLabels([ "person" ])
 
                     // 💡 (Optional) Apply object tracking to maintain object identities across frames.
                     .Track(_sortTracker);
@@ -317,9 +319,9 @@ namespace VideoStreamDemo
             Console.WriteLine($"fps             : {metaData.FPS}");
             Console.WriteLine($"duration        : {metaData.Duration}");
             Console.WriteLine();
-            Console.WriteLine($"target fps      : {metaData.FPS}");
             Console.WriteLine($"target width    : {metaData.TargetWidth}");
             Console.WriteLine($"target height   : {metaData.TargetHeight}");
+            Console.WriteLine($"target fps      : {metaData.FPS}");
 
             Console.ForegroundColor = ConsoleColor.Gray;
         }
