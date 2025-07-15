@@ -76,8 +76,12 @@ namespace WebcamDemo
             // Initialize stopwatch for simple measuring of frame processing time
             _stopwatch = new Stopwatch();
 
-            // (Optional) Create a new SortTracker instance for object tracking
-            _sortTracker = new SortTracker(costThreshold: 2f, maxAge: 8, tailLength: 30);
+            // (Optional) Create a new SortTracker instance with configurable parameters:
+            // - costThreshold: matching cost threshold for assigning detections to tracks (lower = stricter matching).
+            // - maxAge: number of frames to keep unmatched tracks before removal.
+            // - tailLength: length of the track history for visualization or analysis.
+            // Note: There is no one-size-fits-all setting; these parameters often require some tinkering to find the best balance for your specific use case.
+            _sortTracker = new SortTracker(costThreshold: 0.5f, maxAge: 5, tailLength: 30);
 
             // Instantiate yolo 11
             _yolo = new Yolo(new YoloOptions()
