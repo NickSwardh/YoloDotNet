@@ -195,9 +195,9 @@ https://github.com/mentalstack/yolov5-net
 
 # License
 
-YoloDotNet is © 2023 Nick Swardh (https://github.com/NickSwardh)
+YoloDotNet is © 2023 Niklas Swärd ([GitHub](https://github.com/NickSwardh/YoloDotNet))\
+Licensed under the GNU General Public License v3.0 or later.
 
-This project is licensed under the GNU General Public License v3.0 (GPLv3).  
 See the [LICENSE](https://github.com/NickSwardh/YoloDotNet?tab=GPL-3.0-1-ov-file#readme) file for full license text.
 
 This software is provided "as-is", without warranty of any kind.  
