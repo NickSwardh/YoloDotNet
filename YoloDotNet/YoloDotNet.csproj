@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-    <Title>YoloDotNet - C# .NET 8.0 implementation of YOLOv8-Yolov11</Title>
+    <Title>YoloDotNet</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
     <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;cuda;gpu;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;ffmpeg;skiasharp;imagesharp;tracking;machine-learning;real-time;inference</PackageTags>
