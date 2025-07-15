@@ -17,7 +17,7 @@
 	<Version>3.0</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageReleaseNotes>YoloDotNet 3.0 is here with significant improvements across the board. After careful optimization and refinement, this release delivers faster performance, broader model support, and enhanced usability — making your real-time vision projects smoother and more efficient.
 
 Performance Improvements:
