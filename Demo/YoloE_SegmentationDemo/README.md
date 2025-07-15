@@ -67,3 +67,4 @@ Load the exported ONNX model just like any Segmentation model in YoloDotNet.
 ### Tip:
 - You may need to lower the confidence threshold (e.g. 0.1–0.3) for reliable detections.
 - Try different wording in prompts for better results.
+- Try a larger YoloE model for better accuracy
