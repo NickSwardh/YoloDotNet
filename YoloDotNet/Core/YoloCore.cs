@@ -199,7 +199,6 @@ namespace YoloDotNet.Core
         /// <summary>
         /// Calculate pixel by byte to confidence
         /// </summary>
-        ///public static float CalculatePixelConfidence(byte value) => 1 - value / 255F;
         public static float CalculatePixelConfidence(byte value) => value / 255F;
 
         /// <summary>
