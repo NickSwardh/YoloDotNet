@@ -69,7 +69,7 @@ namespace BatchDemo
             });
 
             // Print model type
-            Console.WriteLine($"Onnx Model: {yolo.OnnxModel.ModelType}");
+            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
 
             // Collect images
             var images = Directory.GetFiles(@"path\to\image\folder");

@@ -92,8 +92,8 @@ namespace VideoStreamDemo
                 SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
-            // Print model type.
-            Console.WriteLine($"Onnx Model: {yolo.OnnxModel.ModelType}");
+            // Print model type
+            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
 
             // List all available video input devices detected on the system.
             var devices = Yolo.GetVideoDevices();

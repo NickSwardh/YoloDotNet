@@ -71,6 +71,9 @@ namespace PoseEstimationDemo
                 SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
+            // Print model type
+            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
+
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
             using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Crosswalk));

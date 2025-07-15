@@ -194,6 +194,20 @@ namespace YoloDotNet
 
         #endregion
 
+        #region Model Info
+
+        /// <summary>
+        /// Gets a description of the currently loaded YOLO model,
+        /// including the model type and version. Returns "No model loaded"
+        /// if no model has been initialized.
+        /// </summary>
+        public string ModelInfo =>
+            _detection.OnnxModel == null
+                ? "No model loaded"
+                : $"{_detection.OnnxModel.ModelType} (yolo {_detection.OnnxModel.ModelVersion.ToString().ToLower()})";
+
+        #endregion
+
         #region Dispose
 
         public void Dispose()

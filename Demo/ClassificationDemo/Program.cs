@@ -70,7 +70,8 @@ namespace ClassificationDemo
                 SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
-            Console.WriteLine($"Onnx Model: {yolo.OnnxModel.ModelType}");
+            // Print model type
+            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.

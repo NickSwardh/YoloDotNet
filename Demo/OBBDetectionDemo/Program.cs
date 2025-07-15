@@ -70,7 +70,7 @@ namespace OBBDetectionDemo
             });
 
             // Print model type
-            Console.WriteLine($"Onnx Model: {yolo.OnnxModel.ModelType}");
+            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
