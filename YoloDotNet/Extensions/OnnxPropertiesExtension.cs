@@ -106,7 +106,9 @@ namespace YoloDotNet.Extensions
         /// </summary>
         private static ModelVersion GetModelVersion(string modelDescription) => modelDescription.ToLower() switch
         {
+            // Fallback: if version metadata is missing, treat the model as YOLOv8.
             var version when version.Contains("yolo") is false => ModelVersion.V8,
+
             var version when version.StartsWith("ultralytics yolov5") => ModelVersion.V5U,
             var version when version.StartsWith("ultralytics yolov8") => ModelVersion.V8,
             var version when version.StartsWith("ultralytics yoloe-v8") => ModelVersion.V8E,
