@@ -62,26 +62,26 @@
 
         // Yolov8
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov8Cpu()
+        public Segmentation[] RunSimpleSegmentationYolov8Cpu()
         {
             return _cpuYolov8.RunSegmentation(_image);
         }
 
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov8Gpu()
+        public Segmentation[] RunSimpleSegmentationYolov8Gpu()
         {
             return _gpuYolov8.RunSegmentation(_image);
         }
 
         // Yolov11
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov11Cpu()
+        public Segmentation[] RunSimpleSegmentationYolov11Cpu()
         {
             return _cpuYolov11.RunSegmentation(_image);
         }
 
         [Benchmark]
-        public List<Segmentation> RunSimpleSegmentationYolov11Gpu()
+        public Segmentation[] RunSimpleSegmentationYolov11Gpu()
         {
             return _gpuYolov11.RunSegmentation(_image);
         }

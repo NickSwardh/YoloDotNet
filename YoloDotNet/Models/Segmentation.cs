@@ -1,21 +1,14 @@
 ﻿namespace YoloDotNet.Models
 {
-    public class Segmentation : IDetection
+    public struct Segmentation
     {
-        /// <summary>
-        /// Label information associated with the detected object.
-        /// </summary>
-        public LabelModel Label { get; init; } = new();
+        public Segmentation(Detection detection, Pixel[] segmentedPixels)
+        {
+            Detection = detection;
+            SegmentedPixels = segmentedPixels;
+        }
 
-        /// <summary>
-        /// Confidence score of the detected object.
-        /// </summary>
-        public double Confidence { get; init; }
-
-        /// <summary>
-        /// Rectangle defining the region of interest (bounding box) of the detected object.
-        /// </summary>
-        public SKRectI BoundingBox { get; init; }
+        public Detection Detection { get; }
 
         /// <summary>
         /// Segmentated pixels (x,y) with the pixel confidence value

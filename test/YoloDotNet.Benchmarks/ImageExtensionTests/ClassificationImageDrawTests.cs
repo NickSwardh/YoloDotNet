@@ -10,7 +10,7 @@
 
         private Yolo _cpuYolo;
         private SKImage _image;
-        private List<Classification> _classifications;
+        private Classification[] _classifications;
 
         #endregion Fields
 

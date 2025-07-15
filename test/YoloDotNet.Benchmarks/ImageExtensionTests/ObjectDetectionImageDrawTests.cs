@@ -10,7 +10,7 @@
 
         private Yolo _cpuYolo;
         private SKImage _image;
-        private List<ObjectDetection> _objectDetections;
+        private ObjectDetection[] _objectDetections;
 
         #endregion Fields
 

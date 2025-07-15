@@ -62,26 +62,26 @@
 
         // Yolov8
         [Benchmark]
-        public List<OBBDetection> RunSimpleObbDetectionYolov8Cpu()
+        public OBBDetection[] RunSimpleObbDetectionYolov8Cpu()
         {
             return _cpuYolov8.RunObbDetection(_image);
         }
 
         [Benchmark]
-        public List<OBBDetection> RunSimpleObbDetectionYolov8Gpu()
+        public OBBDetection[] RunSimpleObbDetectionYolov8Gpu()
         {
             return _gpuYolov8.RunObbDetection(_image);
         }
 
         // Yolov11
         [Benchmark]
-        public List<OBBDetection> RunSimpleObbDetectionYolov11Cpu()
+        public OBBDetection[] RunSimpleObbDetectionYolov11Cpu()
         {
             return _cpuYolov11.RunObbDetection(_image);
         }
 
         [Benchmark]
-        public List<OBBDetection> RunSimpleObbDetectionYolov11Gpu()
+        public OBBDetection[] RunSimpleObbDetectionYolov11Gpu()
         {
             return _gpuYolov11.RunObbDetection(_image);
         }

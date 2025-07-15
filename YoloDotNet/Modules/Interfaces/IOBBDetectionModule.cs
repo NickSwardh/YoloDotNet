@@ -2,7 +2,7 @@
 {
     internal interface IOBBDetectionModule : IModule
     {
-        List<OBBDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence,double iou);
-        Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence,double iou);
+        OBBDetection[] ProcessImage(SKImage image, double confidence, double pixelConfidence,double iou);
+        Dictionary<int, OBBDetection[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence,double iou);
     }
 }

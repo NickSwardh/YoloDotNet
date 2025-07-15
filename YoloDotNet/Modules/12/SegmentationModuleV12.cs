@@ -22,10 +22,10 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Segmentation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public Segmentation[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
             => _segmentationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-        public Dictionary<int, List<Segmentation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, Segmentation[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods

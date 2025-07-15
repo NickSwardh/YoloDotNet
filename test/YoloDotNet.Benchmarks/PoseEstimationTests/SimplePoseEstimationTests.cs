@@ -62,26 +62,26 @@
 
         // Yolov8
         [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationYolov8Cpu()
+        public PoseEstimation[] RunSimplePoseEstimationYolov8Cpu()
         {
             return _cpuYolov8.RunPoseEstimation(_image);
         }
 
         [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationYolov8Gpu()
+        public PoseEstimation[] RunSimplePoseEstimationYolov8Gpu()
         {
             return _gpuYolov8.RunPoseEstimation(_image);
         }
 
         // Yolov11
         [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationYolov11Cpu()
+        public PoseEstimation[] RunSimplePoseEstimationYolov11Cpu()
         {
             return _cpuYolov11.RunPoseEstimation(_image);
         }
 
         [Benchmark]
-        public List<PoseEstimation> RunSimplePoseEstimationYolov11Gpu()
+        public PoseEstimation[] RunSimplePoseEstimationYolov11Gpu()
         {
             return _gpuYolov11.RunPoseEstimation(_image);
         }

@@ -22,7 +22,7 @@
             var results = yolo.RunObjectDetection(image);
 
             // Assert
-            Assert.Equal(29, results.Count);
+            Assert.Equal(29, results.Length);
         }
     }
 }

@@ -22,7 +22,7 @@
             var results = yolo.RunSegmentation(image);
 
             // Assert
-            Assert.Equal(21, results.Count);
+            Assert.Equal(21, results.Length);
         }
     }
 }

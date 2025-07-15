@@ -18,7 +18,7 @@
             SubscribeToVideoEvents();
         }
 
-        public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public PoseEstimation[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>(); ;
@@ -26,12 +26,12 @@
             return PoseEstimateImage(image, ortSpan, confidence, iou);
         }
 
-        public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, PoseEstimation[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods
 
-        public List<PoseEstimation> PoseEstimateImage(SKImage image, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
+        public PoseEstimation[] PoseEstimateImage(SKImage image, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
         {
             var boxes = _objectDetectionModule.ObjectDetection(image, ortSpan, threshold, overlapThrehshold);
 

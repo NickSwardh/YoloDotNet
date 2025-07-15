@@ -20,14 +20,14 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence, double iou)
+        public Classification[] ProcessImage(SKImage image, double classes, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
             using var ort = ortValues[0];
             return ClassifyTensor(ort, (int)classes);
         }
 
-        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, Classification[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Classicifation
@@ -36,7 +36,7 @@
         /// Classifies a tensor and returns a Classification list 
         /// </summary>
         /// <param name="numberOfClasses"></param>
-        private List<Classification> ClassifyTensor(OrtValue ortTensor, int numberOfClasses)
+        private Classification[] ClassifyTensor(OrtValue ortTensor, int numberOfClasses)
         {
             var span = ortTensor.GetTensorDataAsSpan<float>();
             var tmp = new Classification[span.Length];

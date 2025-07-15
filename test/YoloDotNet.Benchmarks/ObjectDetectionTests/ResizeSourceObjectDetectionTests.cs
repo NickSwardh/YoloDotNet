@@ -47,25 +47,25 @@
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionOriginalSizeCpu()
+        public ObjectDetection[] ObjectDetectionOriginalSizeCpu()
         {
             return _cpuYolo.RunObjectDetection(_originalSizeimage);
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionOriginalSizeGpu()
+        public ObjectDetection[] ObjectDetectionOriginalSizeGpu()
         {
             return _cudaYolo.RunObjectDetection(_originalSizeimage);
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionModelSizeCpu()
+        public ObjectDetection[] ObjectDetectionModelSizeCpu()
         {
             return _cpuYolo.RunObjectDetection(_modelSizeImage);
         }
 
         [Benchmark]
-        public List<ObjectDetection> ObjectDetectionModelSizeGpu()
+        public ObjectDetection[] ObjectDetectionModelSizeGpu()
         {
             return _cudaYolo.RunObjectDetection(_modelSizeImage);
         }

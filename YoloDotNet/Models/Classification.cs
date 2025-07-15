@@ -3,8 +3,14 @@
     /// <summary>
     /// Represents the result of image classification
     /// </summary>
-    public class Classification
+    public struct Classification
     {
+        public Classification(string label, double confidence)
+        {
+            this.Label = label;
+            this.Confidence = confidence;
+        }
+
         /// <summary>
         /// Label of classified image.
         /// </summary>

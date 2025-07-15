@@ -22,10 +22,10 @@
             SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public ObjectDetection[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
             => _objectDetectionModule.ProcessImage(image, confidence, pixelConfidence, iou);
 
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, ObjectDetection[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         private void SubscribeToVideoEvents()

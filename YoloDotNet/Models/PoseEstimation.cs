@@ -1,21 +1,14 @@
 ﻿namespace YoloDotNet.Models
 {
-    public class PoseEstimation : IDetection
+    public struct PoseEstimation
     {
-        /// <summary>
-        /// Label information associated with the detected object.
-        /// </summary>
-        public LabelModel Label { get; init; } = new();
+        public PoseEstimation(Detection detection, KeyPoint[] keyPoints)
+        {
+            Detection = detection;
+            KeyPoints = keyPoints;
+        }
 
-        /// <summary>
-        /// Confidence score of the detected object.
-        /// </summary>
-        public double Confidence { get; init; }
-
-        /// <summary>
-        /// Rectangle defining the region of interest (bounding box) of the detected object.
-        /// </summary>
-        public SKRectI BoundingBox { get; init; }
+        public Detection Detection { get; }
 
         /// <summary>
         /// Keypoints with x, y coordinates and confidence score

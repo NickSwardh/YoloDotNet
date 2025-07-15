@@ -22,10 +22,10 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Classification> ProcessImage(SKImage image, double classes, double pixelConfidence,double iou)
+        public Classification[] ProcessImage(SKImage image, double classes, double pixelConfidence,double iou)
             => _classificationModuleV8.ProcessImage(image, classes, pixelConfidence, iou);
 
-        public Dictionary<int, List<Classification>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, Classification[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods

@@ -40,10 +40,10 @@
             => [.. typeof(T) switch
             {
                 Type t when t == typeof(Classification) => result.Cast<Classification>().Where(x => filterClasses.Contains(x.Label)).Cast<T>(),
-                Type t when t == typeof(ObjectDetection) => result.Cast<ObjectDetection>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                Type t when t == typeof(OBBDetection) => result.Cast<OBBDetection>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                Type t when t == typeof(PoseEstimation) => result.Cast<PoseEstimation>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
-                Type t when t == typeof(Segmentation) => result.Cast<Segmentation>().Where(x => filterClasses.Contains(x.Label.Name)).Cast<T>(),
+                Type t when t == typeof(ObjectDetection) => result.Cast<ObjectDetection>().Where(x => filterClasses.Contains(x.Detection.Label.Name)).Cast<T>(),
+                Type t when t == typeof(OBBDetection) => result.Cast<OBBDetection>().Where(x => filterClasses.Contains(x.Detection.Label.Name)).Cast<T>(),
+                Type t when t == typeof(PoseEstimation) => result.Cast<PoseEstimation>().Where(x => filterClasses.Contains(x.Detection.Label.Name)).Cast<T>(),
+                Type t when t == typeof(Segmentation) => result.Cast<Segmentation>().Where(x => filterClasses.Contains(x.Detection.Label.Name)).Cast<T>(),
                 _ => throw new ArgumentException("Invalid type", nameof(result))
             }];
     }

@@ -22,10 +22,10 @@
             SubscribeToVideoEvents();
         }
 
-        public List<PoseEstimation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public PoseEstimation[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
             => _poseEstimationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-        public Dictionary<int, List<PoseEstimation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, PoseEstimation[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods

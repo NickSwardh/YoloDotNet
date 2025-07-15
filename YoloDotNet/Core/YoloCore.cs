@@ -111,14 +111,14 @@
         /// <param name="iouThreshold">IoU threshold value for excluding bounding boxes.</param>
         /// <param name="func">A function that processes each frame and returns a list of inference results.</param>
         /// <returns>A dictionary where the key is the frame index and the value is a list of inference results of type <typeparamref name="T"/>.</returns>
-        public Dictionary<int, List<T>> RunVideo<T>(
+        public Dictionary<int, T[]> RunVideo<T>(
             VideoOptions options,
             double confidence,
             double pixelConfidence,
             double iouThreshold,
-            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
+            Func<SKImage, double, double, double, T[]> func) where T : struct
         {
-            var output = new Dictionary<int, List<T>>();
+            var output = new Dictionary<int, T[]>();
 
             using var _videoHandler = new VideoHandler.VideoHandler(options, useCuda);
 
@@ -143,12 +143,12 @@
         /// <summary>
         /// Runs batch inference on the extracted video frames.
         /// </summary>
-        private Dictionary<int, List<T>> RunBatchInferenceOnVideoFrames<T>(
+        private Dictionary<int, T[]> RunBatchInferenceOnVideoFrames<T>(
             VideoHandler.VideoHandler _videoHandler,
             double confidence,
             double pixelConfidence,
             double iouThreshold,
-            Func<SKImage, double, double, double, List<T>> func) where T : class, new()
+            Func<SKImage, double, double, double, T[]> func) where T : struct
         {
             var frames = _videoHandler.GetExtractedFrames();
             int progressCounter = 0;
@@ -165,7 +165,7 @@
 
 
                 var results = func.Invoke(img, confidence, pixelConfidence, iouThreshold);
-                batch[i] = results;
+                batch[i] = new List<T>(results);
 
                 if (shouldDrawLabelsOnKeptFrames || shouldDrawLabelsOnVideoFrames)
                     DrawResultsOnVideoFrame(img, results, frame, _videoHandler._videoSettings);
@@ -179,13 +179,13 @@
                 }
             });
 
-            return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x]);
+            return Enumerable.Range(0, batch.Length).ToDictionary(x => x, x => batch[x].ToArray());
         }
 
         /// <summary>
         /// Draw labels on video frames
         /// </summary>
-        private static void DrawResultsOnVideoFrame<T>(SKImage img, List<T> results, string savePath, VideoSettings videoSettings)
+        private static void DrawResultsOnVideoFrame<T>(SKImage img, T[] results, string savePath, VideoSettings videoSettings)
         {
             var drawConfidence = videoSettings.DrawConfidence;
 

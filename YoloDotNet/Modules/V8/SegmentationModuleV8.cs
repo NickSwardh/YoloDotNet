@@ -18,13 +18,13 @@
             SubscribeToVideoEvents();
         }
 
-        public List<Segmentation> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public Segmentation[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
         {
             using IDisposableReadOnlyCollection<OrtValue>? ortValues = _yoloCore.Run(image);
             return RunSegmentation(image, ortValues, confidence, pixelConfidence, iou);
         }
 
-        public Dictionary<int, List<Segmentation>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, Segmentation[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Segmentation
@@ -60,7 +60,7 @@
         /// <param name="confidence">The confidence threshold for object detection.</param>
         /// <param name="iou">The Intersection over Union (IoU) threshold for excluding bounding boxes.</param>
         /// <returns>A list of Segmentation objects corresponding to the input bounding boxes.</returns> 
-        private List<Segmentation> RunSegmentation(SKImage image, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double pixelConfidence, double iou)
+        private Segmentation[] RunSegmentation(SKImage image, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double pixelConfidence, double iou)
         {
             var ortSpan0 = ortValues[0].GetTensorDataAsSpan<float>();
             var ortSpan1 = ortValues[1].GetTensorDataAsSpan<float>();

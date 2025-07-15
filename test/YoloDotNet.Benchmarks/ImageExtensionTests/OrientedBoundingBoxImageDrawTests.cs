@@ -10,7 +10,7 @@
 
         private Yolo _cpuYolo;
         private SKImage _image;
-        private List<OBBDetection> _oBBDetections;
+        private OBBDetection[] _oBBDetections;
 
         #endregion Fields
 

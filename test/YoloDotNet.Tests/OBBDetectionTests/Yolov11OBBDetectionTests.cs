@@ -22,7 +22,7 @@
             var results = yolo.RunObbDetection(image, 0.25, 0.45);
 
             // Assert
-            Assert.Equal(5, results.Count);
+            Assert.Equal(5, results.Length);
         }
     }
 }

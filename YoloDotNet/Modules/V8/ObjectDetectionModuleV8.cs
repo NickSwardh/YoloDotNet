@@ -31,7 +31,7 @@
             SubscribeToVideoEvents();
         }
 
-        public List<ObjectDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public ObjectDetection[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
         {
             using var ortValues = _yoloCore.Run(image);
             var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
@@ -42,7 +42,7 @@
             return [..results];
         }
 
-        public Dictionary<int, List<ObjectDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, ObjectDetection[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods

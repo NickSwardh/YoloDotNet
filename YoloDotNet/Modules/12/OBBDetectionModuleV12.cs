@@ -22,10 +22,10 @@
             SubscribeToVideoEvents();
         }
 
-        public List<OBBDetection> ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
+        public OBBDetection[] ProcessImage(SKImage image, double confidence, double pixelConfidence, double iou)
             => _obbDetectionModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
 
-        public Dictionary<int, List<OBBDetection>> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
+        public Dictionary<int, OBBDetection[]> ProcessVideo(VideoOptions options, double confidence, double pixelConfidence, double iou)
             => _yoloCore.RunVideo(options, confidence, pixelConfidence, iou, ProcessImage);
 
         #region Helper methods

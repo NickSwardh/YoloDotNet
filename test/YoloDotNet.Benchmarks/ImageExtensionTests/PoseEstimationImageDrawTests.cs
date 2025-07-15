@@ -10,7 +10,7 @@
 
         private Yolo _cpuYolo;
         private SKImage _image;
-        private List<PoseEstimation> _poseEstimations;
+        private PoseEstimation[] _poseEstimations;
 
         #endregion Fields
 

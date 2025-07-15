@@ -18,7 +18,7 @@
         /// <param name="objectDetections">An enumerable collection of objects representing the detected items.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
         public static SKImage Draw(this SKImage image, IEnumerable<ObjectDetection>? objectDetections, bool drawConfidence = true)
-            => image.DrawBoundingBoxes(objectDetections, drawConfidence);
+            => image.DrawBoundingBoxes(objectDetections?.Select(x => x.Detection), drawConfidence);
 
 
         /// <summary>
@@ -292,7 +292,7 @@
                 Parallel.ForEach(segmentations, options, segmentation =>
                 {
                     // Define the overlay color
-                    var color = HexToRgbaSkia(segmentation.Label.Color, ImageConfig.SEGMENTATION_MASK_OPACITY);
+                    var color = HexToRgbaSkia(segmentation.Detection.Label.Color, ImageConfig.SEGMENTATION_MASK_OPACITY);
 
                     var pixelSpan = segmentation.SegmentedPixels.AsSpan();
 
@@ -334,8 +334,8 @@
             return draw switch
             {
                 DrawSegment.PixelMaskOnly => SKImage.FromBitmap(bitmap),
-                DrawSegment.BoundingBoxOnly => SKImage.FromBitmap(bitmap).DrawBoundingBoxes(segmentations, drawConfidence),
-                _ => SKImage.FromBitmap(bitmap).DrawBoundingBoxes(segmentations, drawConfidence)
+                DrawSegment.BoundingBoxOnly => SKImage.FromBitmap(bitmap).DrawBoundingBoxes(segmentations.Select(x => x.Detection), drawConfidence),
+                _ => SKImage.FromBitmap(bitmap).DrawBoundingBoxes(segmentations.Select(x => x.Detection), drawConfidence)
             };
         }
 
@@ -406,7 +406,7 @@
             }
 
             if (poseOptions.DrawBoundingBox)
-                return surface.Snapshot().DrawBoundingBoxes(poseEstimations, drawConfidence);
+                return surface.Snapshot().DrawBoundingBoxes(poseEstimations.Select(x => x.Detection), drawConfidence);
 
             return surface.Snapshot();
         }
@@ -417,7 +417,7 @@
         /// <param name="image">The image on which to draw bounding boxes.</param>
         /// <param name="detections">An enumerable collection of objects representing the detected items.</param>
         /// <param name="drawConfidence">A boolean indicating whether to include confidence percentages in the drawn labels.</param>
-        private static SKImage DrawBoundingBoxes(this SKImage image, IEnumerable<IDetection>? detections, bool drawConfidence)
+        private static SKImage DrawBoundingBoxes(this SKImage image, IEnumerable<Detection>? detections, bool drawConfidence)
         {
             ArgumentNullException.ThrowIfNull(detections);
 
@@ -546,11 +546,11 @@
 
             foreach (var detection in detections)
             {
-                var box = detection.BoundingBox;
+                var box = detection.Detection.BoundingBox;
                 var radians = detection.OrientationAngle;
 
-                var boxColor = HexToRgbaSkia(detection.Label.Color, labelBoxAlpha);
-                var labelText = LabelText(detection.Label.Name, detection.Confidence, drawConfidence);
+                var boxColor = HexToRgbaSkia(detection.Detection.Label.Color, labelBoxAlpha);
+                var labelText = LabelText(detection.Detection.Label.Name, detection.Detection.Confidence, drawConfidence);
                 //var labelWidth = (int)paintText.MeasureText(labelText);
                 var labelWidth = (int)font.MeasureText(labelText);
 

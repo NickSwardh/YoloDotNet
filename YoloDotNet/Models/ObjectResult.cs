@@ -1,4 +1,6 @@
-﻿namespace YoloDotNet.Models
+﻿using System.Reflection.Emit;
+
+namespace YoloDotNet.Models
 {
     public class ObjectResult
     {
@@ -43,36 +45,15 @@
         public float OrientationAngle { get; set; }
 
         #region Mapping methods
-        public static explicit operator ObjectDetection(ObjectResult result) => new()
-        {
-            Label = result.Label,
-            Confidence = result.Confidence,
-            BoundingBox = result.BoundingBox
-        };
 
-        public static explicit operator OBBDetection(ObjectResult result) => new()
-        {
-            Label = result.Label,
-            Confidence = result.Confidence,
-            BoundingBox = result.BoundingBox,
-            OrientationAngle = result.OrientationAngle
-        };
+        public static explicit operator ObjectDetection(ObjectResult result) => new(detection: new Detection(label: result.Label, confidence: result.Confidence, boundingBox: result.BoundingBox));
 
-        public static explicit operator Segmentation(ObjectResult result) => new()
-        {
-            Label = result.Label,
-            Confidence = result.Confidence,
-            BoundingBox = result.BoundingBox,
-            SegmentedPixels = result.SegmentedPixels
-        };
+        public static explicit operator OBBDetection(ObjectResult result) => new(detection: new Detection(label: result.Label, confidence: result.Confidence, boundingBox: result.BoundingBox), orientationAngle: result.OrientationAngle);
 
-        public static explicit operator PoseEstimation(ObjectResult result) => new()
-        {
-            Label = result.Label,
-            Confidence = result.Confidence,
-            BoundingBox = result.BoundingBox,
-            KeyPoints = result.KeyPoints
-        };
+        public static explicit operator Segmentation(ObjectResult result) => new(detection: new Detection(label: result.Label, confidence: result.Confidence, boundingBox: result.BoundingBox), segmentedPixels: result.SegmentedPixels);
+
+        public static explicit operator PoseEstimation(ObjectResult result) => new(detection: new Detection(label: result.Label, confidence: result.Confidence, boundingBox: result.BoundingBox), keyPoints: result.KeyPoints);
+
         #endregion
     }
 }

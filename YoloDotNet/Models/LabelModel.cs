@@ -3,8 +3,15 @@
     /// <summary>
     /// Represents a label with its associated color in hexadecimal format.
     /// </summary>
-    public record LabelModel
+    public struct LabelModel
     {
+        public LabelModel(int index, string name, string color)
+        {
+            this.Index = index;
+            this.Name = name;
+            this.Color = color;
+        }
+
         /// <summary>
         /// Label index
         /// </summary>

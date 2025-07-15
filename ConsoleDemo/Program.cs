@@ -101,21 +101,21 @@ case ModelType.Classification:
 case ModelType.ObjectDetection:
     {
         var result = yolo.RunObjectDetection(image, 0.23, 0.7);
-        labels = result.Select(x => x.Label).ToList();
+        labels = result.Select(x => x.Detection.Label).ToList();
         resultImage = image.Draw(result);
         break;
     }
 case ModelType.ObbDetection:
     {
         var result = yolo.RunObbDetection(image, 0.23, 0.7);
-        labels = result.Select(x => x.Label).ToList();
+        labels = result.Select(x => x.Detection.Label).ToList();
         resultImage = image.Draw(result);
         break;
     }
 case ModelType.Segmentation:
     {
         var result = yolo.RunSegmentation(image, 0.23, 0.65, 0.7);
-        labels = result.Select(x => x.Label).ToList();
+        labels = result.Select(x => x.Detection.Label).ToList();
 
         resultImage = image.Draw(result);
         break;
@@ -123,7 +123,7 @@ case ModelType.Segmentation:
 case ModelType.PoseEstimation:
     {
         var result = yolo.RunPoseEstimation(image, 0.23, 0.7);
-        labels = result.Select(x => x.Label).ToList();
+        labels = result.Select(x => x.Detection.Label).ToList();
         resultImage = image.Draw(result, CustomKeyPointColorMap.KeyPointOptions);
         break;
     }
@@ -188,7 +188,7 @@ Console.WriteLine();
 Console.WriteLine("Complete!");
 };
 
-Dictionary<int, List<ObjectDetection>> detections = yolo.RunObjectDetection(videoOptions, 0.25);
+Dictionary<int, ObjectDetection[]> detections = yolo.RunObjectDetection(videoOptions, 0.25);
 Console.WriteLine();
 }
 

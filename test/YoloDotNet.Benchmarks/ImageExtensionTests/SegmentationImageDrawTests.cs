@@ -10,7 +10,7 @@
 
         private Yolo _cpuYolo;
         private SKImage _image;
-        private List<Segmentation> _segmentations;
+        private Segmentation[] _segmentations;
 
         #endregion Fields
 
