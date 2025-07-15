@@ -127,30 +127,38 @@ namespace WebcamDemo
                 using var frame = SKImage.FromPixels(_imageInfo, bgraMat.DataPointer);
                 _currentFrame = SKBitmap.FromImage(frame);
 
-                _stopwatch.Restart();
-
                 if (_runDetection)
                 {
+                    _stopwatch.Restart();
+
                     // Run object detection on the current frame
                     var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold, iou: 0.7);
 
                     if (_isFilteringEnabled)
-                        results = results.FilterLabels(["person", "cat", "plane"]);  // Optionally filter results to include only specific classes (e.g., "person", "cat", "plan")
+                        results = results.FilterLabels(["person", "cat", "dog"]);  // Optionally filter results to include only specific classes (e.g., "person", "cat", "dog")
 
                     if (_isTrackingEnabled)
-                        results = results.Track(_sortTracker); // Optionally track objects using the SortTracker
+                        results.Track(_sortTracker); // Optionally track objects using the SortTracker
 
                     // Draw detection and tracking results on the current frame
                     _currentFrame.Draw(results);
-                }
 
-                _stopwatch.Stop();
+                    _stopwatch.Stop();
+                }
 
                 // Update GUI
                 await _dispatcher.InvokeAsync(() =>
                 {
-                    WebCamFrame.InvalidateVisual(); // Notify SKiaSharp to update the frame in the GUI.
-                    FrameProcess.Text = $"Processed Frame (ms): {_stopwatch.ElapsedMilliseconds}";
+                    WebCamFrame.InvalidateVisual(); // Notify SKiaSharp to update the frame.
+
+                    // Display processing time and max fps
+                    if (_runDetection)
+                    {
+                        var milliseconds = _stopwatch.ElapsedMilliseconds;
+                        var yoloFps = 1000.0 / milliseconds;
+
+                        FrameProcess.Text = $"Processed Frame: {milliseconds}ms, {yoloFps:###} fps";
+                    }
                 });
             }
         }

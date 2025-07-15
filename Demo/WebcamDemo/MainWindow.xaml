@@ -14,9 +14,8 @@
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
+  
         <!-- Webcam -->
-
         <skia:SKElement x:Name="WebCamFrame"
                         Width="1280"
                         Height="720"
@@ -24,34 +23,29 @@
                         VerticalAlignment="Stretch"
                         PaintSurface="UpdateWebcamFrame" />
 
-        <!-- Buttons -->
+        <!-- Simple processing timer -->
+        <TextBlock x:Name="FrameProcess"
+                   VerticalAlignment="Top"
+                   HorizontalAlignment="Right"
+                   Foreground="White"
+                   Background="Black"
+                   Padding="4"
+                   Margin="0,10,10,0"/>
+
+        <!-- Controls -->
         <StackPanel Grid.Row="1"
                     Orientation="Horizontal"
                     HorizontalAlignment="Center"
                     Margin="20">
 
-            <Button x:Name="Start"
-                    Content="Start Detection"
-                    Width="120"
-                    Height="30"
-                    Padding="10,0,10,0"
-                    Margin="0,0,10,0"
-                    Click="StartClick" />
-
-            <Button x:Name="Stop"
-                    Content="Stop Detection"
-                    Width="120"
-                    Height="30"
-                    Padding="10,0,10,0"
-                    Click="StopClick" />
-
+            <!-- Slider -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Slider x:Name="ConfidenceTreshold"
                         Minimum="0.20"
                         Maximum="0.99"
                         Width="120"
                         VerticalAlignment="Center"
-                        Margin="10,0,0,0" ValueChanged="ConfidenceTreshold_ValueChanged"/>
+                         ValueChanged="ConfidenceTreshold_ValueChanged"/>
 
                 <TextBlock VerticalAlignment="Center"
                            Margin="10,0,0,0"
@@ -59,6 +53,8 @@
                            Text="{Binding ElementName=ConfidenceTreshold, Path=Value, StringFormat={}{0:F2}}" />
             </StackPanel>
 
+
+            <!-- Checkboxes -->
             <CheckBox x:Name="EnableTracking"
                       Content="Track Objects"
                       Foreground="white"
@@ -71,10 +67,21 @@
                       VerticalAlignment="Center"
                       Margin="10,0,0,0" Checked="EnableFiltering_Checked" Unchecked="EnableFiltering_Unchecked"/>
 
-            <TextBlock x:Name="FrameProcess"
-                       Foreground="white"
-                       VerticalAlignment="Center"
-                       Margin="10,0,0,0"/>
+            <!-- Buttons -->
+            <Button x:Name="Start"
+                    Content="Start Detection"
+                    Width="120"
+                    Height="30"
+                    Padding="10,0,10,0"
+                    Margin="10,0,10,0"
+                    Click="StartClick" />
+
+            <Button x:Name="Stop"
+                    Content="Stop Detection"
+                    Width="120"
+                    Height="30"
+                    Padding="10,0,0,0"
+                    Click="StopClick" />
 
         </StackPanel>
 
