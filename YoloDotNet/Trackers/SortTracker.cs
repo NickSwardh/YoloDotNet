@@ -20,6 +20,21 @@ namespace YoloDotNet.Trackers
             _tailLength = tailLength;
         }
 
+        /// <summary>
+        /// Updates the tracker state with the current detections.
+        /// </summary>
+        /// <typeparam name="T">A detection type implementing <see cref="IDetection"/>.</typeparam>
+        /// <param name="detections">List of detections from the current frame.</param>
+        /// <remarks>
+        /// The method performs the following steps:
+        /// <list type="bullet">
+        /// <item>Predicts new positions of existing tracked objects using a Kalman filter.</item>
+        /// <item>Matches current detections to active tracks using a cost matrix and assignment algorithm.</item>
+        /// <item>Adds new detections as untracked objects when no matching track is found.</item>
+        /// <item>Initializes tracking if no active tracks exist.</item>
+        /// <item>Removes old tracked objects that have exceeded the maximum allowed age.</item>
+        /// </list>
+        /// </remarks>
         public void UpdateTracker<T>(List<T> detections) where T : IDetection
         {
             // If there is nothing to track, no further processing needed...
@@ -39,13 +54,13 @@ namespace YoloDotNet.Trackers
             // Update existing tracked objects and add new untracked objects.
             if (activeTracks.Count > 0)
             {
-            var costMatrix = CalculateCostMatrix(activeTracks, detections);
+                var costMatrix = CalculateCostMatrix(activeTracks, detections);
 
-            // Match detected objects with tracked objects
-            var assignedIds = MatchPredictedObjects(detections, activeTracks, costMatrix);
+                // Match detected objects with tracked objects
+                var assignedIds = MatchPredictedObjects(detections, activeTracks, costMatrix);
 
-            // Add untracked new objects to tracker
-            AddUntrackedObjects(detections, assignedIds);
+                // Add untracked new objects to tracker
+                AddUntrackedObjects(detections, assignedIds);
             }
             else
             {
@@ -56,6 +71,10 @@ namespace YoloDotNet.Trackers
             RemoveOldTrackedObjects();
         }
 
+        /// <summary>
+        /// Adds new tracks for detections that were not matched to any existing tracked object.
+        /// Called after the assignment phase.
+        /// </summary>
         private void AddUntrackedObjects<T>(List<T> detections, HashSet<int> assignedDetections) where T : IDetection
         {
             // Add new untracked objects     
@@ -85,6 +104,10 @@ namespace YoloDotNet.Trackers
                 _trackedObjects[_nextId] = new TrackedObject(detection, _tailLength);
             }
         }
+
+        /// <summary>
+        /// Removes tracked objects that have not been matched for more than <c>_maxAge</c> frames.
+        /// </summary>
         private void RemoveOldTrackedObjects()
         {
             foreach (var track in _trackedObjects.ToList())
@@ -98,6 +121,10 @@ namespace YoloDotNet.Trackers
             }
         }
 
+        /// <summary>
+        /// Computes the cost matrix between active tracks and current detections,
+        /// based on IoU and normalized center-point distance.
+        /// </summary>
         private static float[,] CalculateCostMatrix<T>(List<KeyValuePair<int, TrackedObject>> activeTracks, List<T> detections) where T : IDetection
         {
             // Define array for storing costMatrix
@@ -126,6 +153,11 @@ namespace YoloDotNet.Trackers
             return costMatrix;
         }
 
+        /// <summary>
+        /// Matches current detections to existing active tracks using the LAPJV assignment algorithm
+        /// based on the provided cost matrix. Updates tracked objects for matched detections,
+        /// resets their age, and returns the set of assigned detection indices.
+        /// </summary>
         private HashSet<int> MatchPredictedObjects<T>(List<T> detections, List<KeyValuePair<int, TrackedObject>> activeTracks, float[,] costMatrix) where T : IDetection
         {
             // Solve assignment using LAPJV algorithm.
@@ -155,6 +187,7 @@ namespace YoloDotNet.Trackers
                     // Set Id of detected boundingbox
                     box.Id = trackId;
 
+                    // Reset tracked box age counter
                     trackedBox.Age = 0;
                     trackedBox.TrackBoundingBox(box);
 
