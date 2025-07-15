@@ -8,7 +8,6 @@ namespace YoloDotNet.Trackers
     {
         private readonly Dictionary<int, TrackedObject> _trackedObjects = [];
 
-        private bool _trackerWasInitialized = false;
         private int _nextId = 0;
         private readonly int _maxAge;
         private readonly float _costThreshold;
@@ -17,20 +16,12 @@ namespace YoloDotNet.Trackers
         public SortTracker(float costThreshold = 0.5f, int maxAge = 3, int tailLength = 30)
         {
             _costThreshold = costThreshold;
-            _maxAge = maxAge + 1;
+            _maxAge = maxAge;
             _tailLength = tailLength;
         }
 
         public void UpdateTracker<T>(List<T> detections) where T : IDetection
         {
-            // Initialize tracker on first tracked objects.
-            if (_trackerWasInitialized is false)
-            {
-                _trackerWasInitialized = true;
-                InitializeTracker(detections);
-                return;
-            }
-
             // If there is nothing to track, no further processing needed...
             if (detections.Count == 0)
             {
@@ -43,14 +34,11 @@ namespace YoloDotNet.Trackers
                 trackedObject.KalmanPredict();
 
             // Get previous boundingboxes based on previous _trackCounter
-            var activeTracks = _trackedObjects.Where(x => x.Value.Age < _maxAge).ToList();
+            var activeTracks = _trackedObjects.Where(x => x.Value.Age <= _maxAge).ToList();
 
-            if (activeTracks.Count == 0)
+            // Update existing tracked objects and add new untracked objects.
+            if (activeTracks.Count > 0)
             {
-                RemoveOldTrackedObjects();
-                return;
-            }
-
             var costMatrix = CalculateCostMatrix(activeTracks, detections);
 
             // Match detected objects with tracked objects
@@ -58,6 +46,13 @@ namespace YoloDotNet.Trackers
 
             // Add untracked new objects to tracker
             AddUntrackedObjects(detections, assignedIds);
+            }
+            else
+            {
+                // Tracker is empty; create new tracks for all current detections.
+                CreateInitialTracks(detections);
+            }
+            
             RemoveOldTrackedObjects();
         }
 
@@ -69,21 +64,34 @@ namespace YoloDotNet.Trackers
                 if (assignedDetections.Contains(i) is false)
                 {
                     _nextId++;
-                    detections[i].Id = _nextId;
 
-                    // Add new tracked item with a new id (incremented _nextId)
+                    detections[i].Id = _nextId;
                     _trackedObjects[_nextId] = new TrackedObject(detections[i], _tailLength);
                 }
             }
         }
 
+        /// <summary>
+        /// Adds new untracked objects to the tracker.  
+        /// Used when the tracker is empty and all detections are considered new.
+        /// </summary>
+        public void CreateInitialTracks<T>(List<T> detections) where T : IDetection
+        {
+            foreach (var detection in detections)
+            {
+                _nextId++;
+
+                detection.Id = _nextId;
+                _trackedObjects[_nextId] = new TrackedObject(detection, _tailLength);
+            }
+        }
         private void RemoveOldTrackedObjects()
         {
             foreach (var track in _trackedObjects.ToList())
             {
                 track.Value.Age++;
 
-                if (track.Value.Age >= _maxAge)
+                if (track.Value.Age > _maxAge)
                 {
                     _trackedObjects.Remove(track.Key);
                 }
@@ -156,19 +164,9 @@ namespace YoloDotNet.Trackers
 
             return assignedDetections;
         }
-
-        public void InitializeTracker<T>(List<T> detections) where T : IDetection
-        {
-            foreach (var detection in detections)
-            {
-                _nextId++;
-
-                detection.Id = _nextId;
-                _trackedObjects[_nextId] = new TrackedObject(detection);
-            }
-        }
-
-        // Calculate distance between two bounding box centers.
+        /// <summary>
+        /// Calculate distance between two bounding box centers.
+        /// </summary>
         private static float CalculateDistance(float predictedX, float predictedY, float detectionX, float detectionY)
         {
             var dx = predictedX - detectionX;
