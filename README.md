@@ -103,24 +103,24 @@ For more information on how to export yolo-models to onnx [read this guide](http
 The ONNX-models included in this repo for test and demo purposes are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
 
 # 🚀 Quick Start: Dive into the Demos
-Can’t wait to see YoloDotNet in action? The demo projects are the fastest way to get started and explore everything this library can do.
+Can’t wait to see YoloDotNet in action? The [demo projects](./Demo) are the fastest way to get started and explore everything this library can do.
 
 Each demo showcases one of the supported tasks:
 
-- Classification – What is this thing?
-- Object Detection – What are all these things?
-- OBB Detection – Rotated objects? No problem.
-- Segmentation – Color between the lines… automatically.
-- Pose Estimation – Find the limbs, strike a pose!
+- **Classification** – What is this thing?
+- **Object Detection** – What are all these things?
+- **OBB Detection** – Rotated objects? No problem.
+- **Segmentation** – Color between the lines… automatically.
+- **Pose Estimation** – Find the limbs, strike a pose!
 
-Oh, and it doesn’t stop there — there’s a demo for real-time video inference too! Whether you’re analyzing local video files or streaming live, the demos have you covered.
+Oh, and it doesn’t stop there — there’s a demo for [real-time video inference](./Demo/VideoStreamDemo) too! Whether you’re analyzing local video files or streaming live, the demos have you covered.
 
-Each demo is packed with inline comments to help you understand how everything works under the hood. From model setup and preprocessing to video streaming and result rendering — it's all there.
+Each [demo](./Demo) is packed with inline comments to help you understand how everything works under the hood. From model setup and preprocessing to video streaming and result rendering — it's all there.
 
 > Pro tip:
 > For detailed configuration options and usage guidance, check out the comments in the demo source files. That’s where the real magic happens.
 
-Open the YoloDotNet.Demo projects, build, run, and start detecting at full speed. ✨
+[Open the YoloDotNet.Demo projects](./Demo), build, run, and start detecting at full speed. ✨
 
 # Bare Minimum — Get Up and Running in a Snap
 Sometimes you just want to see the magic happen without the bells and whistles. Here’s the absolute simplest way to load a model, run inference on an image, and get your detected objects:
