@@ -185,7 +185,14 @@ If that's not enough, check out the extension methods in the main YoloDotNet rep
 For practical examples on drawing and customization, don’t forget to peek at the demo project source code too!
 
 # Support YoloDotNet
-Find this project useful? Buy me a beer or two! 🍻 [https://paypal.me/nickswardh](https://paypal.me/nickswardh?country.x=SE&locale.x=en_US)
+YoloDotNet is the result of countless hours of development, testing, and continuous improvement — all offered freely to the community.
+
+If you’ve found this project helpful, consider supporting its development. Your contribution helps cover the time and resources needed to keep the project maintained, updated, and freely available to everyone.
+
+Support the project:
+👉 https://paypal.me/nickswardh
+
+Every donation, no matter the size, is greatly appreciated. Thank you!
 
 # References & Acknowledgements
 
