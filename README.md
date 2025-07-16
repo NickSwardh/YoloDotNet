@@ -171,14 +171,14 @@ That’s it! No fuss, just fast and easy detection.
 
 Of course, the real power lies in customizing the pipeline, streaming videos, or tweaking models… but this snippet gets you started in seconds.
 
-Want more? Dive into the demos and source code for full examples, from video streams to segmentation and pose estimation.
+**Want more?** Dive into the [demos and source code](./Demo) for full examples, from video streams to segmentation and pose estimation.
 
 # Make It Yours – Customize the Look
 Want to give your detections a personal touch? Go ahead! If you're drawing bounding boxes on-screen, there’s full flexibility to style them just the way you like:
 
-- Custom Colors – Use the built-in class-specific colors or define your own for every bounding box.
-- Font Style & Size – Choose your favorite font, set the size, and even change the color for the labels.
-- Custom Fonts – Yep, you can load your own font files to give your overlay a totally unique feel.
+- **Custom Colors** – Use the built-in class-specific colors or define your own for every bounding box.
+- **Font Style & Size** – Choose your favorite font, set the size, and even change the color for the labels.
+- **Custom Fonts** – Yep, you can load your own font files to give your overlay a totally unique feel.
 
 If that's not enough, check out the extension methods in the main YoloDotNet repository — a solid boilerplate for building even deeper customizations tailored exactly to your needs.
 
