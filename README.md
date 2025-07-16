@@ -151,7 +151,7 @@ public class Program
         });
 
         // Which YOLO magic is this? Let’s find out!
-        Console.WriteLine($"Model Type: {yolo.OnnxModel.ModelType}");
+        Console.WriteLine($"Model Type: {yolo.ModelInfo}");
 
         // Load image with SkiaSharp
         using var image = SKBitmap.Decode("image.jpg");
