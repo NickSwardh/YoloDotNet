@@ -189,8 +189,9 @@ YoloDotNet is the result of countless hours of development, testing, and continu
 
 If you’ve found this project helpful, consider supporting its development. Your contribution helps cover the time and resources needed to keep the project maintained, updated, and freely available to everyone.
 
-Support the project:
-👉 https://paypal.me/nickswardh
+Support the project:\
+👉 [GitHub Sponsor](https://github.com/sponsors/NickSwardh)\
+👉 [PayPal](https://paypal.me/nickswardh)
 
 Every donation, no matter the size, is greatly appreciated. Thank you!
 
