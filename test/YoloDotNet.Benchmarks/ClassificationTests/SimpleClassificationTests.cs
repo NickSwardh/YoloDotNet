@@ -30,8 +30,15 @@ namespace YoloDotNet.Benchmarks.ClassificationTests
 
         [Params(YoloType.V8_Cls_CPU,
             YoloType.V8_Cls_GPU,
+            YoloType.V8_Cls_TRT32,
+            YoloType.V8_Cls_TRT16,
+            YoloType.V8_Cls_TRT8,
+
             YoloType.V11_Cls_CPU,
-            YoloType.V11_Cls_GPU
+            YoloType.V11_Cls_GPU,
+            YoloType.V11_Cls_TRT32,
+            YoloType.V11_Cls_TRT16,
+            YoloType.V11_Cls_TRT8
             )]
         public YoloType YoloParam { get; set; }
 

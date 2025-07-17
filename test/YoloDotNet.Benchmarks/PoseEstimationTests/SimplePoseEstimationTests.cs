@@ -29,8 +29,15 @@ namespace YoloDotNet.Benchmarks.PoseEstimationTests
 
         [Params(YoloType.V8_Pos_CPU,
             YoloType.V8_Pos_GPU,
+            YoloType.V8_Pos_TRT32,
+            YoloType.V8_Pos_TRT16,
+            YoloType.V8_Pos_TRT8,
+
             YoloType.V11_Pos_CPU,
-            YoloType.V11_Pos_GPU
+            YoloType.V11_Pos_GPU,
+            YoloType.V11_Pos_TRT32,
+            YoloType.V11_Pos_TRT16,
+            YoloType.V11_Pos_TRT8
             )]
         public YoloType YoloParam { get; set; }
 

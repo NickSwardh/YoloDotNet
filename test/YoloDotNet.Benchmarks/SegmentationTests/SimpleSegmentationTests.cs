@@ -29,8 +29,15 @@ namespace YoloDotNet.Benchmarks.SegmentationTests
         [Params(
             YoloType.V8_Seg_CPU,
             YoloType.V8_Seg_GPU,
+            YoloType.V8_Seg_TRT32,
+            YoloType.V8_Seg_TRT16,
+            YoloType.V8_Seg_TRT8,
+
             YoloType.V11_Seg_CPU,
-            YoloType.V11_Seg_GPU
+            YoloType.V11_Seg_GPU,
+            YoloType.V11_Seg_TRT32,
+            YoloType.V11_Seg_TRT16,
+            YoloType.V11_Seg_TRT8
             )]
         public YoloType YoloParam { get; set; }
 
