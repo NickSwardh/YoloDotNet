@@ -6,6 +6,7 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
+using YoloDotNet.Core;
 using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
@@ -30,7 +31,7 @@ namespace PoseEstimationDemo
     /// - Console reporting of detected poses and their confidence scores
     /// 
     /// Important notes:
-    /// - CUDA (GPU acceleration) is disabled by default here but can be enabled for improved performance.
+    /// - This demo runs inference on the CPU. Use CUDA or TensorRT for significantly faster performance.
     /// - PoseDrawingOptions allows customization of font, colors, opacity, keypoint visualization, and more.
     /// - Tail visualization for tracking motion paths is referenced but not enabled in this static image example.
     /// </summary>
@@ -52,14 +53,19 @@ namespace PoseEstimationDemo
                 // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.PoseEstimation),
 
-                // Use CUDA (Nvidia GPU acceleration) if available. Set to true for GPU inference.
-                Cuda = false,
-
-                // If true, will prime (warm up) the GPU to reduce the latency of the first inference.
-                PrimeGpu = false,
-
-                // Index of GPU device to use (0 = first GPU).
-                GpuId = 0,
+                // Select execution provider (controls how inference is performed on hardware).
+                // Available execution providers:
+                //   - CpuExecutionProvider()  
+                //     Runs inference entirely on the CPU. Universally supported but typically the slowest.
+                //
+                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
+                //     Uses CUDA to run inference on an NVIDIA GPU. Reliable for general GPU acceleration.
+                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
+                //
+                //   - TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP32, EngineCachePath: @"cache\folder")  
+                //     Uses NVIDIA TensorRT for highly optimized GPU inference. Supports FP32 and FP16/INT8 acceleration if available.
+                //     Requires a valid engine cache path to store and reuse optimized TensorRT engines.
+                ExecutionProvider = new CpuExecutionProvider(),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

@@ -6,6 +6,7 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
+using YoloDotNet.Core;
 using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
@@ -29,7 +30,7 @@ namespace ObjectDetectionDemo
     /// - Console reporting of inference results
     ///
     /// Note:
-    /// - CUDA (GPU acceleration) is disabled by default but can be enabled for faster inference.
+    /// - This demo runs inference on the CPU. Use CUDA or TensorRT for significantly faster performance.
     /// - The demo creates an output folder on the desktop to store processed results.
     /// </summary>
     internal class Program
@@ -50,14 +51,12 @@ namespace ObjectDetectionDemo
                 // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
-                // Use CUDA (Nvidia GPU acceleration) if available. Set to true for GPU inference.
-                Cuda = false,
-
-                // If true, will prime (warm up) the GPU to reduce the latency of the first inference.
-                PrimeGpu = false,
-
-                // Index of GPU device to use (0 = first GPU).
-                GpuId = 0,
+                // Select execution provider:
+                // Available execution providers:
+                //   new CpuExecutionProvider()
+                //   new CudaExecutionProvider(GpuId: 0, PrimeGpu: true)
+                //   new TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP32, EngineCachePath: @"tensor_chache\folder")
+                ExecutionProvider = new TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP16, EngineCachePath: @"C:\Tools\tensor_cache"),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

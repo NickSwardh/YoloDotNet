@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 using YoloDotNet;
+using YoloDotNet.Core;
 using YoloDotNet.Enums;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
@@ -38,7 +39,7 @@ namespace WebcamDemo
     /// - Additional devices by index (e.g., 1 for a secondary camera)
     /// 
     /// Note:
-    /// - CUDA acceleration is enabled for faster inference.
+    /// - This demo runs inference using CUDA. Use TensorRT for significantly faster performance.
     /// - The demo updates the WPF UI in real time with processed frames and performance metrics.
     /// </summary>
     public partial class MainWindow : Window
@@ -83,13 +84,35 @@ namespace WebcamDemo
             // Note: There is no one-size-fits-all setting; these parameters often require some tinkering to find the best balance for your specific use case.
             _sortTracker = new SortTracker(costThreshold: 0.5f, maxAge: 5, tailLength: 30);
 
-            // Instantiate yolo 11
-            _yolo = new Yolo(new YoloOptions()
+            // Initialize YoloDotNet.
+            // YoloOptions configures the model, hardware settings, and image processing behavior.
+            using var yolo = new Yolo(new YoloOptions
             {
+                // Path or byte[] to the ONNX model file. 
+                // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-                Cuda = true,
-                PrimeGpu = false,
+
+                // Select execution provider (controls how inference is performed on hardware).
+                // Available execution providers:
+                //   - CpuExecutionProvider()  
+                //     Runs inference entirely on the CPU. Universally supported but typically the slowest.
+                //
+                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
+                //     Uses CUDA to run inference on an NVIDIA GPU. Reliable for general GPU acceleration.
+                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
+                //
+                //   - TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP32, EngineCachePath: @"cache\folder")  
+                //     Uses NVIDIA TensorRT for highly optimized GPU inference. Supports FP32 and FP16/INT8 acceleration if available.
+                //     Requires a valid engine cache path to store and reuse optimized TensorRT engines.
+                ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
+
+                // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
+                // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
+                // Set this accordingly, as it directly impacts the inference results.
                 ImageResize = ImageResize.Proportional,
+
+                // Sampling options for resizing; affects inference speed and quality.
+                // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/blob/development/test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs
                 SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
             });
 
