@@ -84,7 +84,7 @@ namespace YoloDotNet.Modules.V10
                         yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
                     }
 
-                    boxes[validBoxCount] = new ObjectResult
+                    boxes[validBoxCount++] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
