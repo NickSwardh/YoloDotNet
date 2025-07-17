@@ -128,6 +128,9 @@ namespace YoloDotNet.Core
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
         public List<ObjectResult> RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
         {
+            if (predictions.Length == 0)
+                return [];
+
             Array.Sort(predictions, ConfidenceComparer.Instance);
 
             var result = new List<ObjectResult>();
