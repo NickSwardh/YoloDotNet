@@ -15,9 +15,7 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
 
             using var yolo = new Yolo(new YoloOptions
             {
-                OnnxModel = model,
-                Cuda = false,
-                ImageResize = ImageResize.Proportional
+                OnnxModel = model
             });
 
             using var image = SKBitmap.Decode(testImage);

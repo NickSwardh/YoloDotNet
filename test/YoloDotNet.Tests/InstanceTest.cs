@@ -20,8 +20,7 @@ namespace YoloDotNet.Tests
                 var model = SharedConfig.GetTestModelV8(ModelType.ObjectDetection);
                 using var mock = new Yolo(new YoloOptions
                 {
-                    OnnxModel = model,
-                    Cuda = useCuda
+                    OnnxModel = model
                 });
             }
             catch (Exception)

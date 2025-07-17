@@ -16,7 +16,6 @@ namespace YoloDotNet.Tests.SegmentationTests
             using var yolo = new Yolo(new YoloOptions
             {
                 OnnxModel = model,
-                Cuda = false,
                 ImageResize = ImageResize.Stretched
             });
 

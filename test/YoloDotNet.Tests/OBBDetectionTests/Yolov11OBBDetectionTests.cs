@@ -15,8 +15,7 @@ namespace YoloDotNet.Tests.OBBDetectionTests
 
             using var yolo = new Yolo(new YoloOptions
             {
-                OnnxModel = model,
-                Cuda = false
+                OnnxModel = model
             });
 
             //var image = SKImage.FromEncodedData(testImage);
