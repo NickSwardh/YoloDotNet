@@ -39,7 +39,7 @@ namespace YoloDotNet.Core
             if (string.IsNullOrEmpty(YoloOptions.OnnxModel) && YoloOptions.OnnxModelBytes is null)
                 throw new ArgumentException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
 
-            InjectModelIntoOnnxRuntime();
+            InjectModelIntoExecutionProvider();
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
@@ -59,12 +59,15 @@ namespace YoloDotNet.Core
 
             _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
 
-            if (YoloOptions.Cuda && YoloOptions.PrimeGpu)
-                _session.AllocateGpuMemory(_ortIoBinding,
-                    _runOptions,
-                    customSizeFloatPool,
-                    _pinnedMemoryPool,
-                    YoloOptions.SamplingOptions);
+            if (YoloOptions.ExecutionProvider is CudaExecutionProvider cuda)
+            {
+                if (cuda.PrimeGpu)
+                    _session.AllocateGpuMemory(_ortIoBinding,
+                        _runOptions,
+                        customSizeFloatPool,
+                        _pinnedMemoryPool,
+                        YoloOptions.SamplingOptions);
+            }
 
             _inputNames = new Dictionary<string, OrtValue>
             {
@@ -75,43 +78,11 @@ namespace YoloDotNet.Core
             FrameSaveService.Start();
         }
 
-        private void InjectModelIntoOnnxRuntime()
+        private void InjectModelIntoExecutionProvider()
         {
-            SessionOptions sessionOptions = new();
+            using var sessionOptions = ExecutionProviderFactory.Create(yoloOptions.ExecutionProvider);
 
-            // If CUDA is enabled, apply ONNX Runtime CUDA optimizations to squeeze out extra performance ;)
-            if (YoloOptions.Cuda)
-            {
-                sessionOptions.GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL;
-                sessionOptions.ExecutionMode = ExecutionMode.ORT_SEQUENTIAL;
-                sessionOptions.EnableCpuMemArena = true;
-
-                var cudaOptions = new OrtCUDAProviderOptions();
-                cudaOptions.UpdateOptions(new Dictionary<string, string>
-                {
-                    { "device_id", YoloOptions.GpuId.ToString() },  
-                    // Specifies which GPU device to use (default = 0 if not set).
-
-                    { "arena_extend_strategy", "kNextPowerOfTwo" }, 
-                    // Controls how the GPU memory arena grows when more memory is needed.
-                    // kNextPowerOfTwo doubles the allocation size to the next power of two,
-                    // which reduces the frequency of CUDA malloc/free calls and minimizes fragmentation 
-                    // in long-running or high-throughput inference scenarios like YOLO object detection.
-
-                    { "cudnn_conv_algo_search", "EXHAUSTIVE" },     
-                    // Forces cuDNN to benchmark all available convolution algorithms during model initialization
-                    // and select the fastest one for the hardware + model combination.
-                    // This gives optimal conv kernel performance at runtime, especially beneficial for large or custom conv layers.
-                });
-
-                sessionOptions.AppendExecutionProvider_CUDA(cudaOptions);
-            }
-            else
-            {
-                sessionOptions.EnableCpuMemArena = true;
-            }
-
-            // Create inference session from byte[] or file path
+            // Create session using bytes if available; else load from file with selected provider.
             _session = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
                 ? new InferenceSession(YoloOptions.OnnxModelBytes, sessionOptions)
                 : new InferenceSession(YoloOptions.OnnxModel, sessionOptions);

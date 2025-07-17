@@ -230,7 +230,7 @@ namespace YoloDotNet.Video.Services
 
             // Encode using CUDA?
             var videoCodec = "libx264";
-            if (_yoloOptions.Cuda is true)
+            if (_yoloOptions.ExecutionProvider is not CpuExecutionProvider)
             {
                 videoCodec = "h264_nvenc";
             }
