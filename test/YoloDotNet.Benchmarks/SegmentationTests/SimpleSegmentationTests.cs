@@ -16,7 +16,7 @@ namespace YoloDotNet.Benchmarks.SegmentationTests
         public void GlobalSetup()
         {
             _image = SKBitmap.Decode(_testImage);
-            _yolo = YoloCreator.CreateYolo(YoloParam);
+            _yolo = YoloCreator.Create(YoloParam);
         }
 
         [GlobalCleanup]

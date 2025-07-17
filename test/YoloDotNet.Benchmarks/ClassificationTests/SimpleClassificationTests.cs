@@ -18,7 +18,7 @@ namespace YoloDotNet.Benchmarks.ClassificationTests
         {
             _image = SKBitmap.Decode(_testImage);
 
-            _yolo = YoloCreator.CreateYolo(YoloParam);
+            _yolo = YoloCreator.Create(YoloParam);
         }
 
         [GlobalCleanup]

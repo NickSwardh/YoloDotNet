@@ -17,7 +17,7 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _yolo = YoloCreator.CreateYolo(YoloType.V8_Cls_CPU);
+            _yolo = YoloCreator.Create(YoloType.V8_Cls_CPU);
             _skBitmap = SKBitmap.Decode(_testImage);
 
             _classifications = _yolo.RunClassification(_skBitmap);

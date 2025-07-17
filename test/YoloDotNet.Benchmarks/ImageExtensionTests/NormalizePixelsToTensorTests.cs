@@ -2,7 +2,9 @@
 // Copyright (c) 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-﻿namespace YoloDotNet.Benchmarks.ImageExtensionTests
+using YoloDotNet.Core;
+
+namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
@@ -25,8 +27,8 @@
         {
             var options = new YoloOptions
             {
-                OnnxModel = YoloCreator.Model8_ObjectDetection,
-                Cuda = false
+                OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
+                ExecutionProvider = new CpuExecutionProvider()
             };
 
             _yolo = new Yolo(options);
