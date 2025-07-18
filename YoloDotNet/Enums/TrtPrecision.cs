@@ -1,6 +1,6 @@
 ﻿namespace YoloDotNet.Enums
 {
-    public enum TensorRTPrecision
+    public enum TrtPrecision
     {
         FP32,
         FP16,
