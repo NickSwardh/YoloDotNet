@@ -64,7 +64,7 @@ namespace TensorRTDemo
                     GpuId = 0,
                     // Specifies which GPU device index to use for TensorRT execution. 0 = default.
 
-                    Precision = TrtPrecision.FP16,
+                    Precision = TrtPrecision.FP32,
                     // - FP32: Full precision (32-bit float). Default mode. Highest accuracy, default execution.
                     // - FP16: Half precision (16-bit float). Offers improved performance on supported GPUs with minimal accuracy loss.
                     // - INT8: Integer precision (8-bit). Fastest inference performance, but requires calibration.
@@ -103,8 +103,8 @@ namespace TensorRTDemo
                     //
                     // If left empty, a default internal prefix will be used.
 
-                    Int8CalibrationCacheFile = "",
-                    // Required for INT8 precision mode. Leave empty if INT8 is not used.
+                    Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", "yolov11s.cache"),
+                    // Path to calibration cache required for INT8 precision mode. Leave empty if INT8 is not used.
                     //
                     // Specifies the path to the INT8 calibration cache file used during engine building.
                     // This file is required when using non-quantized models in INT8 mode.
@@ -114,7 +114,7 @@ namespace TensorRTDemo
                     //
                     // 🔧 To generate the calibration cache, export the model using the Ultralytics CLI:
                     //
-                    //   yolo export model=your_model.pt format=engine int8=true simplify=true opset=17
+                    //   yolo export model=your_model.pt format=engine int8=true simplify=true data=your_model_dataset.yaml opset=17
                     //
                     // This command generates:
                     //   - A standard ONNX model (unquantized, FP32-based)
@@ -227,8 +227,8 @@ namespace TensorRTDemo
 
         private static void CreateOutputFolder()
         {
-            _outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
-            _trtEngineCacheFolder = Path.Combine(_outputFolder, "TensorRT_Engine_Cache");
+            _outputFolder = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
+            _trtEngineCacheFolder = Path.Join(_outputFolder, "TensorRT_Engine_Cache");
 
             var folder = _trtEngineCacheFolder;
 
