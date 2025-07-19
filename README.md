@@ -122,30 +122,34 @@ public class Program
         var yolo = new Yolo(new YoloOptions
         {
             OnnxModel = "model.onnx",
-            Cuda = true,
-            PrimeGpu = true,
-            GpuId = 0,
-            ImageResize = ImageResize.Proportional
-            // Choose between Proportional or Stretched resizing.
-            // Use 'Proportional' if your model was trained with images that preserve aspect ratio (e.g., padded borders).
-            // Use 'Stretched' if your training data was resized to fit the model's input dimensions directly.
-            // This setting influence detection accuracy, so be sure it aligns with how the model was trained.
+            // Can be a file path or byte[] (e.g. for embedded scenarios)
+
+            ImageResize = ImageResize.Proportional,
+            // Match this to how your training data was preprocessed.
+            // Proportional = keeps aspect ratio (e.g. letterboxing)
+            // Stretched = fits input size directly (e.g. distortion OK)
+
+            ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
+            // Sets the execution backend for ONNX Runtime.
+            // Available options:
+            //   - CpuExecutionProvider         → CPU-only (no GPU required)
+            //   - CudaExecutionProvider        → GPU via CUDA (NVIDIA required)
+            //   - TensorRtExecutionProvider    → GPU via NVIDIA TensorRT for maximum performance
         });
 
-        // Which YOLO magic is this? Let’s find out!
+        // Display model metadata
         Console.WriteLine($"Model Type: {yolo.ModelInfo}");
 
-        // Load image with SkiaSharp
+        // Load image using SkiaSharp
         using var image = SKBitmap.Decode("image.jpg");
 
-        // Run object detection with default values
-        var results = yolo.RunObjectDetection(image, confidence: 0.20, iou = 0.7);
+        // Run object detection
+        var results = yolo.RunObjectDetection(image, confidence: 0.20, iou: 0.7);
 
-        image.Draw(results);        // Overlay results on image
-        image.Save("result.jpg");   // Save to disk – boom, done!
+        image.Draw(results);         // Draw boxes and labels
+        image.Save("result.jpg");    // Save to file – boom, done!
 
-        // Clean up – unless you're using 'using' above.
-        yolo?.Dispose();
+        yolo?.Dispose();             // Cleanup if not using 'using'
     }
 }
 ```
