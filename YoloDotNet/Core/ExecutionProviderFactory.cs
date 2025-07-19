@@ -110,7 +110,7 @@ namespace YoloDotNet.Core
                 // If no path is specifiec, executable folder will be used.
 
 
-                { "trt_engine_cache_prefix", provider.EngineCachePrefix ?? "" },
+                { "trt_engine_cache_prefix", provider.EngineCachePrefix ?? "YoloDotNet" },
                 // Set prefix. If empty a default prefix will be used.
 
                 { "trt_auxiliary_streams", "0" },
