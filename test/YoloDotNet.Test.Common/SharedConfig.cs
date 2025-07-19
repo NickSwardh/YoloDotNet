@@ -12,10 +12,10 @@ namespace YoloDotNet.Test.Common
 
     public static class SharedConfig
     {
-        private const string ASSETS_FOLDER = @".\assets";
-        private const string BASE_MODELS = ASSETS_FOLDER + @"\models";
-        private const string BASE_MEDIA = ASSETS_FOLDER + @"\media";
-        private static readonly string ABSOLUTE_PATH = GetAbsolutePath();
+        // Define relative paths with cross-platform compatibility.
+        public static readonly string AssetsFolder = Path.Join(".", "assets");
+        public static readonly string BaseModels = Path.Join(AssetsFolder, "models");
+        public static readonly string BaseMedia = Path.Join(AssetsFolder, "media");
 
         // Define an absolute path to the assets folder.
         public static readonly string AbsoluteAssetsPath = GetAbsoluteAssetsPath();
@@ -28,7 +28,7 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV5U(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov5su.onnx"),
+            ModelType.ObjectDetection => Path.Join(BaseModels, "yolov5su.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
@@ -40,11 +40,11 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV8(ModelType modelType) => modelType switch
         {
-            ModelType.Classification => Path.Combine(BASE_MODELS, "yolov8s-cls.onnx"),
-            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov8s.onnx"),
-            ModelType.ObbDetection => Path.Combine(BASE_MODELS, "yolov8s-obb.onnx"),
-            ModelType.Segmentation => Path.Combine(BASE_MODELS, "yolov8s-seg.onnx"),
-            ModelType.PoseEstimation => Path.Combine(BASE_MODELS, "yolov8s-pose.onnx"),
+            ModelType.Classification => Path.Join(BaseModels, "yolov8s-cls.onnx"),
+            ModelType.ObjectDetection => Path.Join(BaseModels, "yolov8s.onnx"),
+            ModelType.ObbDetection => Path.Join(BaseModels, "yolov8s-obb.onnx"),
+            ModelType.Segmentation => Path.Join(BaseModels, "yolov8s-seg.onnx"),
+            ModelType.PoseEstimation => Path.Join(BaseModels, "yolov8s-pose.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
@@ -56,7 +56,7 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV9(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov9s.onnx"),
+            ModelType.ObjectDetection => Path.Join(BaseModels, "yolov9s.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
@@ -68,7 +68,7 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV10(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov10s.onnx"),
+            ModelType.ObjectDetection => Path.Join(BaseModels, "yolov10s.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
@@ -80,11 +80,11 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV11(ModelType modelType) => modelType switch
         {
-            ModelType.Classification => Path.Combine(BASE_MODELS, "yolov11s-cls.onnx"),
-            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov11s.onnx"),
-            ModelType.ObbDetection => Path.Combine(BASE_MODELS, "yolov11s-obb.onnx"),
-            ModelType.Segmentation => Path.Combine(BASE_MODELS, "yolov11s-seg.onnx"),
-            ModelType.PoseEstimation => Path.Combine(BASE_MODELS, "yolov11s-pose.onnx"),
+            ModelType.Classification => Path.Join(BaseModels, "yolov11s-cls.onnx"),
+            ModelType.ObjectDetection => Path.Join(BaseModels, "yolov11s.onnx"),
+            ModelType.ObbDetection => Path.Join(BaseModels, "yolov11s-obb.onnx"),
+            ModelType.Segmentation => Path.Join(BaseModels, "yolov11s-seg.onnx"),
+            ModelType.PoseEstimation => Path.Join(BaseModels, "yolov11s-pose.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
@@ -96,7 +96,7 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV12(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Combine(BASE_MODELS, "yolov12s.onnx"),
+            ModelType.ObjectDetection => Path.Join(BaseModels, "yolov12s.onnx"),
             _ => throw new ArgumentException("Unknown modeltype.")
         };
 
@@ -108,11 +108,11 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestImage(ImageType imageType) => imageType switch
         {
-            ImageType.Hummingbird => Path.Combine(BASE_MEDIA, "hummingbird.jpg"),
-            ImageType.Street => Path.Combine(BASE_MEDIA, "street.jpg"),
-            ImageType.People => Path.Combine(BASE_MEDIA, "people.jpg"),
-            ImageType.Crosswalk => Path.Combine(BASE_MEDIA, "crosswalk.jpg"),
-            ImageType.Island => Path.Combine(BASE_MEDIA, "island.jpg"),
+            ImageType.Hummingbird => Path.Join(BaseMedia, "hummingbird.jpg"),
+            ImageType.Street => Path.Join(BaseMedia, "street.jpg"),
+            ImageType.People => Path.Join(BaseMedia, "people.jpg"),
+            ImageType.Crosswalk => Path.Join(BaseMedia, "crosswalk.jpg"),
+            ImageType.Island => Path.Join(BaseMedia, "island.jpg"),
             _ => throw new ArgumentException("Unknown ImageType.")
         };
 
@@ -140,7 +140,7 @@ namespace YoloDotNet.Test.Common
 
             // Traverse back untill we find .git file marker
             while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
-        {
+            {
                 dir = dir.Parent;
             }
 
