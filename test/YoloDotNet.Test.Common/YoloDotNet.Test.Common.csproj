@@ -85,43 +85,43 @@
 	
 	<!-- TensorRT INT8 calibration cache -->
 	<ItemGroup>
-		<Content Include="..\assets\cache\yolov5su.cache" Link="Assets\Cache\yolov5su.cache">
+		<Content Include="..\assets\Cache\yolov5su.cache" Link="Assets\Cache\yolov5su.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<None Include="..\assets\cache\yolov8s.cache" Link="Assets\Cache\yolov8s.cache">
+		<None Include="..\assets\Cache\yolov8s.cache" Link="Assets\Cache\yolov8s.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<Content Include="..\assets\cache\yolov8s.cache" Link="Assets\Cache\yolov8s.cache">
+		<Content Include="..\assets\Cache\yolov8s.cache" Link="Assets\Cache\yolov8s.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov8s-cls.cache" Link="Assets\Cache\yolov8s-cls.cache">
+		<Content Include="..\assets\Cache\yolov8s-cls.cache" Link="Assets\Cache\yolov8s-cls.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov8s-obb.cache" Link="Assets\Cache\yolov8s-obb.cache">
+		<Content Include="..\assets\Cache\yolov8s-obb.cache" Link="Assets\Cache\yolov8s-obb.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov8s-pose.cache" Link="Assets\Cache\yolov8s-pose.cache">
+		<Content Include="..\assets\Cache\yolov8s-pose.cache" Link="Assets\Cache\yolov8s-pose.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<None Include="..\assets\cache\yolov9s.cache" Link="Assets\Cache\yolov9s.cache">
+		<None Include="..\assets\Cache\yolov9s.cache" Link="Assets\Cache\yolov9s.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<Content Include="..\assets\cache\yolov10s.cache" Link="Assets\Cache\yolov10s.cache">
+		<Content Include="..\assets\Cache\yolov10s.cache" Link="Assets\Cache\yolov10s.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov11s.cache" Link="Assets\Cache\yolov11s.cache">
+		<Content Include="..\assets\Cache\yolov11s.cache" Link="Assets\Cache\yolov11s.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov11s-cls.cache" Link="Assets\Cache\yolov11s-cls.cache">
+		<Content Include="..\assets\Cache\yolov11s-cls.cache" Link="Assets\Cache\yolov11s-cls.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov11s-obb.cache" Link="Assets\Cache\yolov11s-obb.cache">
+		<Content Include="..\assets\Cache\yolov11s-obb.cache" Link="Assets\Cache\yolov11s-obb.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov11s-pose.cache" Link="Assets\Cache\yolov11s-pose.cache">
+		<Content Include="..\assets\Cache\yolov11s-pose.cache" Link="Assets\Cache\yolov11s-pose.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
-		<Content Include="..\assets\cache\yolov12s.cache" Link="Assets\Cache\yolov12s.cache">
+		<Content Include="..\assets\Cache\yolov12s.cache" Link="Assets\Cache\yolov12s.cache">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
 	</ItemGroup>

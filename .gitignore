@@ -229,6 +229,9 @@ _pkginfo.txt
 # but keep track of directories ending in .cache
 !?*.[Cc]ache/
 
+# Allow TensorRT calibration .cache files to be tracked!
+!test/assets/cache/*.cache
+
 # Others
 ClientBin/
 ~$*
