@@ -2,6 +2,7 @@
 // Copyright (c) 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
+using YoloDotNet.Benchmarks.Configuration;
 using YoloDotNet.Core;
 using YoloDotNet.Models.Interfaces;
 
@@ -9,9 +10,6 @@ namespace YoloDotNet.Benchmarks.Setup
 {
     public class YoloCreator
     {
-        // Path where to store tensor cache for faster startup.
-        private const string TENSOR_CACHE = @"C:\Tools\tensor_cache";
-
         public static Yolo Create(YoloType type)
         {
             var part = type.ToString().Split('_');
@@ -20,7 +18,7 @@ namespace YoloDotNet.Benchmarks.Setup
             var providerKey = part[2];
 
             var model = GetModel(modelKey);
-            var provider = GetExecutionProvider(providerKey);
+            var provider = GetExecutionProvider(providerKey, model);
 
             return new Yolo(new YoloOptions { OnnxModel = model, ExecutionProvider = provider });
         }
@@ -63,18 +61,35 @@ namespace YoloDotNet.Benchmarks.Setup
             "V12_Obb" => SharedConfig.GetTestModelV12(ModelType.ObbDetection),
             "V12_Pos" => SharedConfig.GetTestModelV12(ModelType.PoseEstimation),
             "V12_Seg" => SharedConfig.GetTestModelV12(ModelType.Segmentation),
-            _ => throw new ArgumentException()
+            _ => throw new ArgumentException("Unknown model")
         };
 
-        private static IExecutionProvider GetExecutionProvider(string provider) => provider switch
-        {
-            "CPU" => new CpuExecutionProvider(),
-            "GPU" => new CudaExecutionProvider(),
-            "TRT32" => new TensorRTExecutionProvider(Precision: TensorRTPrecision.FP32, EngineCachePath: TENSOR_CACHE), // FP32
-            "TRT16" => new TensorRTExecutionProvider(Precision: TensorRTPrecision.FP16, EngineCachePath: TENSOR_CACHE), // FP16
-            "TRT8" => new TensorRTExecutionProvider(Precision: TensorRTPrecision.INT8, EngineCachePath: TENSOR_CACHE),  // INT8
-            _ => throw new ArgumentException()
-        };
+        private static IExecutionProvider GetExecutionProvider(string provider, string model) => provider switch
+            {
+                "CPU" => new CpuExecutionProvider(),
+                "GPU" => new CudaExecutionProvider(),
+                "TRT32" => new TensorRtExecutionProvider() // FP32
+                {
+                    Precision = TrtPrecision.FP32,
+                    EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+                    BuilderOptimizationLevel = 5,
+                },
+                "TRT16" => new TensorRtExecutionProvider() // FP16
+                {
+                    Precision = TrtPrecision.FP16,
+                    EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+                    BuilderOptimizationLevel = 5,
+                },
+                "TRT8" => new TensorRtExecutionProvider()  // INT8
+                {
+                    Precision = TrtPrecision.INT8,
+                    EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+                    Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
+                    BuilderOptimizationLevel = 5,
+                },
+                _ => throw new ArgumentException("Unknown execution provider")
+            };
+
         #endregion
     }
 }
