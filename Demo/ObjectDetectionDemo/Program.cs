@@ -56,7 +56,7 @@ namespace ObjectDetectionDemo
                 //   new CpuExecutionProvider()
                 //   new CudaExecutionProvider(GpuId: 0, PrimeGpu: true)
                 //   new TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP32, EngineCachePath: @"tensor_chache\folder")
-                ExecutionProvider = new TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP16, EngineCachePath: @"C:\Tools\tensor_cache"),
+                ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
