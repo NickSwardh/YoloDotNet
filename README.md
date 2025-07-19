@@ -194,7 +194,7 @@ YoloDotNet is © 2023–2025 Niklas Swärd ([GitHub](https://github.com/NickSwar
 Licensed under the **GNU General Public License v3.0 or later**.
 
 ![License: GPL v3 or later](https://img.shields.io/badge/License-GPL_v3_or_later-blue)  
-See the [LICENSE](./LICENSE) file for the full license text.
+See the [LICENSE](./LICENSE.txt) file for the full license text.
 
 This software is provided “as is”, without warranty of any kind.  
 The author is not liable for any damages arising from its use.
