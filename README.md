@@ -1,77 +1,59 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v3.0
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v3.1
 
-YoloDotNet is a blazing-fast, fully featured C# library for real-time object detection, obb, segmentation, classification, pose estimation — and tracking — using YOLOv5u–v12, YOLO-World, and YOLO-E models.
+**YoloDotNet** is a blazing-fast, fully featured C# library for real-time object detection, OBB, segmentation, classification, pose estimation — and tracking — using YOLOv5u–v12, YOLO-World, and YOLO-E models.
 
-Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration via CUDA, YoloDotNet delivers exceptional speed and flexibility for both image and video processing — with full support for live streams, frame skipping, and custom visualizations.
+Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration via **CUDA** — or break the speed barrier entirely with **NVIDIA TensorRT support**, unleashing maximum inference performance through hardware-level optimization. YoloDotNet delivers exceptional speed and flexibility for both image and video processing, with full support for live streams, frame skipping, and custom visualizations.
 
 ### Supported Versions:
 ```Yolov5u``` ```Yolov8``` ```Yolov9``` ```Yolov10``` ```Yolov11``` ```Yolov12``` ```Yolo-World``` ```YoloE```
 
 ### Supported Tasks:
 
-&nbsp;&nbsp;✓&nbsp;&nbsp;`   Classification   `&nbsp;&nbsp;Categorize an image\
-&nbsp;&nbsp;✓&nbsp;&nbsp;`  Object Detection  `&nbsp;&nbsp;Detect multiple objects in a single image\
-&nbsp;&nbsp;✓&nbsp;&nbsp;`   OBB Detection    `&nbsp;&nbsp;OBB (Oriented Bounding Box)\
-&nbsp;&nbsp;✓&nbsp;&nbsp;`    Segmentation    `&nbsp;&nbsp;Separate detected objects using pixel masks\
-&nbsp;&nbsp;✓&nbsp;&nbsp;`  Pose Estimation   `&nbsp;&nbsp;Identifying location of specific keypoints in an image
-
-Batteries not included.
-
 | Classification | Object Detection | OBB Detection | Segmentation | Pose Estimation |
 |:---:|:---:|:---:|:---:|:---:|
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
+### Supported Execution Providers
+![ONNX Runtime](https://img.shields.io/badge/Backend-ONNX_Runtime-1f65dc?style=flat&logo=onnx)
+![CUDA](https://img.shields.io/badge/GPU-CUDA-76B900?style=flat&logo=nvidia)
+![TensorRT](https://img.shields.io/badge/Inference-TensorRT-00BFFF?style=flat&logo=nvidia)
 # Nuget
 ```
 > dotnet add package YoloDotNet
 ```
 
-# What's new in YoloDotNet v3.0?
-Buckle up — YoloDotNet v3.0 is here, and it’s a beast!
+# 🚀 YoloDotNet v3.1 - Full-Throttle TensorRT Inference!
+**Say hello to TensorRT support in YoloDotNet!**
 
-After countless hours of profiling, tightening bolts, and chasing down bottlenecks, this release delivers massive performance gains, streamlined APIs, and cutting-edge model support.
+Version 3.1 bolts on NVIDIA's high-performance inference engine to break the speed barrier and unleash maximum throughput on supported GPUs.
 
-Whether you're streamlining inference pipelines, tracking objects like a pro, or customizing your visual output, this version delivers massive upgrades in speed, flexibility, and usability.
+### ✨ Highlights:
+New `TensorRtExecutionProvider` — Configure GPU ID, precision (`FP32`, `FP16`, or turbocharged `INT8`), builder optimizations, and engine cache handling — all from your C# code.
+Give the [TensorRT demo](./Demo/TensorRTDemo/) project a spin to get you started in **no time**. No pun intended ;)
 
-This is the fastest release yet — with performance boosts of up to 70% faster inference and up to 92% lower memory usage, depending on task and hardware.
-From lightning-fast segmentation to smarter tracking and smoother rendering, v3.0 is built to crush bottlenecks.
+**Hardware-Level Optimization** — TensorRT builds a custom engine just for your machine, tailored to your GPU and inference settings. That means raw, uncompromising speed.
 
-| YoloDotNet v3.0     | Device | Speed Gain         | Memory Reduction        |
-| ------------------- | ------ | ------------------ | ----------------------- |
-| **Segmentation**    | GPU    | up to 70.8% faster | up to 92.7% less memory |
-|                     | CPU    | up to 12.6% faster | up to 92.7% less memory |
-| **Classification**  | GPU    | up to 28.5% faster | up to 46.1% less memory |
-|                     | CPU    | up to 9.6% faster  | up to 46.1% less memory |
-| **OBB Detection**   | GPU    | up to 28.7% faster | up to 2.2% less memory  |
-|                     | CPU    | up to 4.7% faster  | up to 2.9% less memory  |
-| **Pose Estimation** | GPU    | up to 27.6% faster | up to 0.7% less memory  |
-|                     | CPU    | up to 4.6% faster  | up to 0.7% less memory  |
-| **Detection**       | GPU    | up to 25.0% faster | up to 0.8% less memory  |
-|                     | CPU    | up to 5.3% faster  | up to 1.0% less memory  |
+**Engine Cache Support** — Save and reuse compiled TensorRT engines between runs to skip the long optimization stage.
 
-> **Note:** This summary highlights the *maximum* observed speed and memory improvements between versions.
-> For full benchmark results, hardware used, detailed per-task analysis, and raw data, please see the complete benchmarks.
+**INT8 Calibration Cache** — Drop your precision down to `INT8` for maximum speed and minimal accuracy loss. Generate the `.cache` file once, reuse it forever.
 
-- **Model Support That Keeps You Ahead**
-    - YOLO-E (Zero-Shot Detection) — tap into cutting-edge open-world object
-    - YOLOv5u (Ultralytics fork of YOLOv5 using the YOLOv8 architecture) is now fully supported.
-    - Load ONNX models directly from byte[] — ideal for embedded, encrypted, or dynamic loading scenarios.
-- **Streamlined Inference & Performance**
-    - Simplified inference pipeline — fewer steps, more power, same accuracy.
-    - Inference can now run directly on SKBitmap and SKImage types (SkiaSharp), unlocking powerful image workflows.
-    - Improved drawing performance when rendering results onto images or frames.
-- **Video & Tracking Enhancements**
-    - Video processing has been redesigned and simplified — less boilerplate, more control.
-    - Split video streams into chunks — perfect for long video processing or batching inference tasks.
-    - Added SORT object tracking for maintaining object identity across frames. (See demo project)
-    - Customizable frame intervals — process every frame, or every 2nd, 10th, 30th… you decide. This is perfect for high-frame-rate or surveillance streams where analyzing every single frame isn’t necessary.
-- **Custom Visualizations**
-    - Choose your own font type for result annotations.
-    - Define custom colors per class and bounding box — full control over output styling.
-- **Dependency Updates**
-    - ONNX Runtime 1.22.1
-    - SkiaSharp 3.119.0
+**Fully Configurable** — Engine cache path, file prefix, calibration cache file location — it's all in your control.
+
+> 💡 **Heads up:**\
+On the first run, TensorRT may take a couple of minutes to compile and optimize your model. But once the engine is built and cached, it’s warp-speed from there on out.
+
+Bottom Line? Real-time YOLO inference at breakneck speed!
+
+## Previously in v3.0
+YoloDotNet 3.0 introduced massive performance upgrades and smarter APIs:
+
+- Up to 70% faster inference and 92% less memory usage, depending on task and hardware
+- Support for YOLOv5u, YOLO-E, and ONNX byte array loading
+- Direct inference on SkiaSharp types (SKBitmap, SKImage)
+- Improved video handling and built-in SORT tracking
+- Custom fonts, class colors, and smarter drawing tools
+- Dependency updates: ONNX Runtime 1.22.1, SkiaSharp 3.119.0
 
 # Install CUDA (optional)
 YoloDotNet with GPU-acceleration requires CUDA Toolkit 12.x and cuDNN 9.x.
@@ -189,11 +171,12 @@ YoloDotNet is the result of countless hours of development, testing, and continu
 
 If you’ve found this project helpful, consider supporting its development. Your contribution helps cover the time and resources needed to keep the project maintained, updated, and freely available to everyone.
 
-Support the project:\
-👉 [GitHub Sponsor](https://github.com/sponsors/NickSwardh)\
-👉 [PayPal](https://paypal.me/nickswardh)
+Support the project:
 
-Every donation, no matter the size, is greatly appreciated. Thank you!
+[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-ea4aaa?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/NickSwardh) [![PayPal](https://img.shields.io/badge/Support-PayPal-00457C?logo=paypal&logoColor=white)](https://paypal.me/nickswardh)
+
+
+Whether it's a donation, sponsorship, or just spreading the word — every bit of support fuels the journey. Thank you for helping YoloDotNet grow! ❤️
 
 # References & Acknowledgements
 
@@ -203,10 +186,11 @@ https://github.com/mentalstack/yolov5-net
 
 # License
 
-YoloDotNet is © 2023 Niklas Swärd ([GitHub](https://github.com/NickSwardh/YoloDotNet))\
-Licensed under the GNU General Public License v3.0 or later.
+YoloDotNet is © 2023–2025 Niklas Swärd ([GitHub](https://github.com/NickSwardh/YoloDotNet))  
+Licensed under the **GNU General Public License v3.0 or later**.
 
-See the [LICENSE](https://github.com/NickSwardh/YoloDotNet?tab=GPL-3.0-1-ov-file#readme) file for full license text.
+![License: GPL v3 or later](https://img.shields.io/badge/License-GPL_v3_or_later-blue)  
+See the [LICENSE](./LICENSE) file for the full license text.
 
-This software is provided "as-is", without warranty of any kind.  
+This software is provided “as is”, without warranty of any kind.  
 The author is not liable for any damages arising from its use.
