@@ -247,6 +247,5 @@ namespace TensorRTDemo
                 FileName = _outputFolder,
                 UseShellExecute = true
             });
-        //=> Process.Start("explorer.exe", _outputFolder);
     }
 }
