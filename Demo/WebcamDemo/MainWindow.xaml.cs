@@ -38,8 +38,14 @@ namespace WebcamDemo
     /// - Default webcam device (index 0)
     /// - Additional devices by index (e.g., 1 for a secondary camera)
     /// 
-    /// Note:
-    /// - This demo runs inference using CUDA. Use TensorRT for significantly faster performance.
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
+    /// Important notes:
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - The demo updates the WPF UI in real time with processed frames and performance metrics.
     /// </summary>
     public partial class MainWindow : Window

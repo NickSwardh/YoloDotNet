@@ -36,8 +36,14 @@ namespace YoloE_SegmentationDemo
     /// - Support for custom font rendering, bounding box colors, and dynamic scaling.
     /// - Extensible drawing pipeline via SegmentationDrawingOptions.
     ///
-    /// Note:
-    /// - This demo runs inference on the CPU. Use CUDA or TensorRT for significantly faster performance.
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
+    /// Important notes:
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - This example uses a static image for simplicity, but YoloE is optimized for real-time video as well.
     /// - Object tracking is supported in YoloDotNet but not demonstrated here. See the VideoStream demo for details.
     /// </summary>

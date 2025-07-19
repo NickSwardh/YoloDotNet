@@ -46,8 +46,14 @@ namespace VideoStreamDemo
     ///
     ///     Note: Width, Height, and FPS must match a capture mode supported by your device.
     ///
-    /// Note:
-    /// - This demo runs inference using CUDA. Use TensorRT for significantly faster performance.
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
+    /// Important notes:
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - FFmpeg and FFprobe must be added to your system PATH variable. Download and install: https://ffmpeg.org/download.html
     /// - The demo creates an output folder on the desktop to store processed results.
     /// </summary>

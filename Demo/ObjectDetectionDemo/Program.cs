@@ -29,8 +29,14 @@ namespace ObjectDetectionDemo
     /// - Saving annotated output to disk
     /// - Console reporting of inference results
     ///
-    /// Note:
-    /// - This demo runs inference on the CPU. Use CUDA or TensorRT for significantly faster performance.
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
+    /// Important notes:
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - The demo creates an output folder on the desktop to store processed results.
     /// </summary>
     internal class Program

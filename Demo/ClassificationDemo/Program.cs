@@ -29,8 +29,14 @@ namespace ClassificationDemo
     /// - Saving output images with quality control and automated output folder creation
     /// - Console reporting of classification results with label and confidence display
     /// 
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
     /// Important notes:
-    /// - This demo runs inference on the CPU. Use CUDA or TensorRT for significantly faster performance.
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - ClassificationDrawingOptions allows customization of font, color, scaling, and label background.
     /// - The number of classes to return can be limited to focus on the most confident predictions.
     /// </summary>

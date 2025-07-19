@@ -30,8 +30,14 @@ namespace PoseEstimationDemo
     /// - Saving output images with quality control and automated output folder management
     /// - Console reporting of detected poses and their confidence scores
     /// 
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
     /// Important notes:
-    /// - This demo runs inference on the CPU. Use CUDA or TensorRT for significantly faster performance.
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - PoseDrawingOptions allows customization of font, colors, opacity, keypoint visualization, and more.
     /// - Tail visualization for tracking motion paths is referenced but not enabled in this static image example.
     /// </summary>

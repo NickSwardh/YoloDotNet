@@ -31,9 +31,14 @@ namespace TensorRTDemo
     /// - Saving annotated output to disk
     /// - Console reporting of inference results
     ///
-    /// Note:
-    /// - The TensorRT engine cache is saved to disk to avoid rebuilding the engine on each run.
-    /// - INT8 mode requires a calibration cache file. See <see cref="YoloOptions.Int8CalibrationCacheFile"/> for details.
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
+    /// Important notes:
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - Requires a compatible NVIDIA GPU and TensorRT runtime support.
     /// </summary>
     internal class Program

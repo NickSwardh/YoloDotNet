@@ -28,8 +28,14 @@ namespace BatchDemo
     /// - Automated output management with results saved to a desktop folder
     /// - Console output indicating the loaded model type
     ///
-    /// Note:
-    /// - This demo runs inference using CUDA. Use TensorRT for significantly faster performance.
+    /// Execution providers:
+    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
+    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
+    ///   precision modes, delivering significant speed improvements.
+    ///
+    /// Important notes:
+    /// - Choose the execution provider based on your hardware and performance requirements.
     /// - Annotated output images are saved in a "YoloDotNet_Results\batch" folder on the desktop.
     /// </summary>
     internal class Program
