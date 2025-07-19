@@ -51,11 +51,23 @@ namespace ObjectDetectionDemo
                 // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
-                // Select execution provider:
+                // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //   new CpuExecutionProvider()
-                //   new CudaExecutionProvider(GpuId: 0, PrimeGpu: true)
-                //   new TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP32, EngineCachePath: @"tensor_chache\folder")
+                //
+                //   - CpuExecutionProvider()  
+                //     Runs inference entirely on the CPU.
+                //     Universally compatible but generally the slowest option.
+                //
+                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
+                //     Executes inference on an NVIDIA GPU using CUDA.
+                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
+                //
+                //   - TensorRtExecutionProvider() { ... }
+                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
+                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
+                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
+                //
+                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
                 ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),

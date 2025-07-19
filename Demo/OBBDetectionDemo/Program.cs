@@ -51,18 +51,23 @@ namespace OBBDetectionDemo
                 // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObbDetection),
 
-                // Select execution provider (controls how inference is performed on hardware).
+                // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
+                //
                 //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU. Universally supported but typically the slowest.
+                //     Runs inference entirely on the CPU.
+                //     Universally compatible but generally the slowest option.
                 //
                 //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Uses CUDA to run inference on an NVIDIA GPU. Reliable for general GPU acceleration.
+                //     Executes inference on an NVIDIA GPU using CUDA.
                 //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
                 //
-                //   - TensorRTExecutionProvider(GpuId: 0, Precision: TensorRTPrecision.FP32, EngineCachePath: @"cache\folder")  
-                //     Uses NVIDIA TensorRT for highly optimized GPU inference. Supports FP32 and FP16/INT8 acceleration if available.
-                //     Requires a valid engine cache path to store and reuse optimized TensorRT engines.
+                //   - TensorRtExecutionProvider() { ... }
+                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
+                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
+                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
+                //
+                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
                 ExecutionProvider = new CpuExecutionProvider(),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
