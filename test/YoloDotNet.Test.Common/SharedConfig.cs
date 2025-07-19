@@ -17,6 +17,9 @@ namespace YoloDotNet.Test.Common
         private const string BASE_MEDIA = ASSETS_FOLDER + @"\media";
         private static readonly string ABSOLUTE_PATH = GetAbsolutePath();
 
+        // Define an absolute path to the assets folder.
+        public static readonly string AbsoluteAssetsPath = GetAbsoluteAssetsPath();
+
         /// <summary>
         /// Test models for Yolo V5U
         /// </summary>
@@ -121,22 +124,34 @@ namespace YoloDotNet.Test.Common
         /// <exception cref="ArgumentException"></exception>
         public static string GetTestVideo(VideoType videoType) => videoType switch
         {
-            VideoType.PeopleWalking => Path.Combine(ABSOLUTE_PATH, "walking.mp4"),
+            VideoType.PeopleWalking => Path.Join(AbsoluteAssetsPath, "media", "walking.mp4"),
             _ => throw new ArgumentException("Unknown VideoType.")
         };
 
-        private static string GetAbsolutePath()
+        /// <summary>
+        /// Get absolute path to the assets folder.
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private static string GetAbsoluteAssetsPath()
         {
-            var path = new DirectoryInfo(AppContext.BaseDirectory)
-                .Parent
-                .Parent
-                .Parent
-                .Parent
-                .Parent.FullName;
+            // Get executable base dir
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
 
-            return Path.Combine(path, @"test\assets\media");
+            // Traverse back untill we find .git file marker
+            while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
+        {
+                dir = dir.Parent;
+            }
+
+            // If no .git marker was found, throw an exception.
+            if (dir == null)
+                throw new InvalidOperationException("Could not find Git repository root.");
+
+            // Add the assets folder
+            return Path.Join(dir.FullName, "test", "assets");
         }
 
-        public static string GetTestImage(string imageName) => Path.Combine(BASE_MEDIA, imageName);
+        public static string GetTestImage(string imageName) => Path.Join(BaseMedia, imageName);
     }
 }
