@@ -72,20 +72,17 @@ namespace YoloDotNet.Benchmarks.Setup
                 {
                     Precision = TrtPrecision.FP32,
                     EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                    BuilderOptimizationLevel = 5,
                 },
                 "TRT16" => new TensorRtExecutionProvider() // FP16
                 {
                     Precision = TrtPrecision.FP16,
                     EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                    BuilderOptimizationLevel = 5,
                 },
                 "TRT8" => new TensorRtExecutionProvider()  // INT8
                 {
                     Precision = TrtPrecision.INT8,
                     EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
                     Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
-                    BuilderOptimizationLevel = 5,
                 },
                 _ => throw new ArgumentException("Unknown execution provider")
             };
