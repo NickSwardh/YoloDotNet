@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-namespace YoloDotNet.Handlers
+namespace YoloDotNet.Utils
 {
     internal class ConfidenceComparer : IComparer<ObjectResult>
     {
