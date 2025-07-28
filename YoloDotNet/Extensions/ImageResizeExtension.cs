@@ -103,8 +103,8 @@ namespace YoloDotNet.Extensions
             int tensorBufferSize,
             float[] tensorArrayBuffer)
         {
-            // Deconstruct the input shape into batch size, number of channels, width, and height.
-            var (batchSize, colorChannels, width, height) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
+            // Deconstruct the input shape into batch size, number of channels, height, and width.
+            var (batchSize, colorChannels, height, width) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
 
             // Total number of pixels in the image.
             int totalPixels = width * height;
@@ -147,9 +147,10 @@ namespace YoloDotNet.Extensions
             }
 
             // Create and return a DenseTensor using the correctly sized memory slice.
+            // Dimensions must be in NCWH order (Batch, Channels, Height, Width).
             return new DenseTensor<float>(
                 tensorArrayBuffer.AsMemory(0, tensorBufferSize),
-                [batchSize, colorChannels, width, height]
+                [batchSize, colorChannels, height, width]
             );
         }
     }

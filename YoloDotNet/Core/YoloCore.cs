@@ -51,7 +51,8 @@ namespace YoloDotNet.Core
             parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
-            _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Width * OnnxModel.Input.Height;
+            // Input shape is in BCHW format (Batch, Channels, Height, Width)
+            _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Height * OnnxModel.Input.Width;
             customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
             customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
 

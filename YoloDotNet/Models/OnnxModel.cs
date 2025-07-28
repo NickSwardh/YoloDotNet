@@ -50,13 +50,14 @@ namespace YoloDotNet.Models
     }
 
     /// <summary>
-    /// Represents the configuration of input data for the ONNX model.
+    /// Represents the configuration of input data for the ONNX model in BCHW oder
+    /// [Batch, Channels, Height, Width]
     /// </summary>
     /// <param name="BatchSize">The batch size of input data.</param>
     /// <param name="Channels">The number of input channels.</param>
-    /// <param name="Width">The width of input data.</param>
     /// <param name="Height">The height of input data.</param>
-    public record Input(int BatchSize, int Channels, int Width, int Height)
+    /// <param name="Width">The width of input data.</param>
+    public record Input(int BatchSize, int Channels, int Height, int Width)
     {
         public static Input Shape(int[] dimensions)
             => new(dimensions[0], dimensions[1], dimensions[2], dimensions[3]);

@@ -32,12 +32,14 @@ namespace YoloDotNet.Extensions
                 Input = GetModelInputShape(session.InputMetadata[inputName]),
                 Outputs = GetOutputShapes(session.OutputMetadata, modelType),
                 Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], modelType),
+
+                // Input shape in NCHW order: [N (batch), Channels, Height, Width]
                 InputShape = new long[]
                 {
-                    session.InputMetadata[inputName].Dimensions[0], // Batches (nr of images the model can process)
-                    session.InputMetadata[inputName].Dimensions[1], // Total color channels the model expects
-                    session.InputMetadata[inputName].Dimensions[2], // Required image width
-                    session.InputMetadata[inputName].Dimensions[3], // Required image Height
+                    session.InputMetadata[inputName].Dimensions[0], // Batch (nr of images the model can process)
+                    session.InputMetadata[inputName].Dimensions[1], // Color channels
+                    session.InputMetadata[inputName].Dimensions[2], // Required image height
+                    session.InputMetadata[inputName].Dimensions[3], // Required image width
                 }
             };
         }
