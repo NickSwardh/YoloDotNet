@@ -73,7 +73,15 @@ namespace YoloDotNet.Extensions
         /// Retrieves the input shape of a model based on metadata
         /// </summary>
         private static Input GetModelInputShape(NodeMetadata metaData)
-            => Input.Shape(metaData.Dimensions);
+        {
+            var dimensions = metaData.Dimensions;
+
+            // Check for any dynamic dimension (-1 means dynamic in ONNX)
+            if (dimensions.Any(d => d == -1))
+                throw new ArgumentException("Dynamic ONNX models are not supported.");
+
+            return Input.Shape(dimensions);
+        }
 
         /// <summary>
         /// Retrieves the output shapes of a model based on metadata and model type.
