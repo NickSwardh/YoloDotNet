@@ -65,6 +65,9 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 
+		<None Include="..\assets\Models\yolov11s.onnx" Link="Assets\Models\yolov11s.onnx">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
 		<None Include="..\assets\Models\yolov11s-cls.onnx" Link="Assets\Models\yolov11s-cls.onnx">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
@@ -74,7 +77,7 @@
 		<None Include="..\assets\Models\yolov11s-pose.onnx" Link="Assets\Models\yolov11s-pose.onnx">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
-		<None Include="..\assets\Models\yolov11s.onnx" Link="Assets\Models\yolov11s.onnx">
+		<None Include="..\assets\Models\yolov11s-seg.onnx" Link="Assets\Models\yolov11s-seg.onnx">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	
