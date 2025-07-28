@@ -24,7 +24,6 @@ namespace YoloDotNet.Core
         private readonly object _progressLock = new();
 
         private SKImageInfo _imageInfo;
-        public ParallelOptions parallelOptions = default!;
         #endregion
 
         public OnnxModel OnnxModel { get; private set; } = default!;
@@ -47,8 +46,6 @@ namespace YoloDotNet.Core
             OnnxModel = _session.GetOnnxProperties();
 
             VerifyExpectedModelType(ModelType);
-
-            parallelOptions = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
 
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
             // Input shape is in BCHW format (Batch, Channels, Height, Width)
