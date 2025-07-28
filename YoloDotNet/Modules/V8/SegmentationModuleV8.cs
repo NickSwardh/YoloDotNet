@@ -74,8 +74,7 @@ namespace YoloDotNet.Modules.V8
 
                 // 2) Apply pixelmask based on mask-weights to canvas
                 using var pixelMaskBitmap = new SKBitmap(_maskWidth, _maskHeight, SKColorType.Gray8, SKAlphaType.Opaque);
-                using var pixelMaskCanvas = new SKCanvas(pixelMaskBitmap);
-                ApplySegmentationPixelMask(pixelMaskCanvas, box.BoundingBoxUnscaled, ortSpan1, maskWeights);
+                ApplySegmentationPixelMask(pixelMaskBitmap, box.BoundingBoxUnscaled, ortSpan1, maskWeights);
 
                 // 3) Crop downscaled boundingbox from the pixelmask canvas
                 using var cropped = new SKBitmap();
@@ -83,7 +82,12 @@ namespace YoloDotNet.Modules.V8
 
                 // 4) Upscale cropped pixelmask to original boundingbox size. For smother edges, use an appropriate resampling method!
                 using var resizedCrop = new SKBitmap(pixelMaskInfo);
-                cropped.ScalePixels(resizedCrop, ImageConfig.SegmentationResamplingOptions);
+
+                // Use AVX2-optimized upscaling if supported; otherwise, fall back to SkiaSharp's ScalePixels.
+                if (Avx2.IsSupported)
+                    Avx2LinearResizer.ScalePixels(cropped, resizedCrop);
+                else
+                    cropped.ScalePixels(resizedCrop, ImageConfig.SegmentationResamplingOptions);
 
                 // 5) Pack the upscaled pixel mask into a compact bit array (1 bit per pixel)
                 // for cleaner, memory-efficient storage of the mask in the detection box.
@@ -117,41 +121,42 @@ namespace YoloDotNet.Modules.V8
             int right = (int)Math.Ceiling(box.Right * _scalingFactorW);
             int bottom = (int)Math.Ceiling(box.Bottom * _scalingFactorH);
 
+            // Clamp to mask bounds (important!)
+            left = Math.Clamp(left, 0, _maskWidth - 1);
+            top = Math.Clamp(top, 0, _maskHeight - 1);
+            right = Math.Clamp(right, 0, _maskWidth - 1);
+            bottom = Math.Clamp(bottom, 0, _maskHeight - 1);
+
             return new SKRectI(left, top, right, bottom);
         }
 
-        private void ApplySegmentationPixelMask(SKCanvas canvas, SKRect bbox, ReadOnlySpan<float> outputOrtSpan, MaskWeights32 maskWeights)
+        unsafe void ApplySegmentationPixelMask(SKBitmap bitmap, SKRect bbox, ReadOnlySpan<float> outputOrtSpan, MaskWeights32 maskWeights)
         {
-            // Convert bounding box from original coordinates to segmentation mask scale
             var scaledBoundingBox = DownscaleBoundingBoxToSegmentationOutput(bbox);
 
-            // Clamp bounding box to valid pixel indices within mask dimensions
             int startX = Math.Max(0, (int)scaledBoundingBox.Left);
             int endX = Math.Min(_maskWidth - 1, (int)scaledBoundingBox.Right);
-
             int startY = Math.Max(0, (int)scaledBoundingBox.Top);
             int endY = Math.Min(_maskHeight - 1, (int)scaledBoundingBox.Bottom);
 
-            // Iterate only over pixels inside the bounding box
+            //var thresholdF = (float)threshold;
+            int stride = bitmap.RowBytes;
+            byte* ptr = (byte*)bitmap.GetPixels().ToPointer();
+
             for (int y = startY; y <= endY; y++)
             {
+                byte* row = ptr + y * stride;
+
                 for (int x = startX; x <= endX; x++)
                 {
                     float pixelWeight = 0;
                     int offset = x + y * _maskWidth;
 
-                    // Sum weighted values across 32 channels (or mask layers)
                     for (int p = 0; p < 32; p++, offset += _maskWidth * _maskHeight)
                         pixelWeight += outputOrtSpan[offset] * maskWeights[p];
 
-                    // Apply sigmoid to map raw score to [0,1] confidence
                     pixelWeight = YoloCore.Sigmoid(pixelWeight);
-
-                    // Convert confidence to alpha (opacity) byte value (0-255)
-                    byte alpha = (byte)(pixelWeight * 255);
-
-                    // Draw the pixel point on the canvas
-                    canvas.DrawPoint(x, y, new SKColor(255, 255, 255, alpha));
+                    row[x] = (byte)(pixelWeight * 255); // write directly to Gray8 bitmap
                 }
             }
         }
