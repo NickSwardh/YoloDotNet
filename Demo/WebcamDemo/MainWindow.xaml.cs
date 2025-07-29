@@ -92,7 +92,7 @@ namespace WebcamDemo
 
             // Initialize YoloDotNet.
             // YoloOptions configures the model, hardware settings, and image processing behavior.
-            using var yolo = new Yolo(new YoloOptions
+            _yolo = new Yolo(new YoloOptions
             {
                 // Path or byte[] to the ONNX model file. 
                 // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
