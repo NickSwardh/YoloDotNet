@@ -136,6 +136,9 @@ Instead, it is recommended to allow TensorRT to build the engine cache at runtim
 # INT8 Calibration Cache File
 When using the INT8 precision mode in the `TensorRtExecutionProvider`, TensorRT requires a calibration cache file to accurately quantize your YOLO ONNX model. This cache contains important calibration data that enables TensorRT to perform `mixed precision` inference while maintaining model accuracy.
 
+> ⚙️ Note:\
+INT8 mode in TensorRT uses mixed precision execution. While it prioritizes INT8 for maximum performance, it will automatically fall back to FP16 or FP32 for layers that cannot be quantized due to unsupported operations, numerical stability concerns, or dynamic range limitations.
+
 ## Why is it needed?
 - `INT8` inference offers the fastest performance but requires calibration because not all operations and layers can be safely quantized without losing accuracy.
 
