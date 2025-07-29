@@ -45,7 +45,8 @@
                         Maximum="0.99"
                         Width="120"
                         VerticalAlignment="Center"
-                         ValueChanged="ConfidenceTreshold_ValueChanged"/>
+                        Value="0.8"
+                        ValueChanged="ConfidenceTreshold_ValueChanged"/>
 
                 <TextBlock VerticalAlignment="Center"
                            Margin="10,0,0,0"
