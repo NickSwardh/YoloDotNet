@@ -109,7 +109,9 @@ namespace TensorRTDemo
                     // If left empty, a default internal prefix will be used.
 
                     Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", "yolov11s.cache"),
-                    // Path to calibration cache required for INT8 precision mode. Leave empty if INT8 is not used.
+                    // Optional path to a TensorRT INT8 calibration cache file.
+                    // This is only used when INT8 precision mode is explicitly enabled; otherwise, it is ignored.
+                    // You may leave this empty if you're not using INT8 mode.
                     //
                     // Specifies the path to the INT8 calibration cache file used during engine building.
                     // This file is required when using non-quantized models in INT8 mode.
