@@ -46,7 +46,7 @@ On the first run, TensorRT may take a couple of minutes to compile and optimize 
 
 **Segmentation upgraded** — Now leaner with 85% less memory, and quicker than ever—8% CPU boost and 28% GPU turbocharged!
 
-Bottom Line? Real-time YOLO inference at breakneck speed!
+Bottom Line? Real-time YOLO inference at breakneck speed! Check the [Benchmarks](./test/YoloDotNet.Benchmarks/).
 
 ## Previously in v3.0
 YoloDotNet 3.0 introduced massive performance upgrades and smarter APIs:
