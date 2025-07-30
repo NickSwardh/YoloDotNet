@@ -16,6 +16,7 @@ Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration
 
 ### Supported Execution Providers
 ![ONNX Runtime](https://img.shields.io/badge/Backend-ONNX_Runtime-1f65dc?style=flat&logo=onnx)
+![CPU](https://img.shields.io/badge/CPU-Supported-lightgrey?style=flat&logo=intel)
 ![CUDA](https://img.shields.io/badge/GPU-CUDA-76B900?style=flat&logo=nvidia)
 ![TensorRT](https://img.shields.io/badge/Inference-TensorRT-00BFFF?style=flat&logo=nvidia)
 # Nuget
