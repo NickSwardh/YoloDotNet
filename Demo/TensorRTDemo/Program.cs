@@ -52,6 +52,13 @@ namespace TensorRTDemo
             CreateOutputFolder();
             SetDrawingOptions();
 
+            Console.WriteLine("Loading or building TensorRT engine cache...\n" +
+                "- If a compatible engine cache exists, it will be loaded automatically.\n" +
+                "- Otherwise, TensorRT will build a new optimized engine. This may take\n" +
+                "  several seconds or minutes depending on model complexity and hardware.\n" +
+                "- For more details on TensorRT usage and configuration, see the README\n" +
+                "  included with this demo.\n");
+
             // Initialize YoloDotNet.
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
