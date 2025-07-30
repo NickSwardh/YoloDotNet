@@ -19,6 +19,11 @@ This project includes a benchmarking suite to measure performance improvements a
 | **Detection**       | GPU    | up to 25.0% faster | up to 0.8% less memory  |
 |                     | CPU    | up to 5.3% faster  | up to 1.0% less memory  |
 
+*Benchmarks performed using NVIDIA GeForce RTX 4070 Ti GPU and Intel Core i7-14700KF*
+
+## Benchmark Models and Images
+The benchmarks performed in this project use the same [models](../assets/Models/) and [images](../assets/Media/) as those included in the YoloDotNet demo projects. This ensures consistency and transparency when evaluating performance metrics across different execution providers.
+
 ### Running Benchmarks
 - Build the solution in `Release` mode.
 - Run the `YoloDotNet.Benchmarks` project.
@@ -32,10 +37,6 @@ primarily for stepping through and diagnosing the benchmark code.
 - Please note that benchmark outcomes depend heavily on hardware and environmental factors. To obtain meaningful and consistent results, it is recommended to run benchmarks on the same hardware configuration whenever possible.
 
 Keep in mind that differences in hardware, system load, driver versions, and other factors can influence benchmark performance. Use these results as a general guide rather than absolute metrics.
-
-### Benchmark Scope
-- Benchmarks use the same images and models as the test project to maintain consistency.
-- These provide a solid foundation for performance analysis and optimization.
 
 ### Hardware Used for Benchmarks
 `NVIDIA GeForce RTX 4070 Ti GPU`
