@@ -79,8 +79,10 @@ ONNX runtime's [current compatibility with specific versions](https://onnxruntim
 4. Captain-Obvious-important! For Windows to recognize your new environment variables, be sure to close all open programs before continuing — or just give your system a quick restart. Otherwise, your changes might play hide-and-seek! ;)
 
 # Export Yolo models to ONNX with opset=17
-All models — including your own custom models — must be exported to the ONNX format with **`opset 17`** for best performance.\
+**All models** — including your own custom models — must be exported to the ONNX format with **`opset 17`** for best performance.\
 For more information on how to export yolo-models to onnx [read this guide](https://docs.ultralytics.com/modes/export/#usage-examples).
+
+>**Note:** Dynamic models are not supported.
 
 The ONNX-models included in this repo for test and demo purposes are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
 
@@ -122,7 +124,10 @@ public class Program
         var yolo = new Yolo(new YoloOptions
         {
             OnnxModel = "model.onnx",
-            // Can be a file path or byte[] (e.g. for embedded scenarios)
+            // Path to model
+
+            // OnnxModelBytes = modelBytes
+            // Load model in byte[] format (e.g. for embedded scenarios)
 
             ImageResize = ImageResize.Proportional,
             // Match this to how your training data was preprocessed.
@@ -130,7 +135,7 @@ public class Program
             // Stretched = fits input size directly (e.g. distortion OK)
 
             ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
-            // Sets the execution backend for ONNX Runtime.
+            // Sets the execution backend.
             // Available options:
             //   - CpuExecutionProvider         → CPU-only (no GPU required)
             //   - CudaExecutionProvider        → GPU via CUDA (NVIDIA required)
