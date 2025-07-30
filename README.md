@@ -58,28 +58,54 @@ YoloDotNet 3.0 introduced massive performance upgrades and smarter APIs:
 - Custom fonts, class colors, and smarter drawing tools
 - Dependency updates: ONNX Runtime 1.22.1, SkiaSharp 3.119.0
 
-# Install CUDA (optional)
-YoloDotNet with GPU-acceleration requires CUDA Toolkit 12.x and cuDNN 9.x.
+## Install CUDA & TensorRT (optional)
 
-ONNX runtime's [current compatibility with specific versions](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#requirements).
+### CUDA - Installation Steps
 
-- Install [CUDA v12.x](https://developer.nvidia.com/cuda-downloads)
-- Install [cuDNN v9.x](https://developer.nvidia.com/cudnn-downloads)
-- Update your system PATH-variable
-1. Open File Explorer and navigate to the folder where the cuDNN-dll's are installed. The typical path looks like:\
-```C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v12.x``` (where x is your  version)
+1. Download and install the following from NVIDIA’s official sites:
+    - [CUDA v12.x](https://developer.nvidia.com/cuda-downloads)
+    - [cuDNN v9.x](https://developer.nvidia.com/cudnn-downloads)
 
-2. Once you are in this specific folder (which contains .dll files), copy the folder path from the address bar at the top of the window.
+2. Locate the folder containing the cuDNN DLL files, typically:
+    ```
+    C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v12.x
+    ```
+    *(Replace v9.x and v12.x with your installed versions.)*
 
-3. Add the cuDNN-Path to your System Variables:
-    - Type ```env``` in windows search
-    - Click on ```Edit the system environment variables```
+3. Copy the full path of this folder from the File Explorer address bar.
+
+4. Add this path to your Windows system environment variables:
+    - Search for `Edit the system environment variables` in the Start menu and open it.
     - Click on ```Environment Variables```
-    - Under ```System Variables``` select the ```Path```-variable and click ```Edit```
-    - Click on ```New``` and paste in your cuDNN dll-folder path
-    - Click Ok a million times to save the changes
+    - Under ```System Variables``` find and select ```Path```, then click ```Edit```
+    - Click ```New``` and paste the copied `cuDNN` folder path.
+    - Click OK to save and close all dialogs.
+5. **Important:** Restart any open programs or reboot your computer to ensure Windows recognizes the 
+new environment variable.
 
-4. Captain-Obvious-important! For Windows to recognize your new environment variables, be sure to close all open programs before continuing — or just give your system a quick restart. Otherwise, your changes might play hide-and-seek! ;)
+### TensorRT - Installation Steps
+1. Download TensorRT from NVIDIA’s official site:\
+    https://developer.nvidia.com/tensorrt
+
+2. Click the `Download Now` button (you may need to log in with your NVIDIA account).
+
+3. Select `TensorRT 10` and accept the terms and conditions.
+
+4. Choose the latest release of `TensorRT 10`.
+
+5. Download the Windows **ZIP package** for `CUDA 12.x`.
+
+6. Once downloaded, unzip the TensorRT archive to a folder on your system.
+
+7. Locate the `lib` folder inside the extracted TensorRT directory.
+
+8. Copy the full path of this lib folder.
+
+9. Add this folder path to your system’s `PATH environment variable`, following the same process as with CUDA (see CUDA installation step #4).
+
+10. **Installation complete!** Restart any open programs or reboot your system to ensure the environment variables take effect.
+
+>💡 **Tip:** Curious about how TensorRT works in practice? Check out the [TensorRT Demo project](./Demo/TensorRTDemo/) and its [README](./Demo/TensorRTDemo/) for a hands-on example and setup instructions.
 
 # Export Yolo models to ONNX with opset=17
 **All models** — including your own custom models — must be exported to the ONNX format with **`opset 17`** for best performance.\
