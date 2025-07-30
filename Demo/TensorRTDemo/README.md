@@ -115,7 +115,6 @@ Once the engine cache file has been built and saved in the specified `EngineCach
 - You preserve useful engine cache files for reuse in production environments.
 
 
-
 ## 🚫 Engine Cache Distribution Warning
 The TensorRT engine cache file is hardware-specific. It is built and optimized based on:
 
@@ -136,8 +135,9 @@ Instead, it is recommended to allow TensorRT to build the engine cache at runtim
 # INT8 Calibration Cache File
 When using the INT8 precision mode in the `TensorRtExecutionProvider`, TensorRT requires a calibration cache file to accurately quantize your YOLO ONNX model. This cache contains important calibration data that enables TensorRT to perform `mixed precision` inference while maintaining model accuracy.
 
-> ⚙️ Note:\
-INT8 mode in TensorRT uses mixed precision execution. While it prioritizes INT8 for maximum performance, it will automatically fall back to FP16 or FP32 for layers that cannot be quantized due to unsupported operations, numerical stability concerns, or dynamic range limitations.
+> ⚙️ INT8 mode in TensorRT uses mixed precision execution. While it prioritizes INT8 for maximum performance, it will automatically fall back to FP16 or FP32 for layers that cannot be quantized due to unsupported operations, numerical stability concerns, or dynamic range limitations.<br>
+\
+🚫 **Limitation:** INT8 precision mode is **not supported for segmentation models** in YoloDotNet. Attempting to use INT8 with a segmentation model will result in a **YoloDotNetModelException** error.
 
 ## Why is it needed?
 - `INT8` inference offers the fastest performance but requires calibration because not all operations and layers can be safely quantized without losing accuracy.
@@ -149,7 +149,7 @@ You can create the calibration cache file using the `Ultralytics Python library`
 1. Install the [Ultralytics library](https://docs.ultralytics.com/quickstart/#__tabbed_1_2)
 2. Run the export command with INT8 calibration enabled:
     ```
-    yolo export model=your_model.pt format=engine int8=true dynamic=true data=your_model_dataset.yaml opset=17
+    yolo export model=your_model.pt format=engine int8=true optimize=true data=your_model_dataset.yaml opset=17
     ```
     Replace:
     - `your_model.pt` with the path to your PyTorch YOLO model.
@@ -175,3 +175,4 @@ This ensures that calibration is performed from scratch using the new data or mo
 - Created using the Ultralytics CLI and a calibration dataset.
 - Must be manually removed if you want to regenerate it.
 - Can be reused and shipped as part of your application.
+- YoloDotNet does not support segmentation in INT8 precision mode 
