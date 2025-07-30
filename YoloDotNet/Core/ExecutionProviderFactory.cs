@@ -28,7 +28,7 @@ namespace YoloDotNet.Core
                     ConfigureTensorRT(trtProvider, options);
                     break;
                 default:
-                    throw new ArgumentException($"Unknown execution provider: {config.GetType().Name}");
+                    throw new YoloDotNetUnsupportedProviderException($"Unknown execution provider: {config.GetType().Name}");
             }
 
             return options;
@@ -69,7 +69,7 @@ namespace YoloDotNet.Core
             // If a engine cache is used, verify the path exist.
             if (string.IsNullOrEmpty(engineCache) is false && Directory.Exists(engineCache) is false)
             {
-                throw new ArgumentException($"TensorRT engine cache directory not found: '{engineCache}'. " +
+                throw new YoloDotNetExecutionProviderException($"TensorRT engine cache directory not found: '{engineCache}'. " +
                     "This folder is required to store and load TensorRT engine cache. " +
                     "Make sure the path exists and is accessible by the application. " +
                     "You can configure it using the 'EngineCachePath' parameter of the execution provider.");
@@ -137,7 +137,7 @@ namespace YoloDotNet.Core
                     var calibrationCache = provider.Int8CalibrationCacheFile;
 
                     if (File.Exists(calibrationCache) is false)
-                        throw new ArgumentException($"INT8 calibration cache file not found: '{calibrationCache}'. " +
+                        throw new YoloDotNetExecutionProviderException($"INT8 calibration cache file not found: '{calibrationCache}'. " +
                             "This file is required to initialize the model in INT8 precision mode using TensorRT. " +
                             "Make sure the file exists and is accessible by the application. " +
                             $"You can specify its location using the '{nameof(provider.Int8CalibrationCacheFile)}' parameter of the execution provider.");

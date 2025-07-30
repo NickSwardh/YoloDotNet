@@ -26,19 +26,16 @@ namespace YoloDotNet.Trackers
         /// Assignment array: assigned column index for each row (or -1 if unassigned).
         /// The returned array length equals the number of input rows.
         /// </returns>
-        /// <exception cref="ArgumentNullException">If costMatrix is null.</exception>
-        /// <exception cref="ArgumentException">If costMatrix has zero rows or columns.</exception>
-        /// <exception cref="InvalidOperationException">If no augmenting path can be found (invalid or infinite costs).</exception>
         public static int[] Solve(float[,] costMatrix)
         {
             if (costMatrix == null)
-                throw new ArgumentNullException(nameof(costMatrix));
+                throw new YoloDotNetException(nameof(costMatrix));
 
             int nRows = costMatrix.GetLength(0);
             int nCols = costMatrix.GetLength(1);
 
             if (nRows == 0 || nCols == 0)
-                throw new ArgumentException("Cost matrix must have non-zero dimensions.");
+                throw new YoloDotNetException("Cost matrix must have non-zero dimensions.");
 
             int n = Math.Max(nRows, nCols);
             float[,] cost = PadCostMatrix(costMatrix, nRows, nCols, n, out float maxCost);
@@ -256,7 +253,7 @@ namespace YoloDotNet.Trackers
 
                     // If no such column is found, it means no augmenting path exists => throw error
                     if (j == -1)
-                        throw new InvalidOperationException(
+                        throw new YoloDotNetException(
                             $"No augmenting path found for free row {freeRow}. Verify cost matrix contains valid, finite costs.");
 
                     // Mark this column as seen (visited)

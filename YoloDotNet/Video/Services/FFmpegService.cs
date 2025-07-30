@@ -104,7 +104,7 @@ namespace YoloDotNet.Video.Services
             }
             catch (Exception)
             {
-                throw new ArgumentException(
+                throw new YoloDotNetVideoException(
                     $"Invalid video device input format: '{_videoOptions.VideoInput}'.\n" +
                     $"Expected format: 'DeviceName:Width:Height:FPS'.\n" +
                     $"Each part must be separated by a colon and must include:\n" +
@@ -156,7 +156,7 @@ namespace YoloDotNet.Video.Services
                 return JsonSerializer.Deserialize<Metadata>(json) ?? new();
             }
             else
-                throw new ArgumentException("The specified video stream is invalid and could not be processed. ", nameof(_videoOptions.VideoInput));
+                throw new YoloDotNetVideoException("The specified video stream is invalid and could not be processed. ", nameof(_videoOptions.VideoInput));
         }
 
         private void InitializeFFMPEGDecode()
@@ -371,7 +371,7 @@ namespace YoloDotNet.Video.Services
                 : originalHeight;
 
             if (targetWidth == -2 && targetHeight == -2)
-                throw new ArgumentException("Both with and height cant be -2.");
+                throw new YoloDotNetVideoException("Both with and height cant be -2.");
 
             if (targetWidth == -2)
             {
@@ -456,12 +456,12 @@ namespace YoloDotNet.Video.Services
             catch (Win32Exception ex)
             {
                 // Common on Windows when tool is not found
-                throw new FileNotFoundException($"Required '{fileName}' is not installed or not in PATH.", ex);
+                throw new YoloDotNetToolException($"Required '{fileName}' is not installed or not in PATH.", ex);
             }
             catch (Exception ex)
             {
                 // Wrap any other issues into a clear higher-level message
-                throw new ApplicationException($"Failed to verify '{fileName}': {ex.Message}", ex);
+                throw new YoloDotNetVideoException($"Failed to verify '{fileName}': {ex.Message}", ex);
             }
         }
 
@@ -498,11 +498,11 @@ namespace YoloDotNet.Video.Services
             }
             catch (Win32Exception ex)
             {
-                throw new FileNotFoundException($"FFmpeg is not installed or not in PATH.", ex);
+                throw new YoloDotNetToolException($"FFmpeg is not installed or not in PATH.", ex);
             }
             catch (Exception ex)
             {
-                throw new ApplicationException($"Failed to get devices: {ex.Message}", ex);
+                throw new YoloDotNetVideoException($"Failed to get devices: {ex.Message}", ex);
             }
 
         }

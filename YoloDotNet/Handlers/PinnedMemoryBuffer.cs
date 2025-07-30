@@ -28,7 +28,7 @@ namespace YoloDotNet.Handlers
             TargetBitmap = new SKBitmap();
 
             if (!TargetBitmap.InstallPixels(imageInfo, Pointer, imageInfo.RowBytes))
-                throw new Exception("Failed to install pixels into SKBitmap");
+                throw new YoloDotNetException("Failed to install pixels into SKBitmap");
 
             Canvas = new SKCanvas(TargetBitmap);
         }

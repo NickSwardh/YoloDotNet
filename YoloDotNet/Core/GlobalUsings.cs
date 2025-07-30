@@ -32,6 +32,7 @@ global using YoloDotNet.Models;
 global using YoloDotNet.Handlers;
 global using YoloDotNet.Trackers;
 global using YoloDotNet.Extensions;
+global using YoloDotNet.Exceptions;
 global using YoloDotNet.Configuration;
 global using YoloDotNet.Video.Services;
 global using YoloDotNet.Models.Interfaces;

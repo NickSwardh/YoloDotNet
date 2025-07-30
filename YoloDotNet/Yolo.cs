@@ -152,7 +152,7 @@ namespace YoloDotNet
         public void InitializeVideo(VideoOptions videoOptions)
         {
             if (options.ExecutionProvider is CpuExecutionProvider)
-                throw new ArgumentException(
+                throw new YoloDotNetVideoException(
                     "Video inference requires CUDA acceleration (GPU support) and FFmpeg installed on your system. " +
                     "Please enable CUDA by setting 'YoloOptions.Cuda = true' in your configuration, " +
                     "and ensure FFmpeg is installed and accessible in your system PATH.");
@@ -167,17 +167,17 @@ namespace YoloDotNet
         /// <summary>
         /// Retrieves a list of available video input devices detected on the current system.
         /// </summary>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="YoloDotNetVideoException"></exception>
         public static List<string> GetVideoDevices()
-            => FFmpegService.GetVideoDevicesOnSystem() ?? throw new Exception(
+            => FFmpegService.GetVideoDevicesOnSystem() ?? throw new YoloDotNetVideoException(
                 "No video initialized. Please call InitializeVideo() before attempting to retrieve metadata.");
 
         /// <summary>
         /// Retrieves metadata about the stream or initialized video, such as duration, frame rate, and resolution.
         /// </summary>
-        /// <exception cref="Exception"></exception>
+        /// <exception cref="YoloDotNetVideoException"></exception>
         public VideoMetadata GetVideoMetaData()
-            => _ffmpegService.VideoMetadata ?? throw new Exception(
+            => _ffmpegService.VideoMetadata ?? throw new YoloDotNetVideoException(
                 "No video initialized. Please call InitializeVideo() before attempting to retrieve metadata.");
 
         /// <summary>

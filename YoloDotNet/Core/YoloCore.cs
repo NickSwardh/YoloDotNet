@@ -36,7 +36,7 @@ namespace YoloDotNet.Core
         public void InitializeYolo()
         {
             if (string.IsNullOrEmpty(YoloOptions.OnnxModel) && YoloOptions.OnnxModelBytes is null)
-                throw new ArgumentException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
+                throw new YoloDotNetModelException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
 
             InjectModelIntoExecutionProvider();
 
@@ -78,12 +78,34 @@ namespace YoloDotNet.Core
 
         private void InjectModelIntoExecutionProvider()
         {
-            using var sessionOptions = ExecutionProviderFactory.Create(yoloOptions.ExecutionProvider);
+            // Log errors and fatals
+            var envOptions = new EnvironmentCreationOptions
+            {
+                logLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR
+            };
 
-            // Create session using bytes if available; else load from file with selected provider.
-            _session = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
-                ? new InferenceSession(YoloOptions.OnnxModelBytes, sessionOptions)
-                : new InferenceSession(YoloOptions.OnnxModel, sessionOptions);
+            OrtEnv.CreateInstanceWithOptions(ref envOptions);
+
+            try
+            {
+                using var sessionOptions = ExecutionProviderFactory.Create(yoloOptions.ExecutionProvider);
+
+                // Create session using bytes if available; else load from file with selected provider.
+                _session = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
+                    ? new InferenceSession(YoloOptions.OnnxModelBytes, sessionOptions)
+                    : new InferenceSession(YoloOptions.OnnxModel, sessionOptions);
+            }
+            catch (OnnxRuntimeException ex)
+            {
+                var source = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
+                    ? "byte array"
+                    : $"model file '{YoloOptions.OnnxModel}'";
+
+                throw new YoloDotNetModelException(
+                    $"Failed to load ONNX model from {source} using execution provider '{yoloOptions.ExecutionProvider}'. " +
+                    $"See inner exception for details.",
+                    ex);
+            }
         }
 
         /// <summary>
@@ -245,7 +267,7 @@ namespace YoloDotNet.Core
         public void VerifyExpectedModelType(ModelType expectedModelType)
         {
             if (expectedModelType.Equals(OnnxModel.ModelType) is false)
-                throw new Exception($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModelType}.");
+                throw new YoloDotNetModelMismatchException($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModelType}.");
         }
 
         /// <summary>

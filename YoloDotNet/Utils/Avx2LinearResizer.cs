@@ -19,7 +19,7 @@ namespace YoloDotNet.Utils
         public static void ScalePixels(SKBitmap src, SKBitmap dst)
         {
             if (src.ColorType != SKColorType.Gray8 || dst.ColorType != SKColorType.Gray8)
-                throw new ArgumentException("Both source and destination bitmaps must be Gray8 format.");
+                throw new YoloDotNetException("Both source and destination bitmaps must be Gray8 format.");
 
             if (!Avx2.IsSupported)
                 throw new PlatformNotSupportedException("AVX2 is required.");

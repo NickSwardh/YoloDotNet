@@ -78,7 +78,7 @@ namespace YoloDotNet.Extensions
 
             // Check for any dynamic dimension (-1 means dynamic in ONNX)
             if (dimensions.Any(d => d == -1))
-                throw new ArgumentException("Dynamic ONNX models are not supported.");
+                throw new YoloDotNetModelException("Dynamic ONNX models are not supported.");
 
             return Input.Shape(dimensions);
         }
@@ -97,7 +97,7 @@ namespace YoloDotNet.Extensions
                 ModelType.ObbDetection => (Output.Detection(dimensions[0]), Output.Empty()),
                 ModelType.Segmentation => (Output.Detection(dimensions[0]), Output.Segmentation(dimensions[1])),
                 ModelType.PoseEstimation => (Output.Detection(dimensions[0]), Output.Empty()),
-                _ => throw new ArgumentException($"Error getting output shapes. Unknown ONNX model type.", nameof(modelType))
+                _ => throw new YoloDotNetModelException($"Error getting output shapes. Unknown ONNX model type.", nameof(modelType))
             };
 
             return [output0, output1];
@@ -128,7 +128,7 @@ namespace YoloDotNet.Extensions
             var version when version.StartsWith("ultralytics yoloe-11") => ModelVersion.V11E,   // Note the missing v in Yoloe-11
             var version when version.StartsWith("ultralytics yolov12") => ModelVersion.V12,
             var version when version.Contains("worldv2") => ModelVersion.V11,
-            _ => throw new NotSupportedException("Onnx model not supported!")
+            _ => throw new YoloDotNetModelException("Onnx model not supported!")
         };
 
         #endregion

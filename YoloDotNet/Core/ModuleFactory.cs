@@ -110,7 +110,7 @@ namespace YoloDotNet.Core
         /// </summary>
         /// <param name="options">The options for creating the YOLO detection module.</param>
         /// <returns>An instance of the appropriate detection module.</returns>
-        /// <exception cref="InvalidOperationException">Thrown if the model version or type is unsupported.</exception>
+        /// <exception cref="YoloDotNetModelException">Thrown if the model version or type is unsupported.</exception>
         public static IModule CreateModule(YoloOptions options)
         {
             var yoloCore = InitializeYoloCore(options);
@@ -126,7 +126,7 @@ namespace YoloDotNet.Core
             if (versionSelected && moduleSelected)
                 return createModule!(yoloCore);
 
-            throw new InvalidOperationException($"Unsupported detection type {modelType} or model version {modelVersion}.");
+            throw new YoloDotNetModelException($"Unsupported detection type {modelType} or model version {modelVersion}.");
         }
 
         /// <summary>
