@@ -43,6 +43,8 @@ Give the [TensorRT demo](./Demo/TensorRTDemo/) project a spin to get you started
 > 💡 **Heads up:**\
 On the first run, TensorRT may take a couple of minutes to compile and optimize your model. But once the engine is built and cached, it’s warp-speed from there on out.
 
+**Segmentation upgraded** — Now leaner with 85% less memory, and quicker than ever—8% CPU boost and 28% GPU turbocharged!
+
 Bottom Line? Real-time YOLO inference at breakneck speed!
 
 ## Previously in v3.0
