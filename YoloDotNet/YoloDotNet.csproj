@@ -8,35 +8,23 @@
     <Title>YoloDotNet</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;cuda;gpu;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;ffmpeg;skiasharp;imagesharp;tracking;machine-learning;real-time;inference</PackageTags>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;cuda;gpu;tensor;tensorrt;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;ffmpeg;skiasharp;imagesharp;tracking;machine-learning;real-time;inference</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>YoloDotNet is a blazing-fast, modern C# library for real-time object detection, classification, segmentation, OBB, pose estimation — and tracking. Powered by ONNX Runtime and CUDA acceleration, it effortlessly handles images and video streams. Supports a wide range of cutting-edge models including YOLOv5u, YOLOv8, YOLOv9, YOLOv10, YOLOv11, YOLOv12, Yolo-World, and YOLO-E. Whether you’re building smart cameras, analytics dashboards, or unlocking real-time machine vision, YoloDotNet has you covered.</Description>
+    <Description>YoloDotNet is a blazing-fast, modern C# library for real-time object detection, classification, segmentation, OBB, pose estimation — and tracking. Powered by ONNX Runtime, CUDA acceleration, and now NVIDIA TensorRT, it effortlessly handles images and video streams with ultra-low latency. Supports a wide range of cutting-edge models including YOLOv5u, YOLOv8, YOLOv9, YOLOv10, YOLOv11, YOLOv12, Yolo-World, and YOLO-E. Whether you’re building smart cameras, analytics dashboards, or unlocking real-time machine vision, YoloDotNet has you covered.</Description>
     <Authors>Nick Swardh</Authors>
-	<Version>3.0</Version>
+	<Version>3.1</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <PackageReleaseNotes>YoloDotNet 3.0 is here with significant improvements across the board. After careful optimization and refinement, this release delivers faster performance, broader model support, and enhanced usability — making your real-time vision projects smoother and more efficient.
+    <PackageReleaseNotes>Say hello to YoloDotNet 3.1, packed with blazing fast inference thanks to brand-new TensorRT support! Now you can harness NVIDIA’s TensorRT execution provider to supercharge your YOLO models with ultra-low latency and killer throughput — perfect for real-time and edge deployments.
 
-Performance Improvements:
-Enjoy up to 70% faster inference and over 90% reduction in memory usage on GPU for segmentation. Other tasks aren’t far behind, with classification running up to 28% faster and memory use cut by nearly 50%, detection speeding up by 25%, and pose estimation boosted by over 27% — all helping your apps run faster and leaner than ever.
+TensorRT Integration:
+Enjoy powerful CUDA-accelerated inference that pushes your models to new heights with minimal fuss.
 
-Expanded Model Support:
-Now supporting a wide range of modern YOLO models, including YOLOv5u through YOLOv12, plus Yolo-World and YOLO-E zero-shot detection, so you can work with the latest and most versatile models available.
-
-Video Processing &amp; Tracking Enhancements:
-Video stream handling is simpler and more flexible. Split videos into chunks for batch processing, customize frame intervals to suit your needs, and keep track of objects across frames with the new SORT tracking feature.
-
-Customizable Visual Output:
-Tailor your bounding boxes and labels with custom colors and fonts to better fit your project’s style and presentation.
-
-Improved Inference Pipeline:
-Run inference directly on SkiaSharp’s SKBitmap and SKImage objects to reduce overhead. Enhanced image resizing and sampling controls help you balance speed and accuracy.
-
-Developer-Friendly Features:
-Load ONNX models directly from byte arrays for greater deployment flexibility. Cleaner APIs and helpful inline comments make integration straightforward.</PackageReleaseNotes>
+Segmentation Improvements:
+Segmentation inference just got leaner and meaner — CPU inference is up to 11% faster, GPU up to 28% quicker, with memory usage slashed by a massive 85%. Your vision pipelines are now faster, lighter, and more reliable.</PackageReleaseNotes>
     <Copyright>Copyright © 2023 Nick Swardh</Copyright>
   </PropertyGroup>
 
