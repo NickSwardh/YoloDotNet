@@ -64,7 +64,7 @@ namespace TensorRTDemo
             using var yolo = new Yolo(new YoloOptions
             {
                 // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
+                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
                 // Available execution providers:

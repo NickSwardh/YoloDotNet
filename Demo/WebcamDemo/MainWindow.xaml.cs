@@ -95,7 +95,7 @@ namespace WebcamDemo
             _yolo = new Yolo(new YoloOptions
             {
                 // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 classification model.
+                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
                 OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
                 // Select execution provider (determines how and where inference is executed).
