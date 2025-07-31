@@ -1,4 +1,4 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v3.1
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v3.1.1
 
 **YoloDotNet** is a blazing-fast, fully featured C# library for real-time object detection, OBB, segmentation, classification, pose estimation — and tracking — using YOLOv5u–v12, YOLO-World, and YOLO-E models.
 
@@ -24,10 +24,10 @@ Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration
 > dotnet add package YoloDotNet
 ```
 
-# 🚀 YoloDotNet v3.1 - Full-Throttle TensorRT Inference!
+# 🚀 YoloDotNet v3.1.1 - Full-Throttle TensorRT Inference!
 **Say hello to TensorRT support in YoloDotNet!**
 
-Version 3.1 bolts on NVIDIA's high-performance inference engine to break the speed barrier and unleash maximum throughput on supported GPUs.
+Version 3.1.1 bolts on NVIDIA's high-performance inference engine to break the speed barrier and unleash maximum throughput on supported GPUs.
 
 ### ✨ Highlights:
 New `TensorRtExecutionProvider` — Configure GPU ID, precision (`FP32`, `FP16`, or turbocharged `INT8`), builder optimizations, and engine cache handling — all from your C# code.
@@ -40,11 +40,12 @@ Give the [TensorRT demo](./Demo/TensorRTDemo/) project a spin to get you started
 **INT8 Calibration Cache** — Drop your precision down to `INT8` for maximum speed and minimal accuracy loss. Generate the `.cache` file once, reuse it forever.
 
 **Fully Configurable** — Engine cache path, file prefix, calibration cache file location — it's all in your control.
-
 > 💡 **Heads up:**\
 On the first run, TensorRT may take a couple of minutes to compile and optimize your model. But once the engine is built and cached, it’s warp-speed from there on out.
 
 **Segmentation upgraded** — Now leaner with 85% less memory, and quicker than ever—8% CPU boost and 28% GPU turbocharged!
+
+**OrtEnv fix in 3.1.1** — Reusing or recreating YoloDotNet objects? No more "OrtEnv singleton instance already exists" drama.
 
 Bottom Line? Real-time YOLO inference at breakneck speed! Check the [Benchmarks](./test/YoloDotNet.Benchmarks/).
 
