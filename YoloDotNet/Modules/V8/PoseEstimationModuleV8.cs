@@ -40,7 +40,7 @@ namespace YoloDotNet.Modules.V8
             var ouputChannels = _yoloCore.OnnxModel.Outputs[0].Channels;
             var totalKeypoints = (int)Math.Floor(((double)_yoloCore.OnnxModel.Outputs[0].Elements / _yoloCore.OnnxModel.Input.Channels)) - labels;
 
-            var totalBoxes = boxes.Count;
+            var totalBoxes = boxes.Length;
             for (int i = 0; i < totalBoxes; i++)
             {
                 var box = boxes[i];

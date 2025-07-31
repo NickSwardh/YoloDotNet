@@ -75,13 +75,13 @@ namespace YoloDotNet.Core
         {
             try
             {
-            // Log errors and fatals
-            var envOptions = new EnvironmentCreationOptions
-            {
-                logLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR
-            };
+                // Log errors and fatals
+                var envOptions = new EnvironmentCreationOptions
+                {
+                    logLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR
+                };
 
-            OrtEnv.CreateInstanceWithOptions(ref envOptions);
+                OrtEnv.CreateInstanceWithOptions(ref envOptions);
             }
             catch (OnnxRuntimeException ex) when (ex.Message.Contains("OrtEnv singleton instance already exists"))
             {
@@ -155,38 +155,49 @@ namespace YoloDotNet.Core
         /// <param name="predictions">The list of object detection results to process.</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        public List<ObjectResult> RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
+        public ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
         {
             if (predictions.Length == 0)
                 return [];
 
             Array.Sort(predictions, ConfidenceComparer.Instance);
 
-            var result = new List<ObjectResult>();
+            var buffer = customSizeObjectResultPool.Rent(predictions.Length);
 
             var predictionSpan = predictions.AsSpan();
             var totalPredictions = predictionSpan.Length;
 
-            for (int i = 0; i < totalPredictions; i++)
+            try
             {
-                var item = predictionSpan[i];
-
-                bool overlapFound = false;
-                foreach (var res in result)
+                var counter = 0;
+                for (int i = 0; i < totalPredictions; i++)
                 {
-                    if (CalculateIoU(item.BoundingBox, res.BoundingBox) > iouThreshold)
+                    var item = predictionSpan[i];
+
+                    bool overlapFound = false;
+                    for (int j = 0; j < counter; j++)
                     {
-                        overlapFound = true;
-                        break;
+                        if (CalculateIoU(item.BoundingBox, buffer[j].BoundingBox) > iouThreshold)
+                        {
+                            overlapFound = true;
+                            break;
+                        }
                     }
-                }
-                if (!overlapFound)
-                {
-                    result.Add(item);
-                }
-            }
 
-            return result;
+                    if (!overlapFound)
+                        buffer[counter++] = item;
+                }
+
+                // Prevent overhead from temporary collections by copying to a fixed-size array.
+                var resultArray = new ObjectResult[counter];
+                buffer.AsSpan(0, counter).CopyTo(resultArray);
+
+                return resultArray;
+            }
+            finally
+            {
+                customSizeObjectResultPool.Return(buffer, true);
+            }
         }
 
         /// <summary>

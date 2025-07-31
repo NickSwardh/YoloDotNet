@@ -34,7 +34,7 @@ namespace YoloDotNet.Modules.V10
 
         #region Helper methods
 
-        private List<ObjectResult> ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        private ObjectResult[] ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
         {
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
