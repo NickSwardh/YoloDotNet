@@ -20,7 +20,6 @@ namespace YoloDotNet.Core
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
         private PinnedMemoryBufferPool _pinnedMemoryPool = default!;
 
-        private Dictionary<string, OrtValue> _inputNames = default!;
         private readonly object _progressLock = new();
 
         private SKImageInfo _imageInfo;
@@ -67,11 +66,6 @@ namespace YoloDotNet.Core
                         _pinnedMemoryPool,
                         YoloOptions.SamplingOptions);
             }
-
-            _inputNames = new Dictionary<string, OrtValue>
-            {
-                { OnnxModel.InputName, null! }
-            };
 
             // Run frame-save service
             FrameSaveService.Start();
@@ -140,8 +134,12 @@ namespace YoloDotNet.Core
                     var tensorPixels = pinnedBuffer.Pointer.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
                     using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
 
-                    _inputNames[OnnxModel.InputName] = inputOrtValue;
-                    return (_session.Run(_runOptions, _inputNames, OnnxModel.OutputNames), originalImageSize);
+                    return (_session.Run(
+                        _runOptions,
+                        [OnnxModel.InputName],
+                        [inputOrtValue],
+                        OnnxModel.OutputNames),
+                        originalImageSize);
                 }
             }
             finally
