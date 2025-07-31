@@ -38,6 +38,7 @@ namespace YoloDotNet.Core
             if (string.IsNullOrEmpty(YoloOptions.OnnxModel) && YoloOptions.OnnxModelBytes is null)
                 throw new YoloDotNetModelException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
 
+            ConfigureOrtEnv();
             InjectModelIntoExecutionProvider();
 
             _runOptions = new RunOptions();
@@ -76,8 +77,10 @@ namespace YoloDotNet.Core
             FrameSaveService.Start();
         }
 
-        private void InjectModelIntoExecutionProvider()
+        private static void ConfigureOrtEnv()
         {
+            try
+            {
             // Log errors and fatals
             var envOptions = new EnvironmentCreationOptions
             {
@@ -85,7 +88,15 @@ namespace YoloDotNet.Core
             };
 
             OrtEnv.CreateInstanceWithOptions(ref envOptions);
+            }
+            catch (OnnxRuntimeException ex) when (ex.Message.Contains("OrtEnv singleton instance already exists"))
+            {
+                // OrtEnv has already been initialized — ignore and continue gracefully...
+            }
+        }
 
+        private void InjectModelIntoExecutionProvider()
+        {
             try
             {
                 using var sessionOptions = ExecutionProviderFactory.Create(yoloOptions.ExecutionProvider);
