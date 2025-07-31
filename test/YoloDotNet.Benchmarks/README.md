@@ -80,7 +80,7 @@ Intel Core i7-14700KF 3.40GHz, 1 CPU, 28 logical and 20 physical cores
 | Segmentation | V11_Seg_GPU | 10.53 ms | 0.213 ms | 0.306 ms | 10.69 ms | 31.2500 | 533.65 KB |
 
 
-# YoloDotNet 3.1 Benchmark Results (Current version)
+# YoloDotNet 3.1.1 Benchmark Results (Current version)
 ```
 BenchmarkDotNet v0.15.2, Windows 11 (10.0.26100.4652/24H2/2024Update/HudsonValley)
 Intel Core i7-14700KF 3.40GHz, 1 CPU, 28 logical and 20 physical cores
@@ -166,9 +166,14 @@ Intel Core i7-14700KF 3.40GHz, 1 CPU, 28 logical and 20 physical cores
 | PoseEstimation | V11_Pos_TRT8  |  2.259 ms | 0.0115 ms | 0.0204 ms |  24.44 KB |
 
 ##### SEGMENTATION (input image size: 1280x853)
-| Method       | YoloParam   | Mean      | Error     | StdDev    | Allocated |
-|------------- |------------ |----------:|----------:|----------:|----------:|
-| Segmentation | V8_Seg_CPU  | 48.253 ms | 0.9464 ms | 1.6325 ms |  85.24 KB |
-| Segmentation | V8_Seg_GPU  |  7.362 ms | 0.1242 ms | 0.1162 ms |  85.24 KB |
-| Segmentation | V11_Seg_CPU | 44.669 ms | 0.8882 ms | 1.3564 ms |  79.87 KB |
-| Segmentation | V11_Seg_GPU |  7.835 ms | 0.0416 ms | 0.0389 ms |  79.87 KB |
+| Method       | YoloParam     | Mean      | Error     | StdDev    | Allocated |
+|------------- |-------------- |----------:|----------:|----------:|----------:|
+| Segmentation | V8_Seg_CPU    | 47.793 ms | 0.7903 ms | 0.7392 ms |  84.92 KB |
+| Segmentation | V8_Seg_GPU    |  7.373 ms | 0.1047 ms | 0.0979 ms |  84.92 KB |
+| Segmentation | V8_Seg_TRT32  |  6.259 ms | 0.0937 ms | 0.0876 ms |  84.92 KB |
+| Segmentation | V8_Seg_TRT16  |  4.886 ms | 0.0505 ms | 0.0519 ms |  84.89 KB |
+| Segmentation | V11_Seg_CPU   | 44.502 ms | 0.8490 ms | 0.7941 ms |  79.53 KB |
+| Segmentation | V11_Seg_GPU   |  7.805 ms | 0.1083 ms | 0.0904 ms |  79.53 KB |
+| Segmentation | V11_Seg_TRT32 |  6.363 ms | 0.0287 ms | 0.0255 ms |  79.53 KB |
+| Segmentation | V11_Seg_TRT16 |  5.315 ms | 0.1049 ms | 0.1571 ms |  79.58 KB |
+>Note: Segmentation running on TensorRT with INT8 precision is not supported.
