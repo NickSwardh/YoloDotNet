@@ -9,7 +9,7 @@ You can simply tell the model what to find using natural language, or show it ex
 No retraining. No datasets. Just prompts that guide the model to detect your objects of interest.
 
 # Preparations
-To use YoloE with text prompts in YoloDotNet, you’ll need to:
+To use YoloE with text/visual prompts in YoloDotNet, you’ll need to:
 
 - Export a YoloE model to ONNX with your own custom prompts
 
@@ -145,4 +145,4 @@ Load the exported ONNX model just like any other `Segmentation` model in YoloDot
 - You may need to lower the confidence threshold (e.g. 0.1–0.3) for reliable detections.
 - Try different wording in text prompts for better results.
 - Try a larger YoloE model for better accuracy
-- Read the [Ultralytics YOLOE-documentation](https://docs.ultralytics.com/models/yoloe/)
+- For troubleshooting and details about exporting to ONNX, please refer to the [Ultralytics YOLOE documentation](https://docs.ultralytics.com/models/yoloe/)
