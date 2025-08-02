@@ -23,7 +23,7 @@ namespace YoloE_SegmentationDemo
     /// along with bounding boxes, labels, and confidence scores, and then saving the annotated result to disk.
     ///
     /// 🔔 Important:
-    /// - YoloDotNet requires YoloE models to be exported to ONNX **with embedded text prompts** for zero-shot inference.
+    /// - YoloDotNet requires YoloE models to be exported to ONNX **with embedded text/visual prompts** for zero-shot inference.
     ///   See the README for instructions on how to export YoloE models with custom prompts.
     ///
     /// Key features demonstrated:
