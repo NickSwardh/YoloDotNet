@@ -163,7 +163,7 @@ public class Program
 {
     // ⚠️ Note: The accuracy of inference results depends heavily on how you configure preprocessing and thresholds.
     // Make sure to read the README section "Accuracy Depends on Configuration":
-    // https://github.com/NickSwardh/YoloDotNet/blob/master/README.md#%EF%B8%8F-accuracy-depends-on-configuration
+    // https://github.com/NickSwardh/YoloDotNet/tree/master#%EF%B8%8F-accuracy-depends-on-configuration
 
     static void Main(string[] args)
     {
