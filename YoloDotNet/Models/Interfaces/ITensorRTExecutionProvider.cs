@@ -2,7 +2,7 @@
 // Copyright (c) 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-namespace YoloDotNet.Enums
+namespace YoloDotNet.Models.Interfaces
 {
     public interface ITensorRTExecutionProvider : IExecutionProvider
     {
