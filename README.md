@@ -32,7 +32,7 @@ Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration
 - [Export Yolo Models to ONNX](#export-yolo-models-to-onnx-with-opset17)
 - [Quick Start & Demos](#-quick-start-dive-into-the-demos)
 - [Bare Minimum Example](#bare-minimum--get-up-and-running-in-a-snap)
-- [Accuracy Depends on Configuration](#%EF%B8%8F-accuracy-depends-on-configuration)
+- 💡 [Accuracy Depends on Configuration](#%EF%B8%8F-accuracy-depends-on-configuration)
 - [Customize Detection Overlay](#make-it-yours--customize-the-look)
 - [Support YoloDotNet](#support-yolodotnet)
 - [References & Acknowledgements](#references--acknowledgements)
