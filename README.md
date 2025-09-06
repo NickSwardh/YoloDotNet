@@ -24,6 +24,20 @@ Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration
 > dotnet add package YoloDotNet
 ```
 
+# 📖 Table of Contents
+- [What's new in 3.1.1](#-yolodotnet-v311---full-throttle-tensorrt-inference)
+- [Install CUDA & TensorRT (Optional)](#install-cuda--tensorrt-optional)
+  - [CUDA Installation](#cuda---installation-steps)
+  - [TensorRT Installation](#tensorrt---installation-steps)
+- [Export Yolo Models to ONNX](#export-yolo-models-to-onnx-with-opset17)
+- [Quick Start & Demos](#-quick-start-dive-into-the-demos)
+- [Bare Minimum Example](#bare-minimum--get-up-and-running-in-a-snap)
+- [Accuracy Depends on Configuration](#%EF%B8%8F-accuracy-depends-on-configuration)
+- [Customize Detection Overlay](#make-it-yours--customize-the-look)
+- [Support YoloDotNet](#support-yolodotnet)
+- [References & Acknowledgements](#references--acknowledgements)
+- [License](#license)
+
 # 🚀 YoloDotNet v3.1.1 - Full-Throttle TensorRT Inference!
 **Say hello to TensorRT support in YoloDotNet!**
 
@@ -147,6 +161,10 @@ using YoloDotNet.Extensions;
 
 public class Program
 {
+    // ⚠️ Note: The accuracy of inference results depends heavily on how you configure preprocessing and thresholds.
+    // Make sure to read the README section "Accuracy Depends on Configuration":
+    // https://github.com/NickSwardh/YoloDotNet#accuracy-depends-on-configuration
+
     static void Main(string[] args)
     {
         // Fire it up! Create an instance of YoloDotNet and reuse it across your app's lifetime.
@@ -154,15 +172,11 @@ public class Program
         var yolo = new Yolo(new YoloOptions
         {
             OnnxModel = "model.onnx",
-            // Path to model
+            // Path to your trained model.
+            // Ensure this model matches the preprocessing and training settings you use below.
 
             // OnnxModelBytes = modelBytes
             // Load model in byte[] format (e.g. for embedded scenarios)
-
-            ImageResize = ImageResize.Proportional,
-            // Match this to how your training data was preprocessed.
-            // Proportional = keeps aspect ratio (e.g. letterboxing)
-            // Stretched = fits input size directly (e.g. distortion OK)
 
             ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
             // Sets the execution backend.
@@ -170,6 +184,18 @@ public class Program
             //   - CpuExecutionProvider         → CPU-only (no GPU required)
             //   - CudaExecutionProvider        → GPU via CUDA (NVIDIA required)
             //   - TensorRtExecutionProvider    → GPU via NVIDIA TensorRT for maximum performance
+
+            ImageResize = ImageResize.Proportional,
+            // IMPORTANT: Match this to your model's training preprocessing.
+            // Proportional = the dataset images were not distorted; their aspect ratio was preserved.
+            // Stretched = the dataset images were resized directly to the model's input size, ignoring aspect ratio.
+
+            SamplingOptions = new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
+            // IMPORTANT: This defines how pixel data is resampled when resizing the image.
+            // The choice of sampling method can directly affect detection accuracy, 
+            // as different resampling methods (Nearest, Bilinear, Cubic, etc.) slightly alter object shapes and edges.
+            // Check the benchmarks for examples and guidance: 
+            // https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
         });
 
         // Display model metadata
@@ -194,6 +220,37 @@ Of course, the real power lies in customizing the pipeline, streaming videos, or
 
 **Want more?** Dive into the [demos and source code](./Demo) for full examples, from video streams to segmentation and pose estimation.
 
+# ⚠️ Accuracy Depends on Configuration
+
+**The accuracy of your results in YoloDotNet depends heavily on how you configure preprocessing and thresholds**. Even with a correctly trained model, mismatched settings can cause accuracy loss. There is no one-size-fits-all configuration — optimal values depend on your dataset, how your model was trained, and your specific application needs.
+
+### 🔑 Key Factors
+1. **Image Preprocessing & Resize Mode**
+    * Controlled via `ImageResize`.
+    * Must match the preprocessing used during training to ensure accurate detections.
+      | **Proportional dataset** | **Stretched dataset** |
+      |:------------:|:---------:|
+      |<img width="160" height="107" alt="proportional" src="https://github.com/user-attachments/assets/e95a2c5c-8032-4dee-a05a-a73b062a4965" />|<img width="160" height="160" alt="stretched" src="https://github.com/user-attachments/assets/90fa31cf-89dd-41e4-871c-76ae3215171f" />|
+      |Use `ImageResize.Proportional` if the dataset images were not distorted during training and their aspect ratio was preserved.|Use `ImageResize.Stretched` if the dataset images were resized directly to the model’s input size, ignoring the original aspect ratio.|
+    * **Important:** Selecting the wrong resize mode can reduce detection accuracy.
+2. **Sampling Options**
+    * Controlled via `SamplingOptions`.
+    * Define how pixel data is resampled when resizing (e.g., **`Cubic`**, **`NearestNeighbor`**, **`Bilinear`**). This choice has a direct impact on the accuracy of your detections, as different resampling methods can slightly alter object shapes and edges.
+    * Default in `SamplingOptions` in YoloDotNet:
+        ```csharp
+        SamplingOptions = new SKSamplingOptions (SKFilterMode.Nearest, SKMipmapMode.None);
+        ```
+        💡 **Tip:** Check the [ResizeImage Benchmarks](./test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs) for examples of different `SamplingOptions` and to help you choose the best settings for your needs.
+3. **Confidence & IoU Thresholds**
+    * Results are filtered based on thresholds you set during inference:
+        * Confidence → Minimum probability for a detection to count.
+        * IoU (**Intersection-over-Union**) → Overlap required to merge/suppress detections.
+    * Too low → more false positives.
+    * Too high → more missed detections.
+    * Fine-tune these values for your dataset and application.
+
+💡 **Tip**: Start with the defaults, then adjust `ImageResize`, `SamplingOptions`, and `Confidence/IoU` thresholds based on your dataset for optimal detection results.
+
 # Make It Yours – Customize the Look
 Want to give your detections a personal touch? Go ahead! If you're drawing bounding boxes on-screen, there’s full flexibility to style them just the way you like:
 
@@ -208,7 +265,7 @@ For practical examples on drawing and customization, don’t forget to peek at t
 # Support YoloDotNet
 YoloDotNet is the result of countless hours of development, testing, and continuous improvement — all offered freely to the community.
 
-If you’ve found this project helpful, consider supporting its development. Your contribution helps cover the time and resources needed to keep the project maintained, updated, and freely available to everyone.
+If you’ve found my project helpful, consider supporting its development. Your contribution helps cover the time and resources needed to keep the project maintained, updated, and freely available to everyone.
 
 Support the project:
 
