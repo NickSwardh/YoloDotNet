@@ -238,7 +238,7 @@ Of course, the real power lies in customizing the pipeline, streaming videos, or
     * Define how pixel data is resampled when resizing (e.g., **`Cubic`**, **`NearestNeighbor`**, **`Bilinear`**). This choice has a direct impact on the accuracy of your detections, as different resampling methods can slightly alter object shapes and edges.
     * YoloDotNet default:
         ```csharp
-        SamplingOptions = new SKSamplingOptions (SKFilterMode.Nearest, SKMipmapMode.None);
+        SamplingOptions = new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
         ```
         💡 **Tip:** Check the [ResizeImage Benchmarks](./test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs) for examples of different `SamplingOptions` and to help you choose the best settings for your needs.
 3. **Confidence & IoU Thresholds**
