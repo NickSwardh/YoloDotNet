@@ -231,7 +231,7 @@ Of course, the real power lies in customizing the pipeline, streaming videos, or
       | **Proportional dataset** | **Stretched dataset** |
       |:------------:|:---------:|
       |<img width="160" height="107" alt="proportional" src="https://github.com/user-attachments/assets/e95a2c5c-8032-4dee-a05a-a73b062a4965" />|<img width="160" height="160" alt="stretched" src="https://github.com/user-attachments/assets/90fa31cf-89dd-41e4-871c-76ae3215171f" />|
-      |Use `ImageResize.Proportional` if the dataset images were not distorted during training and their aspect ratio was preserved.|Use `ImageResize.Stretched` if the dataset images were resized directly to the model’s input size, ignoring the original aspect ratio.|
+      |Use `ImageResize.Proportional` (default) if the dataset images were not distorted during training and their aspect ratio was preserved.|Use `ImageResize.Stretched` if the dataset images were resized directly to the model’s input size (e.g., 640x640), ignoring the original aspect ratio.|
     * **Important:** Selecting the wrong resize mode can reduce detection accuracy.
 2. **Sampling Options**
     * Controlled via `SamplingOptions`.
