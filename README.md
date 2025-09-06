@@ -236,7 +236,7 @@ Of course, the real power lies in customizing the pipeline, streaming videos, or
 2. **Sampling Options**
     * Controlled via `SamplingOptions`.
     * Define how pixel data is resampled when resizing (e.g., **`Cubic`**, **`NearestNeighbor`**, **`Bilinear`**). This choice has a direct impact on the accuracy of your detections, as different resampling methods can slightly alter object shapes and edges.
-    * Default in `SamplingOptions` in YoloDotNet:
+    * YoloDotNet default:
         ```csharp
         SamplingOptions = new SKSamplingOptions (SKFilterMode.Nearest, SKMipmapMode.None);
         ```
