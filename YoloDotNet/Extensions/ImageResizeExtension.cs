@@ -108,32 +108,47 @@ namespace YoloDotNet.Extensions
             // Lock the pixel data for fast, unsafe memory access.
             byte* pixels = (byte*)pixelsPtr;
 
-            // Loop through all pixels in the image.
-            for (int i = 0; i < totalPixels; i++)
+            // Normalize gray-scale or RGB pixel data into the tensor array buffer.
+            if (colorChannels == 1)
             {
-                // Compute the offset into the pixel array.
-                int offset = i * 4;  // Assuming pixel format is RGBx or similar with 4 bytes per pixel.
+                // Loop through all pixels in the image.
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    // If the pixel is completely black, skip it.
+                    if (pixels[i] == 0)
+                        continue;
 
-                // Read the red, green, and blue components.
-                byte* px = pixels + offset;
-                byte r = px[0];
-                byte g = px[1];
-                byte b = px[2];
-
-                // If the pixel is completely black, skip normalization.
-                if ((r | g | b) == 0)
-                    continue;
-
-                // Normalize the red, green, and blue components and store them in the buffer.
-                // The buffer is arranged in "channel-first" order:
-                // - Red values go in the first section (0 to pixelsPerChannel)
-                // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
-                // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
-                tensorArrayBuffer[i] = r * inv255;
-                tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
-                tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
+                    tensorArrayBuffer[i] = pixels[i] * inv255;
+                }
             }
+            else
+            {
+                // Loop through all pixels in the image.
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    // Compute the offset into the pixel array.
+                    int offset = i * 4;  // Assuming pixel format is RGBx or similar with 4 bytes per pixel.
 
+                    // Read the red, green, and blue components.
+                    byte* px = pixels + offset;
+                    byte r = px[0];
+                    byte g = px[1];
+                    byte b = px[2];
+
+                    // If the pixel is completely black, skip normalization.
+                    if ((r | g | b) == 0)
+                        continue;
+
+                    // Normalize the red, green, and blue components and store them in the buffer.
+                    // The buffer is arranged in "channel-first" order:
+                    // - Red values go in the first section (0 to pixelsPerChannel)
+                    // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
+                    // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
+                    tensorArrayBuffer[i] = r * inv255;
+                    tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
+                    tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
+                }
+            }
         }
     }
 }
