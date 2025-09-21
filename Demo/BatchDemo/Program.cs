@@ -5,8 +5,8 @@
 using SkiaSharp;
 using System.Diagnostics;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cuda;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -14,29 +14,19 @@ using YoloDotNet.Test.Common;
 namespace BatchDemo
 {
     /// <summary>
-    /// Demonstrates batch object detection on multiple static images using the YoloDotNet library,
-    /// leveraging parallel processing for efficient inference.
+    /// Demonstrates batch object detection on static images using YoloDotNet, with parallel
+    /// processing for faster inference across large datasets.
     ///
-    /// This demo loads a collection of images from a specified folder, runs object detection with YOLO segmentation,
-    /// draws detection results (bounding boxes, labels, confidence scores),
-    /// and saves the annotated images to disk with unique filenames.
+    /// This demo:
+    /// - Loads images from a folder
+    /// - Runs YOLO object detection in parallel
+    /// - Draws detection results (boxes, labels, confidence scores)
+    /// - Saves annotated images to a desktop results folder
     ///
-    /// It showcases:
-    /// - Parallel processing to speed up detection across large image batches
-    /// - Model configuration with hardware acceleration (CUDA) and preprocessing settings
-    /// - Customizable rendering of detection output including text styling and bounding box appearance
-    /// - Automated output management with results saved to a desktop folder
-    /// - Console output indicating the loaded model type
-    ///
-    /// Execution providers:
-    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
-    /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
-    /// - Annotated output images are saved in a "YoloDotNet_Results\batch" folder on the desktop.
+    /// Key highlights:
+    /// - Parallel batch processing to accelerate inference
+    /// - Flexible execution provider configuration (CPU, CUDA, TensorRT, OpenVINO)
+    /// - Customizable drawing options for text, colors, and bounding box styling
     /// </summary>
     internal class Program
     {
@@ -52,28 +42,31 @@ namespace BatchDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
-                //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
-                //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
-                //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
+                // 
+                // - CpuExecutionProvider  
+                //   Runs inference entirely on the CPU. Universally supported but typically slower.
+                // 
+                // - CudaExecutionProvider  
+                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //   See the TensorRT demo and documentation for detailed configuration and best practices.
+                // 
+                // Important:  
+                // - Choose the provider that matches your available hardware and performance requirements.  
+                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                // - For detailed setup instructions and examples, see the README:  
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CudaExecutionProvider(
+
+                    // Path or byte[] to the ONNX model file.
+                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
+                    gpuId: 0),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

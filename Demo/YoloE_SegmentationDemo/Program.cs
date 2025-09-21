@@ -6,8 +6,8 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cpu;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -17,15 +17,15 @@ namespace YoloE_SegmentationDemo
 {
     /// <summary>
     /// Demonstrates semantic segmentation on static images using the YoloDotNet library with the YoloE model.
-    ///
+    /// 
     /// YoloE is a next-generation, real-time, multi-task vision model designed to "see anything".
     /// This demo showcases YoloE's segmentation capability by processing static images, drawing segmentation masks
     /// along with bounding boxes, labels, and confidence scores, and then saving the annotated result to disk.
-    ///
+    /// 
     /// 🔔 Important:
     /// - YoloDotNet requires YoloE models to be exported to ONNX **with embedded text/visual prompts** for zero-shot inference.
     ///   See the README for instructions on how to export YoloE models with custom prompts.
-    ///
+    /// 
     /// Key features demonstrated:
     /// - Model initialization using a custom YoloE ONNX model (zero-shot with text prompts), configurable for CPU or GPU.
     /// - Pixel-level segmentation with optional bounding boxes, labels, confidence scores, and colored overlays.
@@ -35,17 +35,20 @@ namespace YoloE_SegmentationDemo
     /// - Output image saving with adjustable quality and output path customization.
     /// - Support for custom font rendering, bounding box colors, and dynamic scaling.
     /// - Extensible drawing pipeline via SegmentationDrawingOptions.
-    ///
+    /// 
     /// Execution providers:
     /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
+    /// - CudaExecutionProvider: executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16, and INT8 precision modes.  
+    ///   This delivers significant speed improvements on compatible GPUs.
+    /// 
     /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
-    /// - This example uses a static image for simplicity, but YoloE is optimized for real-time video as well.
-    /// - Object tracking is supported in YoloDotNet but not demonstrated here. See the VideoStream demo for details.
+    /// - Choose the execution provider based on your available hardware and performance requirements.  
+    /// - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.  
+    /// - This example uses a static image for simplicity, but YoloE is optimized for real-time video as well.  
+    /// - Object tracking is supported in YoloDotNet but not demonstrated here. See the VideoStream demo for details.  
+    /// - For detailed setup instructions and examples, see the README:  
+    ///   https://github.com/NickSwardh/YoloDotNet
     /// </summary>
     internal class Program
     {
@@ -61,27 +64,25 @@ namespace YoloE_SegmentationDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file.
-                OnnxModel = @"path\to\your\yoloE_model.onnx",
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
-                //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
-                //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
-                //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CpuExecutionProvider(),
+                // 
+                // - CpuExecutionProvider  
+                //   Runs inference entirely on the CPU. Universally supported but typically slower.
+                // 
+                // - CudaExecutionProvider  
+                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //   See the TensorRT demo and documentation for detailed configuration and best practices.
+                // 
+                // Important:  
+                // - Choose the provider that matches your available hardware and performance requirements.  
+                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                // - For detailed setup instructions and examples, see the README:  
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CpuExecutionProvider(model: @"path\to\yoloE_model.onnx"),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

@@ -6,8 +6,9 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cuda;
+using YoloDotNet.ExecutionProvider.Cuda.TensorRT;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -17,27 +18,28 @@ namespace ObjectDetectionDemo
 {
     /// <summary>
     /// Demonstrates object detection on static images using the YoloDotNet library.
-    ///
-    /// This demo loads a sample image, runs object detection to detect axis-aligned bounding boxes,
-    /// draws the results (bounding boxes, labels, confidence scores),
-    /// and saves the processed image to disk.
-    ///
-    /// It showcases:
-    /// - Model initialization with configurable hardware and preprocessing options
+    /// 
+    /// This demo loads a sample image, runs object detection to identify objects with axis-aligned bounding boxes,
+    /// overlays the bounding boxes with labels and confidence scores, and saves the processed image to disk.
+    /// 
+    /// Features included:
+    /// - Model initialization with configurable hardware acceleration and preprocessing options
     /// - Static image inference for detecting objects with standard bounding boxes
-    /// - Customizable rendering of detection results, including labels, confidence scores, and boxes
-    /// - Saving annotated output to disk
-    /// - Console reporting of inference results
-    ///
+    /// - Customizable rendering of detection results (labels, confidence scores, bounding boxes)
+    /// - Saving annotated output images with quality control and automated output folder creation
+    /// - Console reporting of detection results
+    /// 
     /// Execution providers:
-    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
+    /// - CpuExecutionProvider: runs inference entirely on the CPU. Universally supported but slower.
+    /// - CudaExecutionProvider: executes inference on an NVIDIA GPU using CUDA for accelerated performance.
+    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16, and INT8 precision modes.
+    /// 
     /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
+    /// - Choose the execution provider that matches your available hardware and performance requirements.
+    /// - DetectionDrawingOptions allows customization of font, colors, box rendering, and label styling.
     /// - The demo creates an output folder on the desktop to store processed results.
+    /// - For setup instructions and best practices, see the README:  
+    ///   https://github.com/NickSwardh/YoloDotNet
     /// </summary>
     internal class Program
     {
@@ -53,28 +55,43 @@ namespace ObjectDetectionDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
-                //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
-                //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
-                //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
+                // 
+                // - CpuExecutionProvider  
+                //   Runs inference entirely on the CPU. Universally supported but typically slower.
+                // 
+                // - CudaExecutionProvider  
+                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //   See the TensorRT demo and documentation for detailed configuration and best practices.
+                // 
+                // Important:  
+                // - Choose the provider that matches your available hardware and performance requirements.  
+                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                // - For detailed setup instructions and examples, see the README:  
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CudaExecutionProvider(
+
+                    // Path or byte[] to the ONNX model file.
+                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
+                    gpuId: 0,
+
+                    // Optional configuration for TensorRT execution.
+                    // Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
+                    // Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
+                    new TensorRt
+                    {
+                        Precision = TrtPrecision.FP16,
+                        BuilderOptimizationLevel = 3,
+                        EngineCachePath = @"C:\Users\Nick\Desktop\YoloDotNet_Results\TensorRT_Engine_Cache",
+                        EngineCachePrefix = "yolov11",
+                        //Int8CalibrationCacheFile = @"path/to/calibration_cache_file.cache" // Only needed for INT8 precision
+                    }),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

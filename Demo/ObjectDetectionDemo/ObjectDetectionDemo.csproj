@@ -9,7 +9,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\test\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
+    <ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cuda\YoloDotNet.ExecutionProvider.Cuda.csproj" />
     <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
   </ItemGroup>
 
+	<!--<Target Name="CopyGpuNativeDlls" AfterTargets="Build">
+		<ItemGroup>
+			<NativeDlls Include="$(SolutionDir)YoloDotNet.ExecutionProvider.Cuda\bin\$(Configuration)\net8.0\*.dll" />
+		</ItemGroup>
+		<Copy SourceFiles="@(NativeDlls)" DestinationFolder="$(OutputPath)" SkipUnchangedFiles="true" />
+	</Target>-->
+	
 </Project>

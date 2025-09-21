@@ -5,8 +5,8 @@
 using SkiaSharp;
 using System.Diagnostics;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cuda;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -18,6 +18,9 @@ namespace VideoStreamDemo
 {
     /// <summary>
     /// Demonstrates object detection and tracking on videos or livestreams using the YoloDotNet library.
+    /// 
+    /// Requires FFmpeg and FFprobe to be installed and added to your system PATH:
+    /// https://ffmpeg.org/download.html
     ///
     /// This demo loads a video source (file, livestream, or webcam), runs object detection and optional tracking on each frame,
     /// draws the results (bounding boxes, labels, confidence scores, and tracked tails), and optionally saves the output video.
@@ -48,9 +51,9 @@ namespace VideoStreamDemo
     ///
     /// Execution providers:
     /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for accelerated performance.
+    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,
+    ///   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.
     ///
     /// Important notes:
     /// - Choose the execution provider based on your hardware and performance requirements.
@@ -80,28 +83,31 @@ namespace VideoStreamDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
-                //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
-                //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
-                //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
+                // 
+                // - CpuExecutionProvider  
+                //   Runs inference entirely on the CPU. Universally supported but typically slower.
+                // 
+                // - CudaExecutionProvider  
+                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //   See the TensorRT demo and documentation for detailed configuration and best practices.
+                // 
+                // Important:  
+                // - Choose the provider that matches your available hardware and performance requirements.  
+                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                // - For detailed setup instructions and examples, see the README:  
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CudaExecutionProvider(
+
+                    // Path or byte[] to the ONNX model file.
+                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
+                    gpuId: 0),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -231,7 +237,7 @@ namespace VideoStreamDemo
 
                     // 💡 (Optional) Filter results to include only specified class labels.
                     // In this case: keep only detections of "person".
-                    .FilterLabels([ "person", "cat", "dog" ])
+                    .FilterLabels(["person", "cat", "dog"])
 
                     // 💡 (Optional) Apply object tracking to maintain object identities across frames.
                     .Track(_sortTracker);

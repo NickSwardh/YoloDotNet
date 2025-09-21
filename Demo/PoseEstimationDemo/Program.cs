@@ -6,8 +6,8 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cpu;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -19,27 +19,28 @@ namespace PoseEstimationDemo
     /// Demonstrates pose estimation on static images using the YoloDotNet library.
     /// 
     /// This demo loads a sample image, runs pose estimation inference to detect human keypoints and skeletal structure,
-    /// draws the detected poses with keypoints, connections, bounding boxes, labels, and confidence scores,
+    /// overlays the detected poses with keypoints, skeleton connections, bounding boxes, labels, and confidence scores,
     /// and saves the annotated image to disk.
     /// 
-    /// Highlights of this demo include:
+    /// Features included:
     /// - Model initialization with configurable hardware acceleration and image preprocessing options
-    /// - Static image pose estimation inference returning detailed keypoints for detected persons
+    /// - Static image inference returning detailed keypoints for detected persons
     /// - Flexible drawing options for rendering keypoints, skeleton connections, bounding boxes, labels, and confidence
-    /// - Support for custom keypoint markers and confidence thresholds
+    /// - Support for custom keypoint markers and adjustable confidence thresholds
     /// - Saving output images with quality control and automated output folder management
     /// - Console reporting of detected poses and their confidence scores
     /// 
     /// Execution providers:
-    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
+    /// - CpuExecutionProvider: runs inference entirely on the CPU. Universally supported but slower.
+    /// - CudaExecutionProvider: executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16, and INT8 precision modes.
+    /// 
     /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
-    /// - PoseDrawingOptions allows customization of font, colors, opacity, keypoint visualization, and more.
-    /// - Tail visualization for tracking motion paths is referenced but not enabled in this static image example.
+    /// - Choose the execution provider that matches your available hardware and performance requirements.
+    /// - PoseDrawingOptions allows customization of font, colors, opacity, keypoint visualization, and label styling.
+    /// - Tail visualization for tracking motion paths is supported but not enabled in this static image demo (see VideoStream demo).
+    /// - For setup instructions and best practices, see the README:  
+    ///   https://github.com/NickSwardh/YoloDotNet
     /// </summary>
     internal class Program
     {
@@ -55,28 +56,25 @@ namespace PoseEstimationDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.PoseEstimation),
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
-                //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
-                //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
-                //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CpuExecutionProvider(),
+                // 
+                // - CpuExecutionProvider  
+                //   Runs inference entirely on the CPU. Universally supported but typically slower.
+                // 
+                // - CudaExecutionProvider  
+                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //   See the TensorRT demo and documentation for detailed configuration and best practices.
+                // 
+                // Important:  
+                // - Choose the provider that matches your available hardware and performance requirements.  
+                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                // - For detailed setup instructions and examples, see the README:  
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.PoseEstimation)),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\test\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
+    <ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cuda\YoloDotNet.ExecutionProvider.Cuda.csproj" />
     <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
   </ItemGroup>
 
