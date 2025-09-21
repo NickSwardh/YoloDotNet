@@ -44,6 +44,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TensorRTDemo", "Demo\Tensor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoloDotNet.ExecutionProvider.Cpu", "YoloDotNet.ExecutionProvider.Cpu\YoloDotNet.ExecutionProvider.Cpu.csproj", "{AC239DA6-5CB8-41EC-894D-E8C9AAFAE1CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "YoloDotNet.ExecutionProvider.Cuda", "YoloDotNet.ExecutionProvider.Cuda\YoloDotNet.ExecutionProvider.Cuda.csproj", "{5F01895B-338C-4564-8355-8B6E3D2F3521}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -110,6 +112,10 @@ Global
 		{AC239DA6-5CB8-41EC-894D-E8C9AAFAE1CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC239DA6-5CB8-41EC-894D-E8C9AAFAE1CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AC239DA6-5CB8-41EC-894D-E8C9AAFAE1CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F01895B-338C-4564-8355-8B6E3D2F3521}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F01895B-338C-4564-8355-8B6E3D2F3521}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F01895B-338C-4564-8355-8B6E3D2F3521}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F01895B-338C-4564-8355-8B6E3D2F3521}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -130,6 +136,7 @@ Global
 		{B25FF78B-2632-957F-F0F5-5DA2019D92AD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{08AA386A-1A7D-428C-9025-CFCD4B4C70EA} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{AC239DA6-5CB8-41EC-894D-E8C9AAFAE1CC} = {C5DF82EF-FED8-4308-A10F-F34E9B714CCF}
+		{5F01895B-338C-4564-8355-8B6E3D2F3521} = {C5DF82EF-FED8-4308-A10F-F34E9B714CCF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C3673E62-2658-4C27-9C6A-A3215F416E05}
