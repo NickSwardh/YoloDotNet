@@ -151,12 +151,6 @@ namespace YoloDotNet
         /// <param name="videoOptions"></param>
         public void InitializeVideo(VideoOptions videoOptions)
         {
-            if (options.ExecutionProvider is CpuExecutionProvider)
-                throw new YoloDotNetVideoException(
-                    "Video inference requires CUDA acceleration (GPU support) and FFmpeg installed on your system. " +
-                    "Please enable CUDA by setting 'YoloOptions.Cuda = true' in your configuration, " +
-                    "and ensure FFmpeg is installed and accessible in your system PATH.");
-
             _ffmpegService = new(videoOptions, options)
             {
                 OnFrameReady = (frame, frameIndex) => OnVideoFrameReceived.Invoke(frame, frameIndex),
