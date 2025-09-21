@@ -15,7 +15,7 @@ namespace YoloDotNet.Tests.ClassificationTests
 
             using var yolo = new Yolo(new YoloOptions
             {
-                OnnxModel = model
+                 ExecutionProvider = new CpuExecutionProvider(model)
             });
 
             using var image = SKBitmap.Decode(testImage);
