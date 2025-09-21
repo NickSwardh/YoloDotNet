@@ -187,8 +187,10 @@ namespace YoloDotNet.Video.Services
 
             // Process all frames or every nth frame?
             var videoFilter = _videoOptions.FrameInterval <= 0
-                ? $@"fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)},scale={_videoTargetWidth}:{_videoTargetHeight}"
-                : $@"select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoTargetWidth}:{_videoTargetHeight}";
+                ? $@"fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)}"
+                : $@"select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB";
+
+            videoFilter += $",zscale={_videoTargetWidth}:{_videoTargetHeight}:filter=lanczos";
 
             ffmpegArgs.AddRange([
                 "-i",           inputSource,
