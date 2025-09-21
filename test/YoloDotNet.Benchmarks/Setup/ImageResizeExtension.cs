@@ -1,4 +1,8 @@
-﻿namespace YoloDotNet.Benchmarks.Setup
+﻿// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+namespace YoloDotNet.Benchmarks.Setup
 {
     internal static class ImageResizeExtension
     {
@@ -94,7 +98,7 @@
         /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
         /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
         /// <returns>A DenseTensor&lt;float&gt; object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
-        unsafe public static DenseTensor<float> NormalizePixelsToTensor(this IntPtr pixelsPtr,
+        unsafe public static void NormalizePixelsToTensor(this IntPtr pixelsPtr,
             long[] inputShape,
             int tensorBufferSize,
             float[] tensorArrayBuffer)
@@ -128,7 +132,7 @@
                 byte g = px[1];
                 byte b = px[2];
 
-                // If the pixel is completely black, skip normalization.
+                // If the pixel is completely black, skip it.
                 if ((r | g | b) == 0)
                     continue;
 
@@ -141,12 +145,8 @@
                 tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
                 tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
             }
-
-            // Create and return a DenseTensor using the correctly sized memory slice.
-            return new DenseTensor<float>(
-                tensorArrayBuffer.AsMemory(0, tensorBufferSize),
-                [batchSize, colorChannels, width, height]
-            );
         }
+
+
     }
 }

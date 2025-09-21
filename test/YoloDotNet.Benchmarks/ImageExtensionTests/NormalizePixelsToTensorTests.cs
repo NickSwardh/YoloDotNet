@@ -2,8 +2,6 @@
 // Copyright (c) 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using YoloDotNet.Core;
-
 namespace YoloDotNet.Benchmarks.ImageExtensionTests
 {
     //[CPUUsageDiagnoser]
@@ -27,8 +25,7 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
         {
             var options = new YoloOptions
             {
-                OnnxModel = SharedConfig.GetTestModelV8(ModelType.ObjectDetection),
-                ExecutionProvider = new CpuExecutionProvider()
+                ExecutionProvider = new CudaExecutionProvider(SharedConfig.GetTestModelV8(ModelType.ObjectDetection), -1)
             };
 
             _yolo = new Yolo(options);

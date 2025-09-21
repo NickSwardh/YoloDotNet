@@ -12,7 +12,8 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\..\Demo\PoseEstimationDemo\PoseEstimationDemo.csproj" />
+		<!--<ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cpu\YoloDotNet.ExecutionProvider.Cpu.csproj" />-->
+		<ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cuda\YoloDotNet.ExecutionProvider.Cuda.csproj" />
 		<ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
 		<ProjectReference Include="..\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
 	</ItemGroup>
