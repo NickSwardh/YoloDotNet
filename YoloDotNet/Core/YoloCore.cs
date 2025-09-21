@@ -12,9 +12,6 @@ namespace YoloDotNet.Core
         #region Fields
         private bool _isDisposed;
 
-        private InferenceSession _session = default!;
-        private RunOptions _runOptions = default!;
-        private OrtIoBinding _ortIoBinding = default!;
         private int _tensorBufferSize;
         public ArrayPool<float> customSizeFloatPool = default!;
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
@@ -34,138 +31,85 @@ namespace YoloDotNet.Core
         /// </summary>
         public void InitializeYolo()
         {
-            if (string.IsNullOrEmpty(YoloOptions.OnnxModel) && YoloOptions.OnnxModelBytes is null)
-                throw new YoloDotNetModelException("No ONNX model was specified. Please provide a model path or byte array.", nameof(YoloOptions));
+            if (YoloOptions.ExecutionProvider is null)
+                throw new YoloDotNetModelException("Execution Provider is missing. Please add an execution provider.", nameof(YoloOptions));
 
-            ConfigureOrtEnv();
-            InjectModelIntoExecutionProvider();
+            OnnxModel = yoloOptions.ExecutionProvider.OnnxData.GetOnnxProperties();
 
-            _runOptions = new RunOptions();
-            _ortIoBinding = _session.CreateIoBinding();
-
-            OnnxModel = _session.GetOnnxProperties();
-
-            VerifyExpectedModelType(ModelType);
+            VerifyExpectedModelType(OnnxModel.ModelType);
 
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
             // Input shape is in BCHW format (Batch, Channels, Height, Width)
             _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Height * OnnxModel.Input.Width;
-            customSizeFloatPool = ArrayPool<float>.Create(maxArrayLength: _tensorBufferSize + 1, maxArraysPerBucket: 10);
-            customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(maxArrayLength: OnnxModel.Outputs[0].Channels + 1, maxArraysPerBucket: 10);
 
-            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            customSizeFloatPool = ArrayPool<float>.Create(CalculateBufferPoolSize(_tensorBufferSize), 20);
+            customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(CalculateBufferPoolSize(OnnxModel.Outputs[0].Channels), maxArraysPerBucket: 20);
+
+            var format = (OnnxModel.Input.Channels == 1) ? SKColorType.Gray8 : SKColorType.Rgb888x;
+            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, format, SKAlphaType.Opaque);
 
             _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
 
-            if (YoloOptions.ExecutionProvider is CudaExecutionProvider cuda)
-            {
-                if (cuda.PrimeGpu)
-                    _session.AllocateGpuMemory(_ortIoBinding,
-                        _runOptions,
-                        customSizeFloatPool,
-                        _pinnedMemoryPool,
-                        YoloOptions.SamplingOptions);
-            }
-
-            // Run frame-save service
             FrameSaveService.Start();
-        }
-
-        private static void ConfigureOrtEnv()
-        {
-            try
-            {
-                // Log errors and fatals
-                var envOptions = new EnvironmentCreationOptions
-                {
-                    logLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR
-                };
-
-                OrtEnv.CreateInstanceWithOptions(ref envOptions);
-            }
-            catch (OnnxRuntimeException ex) when (ex.Message.Contains("OrtEnv singleton instance already exists"))
-            {
-                // OrtEnv has already been initialized — ignore and continue gracefully...
-            }
-        }
-
-        private void InjectModelIntoExecutionProvider()
-        {
-            try
-            {
-                using var sessionOptions = ExecutionProviderFactory.Create(yoloOptions.ExecutionProvider);
-
-                // Create session using bytes if available; else load from file with selected provider.
-                _session = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
-                    ? new InferenceSession(YoloOptions.OnnxModelBytes, sessionOptions)
-                    : new InferenceSession(YoloOptions.OnnxModel, sessionOptions);
-            }
-            catch (OnnxRuntimeException ex)
-            {
-                var source = (YoloOptions.OnnxModelBytes != null && YoloOptions.OnnxModelBytes.Length > 0)
-                    ? "byte array"
-                    : $"model file '{YoloOptions.OnnxModel}'";
-
-                throw new YoloDotNetModelException(
-                    $"Failed to load ONNX model from {source} using execution provider '{yoloOptions.ExecutionProvider}'. " +
-                    $"See inner exception for details.",
-                    ex);
-            }
         }
 
         /// <summary>
         /// Runs the YOLO model on the provided image and returns the inference results.
         /// </summary>
         /// <param name="image">The input image to process.</param>
-        /// <returns>A read-only collection of OrtValue representing the inference results.</returns>
-        public (IDisposableReadOnlyCollection<OrtValue>, SKSizeI) Run<T>(T image)
+        /// <returns>InferenceResult()</returns>
+        public InferenceResult Run<T>(T image)
         {
-            var tensorArrayBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
             var pinnedBuffer = _pinnedMemoryPool.Rent();
+            var normalizedPixelsBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
 
             try
             {
                 lock (_progressLock)
                 {
+                    // Resize image to model input size and store in pinned buffer for faster access
                     var originalImageSize = YoloOptions.ImageResize == ImageResize.Proportional
                         ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
                         : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
 
-                    var tensorPixels = pinnedBuffer.Pointer.NormalizePixelsToTensor(OnnxModel.InputShape, _tensorBufferSize, tensorArrayBuffer);
-                    using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(OrtMemoryInfo.DefaultInstance, tensorPixels.Buffer, OnnxModel.InputShape);
+                    // Normalize image pixels in pinned buffer to a float array
+                    pinnedBuffer.Pointer.NormalizePixelsToArray(OnnxModel.InputShape, _tensorBufferSize, normalizedPixelsBuffer);
 
-                    return (_session.Run(
-                        _runOptions,
-                        [OnnxModel.InputName],
-                        [inputOrtValue],
-                        OnnxModel.OutputNames),
-                        originalImageSize);
+                    // Run inference using the selected execution provider
+                    var inferenceResult = YoloOptions.ExecutionProvider.Run(normalizedPixelsBuffer, _tensorBufferSize);
+
+                    // Attach original image size to the inference result for use to calculate bounding boxes to original image size.
+                    inferenceResult.ImageOriginalSize = originalImageSize;
+
+                    return inferenceResult;
                 }
             }
             finally
             {
-                customSizeFloatPool.Return(tensorArrayBuffer, true);
+                customSizeFloatPool.Return(normalizedPixelsBuffer, true);
                 _pinnedMemoryPool.Return(pinnedBuffer);
             }
         }
 
+        #region Helper methods
+
         /// <summary>
         /// Removes overlapping bounding boxes in a list of object detection results.
         /// </summary>
-        /// <param name="predictions">The list of object detection results to process.</param>
+        /// <param name="predictionSpan">A span with predition results</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        public ObjectResult[] RemoveOverlappingBoxes(ObjectResult[] predictions, double iouThreshold)
+        public ObjectResult[] RemoveOverlappingBoxes(Span<ObjectResult> predictionSpan, double iouThreshold)
         {
-            if (predictions.Length == 0)
+            var totalPredictions = predictionSpan.Length;
+
+            if (totalPredictions == 0)
                 return [];
 
-            Array.Sort(predictions, ConfidenceComparer.Instance);
+            // Sort by confidence
+            MemoryExtensions.Sort(predictionSpan, ConfidenceComparer.Instance);
 
-            var buffer = customSizeObjectResultPool.Rent(predictions.Length);
-
-            var predictionSpan = predictions.AsSpan();
-            var totalPredictions = predictionSpan.Length;
+            var buffer = customSizeObjectResultPool.Rent(totalPredictions);
 
             try
             {
@@ -188,17 +132,18 @@ namespace YoloDotNet.Core
                         buffer[counter++] = item;
                 }
 
-                // Prevent overhead from temporary collections by copying to a fixed-size array.
-                var resultArray = new ObjectResult[counter];
-                buffer.AsSpan(0, counter).CopyTo(resultArray);
-
-                return resultArray;
+                return [.. buffer.AsSpan(0, counter)];
             }
             finally
             {
                 customSizeObjectResultPool.Return(buffer, true);
             }
         }
+
+        /// <summary>
+        /// Calculate buffer pool size as the next power of two to ensuure array pool efficiency.
+        /// </summary>
+        public static int CalculateBufferPoolSize(int bufferSize) => 1 << (int)Math.Ceiling(Math.Log2(bufferSize));
 
         /// <summary>
         /// Squash value to a number between 0 and 1
@@ -218,13 +163,11 @@ namespace YoloDotNet.Core
         /// <summary>
         /// Calculate radian to degree
         /// </summary>
-        /// <param name="value"></param>
         public static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
 
         /// <summary>
         /// Calculate rectangle area
         /// </summary>
-        /// <param name="rect"></param>
         public static float CalculateArea(SKRectI rect) => rect.Width * rect.Height;
 
         /// <summary>
@@ -251,7 +194,7 @@ namespace YoloDotNet.Core
         /// Calculates the padding and scaling factor needed to adjust the bounding box
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
-        /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
+        /// <param name="size">The original image size.</param>
         public (float, float, float, float) CalculateProportionalGain(SKSizeI size)
         {
             var model = OnnxModel;
@@ -269,7 +212,7 @@ namespace YoloDotNet.Core
         /// Calculates the padding and scaling factor needed to adjust the bounding box
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
-        /// <param name="image">The image for which the bounding box needs to be adjusted.</param>
+        /// <param name="size">The original image size.</param>
         public (float, float, float, float) CalculateStretchedGain(SKSizeI size)
         {
             var model = OnnxModel;
@@ -298,12 +241,11 @@ namespace YoloDotNet.Core
             if (_isDisposed)
                 return;
 
-            _session?.Dispose();
-            _ortIoBinding?.Dispose();
-            _runOptions?.Dispose();
             _pinnedMemoryPool?.Dispose();
 
             GC.SuppressFinalize(this);
         }
+
+        #endregion
     }
 }

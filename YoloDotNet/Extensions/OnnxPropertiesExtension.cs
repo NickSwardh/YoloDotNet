@@ -4,23 +4,22 @@
 
 namespace YoloDotNet.Extensions
 {
-    public static class OnnxPropertiesExtension
+    internal static class OnnxPropertiesExtension
     {
         /// <summary>
         /// Extracts and retrieves metadata properties from the ONNX model.
         /// </summary>
         /// <param name="session">The ONNX model inference session.</param>
         /// <returns>An instance of OnnxModel containing extracted metadata properties.</returns>
-        public static OnnxModel GetOnnxProperties(this InferenceSession session)
+        public static OnnxModel GetOnnxProperties(this OnnxDataRecord onnxData)
         {
-            
-            var metaData = session.ModelMetadata.CustomMetadataMap;
+            var metaData = onnxData.MetaData;
 
             var modelType = GetModelType(metaData[NameOf(MetaData.Task)]);
             var modelVersion = GetModelVersion(metaData[NameOf(MetaData.Description)]);
 
-            var inputName = session.InputNames[0];
-            var outputNames = session.OutputNames.ToList();
+            var inputName = onnxData.InputName;
+            var outputNames = onnxData.OutputNames.ToList();
 
             return new OnnxModel()
             {
@@ -29,18 +28,18 @@ namespace YoloDotNet.Extensions
                 InputName = inputName,
                 OutputNames = outputNames,
                 CustomMetaData = metaData,
-                Input = GetModelInputShape(session.InputMetadata[inputName]),
-                Outputs = GetOutputShapes(session.OutputMetadata, modelType),
+                Input = GetModelInputShape(onnxData.InputShape),
+                Outputs = GetOutputShapes(onnxData.OutputShapes, modelType),
                 Labels = MapLabelsAndColors(metaData[NameOf(MetaData.Names)], modelType),
 
                 // Input shape in NCHW order: [N (batch), Channels, Height, Width]
-                InputShape = new long[]
-                {
-                    session.InputMetadata[inputName].Dimensions[0], // Batch (nr of images the model can process)
-                    session.InputMetadata[inputName].Dimensions[1], // Color channels
-                    session.InputMetadata[inputName].Dimensions[2], // Required image height
-                    session.InputMetadata[inputName].Dimensions[3], // Required image width
-                }
+                InputShape =
+                [
+                    onnxData.InputShape[0], // Batch (nr of images the model can process)
+                    onnxData.InputShape[1], // Color channels
+                    onnxData.InputShape[2], // Required image height
+                    onnxData.InputShape[3], // Required image width
+                ]
             };
         }
 
@@ -72,31 +71,27 @@ namespace YoloDotNet.Extensions
         /// <summary>
         /// Retrieves the input shape of a model based on metadata
         /// </summary>
-        private static Input GetModelInputShape(NodeMetadata metaData)
+        private static Input GetModelInputShape(int[] inputShapes)
         {
-            var dimensions = metaData.Dimensions;
-
             // Check for any dynamic dimension (-1 means dynamic in ONNX)
-            if (dimensions.Any(d => d == -1))
+            if (inputShapes.Any(d => d == -1))
                 throw new YoloDotNetModelException("Dynamic ONNX models are not supported.");
 
-            return Input.Shape(dimensions);
+            return Input.Shape(inputShapes);
         }
 
         /// <summary>
         /// Retrieves the output shapes of a model based on metadata and model type.
         /// </summary>
-        private static List<Output> GetOutputShapes(IReadOnlyDictionary<string, NodeMetadata> metaData, ModelType modelType)
+        private static List<Output> GetOutputShapes(int[][] outputDimensions, ModelType modelType)
         {
-            var dimensions = metaData.Values.Select(x => x.Dimensions).ToArray();
-
             var (output0, output1) = modelType switch
             {
-                ModelType.Classification => (Output.Classification(dimensions[0]), Output.Empty()),
-                ModelType.ObjectDetection => (Output.Detection(dimensions[0]), Output.Empty()),
-                ModelType.ObbDetection => (Output.Detection(dimensions[0]), Output.Empty()),
-                ModelType.Segmentation => (Output.Detection(dimensions[0]), Output.Segmentation(dimensions[1])),
-                ModelType.PoseEstimation => (Output.Detection(dimensions[0]), Output.Empty()),
+                ModelType.Classification => (Output.Classification(outputDimensions[0]), Output.Empty()),
+                ModelType.ObjectDetection => (Output.Detection(outputDimensions[0]), Output.Empty()),
+                ModelType.ObbDetection => (Output.Detection(outputDimensions[0]), Output.Empty()),
+                ModelType.Segmentation => (Output.Detection(outputDimensions[0]), Output.Segmentation(outputDimensions[1])),
+                ModelType.PoseEstimation => (Output.Detection(outputDimensions[0]), Output.Empty()),
                 _ => throw new YoloDotNetModelException($"Error getting output shapes. Unknown ONNX model type.", nameof(modelType))
             };
 

@@ -52,17 +52,23 @@ namespace YoloDotNet.Modules.V8
 
         public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            var (ortValues, imageSize) = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image);
+            var detections = RunSegmentation(inferenceResult, confidence, pixelConfidence, iou);
 
-            return RunSegmentation(imageSize, ortValues, confidence, pixelConfidence, iou);
+            // Convert to List<PoseEstimation>
+            var results = new List<Segmentation>(detections.Length);
+            for (int i = 0; i < detections.Length; i++)
+                results.Add((Segmentation)detections[i]);
+
+            return results;
         }
 
-        private List<Segmentation> RunSegmentation(SKSizeI imageSize, IDisposableReadOnlyCollection<OrtValue> ortValues, double confidence, double pixelConfidence, double iou)
+        private ObjectResult[] RunSegmentation(InferenceResult inferenceResult, double confidence, double pixelConfidence, double iou)
         {
-            var ortSpan0 = ortValues[0].GetTensorDataAsSpan<float>();
-            var ortSpan1 = ortValues[1].GetTensorDataAsSpan<float>();
+            var boundingBoxes = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 
-            var boundingBoxes = _objectDetectionModule.ObjectDetection(imageSize, ortSpan0, confidence, iou);
+            var ortSpan0 = inferenceResult.OrtSpan0;
+            var ortSpan1 = inferenceResult.OrtSpan1;
 
             foreach (var box in boundingBoxes)
             {
@@ -94,12 +100,7 @@ namespace YoloDotNet.Modules.V8
                 box.BitPackedPixelMask = PackUpscaledMaskToBitArray(resizedCrop, pixelConfidence);
             }
 
-            // Clean up
-            ortValues[0]?.Dispose();
-            ortValues[1]?.Dispose();
-            ortValues?.Dispose();
-
-            return [.. boundingBoxes.Select(x => (Segmentation)x)];
+            return boundingBoxes;//
         }
 
         private MaskWeights32 GetMaskWeightsFromBoundingBoxArea(ObjectResult box, ReadOnlySpan<float> ortSpan0)
@@ -139,7 +140,6 @@ namespace YoloDotNet.Modules.V8
             int startY = Math.Max(0, (int)scaledBoundingBox.Top);
             int endY = Math.Min(_maskHeight - 1, (int)scaledBoundingBox.Bottom);
 
-            //var thresholdF = (float)threshold;
             int stride = bitmap.RowBytes;
             byte* ptr = (byte*)bitmap.GetPixels().ToPointer();
 

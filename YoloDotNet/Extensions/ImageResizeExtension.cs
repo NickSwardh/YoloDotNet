@@ -79,32 +79,20 @@ namespace YoloDotNet.Extensions
             return new SKSizeI(width, height);
         }
 
-        //private static bool IsImageCompatibleWithTargetInfo(SKBitmap image, SKImageInfo skInfo)
-        //{
-        //    bool sizeMatches = image.Width == skInfo.Width && image.Height == skInfo.Height;
-
-        //    bool colorMatches = image.ColorType == skInfo.ColorType &&
-        //                        image.AlphaType == skInfo.AlphaType &&
-        //                        (image.ColorSpace?.Equals(skInfo.ColorSpace) ?? image.ColorSpace == null);
-
-        //    return sizeMatches && colorMatches;
-        //}
-
         /// <summary>
-        /// Converts the pixel values of a given image into a normalized DenseTensor object.
+        /// Converts raw pixel image data to a normalized float array for model input.
         /// </summary>
         /// <param name="pixelsPtr">A pointer to the raw pixel image data in memory.</param>
         /// <param name="inputShape">The shape of the input tensor.</param>
         /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
         /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
-        /// <returns>A DenseTensor&lt;float&gt; object containing normalized pixel values from the input image, arranged according to the specified input shape.</returns>
-        unsafe public static DenseTensor<float> NormalizePixelsToTensor(this IntPtr pixelsPtr,
+        unsafe public static void NormalizePixelsToArray(this IntPtr pixelsPtr,
             long[] inputShape,
             int tensorBufferSize,
             float[] tensorArrayBuffer)
         {
-            // Deconstruct the input shape into batch size, number of channels, height, and width.
-            var (batchSize, colorChannels, height, width) = ((int)inputShape[0], (int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
+            // Deconstruct the input shape in BCHW-format (batch size, number of channels, height, and width) to just the color channels, height, and width.
+            var (colorChannels, height, width) = ((int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
 
             // Total number of pixels in the image.
             int totalPixels = width * height;

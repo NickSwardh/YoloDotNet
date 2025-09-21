@@ -43,8 +43,7 @@ Reusing or recreating YoloDotNet objects? No more "OrtEnv singleton instance alr
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.22.1" />
     <PackageReference Include="SkiaSharp" Version="3.119.0" />
   </ItemGroup>
-
+	
 </Project>
