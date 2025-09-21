@@ -228,12 +228,13 @@ namespace YoloDotNet.Video.Services
                 "-framerate",   framerate,
                 "-i",           "-"]);
 
-            // Encode using CUDA?
-            var videoCodec = "libx264";
-            if (_yoloOptions.ExecutionProvider is not CpuExecutionProvider)
+            // Video codec based on execution provider
+            var videoCodec = _yoloOptions.ExecutionProvider switch
             {
-                videoCodec = "h264_nvenc";
-            }
+                ICuda => "h264_nvenc",
+                IOpenVino => "h264_qsv",
+                _ => "libx264" // Fallback to CPU encoding
+            };
 
             ffmpegArgs.AddRange([
                 "-c:v",     videoCodec,
