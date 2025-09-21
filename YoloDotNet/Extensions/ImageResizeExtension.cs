@@ -134,12 +134,6 @@ namespace YoloDotNet.Extensions
                 tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
             }
 
-            // Create and return a DenseTensor using the correctly sized memory slice.
-            // Dimensions must be in NCWH order (Batch, Channels, Height, Width).
-            return new DenseTensor<float>(
-                tensorArrayBuffer.AsMemory(0, tensorBufferSize),
-                [batchSize, colorChannels, height, width]
-            );
         }
     }
 }
