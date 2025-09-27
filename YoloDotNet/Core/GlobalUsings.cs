@@ -28,6 +28,7 @@ global using YoloDotNet.Utils;
 global using YoloDotNet.Models;
 global using YoloDotNet.Handlers;
 global using YoloDotNet.Trackers;
+global using YoloDotNet.Attributes;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Exceptions;
 global using YoloDotNet.Configuration;

@@ -230,16 +230,8 @@ namespace YoloDotNet.Video.Services
                 "-framerate",   framerate,
                 "-i",           "-"]);
 
-            // Video codec based on execution provider
-            var videoCodec = _yoloOptions.ExecutionProvider switch
-            {
-                ICuda => "h264_nvenc",
-                IOpenVino => "h264_qsv",
-                _ => "libx264" // Fallback to CPU encoding
-            };
-
             ffmpegArgs.AddRange([
-                "-c:v",     videoCodec,
+                "-c:v",     _videoOptions.VideoEncoder.GetEncoderName(),
                 "-vf",      vf,
                 "-rc:v:0",  "vbr_hq",
                 "-cq:v",    $"{_videoOptions.CompressionQuality}"]);

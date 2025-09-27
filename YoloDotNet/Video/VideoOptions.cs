@@ -20,6 +20,12 @@ namespace YoloDotNet.Video
         public string VideoOutput{ get; set; } = default!;
 
         /// <summary>
+        /// Encoder to use when writing output.
+        /// Only relevant if <see cref="VideoOutput"/> is set.
+        /// </summary>
+        public VideoEncoder VideoEncoder { get; set; }
+
+        /// <summary>
         /// Gets or sets the width of the output video.
         /// Default is 0, which means the source width is preserved.
         /// Set to -2 to automatically calculate the width while maintaining the aspect ratio,
