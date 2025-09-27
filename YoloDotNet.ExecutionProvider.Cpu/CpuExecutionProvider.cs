@@ -4,7 +4,7 @@
 
 namespace YoloDotNet.ExecutionProvider.Cpu
 {
-    public class CpuExecutionProvider : ICpu, IExecutionProvider, IDisposable
+    public class CpuExecutionProvider : IExecutionProvider, IDisposable
     {
         public OnnxDataRecord OnnxData { get; private set; } = default!;
 

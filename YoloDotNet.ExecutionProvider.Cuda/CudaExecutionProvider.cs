@@ -4,7 +4,7 @@
 
 namespace YoloDotNet.ExecutionProvider.Cuda
 {
-    public class CudaExecutionProvider : ICuda, IExecutionProvider, IDisposable
+    public class CudaExecutionProvider : IExecutionProvider, IDisposable
     {
         public OnnxDataRecord OnnxData { get; private set; } = default!;
 
