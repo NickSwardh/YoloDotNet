@@ -14,6 +14,7 @@ namespace YoloDotNet.Core
 
         private int _tensorBufferSize;
         public ArrayPool<float> customSizeFloatPool = default!;
+        public ArrayPool<ushort> customSizeHalfPool = default!;
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
         private PinnedMemoryBufferPool _pinnedMemoryPool = default!;
 
@@ -39,11 +40,14 @@ namespace YoloDotNet.Core
             VerifyExpectedModelType(OnnxModel.ModelType);
 
             // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
-            // Input shape is in BCHW format (Batch, Channels, Height, Width)
-            _tensorBufferSize = OnnxModel.Input.BatchSize * OnnxModel.Input.Channels * OnnxModel.Input.Height * OnnxModel.Input.Width;
+            _tensorBufferSize = OnnxModel.InputShapeSize;
 
-            customSizeFloatPool = ArrayPool<float>.Create(CalculateBufferPoolSize(_tensorBufferSize), 20);
-            customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(CalculateBufferPoolSize(OnnxModel.Outputs[0].Channels), maxArraysPerBucket: 20);
+            // Create custom array pools based on model input size and output channels
+            customSizeFloatPool = ArrayPool<float>.Create(CalculateBufferPoolSize(_tensorBufferSize), 20); 
+            customSizeHalfPool = ArrayPool<ushort>.Create(CalculateBufferPoolSize(_tensorBufferSize), 20);
+
+            // ObjectResult pool based on output channels
+            customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(CalculateBufferPoolSize(OnnxModel.Outputs[0].Channels), maxArraysPerBucket: 10);
 
             var format = (OnnxModel.Input.Channels == 1) ? SKColorType.Gray8 : SKColorType.Rgb888x;
             _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, format, SKAlphaType.Opaque);
@@ -61,7 +65,8 @@ namespace YoloDotNet.Core
         public InferenceResult Run<T>(T image)
         {
             var pinnedBuffer = _pinnedMemoryPool.Rent();
-            var normalizedPixelsBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+            var normalizedPixelsFloatBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
+            var normalizedPixelsToUshortBuffer = customSizeHalfPool.Rent(minimumLength: _tensorBufferSize);
 
             try
             {
@@ -72,11 +77,19 @@ namespace YoloDotNet.Core
                         ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
                         : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
 
-                    // Normalize image pixels in pinned buffer to a float array
-                    pinnedBuffer.Pointer.NormalizePixelsToArray(OnnxModel.InputShape, _tensorBufferSize, normalizedPixelsBuffer);
+                    var inferenceResult = new InferenceResult();
 
-                    // Run inference using the selected execution provider
-                    var inferenceResult = YoloOptions.ExecutionProvider.Run(normalizedPixelsBuffer, _tensorBufferSize);
+                    // Run inference using the selected execution provider and model data type
+                    if (OnnxModel.ModelDataType == ModelDataType.Float16)
+                    {
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(OnnxModel.InputShape, _tensorBufferSize, normalizedPixelsToUshortBuffer);
+                        inferenceResult = YoloOptions.ExecutionProvider.Run<ushort>(normalizedPixelsToUshortBuffer, _tensorBufferSize);
+                    }
+                    else
+                    {
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(OnnxModel.InputShape, _tensorBufferSize, normalizedPixelsFloatBuffer);
+                        inferenceResult = YoloOptions.ExecutionProvider.Run<float>(normalizedPixelsFloatBuffer, _tensorBufferSize);
+                    }
 
                     // Attach original image size to the inference result for use to calculate bounding boxes to original image size.
                     inferenceResult.ImageOriginalSize = originalImageSize;
@@ -86,7 +99,8 @@ namespace YoloDotNet.Core
             }
             finally
             {
-                customSizeFloatPool.Return(normalizedPixelsBuffer, true);
+                customSizeFloatPool.Return(normalizedPixelsFloatBuffer, true);
+                customSizeHalfPool.Return(normalizedPixelsToUshortBuffer, true);
                 _pinnedMemoryPool.Return(pinnedBuffer);
             }
         }
@@ -141,7 +155,7 @@ namespace YoloDotNet.Core
         }
 
         /// <summary>
-        /// Calculate buffer pool size as the next power of two to ensuure array pool efficiency.
+        /// Calculate buffer pool size as the next power of two to ensure array pool efficiency.
         /// </summary>
         public static int CalculateBufferPoolSize(int bufferSize) => 1 << (int)Math.Ceiling(Math.Log2(bufferSize));
 

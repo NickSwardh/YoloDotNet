@@ -24,6 +24,7 @@ namespace YoloDotNet.Extensions
             return new OnnxModel()
             {
                 ModelType = modelType,
+                ModelDataType = onnxData.ModelDataType,
                 ModelVersion = modelVersion,
                 InputName = inputName,
                 OutputNames = outputNames,
@@ -39,7 +40,8 @@ namespace YoloDotNet.Extensions
                     onnxData.InputShape[1], // Color channels
                     onnxData.InputShape[2], // Required image height
                     onnxData.InputShape[3], // Required image width
-                ]
+                ],
+                InputShapeSize = onnxData.InputShapeSize,
             };
         }
 

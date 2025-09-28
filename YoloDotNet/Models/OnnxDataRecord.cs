@@ -12,13 +12,16 @@ namespace YoloDotNet.Models
     /// <param name="OutputNames"></param>
     /// <param name="InputShape"></param>
     /// <param name="OutputShapes"></param>
+    /// <param name="InputShapeSize"></param>
     /// <param name="Labels"></param>
     public record OnnxDataRecord(
         Dictionary<string, string> MetaData,
+        ModelDataType ModelDataType,
         string InputName,
         string[] OutputNames,
         int[] InputShape,
         int[][] OutputShapes,
+        int InputShapeSize,
         string Labels
     );
 }

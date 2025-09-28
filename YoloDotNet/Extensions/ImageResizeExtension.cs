@@ -97,9 +97,6 @@ namespace YoloDotNet.Extensions
             // Total number of pixels in the image.
             int totalPixels = width * height;
 
-            // Each color channel occupies a contiguous section in the tensor buffer.
-            int pixelsPerChannel = tensorBufferSize / colorChannels;
-
             // Precompute the inverse multiplier constant for normalizing byte values (0-255) to the [0, 1] range.
             // This value (1.0f / 255.0f) is a quick way to convert any byte color component into a float between 0 and 1.
             // For example: a red component with value 128 becomes 128 * inv255 = 128 / 255 = 0.50196.
@@ -145,9 +142,110 @@ namespace YoloDotNet.Extensions
                     // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
                     // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
                     tensorArrayBuffer[i] = r * inv255;
-                    tensorArrayBuffer[i + pixelsPerChannel] = g * inv255;
-                    tensorArrayBuffer[i + 2 * pixelsPerChannel] = b * inv255;
+                    tensorArrayBuffer[i + totalPixels] = g * inv255;
+                    tensorArrayBuffer[i + 2 * totalPixels] = b * inv255;
                 }
+            }
+        }
+
+        unsafe public static void NormalizePixelsToArray(this IntPtr pixelsPtr,
+            long[] inputShape,
+            int tensorBufferSize,
+            ushort[] tensorArrayBuffer)
+        {
+            // Deconstruct the input shape in BCHW-format (batch size, number of channels, height, and width) to just the color channels, height, and width.
+            var (colorChannels, height, width) = ((int)inputShape[1], (int)inputShape[2], (int)inputShape[3]);
+
+            // Total number of pixels in the image.
+            int totalPixels = width * height;
+
+            // Each color channel occupies a contiguous section in the tensor buffer.
+            int pixelsPerChannel = tensorBufferSize / colorChannels;
+
+            // Precompute the inverse multiplier constant for normalizing byte values (0-255) to the [0, 1] range.
+            // This value (1.0f / 255.0f) is a quick way to convert any byte color component into a float between 0 and 1.
+            // For example: a red component with value 128 becomes 128 * inv255 = 128 / 255 = 0.50196.
+            float inv255 = 1.0f / 255.0f;
+
+            // Lock the pixel data for fast, unsafe memory access.
+            byte* pixels = (byte*)pixelsPtr;
+
+            // Normalize gray-scale or RGB pixel data into the tensor array buffer.
+            if (colorChannels == 1)
+            {
+                // Loop through all pixels in the image.
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    // If the pixel is completely black, skip it.
+                    if (pixels[i] == 0)
+                        continue;
+
+                    tensorArrayBuffer[i] = FloatToHalf(pixels[i] * inv255);
+                }
+            }
+            else
+            {
+                // Loop through all pixels in the image.
+                for (int i = 0; i < totalPixels; i++)
+                {
+                    // Compute the offset into the pixel array.
+                    int offset = i * 4;  // Assuming pixel format is RGBx or similar with 4 bytes per pixel.
+
+                    // Read the red, green, and blue components.
+                    byte* px = pixels + offset;
+                    byte r = px[0];
+                    byte g = px[1];
+                    byte b = px[2];
+
+                    // If the pixel is completely black, skip normalization.
+                    if ((r | g | b) == 0)
+                        continue;
+
+                    // Normalize the red, green, and blue components and store them in the buffer.
+                    // The buffer is arranged in "channel-first" order:
+                    // - Red values go in the first section (0 to pixelsPerChannel)
+                    // - Green values go in the second section (pixelsPerChannel to 2 * pixelsPerChannel)
+                    // - Blue values go in the third section (2 * pixelsPerChannel to 3 * pixelsPerChannel)
+                    tensorArrayBuffer[i] = FloatToHalf(r * inv255);
+                    tensorArrayBuffer[i + pixelsPerChannel] = FloatToHalf(g * inv255);
+                    tensorArrayBuffer[i + 2 * pixelsPerChannel] = FloatToHalf(b * inv255);
+                }
+            }
+        }
+
+        // Helper method to convert float to half-precision (16-bit) float (ushort)
+        unsafe private static ushort FloatToHalf(float value)
+        {
+            // Avoid BitConverter for performance reasons and use unsafe cast instead.
+            uint f = *(uint*)&value;
+
+            // Extract parts
+            int sign = (int)(f >> 16) & 0x8000;
+            int exponent = (int)((f >> 23) & 0xFF) - 112;
+            int mantissa = (int)(f & 0x7FFFFF);
+
+            if (exponent <= 0)
+            {
+                if (exponent < -10)
+                {
+                    return (ushort)sign; // too small -> zero
+                }
+                mantissa = (mantissa | 0x800000) >> (1 - exponent);
+                return (ushort)(sign | (mantissa + 0xFFF + ((mantissa >> 13) & 1)) >> 13);
+            }
+            else if (exponent == 143 - 112) // Inf/NaN
+            {
+                if (mantissa == 0)
+                    return (ushort)(sign | 0x7C00); // Inf
+                return (ushort)(sign | 0x7C00 | (mantissa >> 13)); // NaN
+            }
+            else
+            {
+                if (exponent > 30)
+                {
+                    return (ushort)(sign | 0x7C00); // overflow -> Inf
+                }
+                return (ushort)(sign | (exponent << 10) | (mantissa + 0xFFF + ((mantissa >> 13) & 1)) >> 13);
             }
         }
     }

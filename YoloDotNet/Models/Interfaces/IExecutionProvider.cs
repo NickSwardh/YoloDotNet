@@ -6,7 +6,8 @@ namespace YoloDotNet.Models.Interfaces
 {
     public interface IExecutionProvider
     {
-        public InferenceResult Run(float[] normalizedPixels, int tensorBufferSize);
+        public InferenceResult Run<T>(T[] normalizedPixels, int tensorBufferSize) where T : unmanaged;
+
         public OnnxDataRecord OnnxData { get; }
     }
 }
