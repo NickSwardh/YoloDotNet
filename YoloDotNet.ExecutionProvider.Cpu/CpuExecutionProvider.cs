@@ -10,6 +10,10 @@ namespace YoloDotNet.ExecutionProvider.Cpu
 
         private InferenceSession _session = default!;
         private RunOptions _runOptions = default!;
+        private long[] _inputShape = default!;
+
+        private float[] _outputBuffer0 = default!;
+        private float[] _outputBuffer1 = default!;
 
         /// <summary>
         /// Constructs a CpuExecutionProvider for running ONNX models on the CPU.
@@ -69,49 +73,105 @@ namespace YoloDotNet.ExecutionProvider.Cpu
 
             OnnxData = new OnnxDataRecord(
                 metaData,
+                ModelDataType.Float, // Currently only float is supported
                 _session.InputNames[0],
                 [.. _session.OutputNames],
                 _session.InputMetadata.Values.Select(x => x.Dimensions).FirstOrDefault() ?? [],
                 [.. _session.OutputMetadata.Values.Select(x => x.Dimensions)],
                 metaData["names"]
             );
+
+            AllocateOutputBuffers();
+
+            // Set the input shape for creating tensors during inference.
+            _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
         }
 
-        public InferenceResult Run(float[] normalizedPixels, int tensorBufferSize)
+        /// <summary>
+        /// Run inference on the provided normalized pixel data.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="normalizedPixels"></param>
+        /// <param name="tensorBufferSize"></param>
+        /// <returns></returns>
+        unsafe public InferenceResult Run<T>(T[] normalizedPixels, int tensorBufferSize) where T : unmanaged
         {
-            // Deconstruct the input shape into batch size, number of channels, height, and width.
-            var (batchSize, colorChannels, height, width) = (OnnxData.InputShape[0], OnnxData.InputShape[1], OnnxData.InputShape[2], OnnxData.InputShape[3]);
+            // Pin the ushort[] so we can get a raw pointer
+            fixed (T* pData = normalizedPixels)
+            {
 
-            // Create a DenseTensor from the normalized pixel data with the specified shape.
-            var tensorPixels = new DenseTensor<float>(
-                normalizedPixels.AsMemory(0, tensorBufferSize),
-                [batchSize, colorChannels, height, width]
-            );
+                var elementType = (typeof(T) == typeof(float)) ? TensorElementType.Float : TensorElementType.Float16;
 
-            // Create an OrtValue from the DenseTensor for input to the ONNX model.
-            using var inputOrtValue = OrtValue.CreateTensorValueFromMemory(
-                OrtMemoryInfo.DefaultInstance,
-                tensorPixels.Buffer,
-                [.. OnnxData.InputShape.Select(i => (long)i)]
+                using var inputOrtValue = OrtValue.CreateTensorValueWithData(
+                    OrtMemoryInfo.DefaultInstance,
+                    elementType,   // 👈 force ONNX to interpret buffer as Float16
+                    _inputShape,
+                    (IntPtr)pData,
+                    tensorBufferSize * sizeof(T) // size in bytes (ushort is 2 bytes, float is 4 bytes)
                 );
 
-            // Run the inference session with the input OrtValue and retrieve the results.
-            using var result = _session.Run(
-                _runOptions,
-                [OnnxData.InputName],
-                [inputOrtValue],
-                OnnxData.OutputNames);
+                // Run inference
+                using var result = _session.Run(
+                    _runOptions,
+                    [OnnxData.InputName],
+                    [inputOrtValue],
+                    OnnxData.OutputNames);
 
-            // Extract the tensor data from the results and return as an InferenceResult.
-            var tensorData0 = result[0].GetTensorDataAsSpan<float>();
-            var tensorData1 = ReadOnlySpan<float>.Empty;
+                if (elementType == TensorElementType.Float)
+                {
+                    // Extract tensor data from the result
+                    var tensorData0 = result[0].GetTensorDataAsSpan<float>();
+                    var tensorData1 = ReadOnlySpan<float>.Empty;
 
-            if (result.Count == 2)
-                tensorData1 = result[1].GetTensorDataAsSpan<float>();
+                    if (result.Count == 2)
+                        tensorData1 = result[1].GetTensorDataAsSpan<float>();
 
-            return new InferenceResult(tensorData0, tensorData1);
+                    // Return the inference result containing the output tensor data
+                    return new InferenceResult(tensorData0, tensorData1);
+                }
+                else
+                {
+                    var tensorData0 = result[0].GetTensorDataAsSpan<Float16>();
+                    var tensorData1 = ReadOnlySpan<Float16>.Empty;
+
+                    if (result.Count == 2)
+                        tensorData1 = result[1].GetTensorDataAsSpan<Float16>();
+
+                    ConvertFloat16ToFloat(tensorData0, tensorData1);
+
+                    // Return the inference result containing the output tensor data
+                    return new InferenceResult(_outputBuffer0, _outputBuffer1);
+                }
+            }
         }
 
+        private void AllocateOutputBuffers()
+        {
+            // Pre-allocate output buffers if the model uses Float16 data type.
+            if (OnnxData.ModelDataType == ModelDataType.Float16)
+                return;
+
+            // Calculate the total number of elements for each output tensor and allocate buffers.
+            var (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
+            _outputBuffer0 = new float[elements * items];
+
+            // If there is a second output tensor, allocate a buffer for it as well.
+            if (OnnxData.OutputShapes.Length == 2)
+            {
+                (items, elements) = (OnnxData.OutputShapes[1][1], OnnxData.OutputShapes[1][2]);
+                _outputBuffer1 = new float[elements * items];
+            }
+        }
+
+        private void ConvertFloat16ToFloat(ReadOnlySpan<Float16> tensorData0, ReadOnlySpan<Float16> tensorData1)
+        {
+            // Convert Float16 to float and store in pre-allocated buffers
+            for (int i = 0; i < tensorData0.Length; i++)
+                _outputBuffer0[i] = (float)tensorData0[i];
+
+            for (int i = 0; i < tensorData1.Length; i++)
+                _outputBuffer1[i] = (float)tensorData1[i];
+        }
         public void Dispose()
         {
             _session?.Dispose();
