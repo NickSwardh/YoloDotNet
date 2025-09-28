@@ -84,12 +84,16 @@ namespace TensorRTDemo
                 //   https://github.com/NickSwardh/YoloDotNet
 
                 ExecutionProvider = new CudaExecutionProvider(
+
+                    // Path or byte[] to the ONNX model file.
                     model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
                     gpuId: 0,
+
+                    // Optional configuration for TensorRT execution.
                     trtConfig: new TensorRt
                     {
-                        // Specifies which GPU device index to use for TensorRT execution. 0 = default.
-
                         Precision = TrtPrecision.FP16,
                         // - FP32: Full precision (32-bit float). Default mode. Highest accuracy, default execution.
                         // - FP16: Half precision (16-bit float). Offers improved performance on supported GPUs with minimal accuracy loss.

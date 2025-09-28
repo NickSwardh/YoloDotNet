@@ -8,7 +8,6 @@ using System.Globalization;
 using YoloDotNet;
 using YoloDotNet.Enums;
 using YoloDotNet.ExecutionProvider.Cuda;
-using YoloDotNet.ExecutionProvider.Cuda.TensorRT;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -79,20 +78,13 @@ namespace ObjectDetectionDemo
                     model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
-                    gpuId: 0,
+                    gpuId: 0
 
                     // Optional configuration for TensorRT execution.
                     // Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
                     // Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                    new TensorRt
-                    {
-                        Precision = TrtPrecision.FP16,
-                        BuilderOptimizationLevel = 3,
-                        EngineCachePath = @"C:\Users\Nick\Desktop\YoloDotNet_Results\TensorRT_Engine_Cache",
-                        EngineCachePrefix = "yolov11",
-                        //Int8CalibrationCacheFile = @"path/to/calibration_cache_file.cache" // Only needed for INT8 precision
-                    }),
-
+                    // trtConfig: new TensorRt {  ... }
+                    ),
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
                 // Set this accordingly, as it directly impacts the inference results.
