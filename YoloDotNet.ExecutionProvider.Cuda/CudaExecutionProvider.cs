@@ -16,7 +16,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         private float[] _outputBuffer1 = default!;
 
         private long[] _inputShape = default!;
-
+        private int _inputShapeSize;
         private TensorElementType _elementDataType = default!;
         private int _dataTypeSize => _elementDataType == TensorElementType.Float16 ? sizeof(ushort) : sizeof(float);
 
@@ -77,7 +77,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <param name="normalizedPixels"></param>
         /// <param name="tensorBufferSize"></param>
         /// <returns></returns>
-        unsafe public InferenceResult Run<T>(T[] normalizedPixels, int tensorBufferSize) where T : unmanaged
+        unsafe public InferenceResult Run<T>(T[] normalizedPixels) where T : unmanaged
         {
             // Pin the input pixel data in memory to prevent it from being moved by the garbage collector.
             fixed (T* pData = normalizedPixels)
@@ -88,7 +88,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                     _elementDataType,
                     _inputShape,
                     (IntPtr)pData,
-                    tensorBufferSize * _dataTypeSize // size in bytes (ushort is 2 bytes, float is 4 bytes)
+                    _inputShapeSize * _dataTypeSize // size in bytes (ushort is 2 bytes, float is 4 bytes)
                 );
 
                 // Run inference
@@ -272,9 +272,10 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
             // Get input shape and size.
             var inputShape = Array.ConvertAll(_session.InputMetadata[_session.InputNames[0]].Dimensions, Convert.ToInt64);
-            var inputSize = (int)ShapeUtils.GetSizeForShape(inputShape);
 
+            _inputShapeSize = (int)ShapeUtils.GetSizeForShape(inputShape);
             _elementDataType = GetModelElementType();
+            _dataTypeSize = _elementDataType == TensorElementType.Float16 ? sizeof(ushort) : sizeof(float);
 
             // Determine model data type (Float32 or Float16).
             var modelDataType = _elementDataType == TensorElementType.Float16
@@ -289,7 +290,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                 [.. _session.OutputNames],
                 _session.InputMetadata.Values.Select(x => x.Dimensions).First(),
                 [.. _session.OutputMetadata.Values.Select(x => x.Dimensions)],
-                inputSize,
+                _inputShapeSize,
                 metaData["names"]
             );
         }
@@ -308,7 +309,6 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
             GC.SuppressFinalize(this);
         }
-
         #endregion
     }
 }

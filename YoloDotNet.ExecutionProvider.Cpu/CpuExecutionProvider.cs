@@ -9,12 +9,15 @@ namespace YoloDotNet.ExecutionProvider.Cpu
         public OnnxDataRecord OnnxData { get; private set; } = default!;
 
         private InferenceSession _session = default!;
+        private static InferenceSession _session = default!;
         private RunOptions _runOptions = default!;
         private long[] _inputShape = default!;
 
         private float[] _outputBuffer0 = default!;
         private float[] _outputBuffer1 = default!;
 
+        private TensorElementType _elementDataType = default!;
+        private int _inputShapeSize;
         /// <summary>
         /// Constructs a CpuExecutionProvider for running ONNX models on the CPU.
         /// </summary>
@@ -71,16 +74,7 @@ namespace YoloDotNet.ExecutionProvider.Cpu
 
             var metaData = _session.ModelMetadata.CustomMetadataMap;
 
-            OnnxData = new OnnxDataRecord(
-                metaData,
-                ModelDataType.Float, // Currently only float is supported
-                _session.InputNames[0],
-                [.. _session.OutputNames],
-                _session.InputMetadata.Values.Select(x => x.Dimensions).FirstOrDefault() ?? [],
-                [.. _session.OutputMetadata.Values.Select(x => x.Dimensions)],
-                metaData["names"]
-            );
-
+            GetOnnxMetaData();
             AllocateOutputBuffers();
 
             // Set the input shape for creating tensors during inference.
@@ -94,7 +88,7 @@ namespace YoloDotNet.ExecutionProvider.Cpu
         /// <param name="normalizedPixels"></param>
         /// <param name="tensorBufferSize"></param>
         /// <returns></returns>
-        unsafe public InferenceResult Run<T>(T[] normalizedPixels, int tensorBufferSize) where T : unmanaged
+        unsafe public InferenceResult Run<T>(T[] normalizedPixels) where T : unmanaged
         {
             // Pin the ushort[] so we can get a raw pointer
             fixed (T* pData = normalizedPixels)
@@ -107,7 +101,7 @@ namespace YoloDotNet.ExecutionProvider.Cpu
                     elementType,   // 👈 force ONNX to interpret buffer as Float16
                     _inputShape,
                     (IntPtr)pData,
-                    tensorBufferSize * sizeof(T) // size in bytes (ushort is 2 bytes, float is 4 bytes)
+                    _inputShapeSize * sizeof(T) // size in bytes (ushort is 2 bytes, float is 4 bytes)
                 );
 
                 // Run inference
@@ -172,6 +166,46 @@ namespace YoloDotNet.ExecutionProvider.Cpu
             for (int i = 0; i < tensorData1.Length; i++)
                 _outputBuffer1[i] = (float)tensorData1[i];
         }
+
+        /// <summary>
+        /// Extracts metadata and input/output shapes from the ONNX model.
+        /// </summary>
+        private void GetOnnxMetaData()
+        {
+            // Extract custom metadata from the ONNX model.
+            var metaData = _session.ModelMetadata.CustomMetadataMap;
+
+            // Get input shape and size.
+            var inputShape = Array.ConvertAll(_session.InputMetadata[_session.InputNames[0]].Dimensions, Convert.ToInt64);
+            var inputSize = (int)ShapeUtils.GetSizeForShape(inputShape);
+
+            _elementDataType = GetModelElementType();
+            _inputShapeSize = (int)ShapeUtils.GetSizeForShape(inputShape);
+
+            // Determine model data type (Float32 or Float16).
+            var modelDataType = _elementDataType == TensorElementType.Float16
+                ? ModelDataType.Float16
+                : ModelDataType.Float;
+
+            // Create OnnxDataRecord to hold model information.
+            OnnxData = new OnnxDataRecord(
+                metaData,
+                modelDataType,
+                _session.InputNames[0],
+                [.. _session.OutputNames],
+                _session.InputMetadata.Values.Select(x => x.Dimensions).First(),
+                [.. _session.OutputMetadata.Values.Select(x => x.Dimensions)],
+                _inputShapeSize,
+                metaData["names"]
+            );
+        }
+
+        /// <summary>
+        /// Gets the tensor element type used by the model (e.g., Float32 or Float16).
+        /// </summary>
+        internal static TensorElementType GetModelElementType()
+            => _session.InputMetadata["images"].ElementDataType;
+
         public void Dispose()
         {
             _session?.Dispose();
