@@ -63,7 +63,7 @@ namespace YoloDotNet.Modules.V8
             return results;
         }
 
-        private ObjectResult[] RunSegmentation(InferenceResult inferenceResult, double confidence, double pixelConfidence, double iou)
+        private Span<ObjectResult> RunSegmentation(InferenceResult inferenceResult, double confidence, double pixelConfidence, double iou)
         {
             var boundingBoxes = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 

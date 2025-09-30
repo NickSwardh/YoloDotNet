@@ -116,8 +116,8 @@ namespace YoloDotNet.Core
         /// </summary>
         /// <param name="predictionSpan">A span with predition results</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
-        /// <returns>A filtered list with non-overlapping bounding boxes based on confidence scores.</returns>
-        public ObjectResult[] RemoveOverlappingBoxes(Span<ObjectResult> predictionSpan, double iouThreshold)
+        /// <returns>A filtered Span<ObjectResult> with non-overlapping bounding boxes based on confidence scores.</returns>
+        public Span<ObjectResult> RemoveOverlappingBoxes(Span<ObjectResult> predictionSpan, double iouThreshold)
         {
             var totalPredictions = predictionSpan.Length;
 
@@ -149,8 +149,7 @@ namespace YoloDotNet.Core
                     if (!overlapFound)
                         buffer[counter++] = item;
                 }
-
-                return [.. buffer.AsSpan(0, counter)];
+                return buffer.AsSpan(0, counter);
             }
             finally
             {

@@ -32,7 +32,7 @@ namespace YoloDotNet.Modules.V8
 
         #region Helper methods
 
-        private ObjectResult[] PoseEstimateImage(InferenceResult inferenceResult, double threshold, double overlapThrehshold)
+        private Span<ObjectResult> PoseEstimateImage(InferenceResult inferenceResult, double threshold, double overlapThrehshold)
         {
             var boxes = _objectDetectionModule.ObjectDetection(inferenceResult, threshold, overlapThrehshold);
 

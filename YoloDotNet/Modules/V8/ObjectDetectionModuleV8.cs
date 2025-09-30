@@ -48,7 +48,7 @@ namespace YoloDotNet.Modules.V8
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
-        public ObjectResult[] ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
+        public Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
         {
             var imageSize = inferenceResult.ImageOriginalSize;
             var ortSpan = inferenceResult.OrtSpan0;

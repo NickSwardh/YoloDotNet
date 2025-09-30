@@ -34,7 +34,7 @@ namespace YoloDotNet.Modules.V10
 
         #region Helper methods
 
-        private ObjectResult[] ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
+        private Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
         {
             var imageSize = inferenceResult.ImageOriginalSize;
             var ortSpan = inferenceResult.OrtSpan0;
