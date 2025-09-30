@@ -150,7 +150,7 @@ namespace YoloDotNet.Modules.V8
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: true);
+                _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: false);
             }
         }
 

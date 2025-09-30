@@ -98,11 +98,12 @@ namespace YoloDotNet.Core
 
                     return inferenceResult;
                 }
-            }
             finally
             {
-                customSizeFloatPool.Return(normalizedPixelsFloatBuffer, true);
-                customSizeHalfPool.Return(normalizedPixelsToUshortBuffer, true);
+                    // Return rented buffers to their respective pools wuithout clearing for performance.
+                    // WARNING: Only disable clearing if data is overwritten on next use to avoid data leakage!
+                    customSizeFloatPool.Return(normalizedPixelsFloatBuffer, false);
+                    customSizeHalfPool.Return(normalizedPixelsUshortBuffer, false);
                 _pinnedMemoryPool.Return(pinnedBuffer);
             }
         }
@@ -153,7 +154,7 @@ namespace YoloDotNet.Core
             }
             finally
             {
-                customSizeObjectResultPool.Return(buffer, true);
+                customSizeObjectResultPool.Return(buffer, false);
             }
         }
 

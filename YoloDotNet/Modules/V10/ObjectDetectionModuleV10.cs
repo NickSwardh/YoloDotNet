@@ -102,7 +102,7 @@ namespace YoloDotNet.Modules.V10
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, true);
+                _yoloCore.customSizeObjectResultPool.Return(boxes, false);
             }
         }
 
