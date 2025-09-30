@@ -12,7 +12,6 @@ namespace YoloDotNet.Core
         #region Fields
         private bool _isDisposed;
 
-        private int _tensorBufferSize;
         public ArrayPool<float> customSizeFloatPool = default!;
         public ArrayPool<ushort> customSizeHalfPool = default!;
         public ArrayPool<ObjectResult> customSizeObjectResultPool = default!;
@@ -21,6 +20,8 @@ namespace YoloDotNet.Core
         private readonly object _progressLock = new();
 
         private SKImageInfo _imageInfo;
+        private long[] _inputShape = default!;
+        private int _inputShapeSize;
         #endregion
 
         public OnnxModel OnnxModel { get; private set; } = default!;
@@ -39,12 +40,12 @@ namespace YoloDotNet.Core
 
             VerifyExpectedModelType(OnnxModel.ModelType);
 
-            // tensorBufferSize can be calculated once and reused for all calls, as it is based on the model properties
-            _tensorBufferSize = OnnxModel.InputShapeSize;
+            _inputShape = OnnxModel.InputShape;
+            _inputShapeSize = OnnxModel.InputShapeSize;
 
             // Create custom array pools based on model input size and output channels
-            customSizeFloatPool = ArrayPool<float>.Create(CalculateBufferPoolSize(_tensorBufferSize), 20); 
-            customSizeHalfPool = ArrayPool<ushort>.Create(CalculateBufferPoolSize(_tensorBufferSize), 20);
+            customSizeFloatPool = ArrayPool<float>.Create(CalculateBufferPoolSize(_inputShapeSize), 20); 
+            customSizeHalfPool = ArrayPool<ushort>.Create(CalculateBufferPoolSize(_inputShapeSize), 20);
 
             // ObjectResult pool based on output channels
             customSizeObjectResultPool = ArrayPool<ObjectResult>.Create(CalculateBufferPoolSize(OnnxModel.Outputs[0].Channels), maxArraysPerBucket: 10);
@@ -64,31 +65,32 @@ namespace YoloDotNet.Core
         /// <returns>InferenceResult()</returns>
         public InferenceResult Run<T>(T image)
         {
+            lock (_progressLock)
+            {
             var pinnedBuffer = _pinnedMemoryPool.Rent();
-            var normalizedPixelsFloatBuffer = customSizeFloatPool.Rent(minimumLength: _tensorBufferSize);
-            var normalizedPixelsToUshortBuffer = customSizeHalfPool.Rent(minimumLength: _tensorBufferSize);
+                var normalizedPixelsFloatBuffer = customSizeFloatPool.Rent(_inputShapeSize);
+                var normalizedPixelsUshortBuffer = customSizeHalfPool.Rent(_inputShapeSize);
 
             try
             {
-                lock (_progressLock)
-                {
                     // Resize image to model input size and store in pinned buffer for faster access
                     var originalImageSize = YoloOptions.ImageResize == ImageResize.Proportional
                         ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
                         : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
 
-                    var inferenceResult = new InferenceResult();
+                    // Declare struct to hold inference results
+                    InferenceResult inferenceResult;
 
                     // Run inference using the selected execution provider and model data type
                     if (OnnxModel.ModelDataType == ModelDataType.Float16)
                     {
-                        pinnedBuffer.Pointer.NormalizePixelsToArray(OnnxModel.InputShape, _tensorBufferSize, normalizedPixelsToUshortBuffer);
-                        inferenceResult = YoloOptions.ExecutionProvider.Run<ushort>(normalizedPixelsToUshortBuffer, _tensorBufferSize);
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, normalizedPixelsUshortBuffer);
+                        inferenceResult = YoloOptions.ExecutionProvider.Run<ushort>(normalizedPixelsUshortBuffer);
                     }
                     else
                     {
-                        pinnedBuffer.Pointer.NormalizePixelsToArray(OnnxModel.InputShape, _tensorBufferSize, normalizedPixelsFloatBuffer);
-                        inferenceResult = YoloOptions.ExecutionProvider.Run<float>(normalizedPixelsFloatBuffer, _tensorBufferSize);
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, normalizedPixelsFloatBuffer);
+                        inferenceResult = YoloOptions.ExecutionProvider.Run<float>(normalizedPixelsFloatBuffer);
                     }
 
                     // Attach original image size to the inference result for use to calculate bounding boxes to original image size.
@@ -103,6 +105,7 @@ namespace YoloDotNet.Core
                 customSizeHalfPool.Return(normalizedPixelsToUshortBuffer, true);
                 _pinnedMemoryPool.Return(pinnedBuffer);
             }
+        }
         }
 
         #region Helper methods
