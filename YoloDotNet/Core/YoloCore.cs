@@ -180,25 +180,32 @@ namespace YoloDotNet.Core
         public static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
 
         /// <summary>
-        /// Calculate rectangle area
-        /// </summary>
-        public static float CalculateArea(SKRectI rect) => rect.Width * rect.Height;
-
-        /// <summary>
-        /// Calculate IoU (Intersection Over Union) bounding box overlap.
+        /// Calculates the Intersection over Union (IoU) between two rectangles.
         /// </summary>
         /// <param name="a"></param>
         /// <param name="b"></param>
-        public static float CalculateIoU(SKRectI a, SKRectI b)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CalculateIoU(in SKRectI a, in SKRectI b)
         {
-            if (a.IntersectsWith(b) is false) // Quick check before calculating intersection
-                return 0;
+            // Use "in" keyword on parameters to pass by reference without allowing modification for better performance.
 
-            var intersectionArea = CalculateArea(SKRectI.Intersect(a, b));
+            int left = Math.Max(a.Left, b.Left);
+            int top = Math.Max(a.Top, b.Top);
+            int right = Math.Min(a.Right, b.Right);
+            int bottom = Math.Min(a.Bottom, b.Bottom);
 
-            return intersectionArea == 0
-                ? 0
-                : intersectionArea / (CalculateArea(a) + CalculateArea(b) - intersectionArea);
+            int width = right - left;
+            int height = bottom - top;
+
+            if (width <= 0 || height <= 0)
+                return 0f;
+
+            int intersection = width * height;
+
+            int areaA = (a.Right - a.Left) * (a.Bottom - a.Top);
+            int areaB = (b.Right - b.Left) * (b.Bottom - b.Top);
+
+            return (float)intersection / (areaA + areaB - intersection);
         }
 
         public (float, float, float, float) CalculateGain(SKSizeI size)
