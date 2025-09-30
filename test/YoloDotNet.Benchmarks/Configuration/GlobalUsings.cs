@@ -6,6 +6,7 @@ global using System;
 global using System.IO;
 global using System.Buffers;
 global using System.Collections.Generic;
+global using System.Runtime.CompilerServices;
 
 global using BenchmarkDotNet.Configs;
 global using BenchmarkDotNet.Reports;

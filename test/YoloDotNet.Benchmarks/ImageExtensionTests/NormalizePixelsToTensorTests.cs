@@ -63,6 +63,6 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
 
         [Benchmark]
         public void NormalizePixelsToTensor()
-            => _imagePointer.NormalizePixelsToTensor(_yolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
+            => _imagePointer.NormalizePixelsToArray(_yolo.OnnxModel.InputShape, _tensorBufferSize, _tensorArrayBuffer);
     }
 }
