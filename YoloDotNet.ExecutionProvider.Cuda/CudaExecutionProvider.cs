@@ -8,6 +8,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
     {
         public OnnxDataRecord OnnxData { get; private set; } = default!;
 
+        #region Fields
         private static InferenceSession _session = default!;
         private OrtIoBinding _ortIoBinding = default!;
         private RunOptions _runOptions = default!;
@@ -18,8 +19,10 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         private long[] _inputShape = default!;
         private int _inputShapeSize;
         private TensorElementType _elementDataType = default!;
-        private int _dataTypeSize => _elementDataType == TensorElementType.Float16 ? sizeof(ushort) : sizeof(float);
+        private int _dataTypeSize;
+        #endregion
 
+        #region Constructors
         /// <summary>
         /// Constructs a CudaExecutionProvider for running ONNX models using CUDA and optionally TensorRT.
         /// </summary>
@@ -41,7 +44,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         {
             InitializeYolo(model, gpuId, trtConfig);
         }
+        #endregion
 
+        #region Initialization
         /// <summary>
         /// Initializes the ONNX Runtime session, configures the CUDA execution provider and allocates resources.
         /// </summary>
@@ -70,12 +75,13 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
 
         }
+        #endregion
 
+        #region Run Inference
         /// <summary>
         /// Runs inference on the provided normalized pixel data.
         /// </summary>
         /// <param name="normalizedPixels"></param>
-        /// <param name="tensorBufferSize"></param>
         /// <returns></returns>
         unsafe public InferenceResult Run<T>(T[] normalizedPixels) where T : unmanaged
         {
@@ -126,9 +132,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                 }
             }
         }
+        #endregion
 
         #region CUDA and TensorRT helper methods
-
         /// <summary>
         /// Allocates float output buffers for models using Float16 data type.
         /// </summary>

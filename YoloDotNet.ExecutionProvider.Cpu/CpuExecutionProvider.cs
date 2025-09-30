@@ -8,7 +8,7 @@ namespace YoloDotNet.ExecutionProvider.Cpu
     {
         public OnnxDataRecord OnnxData { get; private set; } = default!;
 
-        private InferenceSession _session = default!;
+        #region Fields
         private static InferenceSession _session = default!;
         private RunOptions _runOptions = default!;
         private long[] _inputShape = default!;
@@ -18,6 +18,9 @@ namespace YoloDotNet.ExecutionProvider.Cpu
 
         private TensorElementType _elementDataType = default!;
         private int _inputShapeSize;
+        #endregion
+
+        #region Constructors
         /// <summary>
         /// Constructs a CpuExecutionProvider for running ONNX models on the CPU.
         /// </summary>
@@ -35,25 +38,9 @@ namespace YoloDotNet.ExecutionProvider.Cpu
         {
             InitializeYolo(model);
         }
+        #endregion
 
-        private static void ConfigureOrtEnv()
-        {
-            try
-            {
-                // Log errors and fatals
-                var envOptions = new EnvironmentCreationOptions
-                {
-                    logLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR
-                };
-
-                OrtEnv.CreateInstanceWithOptions(ref envOptions);
-            }
-            catch (OnnxRuntimeException ex) when (ex.Message.Contains("OrtEnv singleton instance already exists"))
-            {
-                // OrtEnv has already been initialized — ignore and continue gracefully...
-            }
-        }
-
+        #region Initialization
         private void InitializeYolo(object model)
         {
             ConfigureOrtEnv();
@@ -80,13 +67,14 @@ namespace YoloDotNet.ExecutionProvider.Cpu
             // Set the input shape for creating tensors during inference.
             _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
         }
+        #endregion
 
+        #region Run Inference
         /// <summary>
         /// Run inference on the provided normalized pixel data.
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="normalizedPixels"></param>
-        /// <param name="tensorBufferSize"></param>
         /// <returns></returns>
         unsafe public InferenceResult Run<T>(T[] normalizedPixels) where T : unmanaged
         {
@@ -138,7 +126,34 @@ namespace YoloDotNet.ExecutionProvider.Cpu
                 }
             }
         }
+        #endregion
 
+        #region Helper methods
+
+        /// <summary>
+        /// Configures the ONNX Runtime environment to log errors and fatals only.
+        /// </summary>
+        private static void ConfigureOrtEnv()
+        {
+            try
+            {
+                // Log errors and fatals
+                var envOptions = new EnvironmentCreationOptions
+                {
+                    logLevel = OrtLoggingLevel.ORT_LOGGING_LEVEL_ERROR
+                };
+
+                OrtEnv.CreateInstanceWithOptions(ref envOptions);
+            }
+            catch (OnnxRuntimeException ex) when (ex.Message.Contains("OrtEnv singleton instance already exists"))
+            {
+                // OrtEnv has already been initialized — ignore and continue gracefully...
+            }
+        }
+
+        /// <summary>
+        /// Allocates output buffers for float16 models only.
+        /// </summary>
         private void AllocateOutputBuffers()
         {
             // Pre-allocate output buffers if the model uses Float16 data type.
@@ -213,5 +228,7 @@ namespace YoloDotNet.ExecutionProvider.Cpu
 
             GC.SuppressFinalize(this);
         }
+
+        #endregion
     }
 }
