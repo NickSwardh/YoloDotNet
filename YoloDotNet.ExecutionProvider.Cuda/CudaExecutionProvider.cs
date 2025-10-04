@@ -9,7 +9,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         public OnnxDataRecord OnnxData { get; private set; } = default!;
 
         #region Fields
-        private static InferenceSession _session = default!;
+        private InferenceSession _session = default!;
         private OrtIoBinding _ortIoBinding = default!;
         private RunOptions _runOptions = default!;
 
@@ -304,7 +304,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Gets the tensor element type used by the model (e.g., Float32 or Float16).
         /// </summary>
-        internal static TensorElementType GetModelElementType()
+        internal TensorElementType GetModelElementType()
             => _session.InputMetadata["images"].ElementDataType;
 
         public void Dispose()
