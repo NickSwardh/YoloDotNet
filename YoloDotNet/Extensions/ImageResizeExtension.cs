@@ -29,9 +29,13 @@ namespace YoloDotNet.Extensions
             var destRect = new SKRect(0, 0, modelWidth, modelHeight);
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions);
+            var w = image.Width;
+            var h = image.Height;
+
+            image?.Dispose();
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
-            return new SKSizeI(image.Width, image.Height);
+            return new SKSizeI(w, h);
         }
 
         /// <summary>
@@ -74,9 +78,13 @@ namespace YoloDotNet.Extensions
             var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
+            var w = image.Width;
+            var h = image.Height;
+
+            image?.Dispose();
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
-            return new SKSizeI(width, height);
+            return new SKSizeI(w, h);
         }
 
         /// <summary>
