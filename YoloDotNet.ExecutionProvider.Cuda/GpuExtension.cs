@@ -11,16 +11,14 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// </summary>
         public static void AllocateGpuMemory(this InferenceSession session,
             OrtIoBinding ortIoBinding,
-            RunOptions runOptions)
+            RunOptions runOptions,
+            TensorElementType tensorElementType)
         {
             // Get input shape.
             var inputShape = Array.ConvertAll(session.InputMetadata[session.InputNames[0]].Dimensions, Convert.ToInt64);
 
-            // Get model data type.
-            var modelElementType = CudaExecutionProvider.GetModelElementType();
-
             // Determine byte size based on model data type.
-            var byteSize = modelElementType == TensorElementType.Float ? sizeof(float) : sizeof(ushort);
+            var byteSize = tensorElementType == TensorElementType.Float ? sizeof(float) : sizeof(ushort);
 
             // Calculate input size.
             var inputSizeInBytes = ShapeUtils.GetSizeForShape(inputShape) * byteSize;
@@ -31,7 +29,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             // Create OrtValue with the allocated memory as the data buffer.
             using (var ortValueTensor = OrtValue.CreateTensorValueWithData(
                 OrtMemoryInfo.DefaultInstance,
-                modelElementType,
+                tensorElementType,
                 inputShape,
                 allocPtr,
                 inputSizeInBytes))

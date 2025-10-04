@@ -69,7 +69,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
-            _session.AllocateGpuMemory(_ortIoBinding, _runOptions);
+            _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _elementDataType);
 
             // Set the input shape for creating tensors during inference.
             _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
