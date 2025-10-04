@@ -190,6 +190,16 @@ namespace PoseEstimationDemo
         }
 
         private static void DisplayOutputFolder()
-            => Process.Start("explorer.exe", _outputFolder);
+        {
+            var shell = OperatingSystem.IsWindows() ? "explorer"
+                     : OperatingSystem.IsLinux() ? "xdg-open"
+                     : OperatingSystem.IsMacOS() ? "open"
+                     : null;
+
+            if (shell is not null)
+                Process.Start(shell, _outputFolder);
+            else
+                Console.WriteLine($"Results saved to: {_outputFolder}");
+        }
     }
 }
