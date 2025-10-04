@@ -45,8 +45,6 @@ namespace YoloDotNet.ExecutionProvider.Cpu
         {
             ConfigureOrtEnv();
 
-            _runOptions = new RunOptions();
-
             var options = new SessionOptions
             {
                 GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
@@ -59,10 +57,10 @@ namespace YoloDotNet.ExecutionProvider.Cpu
                 ? new InferenceSession(modelBytes, options)
                 : new InferenceSession((string)model, options);
 
-            var metaData = _session.ModelMetadata.CustomMetadataMap;
-
             GetOnnxMetaData();
             AllocateOutputBuffers();
+
+            _runOptions = new RunOptions();
 
             // Set the input shape for creating tensors during inference.
             _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
@@ -160,11 +158,25 @@ namespace YoloDotNet.ExecutionProvider.Cpu
             if (OnnxData.ModelDataType == ModelDataType.Float16)
                 return;
 
-            // Calculate the total number of elements for each output tensor and allocate buffers.
-            var (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
-            _outputBuffer0 = new float[elements * items];
+            int items;
+            int elements;
 
-            // If there is a second output tensor, allocate a buffer for it as well.
+            // Calculate the total number of elements for each output tensor and allocate buffers.
+
+            // Classification models only has one output tensor with shape [1, num_classes]
+            if (OnnxData.OutputShapes[0].Length == 2)
+            {
+                (items, elements) = (OnnxData.OutputShapes[0][0], OnnxData.OutputShapes[0][1]);
+                _outputBuffer0 = new float[elements * items];
+            }
+            // All other models has an output tensor with shape [1, num_boxes, num_attributes]
+            else
+            {
+                (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
+                _outputBuffer0 = new float[elements * items];
+            }
+
+            // If there is a second output tensor (segmentation), allocate a buffer for it as well.
             if (OnnxData.OutputShapes.Length == 2)
             {
                 (items, elements) = (OnnxData.OutputShapes[1][1], OnnxData.OutputShapes[1][2]);

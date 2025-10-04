@@ -144,9 +144,25 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             if (OnnxData.ModelDataType == ModelDataType.Float)
                 return;
 
+            int items;
+            int elements;
+
             // Calculate the total number of elements for each output tensor and allocate buffers.
-            var (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
-            _outputBuffer0 = new float[elements * items];
+
+            // Classification models only has one output tensor with shape [1, num_classes]
+            if (OnnxData.OutputShapes[0].Length == 2)
+            {
+                (items, elements) = (OnnxData.OutputShapes[0][0], OnnxData.OutputShapes[0][1]);
+                _outputBuffer0 = new float[elements * items];
+            }
+            // All other models has an output tensor with shape [1, num_boxes, num_attributes]
+            else
+            {
+                (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
+                _outputBuffer0 = new float[elements * items];
+            }
+
+            // If there is a second output tensor (segmentation), allocate a buffer for it as well.
 
             // If there is a second output tensor, allocate a buffer for it as well.
             if (OnnxData.OutputShapes.Length == 2)
