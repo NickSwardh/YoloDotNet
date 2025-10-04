@@ -48,6 +48,7 @@ namespace YoloDotNet.Modules.V8
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this small method better performance
         public Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
         {
             var imageSize = inferenceResult.ImageOriginalSize;
@@ -62,7 +63,8 @@ namespace YoloDotNet.Modules.V8
             var height = imageSize.Height;
 
             int validBoxCount = 0;
-            var boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
+            //var boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_channels);
 
             try
             {
@@ -116,10 +118,22 @@ namespace YoloDotNet.Modules.V8
 
                         // Calculate bounding box coordinates adjusted for stretched scaling and padding
                         // Clamp ensures the coordinates remain within the valid bounds of the image.
-                        xMin = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
-                        yMin = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
-                        xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
-                        yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+                        //xMin = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
+                        //yMin = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
+                        //xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
+                        //yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+
+                        int val = (int)((x - halfW - xPad) / xGain);
+                        xMin = val < 0 ? 0 : (val > width - 1 ? width - 1 : val);
+
+                        int valY = (int)((y - halfH - yPad) / yGain);
+                        yMin = valY < 0 ? 0 : (valY > height - 1 ? height - 1 : valY);
+
+                        int valXMax = (int)((x + halfW - xPad) / xGain);
+                        xMax = valXMax < 0 ? 0 : (valXMax > width - 1 ? width - 1 : valXMax);
+
+                        int valYMax = (int)((y + halfH - yPad) / yGain);
+                        yMax = valYMax < 0 ? 0 : (valYMax > height - 1 ? height - 1 : valYMax);
                     }
 
                     // Unscaled coordinates for resized input image
@@ -150,7 +164,8 @@ namespace YoloDotNet.Modules.V8
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: false);
+                //_yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: false);
+                ArrayPool<ObjectResult>.Shared.Return(boxes, false);
             }
         }
 

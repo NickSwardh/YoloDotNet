@@ -33,7 +33,7 @@ namespace YoloDotNet.Modules.V10
         }
 
         #region Helper methods
-
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this small method better performance
         private Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
         {
             var imageSize = inferenceResult.ImageOriginalSize;
@@ -45,7 +45,8 @@ namespace YoloDotNet.Modules.V10
             var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
 
             int validBoxCount = 0;
-            var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
+            //var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(channels * elements);
 
             var width = imageSize.Width;
             var height = imageSize.Height;
@@ -102,7 +103,8 @@ namespace YoloDotNet.Modules.V10
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, false);
+                //_yoloCore.customSizeObjectResultPool.Return(boxes, false);
+                ArrayPool<ObjectResult>.Shared.Return(boxes, false);
             }
         }
 

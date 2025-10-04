@@ -117,6 +117,7 @@ namespace YoloDotNet.Core
         /// <param name="predictionSpan">A span with predition results</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
         /// <returns>A filtered Span<ObjectResult> with non-overlapping bounding boxes based on confidence scores.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<ObjectResult> RemoveOverlappingBoxes(Span<ObjectResult> predictionSpan, double iouThreshold)
         {
             var totalPredictions = predictionSpan.Length;
@@ -165,21 +166,25 @@ namespace YoloDotNet.Core
         /// <summary>
         /// Squash value to a number between 0 and 1
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Sigmoid(float value) => 1 / (1 + MathF.Exp(-value));
 
         /// <summary>
         /// Calculate pixel luminance
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte CalculatePixelLuminance(float value) => (byte)(255 - value * 255);
 
         /// <summary>
         /// Calculate pixel by byte to confidence
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float CalculatePixelConfidence(byte value) => value / 255F;
 
         /// <summary>
         /// Calculate radian to degree
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float CalculateRadianToDegree(float value) => value * (180 / (float)Math.PI);
 
         /// <summary>
@@ -211,6 +216,7 @@ namespace YoloDotNet.Core
             return (float)intersection / (areaA + areaB - intersection);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (float, float, float, float) CalculateGain(SKSizeI size)
             => YoloOptions.ImageResize == ImageResize.Proportional ? CalculateProportionalGain(size) : CalculateStretchedGain(size);
 
