@@ -27,7 +27,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         /// </summary>
         /// <param name="model"></param>
         /// <param name="openVino"></param>
-        public OpenVinoExecutionProvider(string model, OpenVino openVino)
+        public OpenVinoExecutionProvider(string model, OpenVino? openVino = null)
         {
             InitializeYolo(model, openVino);
         }
@@ -37,14 +37,14 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         /// </summary>
         /// <param name="model"></param>
         /// <param name="openVino"></param>
-        public OpenVinoExecutionProvider(object model, OpenVino openVino)
+        public OpenVinoExecutionProvider(object model, OpenVino? openVino = null)
         {
             InitializeYolo(model, openVino);
         }
         #endregion
 
         #region Initialization
-        private void InitializeYolo(object model, OpenVino openVino)
+        private void InitializeYolo(object model, OpenVino? openVino)
         {
             ConfigureOrtEnv();
 
@@ -121,7 +121,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         #endregion
 
         #region OpenVino helper methods
-        private static SessionOptions CreateSessionOptions(OpenVino openVino)
+        private static SessionOptions CreateSessionOptions(OpenVino? openVino)
         {
             var options = new SessionOptions
             {
@@ -129,7 +129,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                 ExecutionMode = ExecutionMode.ORT_SEQUENTIAL
             };
 
-            if (openVino.DeviceType.StartsWith("CPU", StringComparison.OrdinalIgnoreCase))
+            if (openVino is null || openVino.DeviceType.StartsWith("CPU", StringComparison.OrdinalIgnoreCase))
             {
                 options.EnableCpuMemArena = true;
             }
