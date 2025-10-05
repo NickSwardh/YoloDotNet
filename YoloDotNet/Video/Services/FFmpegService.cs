@@ -165,19 +165,36 @@ namespace YoloDotNet.Video.Services
 
             string inputSource = _videoOptions.VideoInput;
 
+            // Is input a video device?
             if (string.IsNullOrEmpty(VideoMetadata.DeviceName) is false)
             {
                 // Select the correct input format based on platform
                 string? deviceVideoFilter;
-                if (SystemPlatform.GetOS() == Platform.Windows)
+
+                switch (SystemPlatform.GetOS())
                 {
-                    deviceVideoFilter = "dshow"; // windows: Directshow
+                    case Platform.Windows:
+                        deviceVideoFilter = "dshow";
                     inputSource = $"video={VideoMetadata.DeviceName}";
-                }
-                else
-                {
-                    deviceVideoFilter = "v4l2"; // linux: Video4Linux2
-                    inputSource = $"/dev/{VideoMetadata.DeviceName}"; // e.g., "video0"
+                        break;
+
+                    case Platform.Linux:
+                        deviceVideoFilter = "v4l2";
+                        // On Linux, device name is usually like "video0" → becomes "/dev/video0"
+                        inputSource = VideoMetadata.DeviceName.StartsWith("/dev/")
+                            ? VideoMetadata.DeviceName
+                            : $"/dev/{VideoMetadata.DeviceName}";
+                        break;
+
+                    case Platform.MacOS:
+                        deviceVideoFilter = "avfoundation";
+                        // On macOS, the device is usually identified by a numeric index (e.g. "0")
+                        // If user passes a string like "0", use as is.
+                        inputSource = VideoMetadata.DeviceName;
+                        break;
+
+                    default:
+                        throw new PlatformNotSupportedException("Unsupported platform for video device capture.");
                 }
 
                 ffmpegArgs.AddRange([
@@ -228,13 +245,9 @@ namespace YoloDotNet.Video.Services
 
             ffmpegArgs.AddRange([
                 "-framerate",   framerate,
-                "-i",           "-"]);
-
-            ffmpegArgs.AddRange([
+                "-i",           "-",
                 "-c:v",     _videoOptions.VideoEncoder.GetEncoderName(),
-                "-vf",      vf,
-                "-rc:v:0",  "vbr_hq",
-                "-cq:v",    $"{_videoOptions.CompressionQuality}"]);
+                "-vf",      vf]);
 
             // Split video in chunks?
             if (_videoOptions.VideoChunkDuration > 0)
