@@ -348,6 +348,10 @@ namespace YoloDotNet.Video.Services
             {
                 // Service stopped by user. Exit gracefully...
             }
+            catch (IOException ex)
+            {
+                ThrowPlatformSpecificError(ex);
+            }
             finally
             {
                 inputStream?.Flush();
@@ -516,7 +520,50 @@ namespace YoloDotNet.Video.Services
             {
                 throw new YoloDotNetVideoException($"Failed to get devices: {ex.Message}", ex);
             }
+        }
 
+        private void ThrowPlatformSpecificError(Exception ex)
+        {
+            var platform = SystemPlatform.GetOS();
+
+            string systemHint = platform switch
+            {
+                Platform.Windows =>
+                "On Windows, ensure that your selected encoder (e.g., 'h264_nvenc' or 'libx264') " +
+                "is available in your FFmpeg build. You can list supported encoders by running:\n" +
+                "    ffmpeg -hide_banner -encoders",
+
+                Platform.Linux =>
+                "On Linux, verify that your FFmpeg build supports your chosen encoder (e.g., 'libx264', 'h264_vaapi'). " +
+                "For GPU encoders, ensure required drivers and VAAPI/NVENC libraries are installed.\n" +
+                "Check available encoders using:\n" +
+                "    ffmpeg -hide_banner -encoders",
+
+                Platform.MacOS =>
+                "On macOS, hardware encoders such as 'h264_videotoolbox' or 'hevc_videotoolbox' " +
+                "require FFmpeg to be built with VideoToolbox support. " +
+                "If you installed FFmpeg via Homebrew or a static build like evermeet.cx, this is usually included.\n" +
+                "Verify encoder support with:\n" +
+                "    ffmpeg -hide_banner -encoders",
+
+                _ => "Unsupported platform for video device capture."
+            };
+
+            var message =
+                "I/O error during video processing.\n\n" +
+                "This error usually means FFmpeg could not start or maintain the encoding process.\n\n" +
+                "Possible causes:\n" +
+                "1. The selected video encoder is incorrect or unsupported on this system.\n" +
+                "   - Check YoloDotNet 'VideoOptions' and ensure the encoder matches your OS and FFmpeg build.\n" +
+                "   - Verify encoder availability using the command below.\n\n" +
+                "2. The video source was disconnected or became unavailable.\n" +
+                "3. The current FFmpeg build does not include the selected encoder.\n" +
+                "4. The output file path is invalid or not writable (check permissions and free space).\n\n" +
+                $"Detected platform: {platform}\n\n" +
+                $"Platform-specific guidance:\n{systemHint}\n\n" +
+                $"Exception details:\n{ex.Message}";
+
+            throw new YoloDotNetVideoException(message, ex);
         }
 
         public void Dispose()
