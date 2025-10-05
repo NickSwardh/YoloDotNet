@@ -175,7 +175,7 @@ namespace YoloDotNet.Video.Services
                 {
                     case Platform.Windows:
                         deviceVideoFilter = "dshow";
-                    inputSource = $"video={VideoMetadata.DeviceName}";
+                        inputSource = $"video={VideoMetadata.DeviceName}";
                         break;
 
                     case Platform.Linux:
@@ -296,7 +296,7 @@ namespace YoloDotNet.Video.Services
                 _ffmpegEncode.Start();
                 _ffmpegEncode.BeginErrorReadLine();
             }
-
+            
             using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
             using Stream? outputStream = shouldCreateVideo
                 ? _ffmpegEncode.StandardInput.BaseStream
@@ -357,9 +357,13 @@ namespace YoloDotNet.Video.Services
                 outputStream?.Close();
 
                 _ffmpegDecode.WaitForExit();
+                _ffmpegDecode.CancelErrorRead();
 
                 if (shouldCreateVideo)
+                {
                     _ffmpegEncode.WaitForExit();
+                    _ffmpegEncode.CancelErrorRead();
+                }
             }
         }
 
