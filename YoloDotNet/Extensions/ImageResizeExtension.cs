@@ -16,11 +16,15 @@ namespace YoloDotNet.Extensions
         public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
             SKImage image = default!;
+            var createdImage = false;
 
             if (img is SKImage skImage)
                 image = skImage;
             else if (img is SKBitmap skBitmap)
+            {
                 image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+                createdImage = true;
+            }
 
             int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
             int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
@@ -32,7 +36,9 @@ namespace YoloDotNet.Extensions
             var w = image.Width;
             var h = image.Height;
 
-            image?.Dispose();
+            // Only dispose if we created a bew SKImage from SKBitmap
+            if (createdImage)
+                image?.Dispose();
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
             return new SKSizeI(w, h);
@@ -48,14 +54,14 @@ namespace YoloDotNet.Extensions
         public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
             SKImage image = default!;
+            var createdImage = false;
 
             if (img is SKImage skImage)
-            {
                 image = skImage;
-            }
             else if (img is SKBitmap skBitmap)
             {
                 image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+                createdImage = true;
             }
 
             int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
@@ -81,7 +87,9 @@ namespace YoloDotNet.Extensions
             var w = image.Width;
             var h = image.Height;
 
-            image?.Dispose();
+            // Only dispose if we created a bew SKImage from SKBitmap
+            if (createdImage)
+                image?.Dispose();
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
             return new SKSizeI(w, h);
