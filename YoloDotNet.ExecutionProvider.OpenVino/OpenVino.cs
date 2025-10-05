@@ -10,7 +10,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         public Precision Precision { get; set; }
         public int Threads { get; set; } = 8; // Open Vino default to 8 threads
         public int Streams { get; set; } = 1; // Open Vino default to 1 stream
-        public int CachePath { get; set; } = default!;
+        public string CachePath { get; set; } = default!;
         public ModelPriority ModelPriority { get; set; }
     }
 }
