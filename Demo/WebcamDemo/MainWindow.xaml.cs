@@ -173,6 +173,8 @@ namespace WebcamDemo
                     // Run object detection on the current frame
                     var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold, iou: 0.7);
 
+                    _stopwatch.Stop();
+
                     if (_isFilteringEnabled)
                         results = results.FilterLabels(["person", "cat", "dog"]);  // Optionally filter results to include only specific classes (e.g., "person", "cat", "dog")
 
@@ -181,8 +183,6 @@ namespace WebcamDemo
 
                     // Draw detection and tracking results on the current frame
                     _currentFrame.Draw(results);
-
-                    _stopwatch.Stop();
                 }
 
                 // Update GUI
@@ -193,10 +193,10 @@ namespace WebcamDemo
                     // Display processing time and max fps
                     if (_runDetection)
                     {
-                        var milliseconds = _stopwatch.ElapsedMilliseconds;
+                        var milliseconds = _stopwatch.Elapsed.TotalMilliseconds;
                         var yoloFps = 1000.0 / milliseconds;
 
-                        FrameProcess.Text = $"Processed Frame: {milliseconds}ms, {yoloFps:###} fps";
+                        FrameProcess.Text = $"Processed Frame: {milliseconds:F1}ms ({yoloFps:F1} fps)";
                     }
                 });
             }
