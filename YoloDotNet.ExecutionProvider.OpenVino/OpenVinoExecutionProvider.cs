@@ -138,13 +138,13 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                 var ovOptions = new Dictionary<string, string>
                 {
                     // OpenVINO EP supports device_type, precision, num_threads, num_streams, model_priority
-                    ["device_type"] = openVino.DeviceType,
+                    ["device_type"] = openVino.DeviceType.ToUpper(),
 
                     // Precision mode: FP16 for speed, FP32 for accuracy. ACCURACY to use model-defined precision.
-                    ["precision"] = openVino.Precision.ToString(),
+                    ["precision"] = openVino.Precision.ToString().ToUpper(), 
 
                     // Threading and streams
-                    ["num_threads"] = openVino.Threads.ToString(), // Open Vino default to 8 threads.
+                    ["num_of_threads"] = openVino.Threads.ToString(), // Open Vino default to 8 threads.
                     ["num_streams"] = openVino.Streams.ToString(), // Open Vino default to 1 stream.
 
                     // Cache directory for storing compiled models
@@ -152,7 +152,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
 
                     // Performance tuning options
                     ["disable_dynamic_shapes"] = "True",
-                    ["model_priority"] = openVino.ModelPriority.ToString()
+                    ["model_priority"] = openVino.ModelPriority.ToString().ToUpper()
                 };
 
                 options.AppendExecutionProvider("OpenVINOExecutionProvider", ovOptions);
