@@ -169,7 +169,10 @@ namespace VideoStreamDemo
                 VideoOutput = Path.Combine(_outputFolder, "video_output.mp4"),
 
                 // 💡 Encoder to use when writing output.
-                // Note: FFmpeg must be compiled with the selected encoder.
+                // Note: Make sure the selected encoder is compatible with:
+                //   - Your operating system and hardware
+                //   - FFmpeg is compiled with the selected encoder
+                //   - The output file format/container
                 VideoEncoder = VideoEncoder.H264Nvenc, // Use NVIDIA GPU encoder (h264_nvenc). See Encoder enum comments for alternatives.
 
                 // 💡 Frame rate for the output video.
