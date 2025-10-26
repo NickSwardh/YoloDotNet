@@ -112,58 +112,32 @@ namespace YoloDotNet.Extensions
             var width = (int)inputShape[3];
             int totalPixels = width * height;
 
-            // Precompute the inverse multiplier constant for normalizing byte values (0-255) to the [0, 1] range.
-            // This value (1.0f / 255.0f) is a quick way to convert any byte color component into a float between 0 and 1.
-            // For example: a red component with value 128 becomes 128 * inv255 = 128 / 255 = 0.50196.
             float inv255 = 1.0f / 255.0f;
+            byte* src = (byte*)pixelsPtr;
 
-            // Lock the pixel data for fast, unsafe memory access.
-            byte* pixels = (byte*)pixelsPtr;
-
-            // Normalize gray-scale pixel data
             if (colorChannels == 1)
             {
                 float* dst = (float*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
+                int srcIndex = 0;
 
-                int i = 0;
-                int limit = totalPixels & ~3; // Round down to nearest multiple of 4
-
-                // Unroll loop to process 4 pixels at a time for better performance
-                for (; i < limit; i += 4)
+                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
                 {
-                    dst[i] = pixels[i] * inv255;
-                    dst[i + 1] = pixels[i + 1] * inv255;
-                    dst[i + 2] = pixels[i + 2] * inv255;
-                    dst[i + 3] = pixels[i + 3] * inv255;
+                    // Read only the grayscale component (assumed in R channel)
+                    dst[i] = src[srcIndex] * inv255;
                 }
             }
-            // Normalize RGB pixel data
             else
             {
                 float* dstR = (float*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
                 float* dstG = dstR + totalPixels;
                 float* dstB = dstG + totalPixels;
 
-                int i = 0;
-                int limit = totalPixels & ~1; // Round down to nearest multiple of 2
-
-                // Unroll loop to process 2 pixels at a time for better performance
-                for (; i < limit; i += 2)
+                int srcIndex = 0;
+                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
                 {
-                    // Pixel 1
-                    dstR[i + 0] = pixels[0] * inv255; // Red
-                    dstG[i + 0] = pixels[1] * inv255; // Green
-                    dstB[i + 0] = pixels[2] * inv255; // Blue
-                    // Skip Alpha channel (pixels[3])
-
-                    // Pixel 2
-                    dstR[i + 1] = pixels[4] * inv255; // Red
-                    dstG[i + 1] = pixels[5] * inv255; // Green
-                    dstB[i + 1] = pixels[6] * inv255; // Blue
-                    // Skip Alpha channel (pixels[7])
-
-                    // Move to the next two pixels (8 bytes)
-                    pixels += 8;
+                    dstR[i] = src[srcIndex] * inv255;
+                    dstG[i] = src[srcIndex + 1] * inv255;
+                    dstB[i] = src[srcIndex + 2] * inv255;
                 }
             }
         }
@@ -185,58 +159,31 @@ namespace YoloDotNet.Extensions
             var width = (int)inputShape[3];
             int totalPixels = width * height;
 
-            // Precompute the inverse multiplier constant for normalizing byte values (0-255) to the [0, 1] range.
-            // This value (1.0f / 255.0f) is a quick way to convert any byte color component into a float between 0 and 1.
-            // For example: a red component with value 128 becomes 128 * inv255 = 128 / 255 = 0.50196.
             float inv255 = 1.0f / 255.0f;
+            byte* src = (byte*)pixelsPtr;
 
-            // Lock the pixel data for fast, unsafe memory access.
-            byte* pixels = (byte*)pixelsPtr;
-
-            // Normalize gray-scale pixel data
             if (colorChannels == 1)
             {
                 ushort* dst = (ushort*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
+                int srcIndex = 0;
 
-                int i = 0;
-                int limit = totalPixels & ~3; // Round down to nearest multiple of 4
-
-                // Unroll loop to process 4 pixels at a time for better performance
-                for (; i < limit; i += 4)
+                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
                 {
-                    dst[i] = FloatToUshort(pixels[i] * inv255);
-                    dst[i + 1] = FloatToUshort(pixels[i + 1] * inv255);
-                    dst[i + 2] = FloatToUshort(pixels[i + 2] * inv255);
-                    dst[i + 3] = FloatToUshort(pixels[i + 3] * inv255);
+                    dst[i] = FloatToUshort(src[srcIndex] * inv255);
                 }
             }
-            // Normalize RGB pixel data
             else
             {
                 ushort* dstR = (ushort*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
                 ushort* dstG = dstR + totalPixels;
                 ushort* dstB = dstG + totalPixels;
 
-                int i = 0;
-                int limit = totalPixels & ~1; // Round down to nearest multiple of 2
-
-                // Unroll loop to process 2 pixels at a time for better performance
-                for (; i < limit; i += 2)
+                int srcIndex = 0;
+                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
                 {
-                    // Pixel 1
-                    dstR[i + 0] = FloatToUshort(pixels[0] * inv255); // Red
-                    dstG[i + 0] = FloatToUshort(pixels[1] * inv255); // Green
-                    dstB[i + 0] = FloatToUshort(pixels[2] * inv255); // Blue
-                    // Skip Alpha channel (pixels[3])
-
-                    // Pixel 2
-                    dstR[i + 1] = FloatToUshort(pixels[4] * inv255); // Red
-                    dstG[i + 1] = FloatToUshort(pixels[5] * inv255); // Green
-                    dstB[i + 1] = FloatToUshort(pixels[6] * inv255); // Blue
-                    // Skip Alpha channel (pixels[7])
-
-                    // Move to the next two pixels (8 bytes)
-                    pixels += 8;
+                    dstR[i] = FloatToUshort(src[srcIndex] * inv255);
+                    dstG[i] = FloatToUshort(src[srcIndex + 1] * inv255);
+                    dstB[i] = FloatToUshort(src[srcIndex + 2] * inv255);
                 }
             }
         }
