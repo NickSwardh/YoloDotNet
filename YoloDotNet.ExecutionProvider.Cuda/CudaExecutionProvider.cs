@@ -256,6 +256,14 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                 // Forces cuDNN to benchmark all available convolution algorithms during model initialization
                 // and select the fastest one for the hardware + model combination.
                 // This gives optimal conv kernel performance at runtime, especially beneficial for large or custom conv layers.
+
+                // Reduce host/device synchronization by enabling copy using the default stream when supported.
+                // This can avoid implicit stream synchronizations on some ONNX Runtime builds.
+                { "do_copy_in_default_stream", "1" },
+
+                // Allow cuDNN to use the maximum workspace (may increase memory usage but can improve kernel perf).
+                { "cudnn_conv_use_max_workspace", "1" }
+
             });
 
             options.AppendExecutionProvider_CUDA(cudaOptions);
