@@ -2,8 +2,7 @@
 // Copyright (c) 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using Emgu.CV;
-using Emgu.CV.CvEnum;
+using OpenCvSharp;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 using System.Diagnostics;
@@ -16,6 +15,7 @@ using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
 using YoloDotNet.Trackers;
+using Window = System.Windows.Window;
 
 namespace WebcamDemo
 {
@@ -145,11 +145,14 @@ namespace WebcamDemo
         private async Task WebcamAsync()
         {
             // Initialize the webcam
-            using var capture = new VideoCapture(0, VideoCapture.API.DShow);
+            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
 
-            capture.Set(CapProp.Fps, FPS);
-            capture.Set(CapProp.FrameWidth, WEBCAM_WIDTH);
-            capture.Set(CapProp.FrameHeight, WEBCAM_HEIGHT);
+            capture.Set(VideoCaptureProperties.Fps, FPS);
+            capture.Set(VideoCaptureProperties.FrameWidth, WEBCAM_WIDTH);
+            capture.Set(VideoCaptureProperties.FrameHeight, WEBCAM_HEIGHT);
+
+            // If the camera supports MJPEG, it's much cheaper on CPU than uncompressed frames.
+            capture.Set(VideoCaptureProperties.FourCC, VideoWriter.FourCC('M', 'J', 'P', 'G'));
 
             using var mat = new Mat();
             using var bgraMat = new Mat();
@@ -158,12 +161,14 @@ namespace WebcamDemo
             {
                 // Capture the current frame from the webcam
                 capture.Read(mat);
-
+                
                 // Convert the frame to BGRA color space
-                CvInvoke.CvtColor(mat, bgraMat, ColorConversion.Bgr2Bgra);
+                Cv2.CvtColor(mat, bgraMat, ColorConversionCodes.BGR2BGRA);
 
                 // Create an SKBitmap from the BGRA Mat for processing
-                using var frame = SKImage.FromPixels(_imageInfo, bgraMat.DataPointer);
+                using var frame = SKImage.FromPixels(_imageInfo, bgraMat.Data);
+
+                _currentFrame?.Dispose();
                 _currentFrame = SKBitmap.FromImage(frame);
 
                 if (_runDetection)
@@ -184,7 +189,7 @@ namespace WebcamDemo
                     // Draw detection and tracking results on the current frame
                     _currentFrame.Draw(results);
                 }
-
+               
                 // Update GUI
                 await _dispatcher.InvokeAsync(() =>
                 {
@@ -206,7 +211,7 @@ namespace WebcamDemo
         {
             using var canvas = e.Surface.Canvas;
             canvas.DrawBitmap(_currentFrame, _rect);
-            canvas.Flush();
+            //canvas.Flush();
         }
 
         private void StartClick(object sender, RoutedEventArgs e)
