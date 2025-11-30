@@ -206,7 +206,19 @@ namespace VideoStreamDemo
                 // 💡 Process every Nth frame.
                 // 0 = process all frames (default).
                 // Example: 30 = process every 30th frame (useful for surveillance where full-frame detection is unnecessary).
-                FrameInterval = 0
+                FrameInterval = 0,
+
+                // 💡 Optional: Define a specific segment of the video to process.
+                // Useful for testing or processing only a portion of the video.
+                // Note: Only applies to video files.
+                // 0 = start from the beginning.
+                StartTimeSeconds = 0,
+
+                // 💡 Optional: Duration of the video segment to process in seconds.
+                // Useful for testing or processing only a portion of the video.
+                // Note: Only applies to video files.
+                // 0 = process until the end of the video.
+                DurationSeconds = 0
             });
 
             // Display basic video metadata before processing begins.
