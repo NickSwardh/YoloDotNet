@@ -65,5 +65,18 @@ namespace YoloDotNet.Video
         /// Compression quality for the output video (0–51). Lower is better quality. Default is 30.
         /// </summary>
         public int CompressionQuality { get; set; } = 30;
+
+        /// <summary>
+        /// Start time in seconds from which to begin processing the video.
+        /// Only relevant if the input is a video file (not a live stream).
+        /// </summary>
+        public float StartTimeSeconds { get; set; }
+        
+        /// <summary>
+        /// Duration in seconds for which to process the video.
+        /// Only relevant if the input is a video file (not a live stream).
+        /// </summary>
+        public float DurationSeconds { get; set; }
+     
     }
 }

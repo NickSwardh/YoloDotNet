@@ -16,5 +16,8 @@ namespace YoloDotNet.Extensions
             var attr = (EncoderNameAttribute?)Attribute.GetCustomAttribute(field!, typeof(EncoderNameAttribute));
             return attr?.Name ?? encoder.ToString().ToLowerInvariant();
         }
+
+        public static bool IsLocalFile(this string videoInput)
+            => File.Exists(videoInput);
     }
 }

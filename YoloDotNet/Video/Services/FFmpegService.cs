@@ -165,7 +165,28 @@ namespace YoloDotNet.Video.Services
 
             string inputSource = _videoOptions.VideoInput;
 
-            // Is input a video device?
+            // Is input a local file?
+            if (inputSource.IsLocalFile())
+            {
+                // Apply start time and duration options
+                if (_videoOptions.StartTimeSeconds > 0)
+                {
+                    ffmpegArgs.AddRange([
+                        "-accurate_seek",
+                        "-ss",    _videoOptions.StartTimeSeconds.ToString(CultureInfo.InvariantCulture)
+                        ]);
+                }
+
+                // Limit duration of processed video?
+                if (_videoOptions.DurationSeconds > 0)
+                {
+                    ffmpegArgs.AddRange([
+                        "-t",    _videoOptions.DurationSeconds.ToString(CultureInfo.InvariantCulture)
+                        ]);
+                }
+            }
+
+            // Is input a video device, eg. webcam etc?
             if (string.IsNullOrEmpty(VideoMetadata.DeviceName) is false)
             {
                 // Select the correct input format based on platform
