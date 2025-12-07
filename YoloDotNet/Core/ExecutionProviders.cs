@@ -5,6 +5,7 @@
 namespace YoloDotNet.Core
 {
     public record CpuExecutionProvider : IExecutionProvider;
+    public record OpenVINOExecutionProvider(string DeviceId = "AUTO:GPU,CPU") : IExecutionProvider;
 
     public record CudaExecutionProvider(int GpuId = 0, bool PrimeGpu = false) : IExecutionProvider;
 

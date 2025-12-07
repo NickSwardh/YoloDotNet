@@ -230,9 +230,9 @@ namespace YoloDotNet.Video.Services
 
             // Encode using CUDA?
             var videoCodec = "libx264";
-            if (_yoloOptions.ExecutionProvider is not CpuExecutionProvider)
+            if (_yoloOptions.ExecutionProvider is CudaExecutionProvider)
             {
-                videoCodec = "h264_nvenc";
+                videoCodec = "h264_nvenc"; // Use NVIDIA NVENC encoder, h264_nvenc only for NVIDIA GPUs
             }
 
             ffmpegArgs.AddRange([
