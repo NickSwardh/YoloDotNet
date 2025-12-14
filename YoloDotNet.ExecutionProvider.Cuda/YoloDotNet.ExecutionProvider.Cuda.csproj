@@ -25,7 +25,7 @@ This provider targets high-performance and real-time inference workloads on Wind
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+    <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

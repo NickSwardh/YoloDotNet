@@ -25,7 +25,7 @@ This provider is intended for macOS applications that benefit from native machin
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+    <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

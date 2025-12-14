@@ -45,7 +45,7 @@ For detailed installation instructions and execution provider setup, see the exe
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
-    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+    <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>

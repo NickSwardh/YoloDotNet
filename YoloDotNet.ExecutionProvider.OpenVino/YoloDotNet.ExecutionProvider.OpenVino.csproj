@@ -25,7 +25,7 @@ This provider is fully compatible with the execution-provider-agnostic YoloDotNe
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+    <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
