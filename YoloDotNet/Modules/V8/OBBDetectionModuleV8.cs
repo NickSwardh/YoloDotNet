@@ -19,14 +19,16 @@ namespace YoloDotNet.Modules.V8
 
         public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            var (ortValues, imageSize) = _yoloCore.Run(image);
-            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+            var inferenceResult = _yoloCore.Run(image);
 
-            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+            var detections = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 
-            var objectDetectionResults = _objectDetectionModule.ObjectDetection(imageSize, ortSpan, confidence, iou);
+            // Convert to List<OBBDetection>
+            var results = new List<OBBDetection>(detections.Length);
+            for (int i = 0; i < detections.Length; i++)
+                results.Add((OBBDetection)detections[i]);
 
-            return [.. objectDetectionResults.Select(x => (OBBDetection)x)];
+            return results;
         }
 
         #region Helper methods

@@ -2,10 +2,6 @@
 // Copyright (c) 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using YoloDotNet.Benchmarks.Configuration;
-using YoloDotNet.Core;
-using YoloDotNet.Models.Interfaces;
-
 namespace YoloDotNet.Benchmarks.Setup
 {
     public class YoloCreator
@@ -20,7 +16,7 @@ namespace YoloDotNet.Benchmarks.Setup
             var model = GetModel(modelKey);
             var provider = GetExecutionProvider(providerKey, model);
 
-            return new Yolo(new YoloOptions { OnnxModel = model, ExecutionProvider = provider });
+            return new Yolo(new YoloOptions { ExecutionProvider = provider });
         }
 
         #region Helper Methods
@@ -65,27 +61,27 @@ namespace YoloDotNet.Benchmarks.Setup
         };
 
         private static IExecutionProvider GetExecutionProvider(string provider, string model) => provider switch
+        {
+            "CPU" => new CudaExecutionProvider(model, -1), // Sentinel value -1 = CPU execution in CudaExecutionProvider.
+            "GPU" => new CudaExecutionProvider(model),
+            "TRT32" => new CudaExecutionProvider(model, 0, new TensorRt
             {
-                "CPU" => new CpuExecutionProvider(),
-                "GPU" => new CudaExecutionProvider(),
-                "TRT32" => new TensorRtExecutionProvider() // FP32
-                {
-                    Precision = TrtPrecision.FP32,
-                    EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                },
-                "TRT16" => new TensorRtExecutionProvider() // FP16
-                {
-                    Precision = TrtPrecision.FP16,
-                    EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                },
-                "TRT8" => new TensorRtExecutionProvider()  // INT8
-                {
-                    Precision = TrtPrecision.INT8,
-                    EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                    Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
-                },
-                _ => throw new ArgumentException("Unknown execution provider")
-            };
+                Precision = TrtPrecision.FP32,
+                EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+            }),
+            "TRT16" => new CudaExecutionProvider(model, 0, new TensorRt
+            {
+                Precision = TrtPrecision.FP16,
+                EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+            }),
+            "TRT8" => new CudaExecutionProvider(model, 0, new TensorRt
+            {
+                Precision = TrtPrecision.INT8,
+                EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+                Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
+            }),
+            _ => throw new ArgumentException("Unknown execution provider")
+        };
 
         #endregion
     }

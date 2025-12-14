@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Enums
+﻿namespace YoloDotNet.ExecutionProvider.Cuda.TensorRT
 {
     public enum TrtPrecision
     {

@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\test\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
+    <ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cpu\YoloDotNet.ExecutionProvider.Cpu.csproj" />
     <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
   </ItemGroup>
 

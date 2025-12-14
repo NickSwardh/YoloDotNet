@@ -17,16 +17,16 @@ namespace YoloDotNet.Benchmarks
 
             // Uncomment below code to run in debug during development.
 
-            //DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator);
+            DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator);
 
-            //var benchmark = new SimpleObjectDetectionTests
-            //{
-            //    YoloParam = YoloType.V8_Obj_GPU
-            //};
+            var benchmark = new SimpleObjectDetectionTests
+            {
+                YoloParam = YoloType.V8_Obj_GPU
+            };
 
-            //benchmark.GlobalSetup();
-            //benchmark.ObjectDetection();
-            //benchmark.GlobalCleanup();
+            benchmark.GlobalSetup();
+            benchmark.ObjectDetection();
+            benchmark.GlobalCleanup();
 #else
             var config = DefaultConfig.Instance
                 .WithOptions(ConfigOptions.DisableOptimizationsValidator)

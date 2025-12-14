@@ -165,19 +165,57 @@ namespace YoloDotNet.Video.Services
 
             string inputSource = _videoOptions.VideoInput;
 
+            // Is input a local file?
+            if (inputSource.IsLocalFile())
+            {
+                // Apply start time and duration options
+                if (_videoOptions.StartTimeSeconds > 0)
+                {
+                    ffmpegArgs.AddRange([
+                        "-accurate_seek",
+                        "-ss",    _videoOptions.StartTimeSeconds.ToString(CultureInfo.InvariantCulture)
+                        ]);
+                }
+
+                // Limit duration of processed video?
+                if (_videoOptions.DurationSeconds > 0)
+                {
+                    ffmpegArgs.AddRange([
+                        "-t",    _videoOptions.DurationSeconds.ToString(CultureInfo.InvariantCulture)
+                        ]);
+                }
+            }
+
+            // Is input a video device, eg. webcam etc?
             if (string.IsNullOrEmpty(VideoMetadata.DeviceName) is false)
             {
                 // Select the correct input format based on platform
                 string? deviceVideoFilter;
-                if (SystemPlatform.GetOS() == Platform.Windows)
+
+                switch (SystemPlatform.GetOS())
                 {
-                    deviceVideoFilter = "dshow"; // windows: Directshow
-                    inputSource = $"video={VideoMetadata.DeviceName}";
-                }
-                else
-                {
-                    deviceVideoFilter = "v4l2"; // linux: Video4Linux2
-                    inputSource = $"/dev/{VideoMetadata.DeviceName}"; // e.g., "video0"
+                    case Platform.Windows:
+                        deviceVideoFilter = "dshow";
+                        inputSource = $"video={VideoMetadata.DeviceName}";
+                        break;
+
+                    case Platform.Linux:
+                        deviceVideoFilter = "v4l2";
+                        // On Linux, device name is usually like "video0" → becomes "/dev/video0"
+                        inputSource = VideoMetadata.DeviceName.StartsWith("/dev/")
+                            ? VideoMetadata.DeviceName
+                            : $"/dev/{VideoMetadata.DeviceName}";
+                        break;
+
+                    case Platform.MacOS:
+                        deviceVideoFilter = "avfoundation";
+                        // On macOS, the device is usually identified by a numeric index (e.g. "0")
+                        // If user passes a string like "0", use as is.
+                        inputSource = VideoMetadata.DeviceName;
+                        break;
+
+                    default:
+                        throw new PlatformNotSupportedException("Unsupported platform for video device capture.");
                 }
 
                 ffmpegArgs.AddRange([
@@ -187,8 +225,10 @@ namespace YoloDotNet.Video.Services
 
             // Process all frames or every nth frame?
             var videoFilter = _videoOptions.FrameInterval <= 0
-                ? $@"fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)},scale={_videoTargetWidth}:{_videoTargetHeight}"
-                : $@"select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB,scale={_videoTargetWidth}:{_videoTargetHeight}";
+                ? $@"fps={_videoTargetfps.ToString(CultureInfo.InvariantCulture)}"
+                : $@"select='not(mod(n,{_videoOptions.FrameInterval}))',setpts=N/FRAME_RATE/TB";
+
+            videoFilter += $",zscale={_videoTargetWidth}:{_videoTargetHeight}:filter=lanczos";
 
             ffmpegArgs.AddRange([
                 "-i",           inputSource,
@@ -226,20 +266,9 @@ namespace YoloDotNet.Video.Services
 
             ffmpegArgs.AddRange([
                 "-framerate",   framerate,
-                "-i",           "-"]);
-
-            // Encode using CUDA?
-            var videoCodec = "libx264";
-            if (_yoloOptions.ExecutionProvider is not CpuExecutionProvider)
-            {
-                videoCodec = "h264_nvenc";
-            }
-
-            ffmpegArgs.AddRange([
-                "-c:v",     videoCodec,
-                "-vf",      vf,
-                "-rc:v:0",  "vbr_hq",
-                "-cq:v",    $"{_videoOptions.CompressionQuality}"]);
+                "-i",           "-",
+                "-c:v",     _videoOptions.VideoEncoder.GetEncoderName(),
+                "-vf",      vf]);
 
             // Split video in chunks?
             if (_videoOptions.VideoChunkDuration > 0)
@@ -288,7 +317,7 @@ namespace YoloDotNet.Video.Services
                 _ffmpegEncode.Start();
                 _ffmpegEncode.BeginErrorReadLine();
             }
-
+            
             using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
             using Stream? outputStream = shouldCreateVideo
                 ? _ffmpegEncode.StandardInput.BaseStream
@@ -340,6 +369,10 @@ namespace YoloDotNet.Video.Services
             {
                 // Service stopped by user. Exit gracefully...
             }
+            catch (IOException ex)
+            {
+                ThrowPlatformSpecificError(ex);
+            }
             finally
             {
                 inputStream?.Flush();
@@ -349,9 +382,13 @@ namespace YoloDotNet.Video.Services
                 outputStream?.Close();
 
                 _ffmpegDecode.WaitForExit();
+                _ffmpegDecode.CancelErrorRead();
 
                 if (shouldCreateVideo)
+                {
                     _ffmpegEncode.WaitForExit();
+                    _ffmpegEncode.CancelErrorRead();
+                }
             }
         }
 
@@ -504,7 +541,50 @@ namespace YoloDotNet.Video.Services
             {
                 throw new YoloDotNetVideoException($"Failed to get devices: {ex.Message}", ex);
             }
+        }
 
+        private void ThrowPlatformSpecificError(Exception ex)
+        {
+            var platform = SystemPlatform.GetOS();
+
+            string systemHint = platform switch
+            {
+                Platform.Windows =>
+                "On Windows, ensure that your selected encoder (e.g., 'h264_nvenc' or 'libx264') " +
+                "is available in your FFmpeg build. You can list supported encoders by running:\n" +
+                "    ffmpeg -hide_banner -encoders",
+
+                Platform.Linux =>
+                "On Linux, verify that your FFmpeg build supports your chosen encoder (e.g., 'libx264', 'h264_vaapi'). " +
+                "For GPU encoders, ensure required drivers and VAAPI/NVENC libraries are installed.\n" +
+                "Check available encoders using:\n" +
+                "    ffmpeg -hide_banner -encoders",
+
+                Platform.MacOS =>
+                "On macOS, hardware encoders such as 'h264_videotoolbox' or 'hevc_videotoolbox' " +
+                "require FFmpeg to be built with VideoToolbox support. " +
+                "If you installed FFmpeg via Homebrew or a static build like evermeet.cx, this is usually included.\n" +
+                "Verify encoder support with:\n" +
+                "    ffmpeg -hide_banner -encoders",
+
+                _ => "Unsupported platform for video device capture."
+            };
+
+            var message =
+                "I/O error during video processing.\n\n" +
+                "This error usually means FFmpeg could not start or maintain the encoding process.\n\n" +
+                "Possible causes:\n" +
+                "1. The selected video encoder is incorrect or unsupported on this system.\n" +
+                "   - Check YoloDotNet 'VideoOptions' and ensure the encoder matches your OS and FFmpeg build.\n" +
+                "   - Verify encoder availability using the command below.\n\n" +
+                "2. The video source was disconnected or became unavailable.\n" +
+                "3. The current FFmpeg build does not include the selected encoder.\n" +
+                "4. The output file path is invalid or not writable (check permissions and free space).\n\n" +
+                $"Detected platform: {platform}\n\n" +
+                $"Platform-specific guidance:\n{systemHint}\n\n" +
+                $"Exception details:\n{ex.Message}";
+
+            throw new YoloDotNetVideoException(message, ex);
         }
 
         public void Dispose()

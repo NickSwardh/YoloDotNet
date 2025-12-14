@@ -6,8 +6,9 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cuda;
+using YoloDotNet.ExecutionProvider.Cuda.TensorRT;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -16,30 +17,31 @@ using YoloDotNet.Test.Common.Enums;
 namespace TensorRTDemo
 {
     /// <summary>
-    /// Demonstrates how to use YoloDotNet with GPU acceleration via the TensorRT execution provider.
-    ///
+    /// Demonstrates how to use YoloDotNet with GPU acceleration via CUDA and TensorRT.
+    /// 
     /// This demo performs object detection on a static image using a YOLOv11 ONNX model,
-    /// accelerated by TensorRT with configurable precision (FP32, FP16, or INT8).
+    /// accelerated by CUDA with TensorRT optimization (FP32, FP16, or INT8).
     /// The image is annotated with bounding boxes, class labels, and confidence scores,
     /// and the result is saved to disk.
-    ///
+    /// 
     /// It showcases:
-    /// - TensorRT-backed GPU inference with configurable numeric precision (FP32, FP16, INT8)
+    /// - CUDA-backed GPU inference with TensorRT precision (FP32, FP16, INT8)
     /// - Model initialization with configurable hardware and preprocessing options
-    /// - Static image inference for detecting objects with standard bounding boxes
-    /// - Customizable rendering of detection results, including labels, confidence scores, and boxes
+    /// - Static image inference for detecting objects with bounding boxes
+    /// - Customizable rendering of detection results (labels, confidence, boxes)
     /// - Saving annotated output to disk
     /// - Console reporting of inference results
-    ///
+    /// 
     /// Execution providers:
-    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
+    /// - CpuExecutionProvider: runs inference on CPU (slower but universally supported).
+    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference.  
+    ///   Optionally integrates with TensorRT for highly optimized performance  
+    ///   with configurable precision (FP32, FP16, INT8).
+    /// 
     /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
-    /// - Requires a compatible NVIDIA GPU and TensorRT runtime support.
+    /// - Choose the provider based on your hardware and performance requirements.
+    /// - For TensorRT acceleration, configure the `trtConfig` parameter of CudaExecutionProvider.
+    /// - Requires a compatible NVIDIA GPU with CUDA/cuDNN, and TensorRT runtime installed.
     /// </summary>
     internal class Program
     {
@@ -63,82 +65,98 @@ namespace TensorRTDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-
+                // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
-                //   new CpuExecutionProvider()
-                //   new CudaExecutionProvider(GpuId: 0, PrimeGpu: true)
-                //   new TensorRTExecutionProvider() { ... }
-                ExecutionProvider = new TensorRtExecutionProvider
-                {
-                    GpuId = 0,
-                    // Specifies which GPU device index to use for TensorRT execution. 0 = default.
+                // 
+                // - CpuExecutionProvider  
+                //   Runs inference entirely on the CPU. Universally supported but typically slower.
+                // 
+                // - CudaExecutionProvider  
+                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //   See the TensorRT demo and documentation for detailed configuration and best practices.
+                // 
+                // Important:  
+                // - Choose the provider that matches your available hardware and performance requirements.  
+                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                // - For detailed setup instructions and examples, see the README:  
+                //   https://github.com/NickSwardh/YoloDotNet
 
-                    Precision = TrtPrecision.FP32,
-                    // - FP32: Full precision (32-bit float). Default mode. Highest accuracy, default execution.
-                    // - FP16: Half precision (16-bit float). Offers improved performance on supported GPUs with minimal accuracy loss.
-                    // - INT8: Integer precision (8-bit). Fastest inference performance, but requires calibration.
-                    //
-                    //   Note: INT8 mode enables **mixed precision execution**.
-                    //   TensorRT will use INT8 precision where supported, and automatically fall back to FP16 or FP32
-                    //   for layers or operations that are not quantizable — due to model structure, unsupported ops,
-                    //   dynamic ranges, or numerical stability concerns.
-                    //
-                    //   See Int8CalibrationCacheFile for calibration file requirements.
+                ExecutionProvider = new CudaExecutionProvider(
 
-                    BuilderOptimizationLevel = 3,
-                    // Set the builder optimization level to use when building a new engine cache. A higher level
-                    // allows TensorRT to spend more building time on more optimization options.
-                    //
-                    // WARNING: levels below 3 do not guarantee good engine performance, but greatly improve
-                    // build time. Default 3, valid range[0 - 5].
+                    // Path or byte[] of the ONNX model to load.
+                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
-                    EngineCachePath = _trtEngineCacheFolder,
-                    // Specifies the directory where TensorRT will store and load engine cache files.
-                    //
-                    // The engine cache avoids rebuilding the TensorRT engine on every startup,
-                    // significantly improving initialization time.
-                    //
-                    // If cache files already exist for the current model, hardware, precision, and configuration,
-                    // they will be reused automatically. Otherwise, a new engine cache will be built and stored here.
-                    //
-                    // Note: Existing cache files are never deleted automatically.
-                    // You must manually remove outdated or unused cache files from this directory as needed.
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
+                    gpuId: 0,
 
-                    EngineCachePrefix = "YoloDotNet",
-                    // Sets a filename prefix for the generated TensorRT engine and profile cache files.
-                    //
-                    // This helps distinguish between cache files from different models, versions, or configurations,
-                    // especially when multiple engines are stored in the same EngineCachePath.
-                    //
-                    // If left empty, a default internal prefix will be used.
+                    // Optional configuration for TensorRT execution.
+                    trtConfig: new TensorRt
+                    {
+                        Precision = TrtPrecision.FP16,
+                        // - FP32: Full precision (32-bit float). Default mode. Highest accuracy, default execution.
+                        // - FP16: Half precision (16-bit float). Offers improved performance on supported GPUs with minimal accuracy loss.
+                        // - INT8: Integer precision (8-bit). Fastest inference performance, but requires calibration.
+                        //
+                        //   Note: INT8 mode enables **mixed precision execution**.
+                        //   TensorRT will use INT8 precision where supported, and automatically fall back to FP16 or FP32
+                        //   for layers or operations that are not quantizable — due to model structure, unsupported ops,
+                        //   dynamic ranges, or numerical stability concerns.
+                        //
+                        //   See Int8CalibrationCacheFile for calibration file requirements.
 
-                    Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", "yolov11s.cache"),
-                    // Optional path to a TensorRT INT8 calibration cache file.
-                    // This is only used when INT8 precision mode is explicitly enabled; otherwise, it is ignored.
-                    // You may leave this empty if you're not using INT8 mode.
-                    //
-                    // Specifies the path to the INT8 calibration cache file used during engine building.
-                    // This file is required when using non-quantized models in INT8 mode.
-                    // TensorRT uses it to assign dynamic ranges to tensors.
-                    //
-                    // The calibration cache must be pre-generated using the original model.pt data.
-                    //
-                    // 🔧 To generate the calibration cache, export the model using the Ultralytics CLI:
-                    //
-                    //   yolo export model=your_model.pt format=engine int8=true simplify=true data=your_model_dataset.yaml opset=17
-                    //
-                    // This command generates:
-                    //   - A standard ONNX model (unquantized, FP32-based)
-                    //   - A TensorRT engine optimized for INT8 precision
-                    //   - A calibration cache file: <model_name>.cache
-                    //
-                    // The path to <model_name>.cache must be specified to run YOLO ONNX models in INT8 mixed precision mode.
-                    // Example:
-                    //   Int8CalibrationCacheFile = @"path\to\<model_name>.cache"
-                },
+                        BuilderOptimizationLevel = 3,
+                        // Set the builder optimization level to use when building a new engine cache. A higher level
+                        // allows TensorRT to spend more building time on more optimization options.
+                        //
+                        // WARNING: levels below 3 do not guarantee good engine performance, but greatly improve
+                        // build time. Default 3, valid range[0 - 5].
+
+                        EngineCachePath = _trtEngineCacheFolder,
+                        // Specifies the directory where TensorRT will store and load engine cache files.
+                        //
+                        // The engine cache avoids rebuilding the TensorRT engine on every startup,
+                        // significantly improving initialization time.
+                        //
+                        // If cache files already exist for the current model, hardware, precision, and configuration,
+                        // they will be reused automatically. Otherwise, a new engine cache will be built and stored here.
+                        //
+                        // Note: Existing cache files are never deleted automatically.
+                        // You must manually remove outdated or unused cache files from this directory as needed.
+
+                        EngineCachePrefix = "YoloDotNet",
+                        // Sets a filename prefix for the generated TensorRT engine and profile cache files.
+                        //
+                        // This helps distinguish between cache files from different models, versions, or configurations,
+                        // especially when multiple engines are stored in the same EngineCachePath.
+                        //
+                        // If left empty, a default internal prefix will be used.
+
+                        Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", "yolov11s.cache"),
+                        // Optional path to a TensorRT INT8 calibration cache file.
+                        // This is only used when INT8 precision mode is explicitly enabled; otherwise, it is ignored.
+                        // You may leave this empty if you're not using INT8 mode.
+                        //
+                        // Specifies the path to the INT8 calibration cache file used during engine building.
+                        // This file is required when using non-quantized models in INT8 mode.
+                        // TensorRT uses it to assign dynamic ranges to tensors.
+                        //
+                        // The calibration cache must be pre-generated using the original model.pt data.
+                        //
+                        // 🔧 To generate the calibration cache, export the model using the Ultralytics CLI:
+                        //
+                        //   yolo export model=your_model.pt format=engine int8=true simplify=true data=your_model_dataset.yaml opset=17
+                        //
+                        // This command generates:
+                        //   - A standard ONNX model (unquantized, FP32-based)
+                        //   - A TensorRT engine optimized for INT8 precision
+                        //   - A calibration cache file: <model_name>.cache
+                        //
+                        // The path to <model_name>.cache must be specified to run YOLO ONNX models in INT8 mixed precision mode.
+                        // Example:
+                        //   Int8CalibrationCacheFile = @"path\to\<model_name>.cache"
+                    }),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -251,10 +269,16 @@ namespace TensorRTDemo
         }
 
         private static void DisplayOutputFolder()
-            => Process.Start(new ProcessStartInfo
-            {
-                FileName = _outputFolder,
-                UseShellExecute = true
-            });
+        {
+            var shell = OperatingSystem.IsWindows() ? "explorer"
+                     : OperatingSystem.IsLinux() ? "xdg-open"
+                     : OperatingSystem.IsMacOS() ? "open"
+                     : null;
+
+            if (shell is not null)
+                Process.Start(shell, _outputFolder);
+            else
+                Console.WriteLine($"Results saved to: {_outputFolder}");
+        }
     }
 }

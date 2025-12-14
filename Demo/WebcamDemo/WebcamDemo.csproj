@@ -10,12 +10,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Emgu.CV.runtime.windows" Version="4.11.0.5746" />
-    <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.0" />
+    <!--<PackageReference Include="Emgu.CV.runtime.windows" Version="4.12.0.5764" />-->
+    <PackageReference Include="OpenCvSharp4" Version="4.11.0.20250507" />
+    <PackageReference Include="OpenCvSharp4.runtime.win" Version="4.11.0.20250507" />
+    <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\test\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />
+    <ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cuda\YoloDotNet.ExecutionProvider.Cuda.csproj" />
     <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
   </ItemGroup>
 

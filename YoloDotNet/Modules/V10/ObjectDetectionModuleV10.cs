@@ -21,33 +21,35 @@ namespace YoloDotNet.Modules.V10
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            var (ortValues, imageSize) = _yoloCore.Run(image);
-            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+            var inferenceResult = _yoloCore.Run(image);
+            var detections = ObjectDetection(inferenceResult, confidence, iou);
 
-            using var ort = ortValues[0];
-            var results = ObjectDetection(imageSize, ort, confidence, iou)
-                .Select(x => (ObjectDetection)x)
-                .ToList();
+            // Convert to List<ObjectDetection>
+            var results = new List<ObjectDetection>(detections.Length);
+            for (int i = 0; i < detections.Length; i++)
+                results.Add((ObjectDetection)detections[i]);
 
             return results;
         }
 
         #region Helper methods
-
-        private ObjectResult[] ObjectDetection(SKSizeI imageSize, OrtValue ortTensor, double confidenceThreshold, double overlapThreshold)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this small method better performance
+        private Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
         {
+            var imageSize = inferenceResult.ImageOriginalSize;
+            var ortSpan = inferenceResult.OrtSpan0;
+
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
             var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
 
             int validBoxCount = 0;
-            var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
+            //var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(channels * elements);
 
             var width = imageSize.Width;
             var height = imageSize.Height;
-
-            var ortSpan = ortTensor.GetTensorDataAsSpan<float>();
 
             try
             {
@@ -93,15 +95,16 @@ namespace YoloDotNet.Modules.V10
                     };
                 }
 
-                // Prevent overhead from temporary collections by copying to a fixed-size array.
-                var resultArray = new ObjectResult[validBoxCount];
-                boxes.AsSpan(0, validBoxCount).CopyTo(resultArray);
+                // Get only the valid portion of the rented array
+                var resultArray = boxes.AsSpan(0, validBoxCount);
 
+                // Remove overlapping boxes using Non-Maximum Suppression (NMS)
                 return _yoloCore.RemoveOverlappingBoxes(resultArray, overlapThreshold);
             }
             finally
             {
-                _yoloCore.customSizeObjectResultPool.Return(boxes, true);
+                //_yoloCore.customSizeObjectResultPool.Return(boxes, false);
+                ArrayPool<ObjectResult>.Shared.Return(boxes, false);
             }
         }
 

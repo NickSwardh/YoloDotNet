@@ -5,25 +5,25 @@
 global using System;
 global using System.IO;
 global using System.Buffers;
-global using System.Globalization;
 global using System.Collections.Generic;
+global using System.Runtime.CompilerServices;
 
-global using Microsoft.VSDiagnostics;
-global using Microsoft.ML.OnnxRuntime.Tensors;
+global using BenchmarkDotNet.Configs;
+global using BenchmarkDotNet.Reports;
+global using BenchmarkDotNet.Running;
+global using BenchmarkDotNet.Attributes;
+
+global using SkiaSharp;
 
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
 global using YoloDotNet.Handlers;
 global using YoloDotNet.Extensions;
 global using YoloDotNet.Test.Common;
-global using YoloDotNet.Configuration;
 global using YoloDotNet.Benchmarks.Setup;
 global using YoloDotNet.Test.Common.Enums;
-
-global using SkiaSharp;
-global using PoseEstimationDemo;
-
-global using BenchmarkDotNet.Configs;
-global using BenchmarkDotNet.Reports;
-global using BenchmarkDotNet.Running;
-global using BenchmarkDotNet.Attributes;
+global using YoloDotNet.Models.Interfaces;
+global using YoloDotNet.ExecutionProvider.Cuda;
+global using YoloDotNet.Benchmarks.Configuration;
+global using YoloDotNet.ExecutionProvider.Cuda.TensorRT;
+global using YoloDotNet.Benchmarks.ObjectDetectionTests;

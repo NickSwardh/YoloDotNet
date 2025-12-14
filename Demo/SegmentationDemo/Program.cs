@@ -6,8 +6,8 @@ using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cuda;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
@@ -19,7 +19,7 @@ namespace SegmentationDemo
     /// Demonstrates semantic segmentation on static images using the YoloDotNet library.
     /// 
     /// This demo loads a sample image, performs segmentation inference to detect pixel-level object masks,
-    /// draws the segmentation masks along with bounding boxes, labels, and confidence scores,
+    /// overlays the segmentation masks along with bounding boxes, labels, and confidence scores,
     /// and saves the annotated image to disk.
     /// 
     /// Key features showcased include:
@@ -31,17 +31,18 @@ namespace SegmentationDemo
     /// - Automatic creation of an output folder on the desktop to store results
     /// 
     /// Execution providers:
-    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
+    /// - CpuExecutionProvider: runs inference entirely on the CPU. Universally supported but slower.
+    /// - CudaExecutionProvider: executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16, and INT8 precision modes.
+    /// 
     /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
+    /// - Choose the execution provider based on your available hardware and performance requirements.
     /// - SegmentationDrawingOptions provides extensive customization for visual output,
     ///   including font styling, colors, opacity, and mask rendering.
     /// - Segmentation masks are drawn as pixel-level overlays, providing precise object outlines.
-    /// - Tail visualization for tracking is mentioned but not enabled in this static image demo.
+    /// - Tail visualization for tracking is supported but not enabled in this static image demo (see VideoStream demo).
+    /// - For setup instructions and examples, see the README:  
+    ///   https://github.com/NickSwardh/YoloDotNet
     /// </summary>
     internal class Program
     {
@@ -57,28 +58,39 @@ namespace SegmentationDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             using var yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.Segmentation),
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
+                // 
+                //   - CpuExecutionProvider
+                //     Runs inference entirely on the CPU. Universally supported on all hardware.
                 //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
+                //   - CudaExecutionProvider
+                //     Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //     Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //     and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //     See the TensorRT demo and documentation for detailed configuration and best practices.
                 //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
+                //   - OpenVinoExecutionProvider
+                //     Runs inference using Intel's OpenVINO toolkit for optimized performance on Intel hardware.
                 //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
+                //   - CoreMLExecutionProvider
+                //     Executes inference using Apple's CoreML framework for efficient performance on macOS and iOS devices.
                 //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CpuExecutionProvider(),
+                //   Important:  
+                //     - Choose the provider that matches your available hardware and performance requirements.  
+                //     - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                //     - For detailed setup instructions and examples, see the README:
+                //
+                //   More information about execution providers and setup instructions can be found in the README:
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CudaExecutionProvider(
+
+                    // Path or byte[] of the ONNX model to load.
+                    model: SharedConfig.GetTestModelV11(ModelType.Segmentation),
+
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
+                    gpuId: 0),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -189,6 +201,16 @@ namespace SegmentationDemo
         }
 
         private static void DisplayOutputFolder()
-            => Process.Start("explorer.exe", _outputFolder);
+        {
+            var shell = OperatingSystem.IsWindows() ? "explorer"
+                     : OperatingSystem.IsLinux() ? "xdg-open"
+                     : OperatingSystem.IsMacOS() ? "open"
+                     : null;
+
+            if (shell is not null)
+                Process.Start(shell, _outputFolder);
+            else
+                Console.WriteLine($"Results saved to: {_outputFolder}");
+        }
     }
 }

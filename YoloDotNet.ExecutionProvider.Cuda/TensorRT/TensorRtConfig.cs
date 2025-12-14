@@ -1,69 +1,12 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
-// https://github.com/NickSwardh/YoloDotNet
-
-namespace YoloDotNet.Core
+﻿namespace YoloDotNet.ExecutionProvider.Cuda.TensorRT
 {
-    internal class ExecutionProviderFactory
+    internal static class TensorRtConfig
     {
-        public static SessionOptions Create(IExecutionProvider config)
+        public static void ConfigureTensorRT(this SessionOptions options, int gpuId, TensorRt tensorRtModel)
         {
-            var options = new SessionOptions
-            {
-                GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
-                ExecutionMode = ExecutionMode.ORT_SEQUENTIAL,
-            };
+            using var tensorOptions = new OrtTensorRTProviderOptions();
 
-            switch (config)
-            {
-                case CpuExecutionProvider:
-                    ConfigureCpu(options);
-                    break;
-
-                case CudaExecutionProvider cudaProvider:
-                    ConfigureCuda(cudaProvider.GpuId, options);
-                    break;
-
-                case TensorRtExecutionProvider trtProvider:
-                    ConfigureTensorRT(trtProvider, options);
-                    break;
-                default:
-                    throw new YoloDotNetUnsupportedProviderException($"Unknown execution provider: {config.GetType().Name}");
-            }
-
-            return options;
-        }
-
-        private static void ConfigureCpu(SessionOptions options)
-            => options.EnableCpuMemArena = true;
-
-        private static void ConfigureCuda(int gpuId, SessionOptions options)
-        {
-            var cudaOptions = new OrtCUDAProviderOptions();
-
-            cudaOptions.UpdateOptions(new Dictionary<string, string>
-            {
-                { "device_id", gpuId.ToString() },
-                // Specifies which GPU device to use (default = 0 if not set).
-
-                { "arena_extend_strategy", "kNextPowerOfTwo" }, 
-                // Controls how the GPU memory arena grows when more memory is needed.
-                // kNextPowerOfTwo doubles the allocation size to the next power of two,
-                // which reduces the frequency of CUDA malloc/free calls and minimizes fragmentation 
-                // in long-running or high-throughput inference scenarios like YOLO object detection.
-
-                { "cudnn_conv_algo_search", "EXHAUSTIVE" },
-                // Forces cuDNN to benchmark all available convolution algorithms during model initialization
-                // and select the fastest one for the hardware + model combination.
-                // This gives optimal conv kernel performance at runtime, especially beneficial for large or custom conv layers.
-            });
-
-            options.AppendExecutionProvider_CUDA(cudaOptions);
-        }
-
-        private static void ConfigureTensorRT(ITensorRTExecutionProvider provider, SessionOptions options)
-        {
-            var engineCache = provider.EngineCachePath;
+            var engineCache = tensorRtModel.EngineCachePath;
             var cacheEnabled = 1;
 
             // If a engine cache is used, verify the path exist.
@@ -78,12 +21,10 @@ namespace YoloDotNet.Core
             {
                 cacheEnabled = 0;
             }
-            
-            var tensorOptions = new OrtTensorRTProviderOptions();
 
             var providerOptions = new Dictionary<string, string>
             {
-                { "device_id", provider.GpuId.ToString()},
+                { "device_id", gpuId.ToString()},
                 // Specifies which GPU device to use (default = 0 if not set).
 
                 { "trt_engine_cache_enable", cacheEnabled.ToString() },
@@ -110,21 +51,21 @@ namespace YoloDotNet.Core
                 // If no path is specifiec, executable folder will be used.
 
 
-                { "trt_engine_cache_prefix", provider.EngineCachePrefix ?? "YoloDotNet" },
+                { "trt_engine_cache_prefix", tensorRtModel.EngineCachePrefix ?? "YoloDotNet" },
                 // Set prefix. If empty a default prefix will be used.
 
                 { "trt_auxiliary_streams", "0" },
                 // Set maximum number of auxiliary streams per inference stream. 0 = optimal memory usage.
 
-                { "trt_builder_optimization_level", provider.BuilderOptimizationLevel.ToString() }
+                { "trt_builder_optimization_level", tensorRtModel.BuilderOptimizationLevel.ToString() }
                 // Set the builder optimization level to use when building the engine. A higher level
                 // allows TensorRT to spend more building time on more optimization options.
                 //
                 // WARNING: levels below 3 do not guarantee good engine performance, but greatly improve
                 // build time. Default 3, valid range[0 - 5].
             };
-            
-            switch (provider.Precision)
+
+            switch (tensorRtModel.Precision)
             {
                 case TrtPrecision.FP16:
                     providerOptions.Add("trt_fp16_enable", "1");
@@ -134,13 +75,13 @@ namespace YoloDotNet.Core
                     break;
                 case TrtPrecision.INT8:
 
-                    var calibrationCache = provider.Int8CalibrationCacheFile;
+                    var calibrationCache = tensorRtModel.Int8CalibrationCacheFile;
 
                     if (File.Exists(calibrationCache) is false)
                         throw new YoloDotNetExecutionProviderException($"INT8 calibration cache file not found: '{calibrationCache}'. " +
                             "This file is required to initialize the model in INT8 precision mode using TensorRT. " +
                             "Make sure the file exists and is accessible by the application. " +
-                            $"You can specify its location using the '{nameof(provider.Int8CalibrationCacheFile)}' parameter of the execution provider.");
+                            $"You can specify its location using the '{nameof(tensorRtModel.Int8CalibrationCacheFile)}' parameter of the execution provider.");
 
                     providerOptions.Add("trt_int8_enable", "1");
                     // Enable INT8 mode in TensorRT.
@@ -173,7 +114,7 @@ namespace YoloDotNet.Core
 
                     break;
             }
-            
+
             tensorOptions.UpdateOptions(providerOptions);
             options.AppendExecutionProvider_Tensorrt(tensorOptions);
         }

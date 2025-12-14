@@ -15,7 +15,7 @@ namespace YoloDotNet.Tests.OBBDetectionTests
 
             using var yolo = new Yolo(new YoloOptions
             {
-                OnnxModel = model
+                ExecutionProvider = new CpuExecutionProvider(model)
             });
 
             //var image = SKImage.FromEncodedData(testImage);

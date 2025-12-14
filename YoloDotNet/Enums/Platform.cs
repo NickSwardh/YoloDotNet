@@ -8,6 +8,7 @@ namespace YoloDotNet.Enums
     {
         Windows,
         Linux,
+        MacOS,
         Unknown
     }
 }

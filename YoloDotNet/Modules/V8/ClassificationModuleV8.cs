@@ -9,19 +9,21 @@ namespace YoloDotNet.Modules.V8
         private readonly YoloCore _yoloCore;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
+        private ArrayPool<ClassificationEntry> _classificationPool = default!;
 
         public ClassificationModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
+
+            var poolSize = YoloCore.CalculateBufferPoolSize(_yoloCore.OnnxModel.Labels.Length);
+            _classificationPool = ArrayPool<ClassificationEntry>.Create(poolSize, 10);
         }
 
         public List<Classification> ProcessImage<T>(T image, double classes, double pixelConfidence, double iou)
         {
-            var (ortValues, _) = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image);
 
-            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
-            using var ort = ortValues[0];
-            return ClassifyTensor(ort, (int)classes);
+            return ClassifyTensor(inferenceResult.OrtSpan0, (int)classes);
         }
 
         #region Classicifation
@@ -30,45 +32,39 @@ namespace YoloDotNet.Modules.V8
         /// Classifies a tensor and returns a Classification list 
         /// </summary>
         /// <param name="numberOfClasses"></param>
-        private List<Classification> ClassifyTensor(OrtValue ortTensor, int numberOfClasses)
+        private List<Classification> ClassifyTensor(ReadOnlySpan<float> span, int numberOfClasses)
         {
-            var span = ortTensor.GetTensorDataAsSpan<float>();
-            var labels = _yoloCore.OnnxModel.Labels.AsSpan();
+            var poolBuffer = _classificationPool.Rent(span.Length);
 
-            var queue = new PriorityQueue<Classification, float>();
-
-            for (int i = 0; i < span.Length; i++)
+            try
             {
-                var cls = new Classification
+                // Fill poolbuffer with confidence and labelId
+                for (int i = 0; i < span.Length; i++)
                 {
-                    Confidence = span[i],
-                    Label = labels[i].Name
-                };
-
-                var addToQueue = false;
-
-                if (queue.Count < numberOfClasses)
-                {
-                    addToQueue = true;
-                }
-                else if (cls.Confidence > queue.Peek().Confidence)
-                {
-                    addToQueue = true;
-                    queue.Dequeue();
+                    poolBuffer[i] = new ClassificationEntry(span[i], i);
                 }
 
-                if (addToQueue)
-                    queue.Enqueue(cls, (float)cls.Confidence);
-            }
+                // Sort descending by confidence
+                Array.Sort(poolBuffer, (a, b) => b.Confidence.CompareTo(a.Confidence));
 
-            // Dequeue into array
-            var result = new Classification[queue.Count];
-            for (int i = result.Length - 1; i >= 0; i--)
+                // Take the top-N classes based on numberOfClasses
+                var results = new List<Classification>(numberOfClasses);
+                for (int i = 0; i < numberOfClasses; i++)
+                {
+                    var entry = poolBuffer[i];
+                    results.Add(new Classification
+                    {
+                        Confidence = entry.Confidence,
+                        Label = _yoloCore.OnnxModel.Labels[entry.LabelId].Name
+                    });
+                }
+
+                return results;
+            }
+            finally
             {
-                result[i] = queue.Dequeue();
+                _classificationPool.Return(array: poolBuffer, clearArray: true);
             }
-
-            return [.. result];
         }
 
         #endregion
@@ -83,5 +79,11 @@ namespace YoloDotNet.Modules.V8
         }
 
         #endregion
+    }
+
+    internal readonly struct ClassificationEntry(float confidence, int labelId)
+    {
+        public readonly float Confidence = confidence;  // confidence score
+        public readonly int LabelId = labelId;          // index into labels array
     }
 }

@@ -19,20 +19,25 @@ namespace YoloDotNet.Modules.V8
 
         public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
-            var (ortValues, imageSize) = _yoloCore.Run(image);
-            using IDisposableReadOnlyCollection<OrtValue> _ = ortValues;
+            var inferenceResult = _yoloCore.Run(image);
+            var detections = PoseEstimateImage(inferenceResult, confidence, iou);
 
-            var ortSpan = ortValues[0].GetTensorDataAsSpan<float>();
+            // Convert to List<PoseEstimation>
+            var results = new List<PoseEstimation>(detections.Length);
+            for (int i = 0; i < detections.Length; i++)
+                results.Add((PoseEstimation)detections[i]);
 
-            return PoseEstimateImage(imageSize, ortSpan, confidence, iou);
-
+            return results;
         }
 
         #region Helper methods
 
-        public List<PoseEstimation> PoseEstimateImage(SKSizeI imageSize, ReadOnlySpan<float> ortSpan, double threshold, double overlapThrehshold)
+        private Span<ObjectResult> PoseEstimateImage(InferenceResult inferenceResult, double threshold, double overlapThrehshold)
         {
-            var boxes = _objectDetectionModule.ObjectDetection(imageSize, ortSpan, threshold, overlapThrehshold);
+            var boxes = _objectDetectionModule.ObjectDetection(inferenceResult, threshold, overlapThrehshold);
+
+            var imageSize = inferenceResult.ImageOriginalSize;
+            var ortSpan = inferenceResult.OrtSpan0;
 
             var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(imageSize);
 
@@ -75,7 +80,7 @@ namespace YoloDotNet.Modules.V8
                         x = Math.Clamp(x, box.BoundingBox.Left, box.BoundingBox.Right - 1);
                         y = Math.Clamp(y, box.BoundingBox.Top, box.BoundingBox.Bottom - 1);
                     }
-                    
+
                     var confidence = ortSpan[cIndex];
 
                     poseEstimations[j] = new KeyPoint(x, y, confidence);
@@ -84,7 +89,7 @@ namespace YoloDotNet.Modules.V8
                 box.KeyPoints = poseEstimations;
             }
 
-            return [.. boxes.Select(x => (PoseEstimation)x)];
+            return boxes;
         }
 
         public void Dispose()

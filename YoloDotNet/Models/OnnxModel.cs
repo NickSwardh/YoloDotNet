@@ -9,9 +9,20 @@ namespace YoloDotNet.Models
     /// </summary>
     public record OnnxModel
     {
+        /// <summary>
+        /// Gets the type of the model, eg. Object Detection, Classification etc.
+        /// </summary>
         public ModelType ModelType { get; init; }
 
+        /// <summary>
+        /// Gets or the version of the model being used.
+        /// </summary>
         public ModelVersion ModelVersion { get; set; }
+
+        /// <summary>
+        /// Gets the data type of the model. Float32 or Float16.
+        /// </summary>
+        public ModelDataType ModelDataType { get; init; }
 
         /// <summary>
         /// Name of the input tensor in the ONNX model.
@@ -42,6 +53,11 @@ namespace YoloDotNet.Models
         /// The ONNX-model input shape for creating a Tensor
         /// </summary>
         public long[] InputShape { get; init; } = default!;
+
+        /// <summary>
+        /// Gets the size of the input shape used for tensor allocation and array pooling.
+        /// </summary>
+        public int InputShapeSize { get; init; }
 
         /// <summary>
         /// ONNX custom metadata 

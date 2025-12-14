@@ -2,32 +2,32 @@
 // Copyright (c) 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using Emgu.CV;
-using Emgu.CV.CvEnum;
+using OpenCvSharp;
 using SkiaSharp;
 using SkiaSharp.Views.Desktop;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Threading;
 using YoloDotNet;
-using YoloDotNet.Core;
 using YoloDotNet.Enums;
+using YoloDotNet.ExecutionProvider.Cuda;
 using YoloDotNet.Extensions;
 using YoloDotNet.Models;
 using YoloDotNet.Test.Common;
 using YoloDotNet.Trackers;
+using Window = System.Windows.Window;
 
 namespace WebcamDemo
 {
     /// <summary>
-    /// Demonstrates real-time object detection and tracking from a webcam using the YoloDotNet and EmguCV.
+    /// Demonstrates real-time object detection and tracking from a webcam using YoloDotNet and EmguCV.
     /// 
     /// This demo captures frames directly from the webcam, performs object detection using YOLO models, 
     /// and optionally applies multi-object tracking (SORT). Detected objects are drawn on the frames with 
     /// bounding boxes, labels, confidence scores, and tracked tails.
     /// 
     /// It showcases:
-    /// - Model initialization with configurable hardware acceleration (CUDA) and preprocessing options
+    /// - Model initialization with configurable hardware acceleration (CUDA, with optional TensorRT integration) and preprocessing options
     /// - Real-time object detection on live webcam input using YoloDotNet
     /// - Optional class label filtering (e.g., detecting only persons)
     /// - Optional multi-object tracking across frames using the SORT tracker
@@ -40,13 +40,15 @@ namespace WebcamDemo
     /// 
     /// Execution providers:
     /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for faster inference, with optional GPU warm-up.
-    /// - TensorRtExecutionProvider: leverages NVIDIA TensorRT for highly optimized GPU inference with FP32, FP16, INT8
-    ///   precision modes, delivering significant speed improvements.
-    ///
+    /// - CudaExecutionProvider: executes inference on an NVIDIA GPU using CUDA for accelerated performance.
+    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16, and INT8 precision modes.
+    ///   This delivers significant speed improvements on compatible GPUs.
+    /// 
     /// Important notes:
     /// - Choose the execution provider based on your hardware and performance requirements.
-    /// - The demo updates the WPF UI in real time with processed frames and performance metrics.
+    /// - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+    /// - For detailed setup instructions and examples, see the README:
+    ///   https://github.com/NickSwardh/YoloDotNet
     /// </summary>
     public partial class MainWindow : Window
     {
@@ -94,28 +96,39 @@ namespace WebcamDemo
             // YoloOptions configures the model, hardware settings, and image processing behavior.
             _yolo = new Yolo(new YoloOptions
             {
-                // Path or byte[] to the ONNX model file. 
-                // SharedConfig.GetTestModelV11 loads a YOLOv11 model.
-                OnnxModel = SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
-
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
+                // 
+                //   - CpuExecutionProvider
+                //     Runs inference entirely on the CPU. Universally supported on all hardware.
                 //
-                //   - CpuExecutionProvider()  
-                //     Runs inference entirely on the CPU.
-                //     Universally compatible but generally the slowest option.
+                //   - CudaExecutionProvider
+                //     Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //     Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //     and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //     See the TensorRT demo and documentation for detailed configuration and best practices.
                 //
-                //   - CudaExecutionProvider(GpuId: 0, PrimeGpu: true)  
-                //     Executes inference on an NVIDIA GPU using CUDA.
-                //     Optionally primes the GPU with a warm-up run to reduce first-inference latency.
+                //   - OpenVinoExecutionProvider
+                //     Runs inference using Intel's OpenVINO toolkit for optimized performance on Intel hardware.
                 //
-                //   - TensorRtExecutionProvider() { ... }
-                //     Executes inference using NVIDIA TensorRT for highly optimized GPU acceleration.
-                //     Supports FP32 and FP16 precision modes, and optionally INT8 if calibration data is provided.
-                //     Offers significant speed-ups by leveraging TensorRT engine optimizations.
+                //   - CoreMLExecutionProvider
+                //     Executes inference using Apple's CoreML framework for efficient performance on macOS and iOS devices.
                 //
-                //     See the TensorRTDemo and documentation for detailed configuration and best practices.
-                ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
+                //   Important:  
+                //     - Choose the provider that matches your available hardware and performance requirements.  
+                //     - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                //     - For detailed setup instructions and examples, see the README:
+                //
+                //   More information about execution providers and setup instructions can be found in the README:
+                //   https://github.com/NickSwardh/YoloDotNet
+
+                ExecutionProvider = new CudaExecutionProvider(
+
+                    // Path or byte[] of the ONNX model to load.
+                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+
+                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
+                    gpuId: 0),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -140,11 +153,14 @@ namespace WebcamDemo
         private async Task WebcamAsync()
         {
             // Initialize the webcam
-            using var capture = new VideoCapture(0, VideoCapture.API.DShow);
+            using var capture = new VideoCapture(0, VideoCaptureAPIs.DSHOW);
 
-            capture.Set(CapProp.Fps, FPS);
-            capture.Set(CapProp.FrameWidth, WEBCAM_WIDTH);
-            capture.Set(CapProp.FrameHeight, WEBCAM_HEIGHT);
+            capture.Set(VideoCaptureProperties.Fps, FPS);
+            capture.Set(VideoCaptureProperties.FrameWidth, WEBCAM_WIDTH);
+            capture.Set(VideoCaptureProperties.FrameHeight, WEBCAM_HEIGHT);
+
+            // If the camera supports MJPEG, it's much cheaper on CPU than uncompressed frames.
+            capture.Set(VideoCaptureProperties.FourCC, VideoWriter.FourCC('M', 'J', 'P', 'G'));
 
             using var mat = new Mat();
             using var bgraMat = new Mat();
@@ -153,12 +169,14 @@ namespace WebcamDemo
             {
                 // Capture the current frame from the webcam
                 capture.Read(mat);
-
+                
                 // Convert the frame to BGRA color space
-                CvInvoke.CvtColor(mat, bgraMat, ColorConversion.Bgr2Bgra);
+                Cv2.CvtColor(mat, bgraMat, ColorConversionCodes.BGR2BGRA);
 
                 // Create an SKBitmap from the BGRA Mat for processing
-                using var frame = SKImage.FromPixels(_imageInfo, bgraMat.DataPointer);
+                using var frame = SKImage.FromPixels(_imageInfo, bgraMat.Data);
+
+                _currentFrame?.Dispose();
                 _currentFrame = SKBitmap.FromImage(frame);
 
                 if (_runDetection)
@@ -168,6 +186,8 @@ namespace WebcamDemo
                     // Run object detection on the current frame
                     var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold, iou: 0.7);
 
+                    _stopwatch.Stop();
+
                     if (_isFilteringEnabled)
                         results = results.FilterLabels(["person", "cat", "dog"]);  // Optionally filter results to include only specific classes (e.g., "person", "cat", "dog")
 
@@ -176,10 +196,8 @@ namespace WebcamDemo
 
                     // Draw detection and tracking results on the current frame
                     _currentFrame.Draw(results);
-
-                    _stopwatch.Stop();
                 }
-
+               
                 // Update GUI
                 await _dispatcher.InvokeAsync(() =>
                 {
@@ -188,10 +206,10 @@ namespace WebcamDemo
                     // Display processing time and max fps
                     if (_runDetection)
                     {
-                        var milliseconds = _stopwatch.ElapsedMilliseconds;
+                        var milliseconds = _stopwatch.Elapsed.TotalMilliseconds;
                         var yoloFps = 1000.0 / milliseconds;
 
-                        FrameProcess.Text = $"Processed Frame: {milliseconds}ms, {yoloFps:###} fps";
+                        FrameProcess.Text = $"Processed Frame: {milliseconds:F1}ms ({yoloFps:F1} fps)";
                     }
                 });
             }
@@ -201,7 +219,7 @@ namespace WebcamDemo
         {
             using var canvas = e.Surface.Canvas;
             canvas.DrawBitmap(_currentFrame, _rect);
-            canvas.Flush();
+            //canvas.Flush();
         }
 
         private void StartClick(object sender, RoutedEventArgs e)

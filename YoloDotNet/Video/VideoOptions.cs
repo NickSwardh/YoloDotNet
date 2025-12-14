@@ -20,6 +20,12 @@ namespace YoloDotNet.Video
         public string VideoOutput{ get; set; } = default!;
 
         /// <summary>
+        /// Encoder to use when writing output.
+        /// Only relevant if <see cref="VideoOutput"/> is set.
+        /// </summary>
+        public VideoEncoder VideoEncoder { get; set; }
+
+        /// <summary>
         /// Gets or sets the width of the output video.
         /// Default is 0, which means the source width is preserved.
         /// Set to -2 to automatically calculate the width while maintaining the aspect ratio,
@@ -59,5 +65,18 @@ namespace YoloDotNet.Video
         /// Compression quality for the output video (0–51). Lower is better quality. Default is 30.
         /// </summary>
         public int CompressionQuality { get; set; } = 30;
+
+        /// <summary>
+        /// Start time in seconds from which to begin processing the video.
+        /// Only relevant if the input is a video file (not a live stream).
+        /// </summary>
+        public float StartTimeSeconds { get; set; }
+        
+        /// <summary>
+        /// Duration in seconds for which to process the video.
+        /// Only relevant if the input is a video file (not a live stream).
+        /// </summary>
+        public float DurationSeconds { get; set; }
+     
     }
 }

@@ -10,19 +10,9 @@ namespace YoloDotNet.Models
     public class YoloOptions
     {
         /// <summary>
-        /// Gets or sets the file path to the ONNX model.
-        /// </summary>
-        public string OnnxModel { get; set; } = default!;
-
-        /// <summary>
-        /// Gets or sets the ONNX model as a byte array.
-        /// </summary>
-        public byte[]? OnnxModelBytes { get; set; }
-
-        /// <summary>
         /// Gets or sets Execution Provider (CPU, CUDA or TensorRT).
         /// </summary>
-        public IExecutionProvider ExecutionProvider { get; set; } = new CpuExecutionProvider();
+        public IExecutionProvider ExecutionProvider { get; set; } = default!;
 
         /// <summary>
         /// Gets or sets the type of image resizing the onnx model requires.

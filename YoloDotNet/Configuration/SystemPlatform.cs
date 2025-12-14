@@ -18,6 +18,9 @@ namespace YoloDotNet.Configuration
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return Platform.Windows;
 
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+                return Platform.MacOS;
+
             return Platform.Unknown;
         }
     }
