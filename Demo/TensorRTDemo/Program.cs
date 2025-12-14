@@ -85,7 +85,7 @@ namespace TensorRTDemo
 
                 ExecutionProvider = new CudaExecutionProvider(
 
-                    // Path or byte[] to the ONNX model file.
+                    // Path or byte[] of the ONNX model to load.
                     model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.

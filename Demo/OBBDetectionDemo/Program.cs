@@ -57,19 +57,27 @@ namespace OBBDetectionDemo
                 // Select execution provider (determines how and where inference is executed).
                 // Available execution providers:
                 // 
-                // - CpuExecutionProvider  
-                //   Runs inference entirely on the CPU. Universally supported but typically slower.
-                // 
-                // - CudaExecutionProvider  
-                //   Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
-                //   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
-                //   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
-                //   See the TensorRT demo and documentation for detailed configuration and best practices.
-                // 
-                // Important:  
-                // - Choose the provider that matches your available hardware and performance requirements.  
-                // - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
-                // - For detailed setup instructions and examples, see the README:  
+                //   - CpuExecutionProvider
+                //     Runs inference entirely on the CPU. Universally supported on all hardware.
+                //
+                //   - CudaExecutionProvider
+                //     Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
+                //     Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
+                //     and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
+                //     See the TensorRT demo and documentation for detailed configuration and best practices.
+                //
+                //   - OpenVinoExecutionProvider
+                //     Runs inference using Intel's OpenVINO toolkit for optimized performance on Intel hardware.
+                //
+                //   - CoreMLExecutionProvider
+                //     Executes inference using Apple's CoreML framework for efficient performance on macOS and iOS devices.
+                //
+                //   Important:  
+                //     - Choose the provider that matches your available hardware and performance requirements.  
+                //     - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
+                //     - For detailed setup instructions and examples, see the README:
+                //
+                //   More information about execution providers and setup instructions can be found in the README:
                 //   https://github.com/NickSwardh/YoloDotNet
 
                 ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.ObbDetection)),
