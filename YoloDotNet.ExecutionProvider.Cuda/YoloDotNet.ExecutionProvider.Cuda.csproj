@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Title>YoloDotNet CUDA Execution Provider</Title>
+    <Title>YoloDotNet CUDA &amp; TensorRT Execution Provider</Title>
     <Version>1.0</Version>
     <Authors>Niklas Swärd</Authors>
     <Copyright>Niklas Swärd</Copyright>
