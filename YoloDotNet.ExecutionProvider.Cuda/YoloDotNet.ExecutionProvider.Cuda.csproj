@@ -8,7 +8,7 @@
     <Title>YoloDotNet CUDA &amp; TensorRT Execution Provider</Title>
     <Version>1.0</Version>
     <Authors>Niklas Swärd</Authors>
-    <Copyright>Niklas Swärd</Copyright>
+    <Copyright>Copyright © 2025 Niklas Swärd</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>CUDA and TensorRT execution provider for YoloDotNet, enabling GPU-accelerated inference on NVIDIA hardware using ONNX Runtime.
@@ -22,6 +22,7 @@ The provider is fully compatible with the YoloDotNet core library and follows th
 The CUDA execution provider enables GPU-accelerated inference using ONNX Runtime’s CUDA backend and supports optional NVIDIA TensorRT integration for maximum performance, lower latency, and optimized execution on supported NVIDIA GPUs.
 
 This provider targets high-performance and real-time inference workloads on Windows and Linux systems and requires the CUDA Toolkit and cuDNN to be installed on the host system. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design.</PackageReleaseNotes>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>

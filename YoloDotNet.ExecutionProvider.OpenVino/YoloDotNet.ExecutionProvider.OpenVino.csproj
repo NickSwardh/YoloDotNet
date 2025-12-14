@@ -18,10 +18,11 @@ The OpenVINO execution provider enables optimized inference using Intel OpenVINO
 This provider is fully compatible with the execution-provider-agnostic YoloDotNet core library and must be used as the sole execution provider within a project. It is well suited for Intel-based systems, edge deployments, and CPU-focused inference workloads.</PackageReleaseNotes>
     <Version>1.0</Version>
     <Authors>Niklas Swärd</Authors>
-    <Copyright>Niklas Swärd</Copyright>
+    <Copyright>Copyright © 2025 Niklas Swärd</Copyright>
     <Title>YoloDotNet OpenVINO Execution Provider</Title>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
