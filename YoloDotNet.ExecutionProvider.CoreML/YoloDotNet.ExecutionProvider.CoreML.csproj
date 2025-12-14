@@ -23,6 +23,7 @@ The CoreML execution provider enables hardware-accelerated inference on macOS us
 This provider is intended for macOS applications that benefit from native machine learning acceleration and low-power inference. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design introduced in YoloDotNet v4.0.</PackageReleaseNotes>
     <Title>YoloDotNet CoreML Execution Provider</Title>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.CoreML</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

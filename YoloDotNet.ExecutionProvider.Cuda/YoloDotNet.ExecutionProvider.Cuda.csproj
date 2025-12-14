@@ -23,6 +23,7 @@ The CUDA execution provider enables GPU-accelerated inference using ONNX Runtime
 
 This provider targets high-performance and real-time inference workloads on Windows and Linux systems and requires the CUDA Toolkit and cuDNN to be installed on the host system. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design.</PackageReleaseNotes>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.Cuda</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>

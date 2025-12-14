@@ -23,6 +23,7 @@ This provider is fully compatible with the execution-provider-agnostic YoloDotNe
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.OpenVino</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
