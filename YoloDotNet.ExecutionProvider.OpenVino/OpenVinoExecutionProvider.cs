@@ -129,7 +129,9 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                 ExecutionMode = ExecutionMode.ORT_SEQUENTIAL
             };
 
-            if (openVino is null || openVino.DeviceType.StartsWith("CPU", StringComparison.OrdinalIgnoreCase))
+            if (openVino is null
+                || string.IsNullOrEmpty(openVino.DeviceType)
+                || openVino.DeviceType.StartsWith("CPU", StringComparison.OrdinalIgnoreCase))
             {
                 options.EnableCpuMemArena = true;
             }
