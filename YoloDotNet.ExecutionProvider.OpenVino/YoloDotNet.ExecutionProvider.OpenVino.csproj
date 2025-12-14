@@ -5,7 +5,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Description>YoloDotNet OpenVINO Execution Provider enables optimized inference using Intel® OpenVINO™ on supported Intel CPUs, integrated GPUs, and accelerators.
+
+This execution provider integrates ONNX Runtime with Intel OpenVINO to deliver high-performance, low-latency inference on Intel hardware across Windows and Linux. It is ideal for CPU-focused deployments, edge systems, and environments where Intel hardware acceleration is preferred over CUDA-based solutions.
+
+The provider is fully modular and designed to work with the execution-provider-agnostic YoloDotNet core library introduced in v4.0. Only one execution provider should be referenced per project.</Description>
+    <PackageTags>yolo;yolodotnet;openvino;intel;cpu;igpu;npu;onnx;onnxruntime;machine-learning;computer-vision;object-detection;segmentation;classification;pose-estimation;obb;real-time;inference;edge-ai;hardware-acceleration;dotnet</PackageTags>
+    <PackageReleaseNotes>This is the first standalone release of the OpenVINO execution provider for YoloDotNet, introduced as part of the new modular execution provider architecture.
+
+The OpenVINO execution provider enables optimized inference using Intel OpenVINO on supported Intel CPUs, integrated GPUs, and accelerators on Windows and Linux. It integrates with ONNX Runtime to provide efficient, low-latency inference without requiring CUDA or NVIDIA hardware.
+
+This provider is fully compatible with the execution-provider-agnostic YoloDotNet core library and must be used as the sole execution provider within a project. It is well suited for Intel-based systems, edge deployments, and CPU-focused inference workloads.</PackageReleaseNotes>
+    <Version>1.0</Version>
+    <Authors>Niklas Swärd</Authors>
+    <Copyright>Niklas Swärd</Copyright>
+    <Title>YoloDotNet OpenVINO Execution Provider</Title>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Intel.ML.OnnxRuntime.OpenVino" Version="1.22.0" />
@@ -13,6 +37,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

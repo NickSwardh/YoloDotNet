@@ -1,11 +1,17 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v3.1.1
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v4.0
 
 **YoloDotNet** is a blazing-fast, fully featured C# library for real-time object detection, OBB, segmentation, classification, pose estimation — and tracking — using YOLOv5u–v12, YOLO-World, and YOLO-E models.
 
-Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration via **CUDA** — or break the speed barrier entirely with **NVIDIA TensorRT support**, unleashing maximum inference performance through hardware-level optimization. YoloDotNet delivers exceptional speed and flexibility for both image and video processing, with full support for live streams, frame skipping, and custom visualizations.
+Built on .NET 8 and powered by ONNX Runtime, YoloDotNet delivers high-performance inference on **Windows, Linux, and macOS**, using pluggable execution providers including **CPU**, **CUDA / TensorRT**, **OpenVINO**, and **CoreML**.
 
-### Supported Versions:
-```Yolov5u``` ```Yolov8``` ```Yolov9``` ```Yolov10``` ```Yolov11``` ```Yolov12``` ```Yolo-World``` ```YoloE```
+Designed for both flexibility and speed, YoloDotNet supports image and video processing out of the box, including live streams, frame skipping, and fully customizable visualizations.
+
+### Execution Providers:
+![CPU](https://img.shields.io/badge/CPU-All_devices-blue)
+![CUDA](https://img.shields.io/badge/NVIDIA-CUDA_&_TensorRT-76B900?style=flat&logo=nvidia)
+![OpenVINO](https://img.shields.io/badge/Intel-OpenVINO-0071C5?style=flat&logo=intel)
+![CoreML](https://img.shields.io/badge/Apple-CoreML-999999?style=flat&logo=apple)\
+See the table below to choose the right one for your platform.
 
 ### Supported Tasks:
 
@@ -14,141 +20,121 @@ Built on .NET 8, powered by ONNX Runtime, and supercharged with GPU acceleration
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[image from pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[image from pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
-### Supported Execution Providers
-![ONNX Runtime](https://img.shields.io/badge/Backend-ONNX_Runtime-1f65dc?style=flat&logo=onnx)
-![CPU](https://img.shields.io/badge/CPU-Supported-lightgrey?style=flat&logo=intel)
-![CUDA](https://img.shields.io/badge/GPU-CUDA-76B900?style=flat&logo=nvidia)
-![TensorRT](https://img.shields.io/badge/Inference-TensorRT-00BFFF?style=flat&logo=nvidia)
-# Nuget
-```
-> dotnet add package YoloDotNet
-```
 
 # 📖 Table of Contents
-- [What's new in 3.1.1](#-yolodotnet-v311---full-throttle-tensorrt-inference)
-- [Install CUDA & TensorRT (Optional)](#install-cuda--tensorrt-optional)
-  - [CUDA Installation](#cuda---installation-steps)
-  - [TensorRT Installation](#tensorrt---installation-steps)
-- [Export Yolo Models to ONNX](#export-yolo-models-to-onnx-with-opset17)
+- [What's new in v4.0](#-yolodotnet-v40--modular-execution-maximum-performance)
+- [Requirements](#requirements)
+  - [ONNX Model (opset 17)](#onnx-model-opset-17)
+  - [Installation](#installation)
+- [Customization](#make-it-yours--customize-the-look)
+- [Support YoloDotNet](#support-yolodotnet)
+- [License](#license)
+<!-- - [Export Yolo Models to ONNX](#export-yolo-models-to-onnx-with-opset17)
 - [Quick Start & Demos](#-quick-start-dive-into-the-demos)
 - [Bare Minimum Example](#bare-minimum--get-up-and-running-in-a-snap)
 - 💡 [Accuracy Depends on Configuration](#%EF%B8%8F-accuracy-depends-on-configuration)
 - [Customize Detection Overlay](#make-it-yours--customize-the-look)
 - [Support YoloDotNet](#support-yolodotnet)
-- [References & Acknowledgements](#references--acknowledgements)
-- [License](#license)
+- [License](#license) -->
 
-# 🚀 YoloDotNet v3.1.1 - Full-Throttle TensorRT Inference!
-**Say hello to TensorRT support in YoloDotNet!**
+# 🚀 YoloDotNet v4.0 — Modular Execution, Maximum Performance
 
-Version 3.1.1 bolts on NVIDIA's high-performance inference engine to break the speed barrier and unleash maximum throughput on supported GPUs.
+> ℹ️ **Breaking Change (v4.0)**  
+> YoloDotNet v4.0 introduces a **new modular architecture** and is therefore a **breaking update**.
+>
+> The core **YoloDotNet** package is now completely execution-provider agnostic and no longer ships with any ONNX Runtime dependencies.  
+> Execution providers (CPU, CUDA, OpenVINO, CoreML, etc.) are now **separate NuGet packages** and must be referenced explicitly.
+>
+> **What this means for you:**
+> - You must install **YoloDotNet** and **exactly one execution provider**
+> - Execution provider **selection and configuration code has changed**
+> - Existing projects upgrading from v3.x will need to update their NuGet references and setup code
+> - The inference *API* remains familiar, but provider wiring is now explicit and platform-aware
+>
+> The upside? Cleaner architecture, fewer native dependency conflicts, and a setup that behaves consistently across platforms.
 
-### ✨ Highlights:
-New `TensorRtExecutionProvider` — Configure GPU ID, precision (`FP32`, `FP16`, or turbocharged `INT8`), builder optimizations, and engine cache handling — all from your C# code.
-Give the [TensorRT demo](./Demo/TensorRTDemo/) project a spin to get you started in **no time**. No pun intended ;)
+## What's new
 
-**Hardware-Level Optimization** — TensorRT builds a custom engine just for your machine, tailored to your GPU and inference settings. That means raw, uncompromising speed.
+- ✅ **Fully modular execution providers**\
+Execution providers have officially moved out and got their own place.
+YoloDotNet Core now focuses on what to run, not how to run it — leaving all the platform-specific heavy lifting to dedicated NuGet packages.
+The result? Cleaner projects, fewer native dependency tantrums, and behavior you can actually predict.
 
-**Engine Cache Support** — Save and reuse compiled TensorRT engines between runs to skip the long optimization stage.
+- ✅ **New execution providers: OpenVINO & CoreML**\
+Two shiny new execution providers join the lineup:
 
-**INT8 Calibration Cache** — Drop your precision down to `INT8` for maximum speed and minimal accuracy loss. Generate the `.cache` file once, reuse it forever.
+    - **Intel OpenVINO** — Squeezes the most out of Intel CPUs and iGPUs on Windows and Linux
+    - **Apple CoreML** — Taps directly into Apple’s native ML stack for fast, hardware-accelerated inference on macOS
+    Plug them in, run inference, enjoy the speed — no code changes, no drama.
 
-**Fully Configurable** — Engine cache path, file prefix, calibration cache file location — it's all in your control.
-> 💡 **Heads up:**\
-On the first run, TensorRT may take a couple of minutes to compile and optimize your model. But once the engine is built and cached, it’s warp-speed from there on out.
+- ✅ **Improved CUDA execution provider**\
+Smarter and more explicit GPU handling for CUDA and TensorRT, so your NVIDIA hardware does what you expect — and not what it feels like doing today.
 
-**Segmentation upgraded** — Now leaner with 85% less memory, and quicker than ever—8% CPU boost and 28% GPU turbocharged!
+- ✅ **Grayscale ONNX model support**\
+Run inference on grayscale-only models when color is just wasted effort.
+Less data, less work, same results — because sometimes black and white is all you need.
 
-**OrtEnv fix in 3.1.1** — Reusing or recreating YoloDotNet objects? No more "OrtEnv singleton instance already exists" drama.
+- 🔄 **Dependency updates**
+    - **SkiaSharp** updated to **3.119.1**
+    - **ONNX Runtime** (CUDA) updated to **1.23.2**\
+    Fresh bits, fewer bugs, better vibes.
 
-Bottom Line? Real-time YOLO inference at breakneck speed! Check the [Benchmarks](./test/YoloDotNet.Benchmarks/).
+# Requirements
 
-## Previously in v3.0
-YoloDotNet 3.0 introduced massive performance upgrades and smarter APIs:
+To use **YoloDotNet**, you need:
 
-- Up to 70% faster inference and 92% less memory usage, depending on task and hardware
-- Support for YOLOv5u, YOLO-E, and ONNX byte array loading
-- Direct inference on SkiaSharp types (SKBitmap, SKImage)
-- Improved video handling and built-in SORT tracking
-- Custom fonts, class colors, and smarter drawing tools
-- Dependency updates: ONNX Runtime 1.22.1, SkiaSharp 3.119.0
+- A YOLO model exported to **ONNX format (opset 17)**
+- The **YoloDotNet core** NuGet package
+- **Exactly one** execution provider package suitable for your target platform
 
-## Install CUDA & TensorRT (optional)
+## ONNX Model (opset 17)
 
-### CUDA - Installation Steps
+All models — including custom-trained models — must be exported to **ONNX format with `opset 17`** for best performance and compatibility.
 
-1. Download and install the following from NVIDIA’s official sites:
-    - [CUDA v12.x](https://developer.nvidia.com/cuda-downloads)
-    - [cuDNN v9.x](https://developer.nvidia.com/cudnn-downloads)
+For instructions on exporting YOLO models to ONNX, see:  
+https://docs.ultralytics.com/modes/export/#usage-examples
 
-2. Locate the folder containing the cuDNN DLL files, typically:
+> **Note:** Dynamic models are not supported.
+
+## Installation
+
+1. ### Install YoloDotNet Core
+    ```bash
+    dotnet add package YoloDotNet
     ```
-    C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v12.x
-    ```
-    *(Replace v9.x and v12.x with your installed versions.)*
+2. ### Select an Execution Provider
 
-3. Copy the full path of this folder from the File Explorer address bar.
+    | Execution Provider | Windows | Linux | macOS | Documentation |
+    | ------------------ | ------- | ----- | ----- | ------------- |
+    | CPU | ✅ | ✅ | ✅ | [CPU README](./YoloDotNet.ExecutionProvider.Cpu/README.md) |
+    | CUDA / TensorRT | ✅ | ✅ | ❌ | [CUDA README](./YoloDotNet.ExecutionProvider.Cuda/README.md) |
+    | OpenVINO | ✅ | ✅ | ❌ | [OpenVINO README](./YoloDotNet.ExecutionProvider.OpenVino/README.md) |
+    | CoreML | ❌ | ❌ | ✅ | [CoreML README](./YoloDotNet.ExecutionProvider.CoreML/README.md) |
 
-4. Add this path to your Windows system environment variables:
-    - Search for `Edit the system environment variables` in the Start menu and open it.
-    - Click on ```Environment Variables```
-    - Under ```System Variables``` find and select ```Path```, then click ```Edit```
-    - Click ```New``` and paste the copied `cuDNN` folder path.
-    - Click OK to save and close all dialogs.
-5. **Important:** Restart any open programs or reboot your computer to ensure Windows recognizes the 
-new environment variable.
+    > ℹ️ **Important limitation**  
+    > Only **one** execution provider package may be referenced.  
+    > Execution providers ship their own ONNX Runtime native binaries, and mixing providers will overwrite shared DLLs and cause runtime errors.
 
-### TensorRT - Installation Steps
-1. Download TensorRT from NVIDIA’s official site:\
-    https://developer.nvidia.com/tensorrt
-
-2. Click the `Download Now` button (you may need to log in with your NVIDIA account).
-
-3. Select `TensorRT 10` and accept the terms and conditions.
-
-4. Choose the latest release of `TensorRT 10`.
-
-5. Download the Windows **ZIP package** for `CUDA 12.x`.
-
-6. Once downloaded, unzip the TensorRT archive to a folder on your system.
-
-7. Locate the `lib` folder inside the extracted TensorRT directory.
-
-8. Copy the full path of this lib folder.
-
-9. Add this folder path to your system’s `PATH environment variable`, following the same process as with CUDA (see CUDA installation step #4).
-
-10. **Installation complete!** Restart any open programs or reboot your system to ensure the environment variables take effect.
-
->💡 **Tip:** Curious about how TensorRT works in practice? Check out the [TensorRT Demo project](./Demo/TensorRTDemo/) and its [README](./Demo/TensorRTDemo/) for a hands-on example and setup instructions.
-
-# Export Yolo models to ONNX with opset=17
-**All models** — including your own custom models — must be exported to the ONNX format with **`opset 17`** for best performance.\
-For more information on how to export yolo-models to onnx [read this guide](https://docs.ultralytics.com/modes/export/#usage-examples).
-
->**Note:** Dynamic models are not supported.
-
-The ONNX-models included in this repo for test and demo purposes are from Ultralytics s-series (small). https://docs.ultralytics.com/models.
 
 # 🚀 Quick Start: Dive into the Demos
 Can’t wait to see YoloDotNet in action? The [demo projects](./Demo) are the fastest way to get started and explore everything this library can do.
 
-Each demo showcases one of the supported tasks:
+Each demo showcases:
 
-- **Classification** – What is this thing?
-- **Object Detection** – What are all these things?
-- **OBB Detection** – Rotated objects? No problem.
-- **Segmentation** – Color between the lines… automatically.
-- **Pose Estimation** – Find the limbs, strike a pose!
+- **Classification**
+- **Object Detection**
+- **OBB Detection**
+- **Segmentation**
+- **Pose Estimation**
 
 Oh, and it doesn’t stop there — there’s a demo for [real-time video inference](./Demo/VideoStreamDemo) too! Whether you’re analyzing local video files or streaming live, the demos have you covered.
 
-Each [demo](./Demo) is packed with inline comments to help you understand how everything works under the hood. From model setup and preprocessing to video streaming and result rendering — it's all there.
+Each [demo](./Demo) is packed with inline comments to help you understand how everything works under the hood. From model setup, execution provider, preprocessing to video streaming and result rendering — it's all there.
 
 > Pro tip:
-> For detailed configuration options and usage guidance, check out the comments in the demo source files. That’s where the real magic happens.
+> For detailed configuration options and usage guidance, check out the comments in the demo source files.
 
-[Open the YoloDotNet.Demo projects](./Demo), build, run, and start detecting at full speed. ✨
+[Open the YoloDotNet.Demo projects](./Demo), build, run, and start detecting like a pro. ✨
 
 # Bare Minimum — Get Up and Running in a Snap
 Sometimes you just want to see the magic happen without the bells and whistles. Here’s the absolute simplest way to load a model, run inference on an image, and get your detected objects:
@@ -158,71 +144,42 @@ using YoloDotNet;
 using YoloDotNet.Enums;
 using YoloDotNet.Models;
 using YoloDotNet.Extensions;
+using YoloDotNet.ExecutionProvider.Cpu;
 
 public class Program
 {
-    // ⚠️ Note: The accuracy of inference results depends heavily on how you configure preprocessing and thresholds.
-    // Make sure to read the README section "Accuracy Depends on Configuration":
-    // https://github.com/NickSwardh/YoloDotNet/tree/master#%EF%B8%8F-accuracy-depends-on-configuration
-
     static void Main(string[] args)
     {
-        // Fire it up! Create an instance of YoloDotNet and reuse it across your app's lifetime.
-        // Prefer the 'using' pattern for automatic cleanup if you're done after a single run.
-        var yolo = new Yolo(new YoloOptions
+        // Instantiate yolo
+        using var yolo = new Yolo(new YoloOptions
         {
-            OnnxModel = "model.onnx",
-            // Path to your trained model.
-            // Ensure this model matches the preprocessing and training settings you use below.
+            // Select an execution provider for your target system
+            // 
+            ExecutionProvider = new CpuExecutionProvider(model: "path/to/model.onnx"),
 
-            // OnnxModelBytes = modelBytes
-            // Load model in byte[] format (e.g. for embedded scenarios)
-
-            ExecutionProvider = new CudaExecutionProvider(GpuId: 0, PrimeGpu: true),
-            // Sets the execution backend.
-            // Available options:
-            //   - CpuExecutionProvider         → CPU-only (no GPU required)
-            //   - CudaExecutionProvider        → GPU via CUDA (NVIDIA required)
-            //   - TensorRtExecutionProvider    → GPU via NVIDIA TensorRT for maximum performance
-
-            ImageResize = ImageResize.Proportional,
-            // IMPORTANT: Match this to your model's training preprocessing.
-            // Proportional = the dataset images were not distorted; their aspect ratio was preserved.
-            // Stretched = the dataset images were resized directly to the model's input size, ignoring aspect ratio.
-
-            SamplingOptions = new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
-            // IMPORTANT: This defines how pixel data is resampled when resizing the image.
-            // The choice of sampling method can directly affect detection accuracy, 
-            // as different resampling methods (Nearest, Bilinear, Cubic, etc.) slightly alter object shapes and edges.
-            // Check the benchmarks for examples and guidance: 
-            // https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
+            // ...other options here
         });
 
-        // Display model metadata
-        Console.WriteLine($"Model Type: {yolo.ModelInfo}");
-
-        // Load image using SkiaSharp
+        // Load image
         using var image = SKBitmap.Decode("image.jpg");
 
-        // Run object detection
-        var results = yolo.RunObjectDetection(image, confidence: 0.20, iou: 0.7);
+        // Run inference
+        var results = yolo.RunObjectDetection(image, confidence: 0.25, iou: 0.7);
 
         image.Draw(results);         // Draw boxes and labels
-        image.Save("result.jpg");    // Save to file – boom, done!
-
-        yolo?.Dispose();             // Cleanup if not using 'using'
+        image.Save("result.jpg");    // Save – boom, done!
     }
 }
 ```
-That’s it! No fuss, just fast and easy detection.
+That’s it! No fuss.
 
-Of course, the real power lies in customizing the pipeline, streaming videos, or tweaking models… but this snippet gets you started in seconds.
+Of course, the real power lies in customizing the pipeline, streaming images/videos, or tweaking models… but this snippet gets you started in seconds.
 
 **Want more?** Dive into the [demos and source code](./Demo) for full examples, from video streams to segmentation and pose estimation.
 
 # ⚠️ Accuracy Depends on Configuration
 
-**The accuracy of your results in YoloDotNet depends heavily on how you configure preprocessing and thresholds**. Even with a correctly trained model, mismatched settings can cause accuracy loss. There is no one-size-fits-all configuration — optimal values depend on your dataset, how your model was trained, and your specific application needs.
+**The accuracy of your results depends heavily on how you configure preprocessing and thresholds**. Even with a correctly trained model, mismatched settings can cause accuracy loss. There is no one-size-fits-all configuration — optimal values depend on your dataset, how your model was trained, and your specific application needs.
 
 ### 🔑 Key Factors
 1. **Image Preprocessing & Resize Mode**

@@ -5,7 +5,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Version>1.0</Version>
+    <Authors>Niklas Swärd</Authors>
+    <Description>YoloDotNet.ExecutionProvider.Cpu provides a fully portable CPU-based execution provider for YoloDotNet using ONNX Runtime’s built-in CPU backend.
+
+This execution provider requires no additional system-level dependencies and works out of the box on Windows, Linux, and macOS. It is ideal for development, testing, CI environments, and production scenarios where GPU or NPU acceleration is unavailable.
+
+The CPU provider integrates seamlessly with YoloDotNet’s modular execution provider architecture introduced in v4.0 and supports all inference tasks including object detection, segmentation, classification, pose estimation, and OBB detection.</Description>
+    <PackageIcon>icon.png</PackageIcon>
+    <Copyright>Copyright © 2025 Nick Swardh</Copyright>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;onnxruntime;cpu;execution-provider;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;tracking;image-processing;video-processing;media-processing;computer-vision;machine-learning;deep-learning;real-time;inference;dotnet;cross-platform;windows;linux;macos</PackageTags>
+    <PackageReleaseNotes>This is the first standalone release of the CPU execution provider for YoloDotNet, introduced alongside the new modular architecture.
+
+The CPU execution provider runs inference using ONNX Runtime’s built-in CPU backend and requires no additional system-level dependencies, drivers, or runtimes. It works out of the box on Windows, Linux, and macOS.
+
+This provider is intended for development, testing, CI environments, and production scenarios where GPU or NPU acceleration is not available or required. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design.</PackageReleaseNotes>
+    <Title>YoloDotNet CPU Execution Provider</Title>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.0" />
@@ -13,6 +37,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

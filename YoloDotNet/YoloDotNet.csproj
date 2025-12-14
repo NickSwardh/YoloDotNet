@@ -8,26 +8,35 @@
     <Title>YoloDotNet</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;cuda;gpu;tensor;tensorrt;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;ffmpeg;skiasharp;imagesharp;tracking;machine-learning;real-time;inference</PackageTags>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>YoloDotNet is a blazing-fast, modern C# library for real-time object detection, classification, segmentation, OBB, pose estimation — and tracking. Powered by ONNX Runtime, CUDA acceleration, and now NVIDIA TensorRT, it effortlessly handles images and video streams with ultra-low latency. Supports a wide range of cutting-edge models including YOLOv5u, YOLOv8, YOLOv9, YOLOv10, YOLOv11, YOLOv12, Yolo-World, and YOLO-E. Whether you’re building smart cameras, analytics dashboards, or unlocking real-time machine vision, YoloDotNet has you covered.</Description>
-    <Authors>Nick Swardh</Authors>
-	<Version>3.1.1</Version>
+    <Description>YoloDotNet is a blazing-fast, modern C# library for real-time object detection, classification, segmentation, OBB, pose estimation — and tracking — using YOLOv5u–v12, YOLO-World, and YOLO-E models.
+
+Built on .NET 8 and powered by ONNX Runtime, YoloDotNet features a fully modular execution architecture, allowing you to run inference via pluggable execution providers such as CPU, CUDA / TensorRT, Intel OpenVINO, and Apple CoreML across Windows, Linux, and macOS.
+
+Designed for high performance and flexibility, YoloDotNet handles images and video streams with low latency, supports live streams and frame skipping, and offers fully customizable visualization pipelines. Whether you’re building smart cameras, real-time analytics, or high-performance machine vision systems, YoloDotNet lets you pick the hardware, platform, and execution backend — and gets out of your way.</Description>
+    <Authors>Niklas Swärd</Authors>
+	<Version>4.0</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <PackageReleaseNotes>Say hello to YoloDotNet 3.1.1, packed with blazing fast inference thanks to brand-new TensorRT support! Now you can harness NVIDIA’s TensorRT execution provider to supercharge your YOLO models with ultra-low latency and killer throughput — perfect for real-time and edge deployments.
+    <PackageReleaseNotes>YoloDotNet v4.0 is a major release that introduces a new modular architecture and significantly improves cross-platform support and maintainability.
 
-TensorRT Integration:
-Enjoy powerful CUDA-accelerated inference that pushes your models to new heights with minimal fuss.
+Execution providers have been fully decoupled from YoloDotNet Core. The core package is now execution-provider agnostic and no longer ships with any ONNX Runtime native dependencies. CPU, CUDA, OpenVINO, and CoreML execution providers are distributed as separate NuGet packages and must be referenced explicitly. Exactly one execution provider should be used per project.
 
-Segmentation Improvements:
-Segmentation inference just got leaner and meaner — CPU inference is up to 11% faster, GPU up to 28% quicker, with memory usage slashed by a massive 85%. Your vision pipelines are now faster, lighter, and more reliable.
+This architectural change is a breaking update for users upgrading from v3.x, as project setup and execution provider configuration have changed. The upside is a much cleaner architecture, fewer native dependency conflicts, and predictable behavior across platforms.
 
-OrtEnv fix in 3.1.1:
-Reusing or recreating YoloDotNet objects? No more "OrtEnv singleton instance already exists" drama.</PackageReleaseNotes>
+New execution providers have been added in this release. Intel OpenVINO enables optimized inference on Intel CPUs and integrated GPUs on Windows and Linux. Apple CoreML enables native, hardware-accelerated inference on macOS using Apple’s Core ML framework.
+
+The CUDA execution provider has been improved with more explicit GPU allocation, resulting in smoother and more predictable CUDA and TensorRT performance on NVIDIA hardware.
+
+Support for grayscale-only ONNX models has been added, allowing inference on models exported specifically for single-channel input where color data is unnecessary.
+
+Dependencies have been updated. SkiaSharp has been updated to version 3.119.1, and ONNX Runtime for CUDA has been updated to version 1.23.2.
+
+For detailed installation instructions and execution provider setup, see the execution providers README in the repository.</PackageReleaseNotes>
     <Copyright>Copyright © 2023 Nick Swardh</Copyright>
   </PropertyGroup>
 

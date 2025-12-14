@@ -5,7 +5,31 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Authors>Niklas Swärd</Authors>
+    <Copyright>Niklas Swärd</Copyright>
+    <PackageIcon>icon.png</PackageIcon>
+    <Version>1.0</Version>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>YoloDotNet.ExecutionProvider.CoreML provides hardware-accelerated inference on macOS using Apple’s native Core ML framework.
+
+This execution provider integrates ONNX Runtime’s CoreML backend, enabling efficient inference on Apple devices by leveraging system-level machine learning acceleration. No additional runtimes, drivers, or SDKs are required beyond macOS itself.
+
+The CoreML execution provider is designed to work seamlessly with the modular YoloDotNet core library and supports the new execution-provider-agnostic architecture introduced in YoloDotNet v4.0. It is ideal for macOS applications that require fast, low-power inference using Apple’s native ML stack.</Description>
+    <PackageTags>yolo;yolodotnet;coreml;apple;macos;onnx;onnxruntime;machine-learning;computer-vision;object-detection;segmentation;pose-estimation;classification;obb;real-time;inference;hardware-acceleration;apple-silicon;intel-mac</PackageTags>
+    <PackageReleaseNotes>This is the first standalone release of the CoreML execution provider for YoloDotNet following the introduction of the new modular architecture.
+
+The CoreML execution provider enables hardware-accelerated inference on macOS using Apple’s native Core ML framework through ONNX Runtime. No additional system-level dependencies, drivers, or runtimes are required.
+
+This provider is intended for macOS applications that benefit from native machine learning acceleration and low-power inference. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design introduced in YoloDotNet v4.0.</PackageReleaseNotes>
+    <Title>YoloDotNet CoreML Execution Provider</Title>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="D:\Documents\Yolodotnet Icon\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.0" />
@@ -13,6 +37,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
