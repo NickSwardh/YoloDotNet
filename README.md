@@ -16,7 +16,6 @@ YoloDotNet is designed for developers who need:
 - ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML
 - ✅ **Explicit configuration** — predictable accuracy and memory usage
 - ✅ **Production readiness** — engine caching, long-running stability
-- ✅ **Large image support** — not limited to toy resolutions
 - ✅ **Multiple vision tasks** — detection, OBB, segmentation, pose, classification
 
 YoloDotNet is ideal for developers building **desktop apps, backend services, or real-time vision pipelines** in .NET who need predictable performance and explicit control.
