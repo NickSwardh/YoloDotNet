@@ -43,10 +43,11 @@ dotnet add package YoloDotNet.ExecutionProvider.Cpu
 
 # Optional GPU acceleration
 dotnet add package YoloDotNet.ExecutionProvider.Cuda
-dotnet add package YoloDotNet.ExecutionProvider.TensorRt
 dotnet add package YoloDotNet.ExecutionProvider.OpenVino
 dotnet add package YoloDotNet.ExecutionProvider.CoreML
 ```
+
+💡 Note: The CUDA execution provider includes optional TensorRT acceleration. No separate TensorRT package is required.
 
 ### 3️⃣ Run object detection
 ```csharp
