@@ -25,5 +25,5 @@ global using YoloDotNet.Test.Common.Enums;
 global using YoloDotNet.Models.Interfaces;
 global using YoloDotNet.ExecutionProvider.Cuda;
 global using YoloDotNet.Benchmarks.Configuration;
+global using YoloDotNet.Benchmarks.InferenceBenchmarks;
 global using YoloDotNet.ExecutionProvider.Cuda.TensorRT;
-global using YoloDotNet.Benchmarks.ObjectDetectionTests;

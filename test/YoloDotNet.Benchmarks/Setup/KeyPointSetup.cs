@@ -1,4 +1,4 @@
-﻿namespace YoloDotNet.Benchmarks.Configuration
+﻿namespace YoloDotNet.Benchmarks.Setup
 {
     /// <summary>
     /// Demonstrates configuring a custom keypoint marker profile with custom colors and illustrating keypoint connections.

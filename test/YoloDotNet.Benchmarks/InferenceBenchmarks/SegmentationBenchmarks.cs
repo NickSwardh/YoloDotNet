@@ -2,11 +2,11 @@
 // Copyright (c) 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-namespace YoloDotNet.Benchmarks.SegmentationTests
+namespace YoloDotNet.Benchmarks.InferenceBenchmarks
 {
     //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
-    public class SimpleSegmentationTests
+    public class SegmentationBenchmarks
     {
         private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
         private SKBitmap _image;
@@ -30,12 +30,12 @@ namespace YoloDotNet.Benchmarks.SegmentationTests
         [Params(
             YoloType.V8_Seg_CPU,
             YoloType.V8_Seg_GPU,
-            YoloType.V8_Seg_TRT32,
-            YoloType.V8_Seg_TRT16,
+            //YoloType.V8_Seg_TRT32,
+            //YoloType.V8_Seg_TRT16,
             YoloType.V11_Seg_CPU,
-            YoloType.V11_Seg_GPU,
-            YoloType.V11_Seg_TRT32,
-            YoloType.V11_Seg_TRT16
+            YoloType.V11_Seg_GPU
+            //YoloType.V11_Seg_TRT32,
+            //YoloType.V11_Seg_TRT16
             )]
         public YoloType YoloParam { get; set; }
 

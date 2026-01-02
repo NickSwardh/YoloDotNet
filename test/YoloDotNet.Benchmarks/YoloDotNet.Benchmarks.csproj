@@ -7,12 +7,15 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
-		<PackageReference Include="Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers" Version="18.0.36525.3" />
+	  <Compile Remove="C:\Users\Nick\.nuget\packages\microsoft.visualstudio.diagnosticshub.benchmarkdotnetdiagnosers\18.0.36525.3\contentFiles\cs\any\BenchmarkProfilerAgentConfig.g.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<!--<ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cpu\YoloDotNet.ExecutionProvider.Cpu.csproj" />-->
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageReference Include="Microsoft.VisualStudio.DiagnosticsHub.BenchmarkDotNetDiagnosers" Version="18.3.36812.1" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cuda\YoloDotNet.ExecutionProvider.Cuda.csproj" />
 		<ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
 		<ProjectReference Include="..\YoloDotNet.Test.Common\YoloDotNet.Test.Common.csproj" />

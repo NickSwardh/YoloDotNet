@@ -19,7 +19,7 @@ namespace YoloDotNet.Benchmarks
 
             DefaultConfig.Instance.WithOptions(ConfigOptions.DisableOptimizationsValidator);
 
-            var benchmark = new SimpleObjectDetectionTests
+            var benchmark = new ObjectDetectionBenchmarks
             {
                 YoloParam = YoloType.V8_Obj_GPU
             };
