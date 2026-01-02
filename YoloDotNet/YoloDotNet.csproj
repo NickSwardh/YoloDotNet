@@ -45,6 +45,14 @@ For detailed installation instructions and execution provider setup, see the exe
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+	<None Include="..\CHANGELOG.md">
+	  <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+	</None>
+	<None Include="..\AccuracyAndConfiguration.md">
+      <Pack>True</Pack>
+	  <PackagePath>\</PackagePath>
+	</None>
     <None Include="..\icon.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
