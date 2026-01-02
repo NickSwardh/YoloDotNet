@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>14.0</LangVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="3.119.1" />
+	<PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Reference local core project in the repo -->
+    <ProjectReference Include="..\..\YoloDotNet.ExecutionProvider.Cpu\YoloDotNet.ExecutionProvider.Cpu.csproj" />
+    <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
+  </ItemGroup>
+
+	<!-- Include any file named 'yolov11s.onnx' in the repository and copy it into the output folder under 'models\'. -->
+	<ItemGroup>
+		<None Include="..\..\test\assets\models\yolov11s.onnx">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+			<TargetPath>models\%(Filename)%(Extension)</TargetPath>
+		</None>
+	</ItemGroup>
+
+</Project>

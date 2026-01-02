@@ -36,10 +36,10 @@ namespace YoloDotNet.Configuration
         public static readonly SKColor TailPaintColorStart = new(255, 105, 180);  // #FF69B4 - Blazing Bubblegum Bomber Pink
         public static readonly SKColor TailPaintColorEnd = TailPaintColorStart.WithAlpha(0);
 
-        public static readonly SKColor PoseMarkerColor = new (255, 246, 51, DEFAULT_OPACITY); // #FFF633 - Goblin Torchlight Yellow
+        public static readonly SKColor PoseMarkerColor = new(255, 246, 51, DEFAULT_OPACITY); // #FFF633 - Goblin Torchlight Yellow
 
-        public static readonly SKSamplingOptions DefaultSamplingOptions = new (SKFilterMode.Nearest, SKMipmapMode.None);
-        public static readonly SKSamplingOptions SegmentationResamplingOptions = new (SKFilterMode.Linear, SKMipmapMode.None);
+        public static readonly SKSamplingOptions DefaultSamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None);
+        public static readonly SKSamplingOptions SegmentationResamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None);
 
         public static readonly SKPaint PaintFill = new()
         {
@@ -67,7 +67,7 @@ namespace YoloDotNet.Configuration
             IsAntialias = true
         };
 
-        public static readonly SKPaint EdgeBlur = new ()
+        public static readonly SKPaint EdgeBlur = new()
         {
             ImageFilter = SKImageFilter.CreateBlur(0.8f, 0.8f)
         };

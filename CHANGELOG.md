@@ -1,29 +1,35 @@
 # Changelog
 
-All notable changes to **YoloDotNet** are documented in this file.
+All notable changes to **YoloDotNet** will be documented in this file.
 
 ## [4.0] — 2025-12-14
 
+### Breaking Changes
+- Execution providers are no longer bundled with the core package.
+- Consumers **must reference exactly one execution provider NuGet package**.
+- Provider setup code must be updated when upgrading from v3.x.
+
 ### Added
-- Fully modular execution provider architecture
+- Fully modular execution provider architecture.
 - New execution providers:
-  - Intel OpenVINO (Windows, Linux)
-  - Apple CoreML (macOS)
-- Support for grayscale (single-channel) ONNX models
+  - **CPU** (baseline, cross-platform)
+  - **CUDA / TensorRT** (NVIDIA GPUs, optional TensorRT acceleration)
+  - **OpenVINO** (Intel CPUs and iGPUs on Windows/Linux)
+  - **CoreML** (Apple Silicon on macOS)
+- Support for **grayscale-only ONNX models**.
+- Improved GPU execution behavior and predictability.
+- Clear separation of native ONNX Runtime dependencies per provider.
 
 ### Changed
-- Execution providers are now distributed as separate NuGet packages
-- Core package is execution-provider agnostic
-- CUDA execution provider behavior has been made more explicit and predictable
-- Improved handling of TensorRT precision modes
+- Core package is now execution-provider agnostic.
+- Dependency graph simplified for predictable deployment.
+- CUDA provider exposes clearer and more explicit GPU behavior.
 
-### Updated
-- SkiaSharp updated to 3.119.1
-- ONNX Runtime (CUDA) updated to 1.23.2
+### ⬆️ Updated
+- **SkiaSharp** → 3.119.1
+- **ONNX Runtime (CUDA)** → 1.23.2
 
-### Migration Notes
-- Projects upgrading from v3.x must explicitly reference one execution provider package
-- Mixing execution providers is not supported due to native dependency conflicts
+---
 
 ## [Pre-4.0]
 

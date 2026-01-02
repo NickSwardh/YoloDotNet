@@ -4,7 +4,7 @@
 
 namespace YoloDotNet.Extensions
 {
-    internal static class ImageResizeExtension
+    public static class ImageResizeExtension
     {
         /// <summary>
         /// Resizes the input image to the target dimensions by stretching it to fit the model input size, returning a pointer to RGB888x pixel data and the new dimensions.

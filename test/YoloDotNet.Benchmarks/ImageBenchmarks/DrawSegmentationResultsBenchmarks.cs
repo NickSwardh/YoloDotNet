@@ -1,26 +1,26 @@
 ﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2024-2025 Niklas Swärd
+// Copyright (c) 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-namespace YoloDotNet.Benchmarks.ImageExtensionTests
+namespace YoloDotNet.Benchmarks.ImageBenchmarks
 {
     //[CPUUsageDiagnoser]
     [MemoryDiagnoser]
-    public class ObjectDetectionImageDrawTests
+    public class DrawSegmentationResultsBenchmarks
     {
-        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
 
         private Yolo _yolo;
         private SKBitmap _image;
-        private List<ObjectDetection> _objectDetections;
+        private List<Segmentation> _detectionResults;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            _yolo = YoloCreator.Create(YoloType.V8_Obj_CPU);
             _image = SKBitmap.Decode(_testImage);
 
-            _objectDetections = _yolo.RunObjectDetection(_image);
+            _yolo = YoloCreator.Create(YoloType.V11_Seg_CPU);
+            _detectionResults = _yolo.RunSegmentation(_image);
         }
 
         [GlobalCleanup]
@@ -31,7 +31,8 @@ namespace YoloDotNet.Benchmarks.ImageExtensionTests
         }
 
         [Benchmark]
-        public void DrawObjectDetection()
-            => _image.Draw(_objectDetections);
+        public void DrawPoseEstimationResults()
+            => _image.Draw(_detectionResults);
+
     }
 }
