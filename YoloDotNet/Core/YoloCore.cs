@@ -56,7 +56,7 @@ namespace YoloDotNet.Core
             {
                 var pinnedBuffer = _pinnedMemoryPool.Rent();
 
-                try //
+                try
                 {
                     // Resize image to model input size and store in pinned buffer for faster access
                     var originalImageSize =
@@ -100,11 +100,11 @@ namespace YoloDotNet.Core
 
                     return inferenceResult;
                 }
-                finally //
-                { //
+                finally
+                {
                     _pinnedMemoryPool.Return(pinnedBuffer);
-                } //
-            } //
+                }
+            }
         }
 
         #region Helper methods
@@ -225,15 +225,25 @@ namespace YoloDotNet.Core
         /// <param name="size">The original image size.</param>
         public (float, float, float, float) CalculateProportionalGain(SKSizeI size)
         {
-            var model = OnnxModel;
+            int w = size.Width;
+            int h = size.Height;
 
-            var (w, h) = (size.Width, size.Height);
+            float modelW = OnnxModel.Input.Width;
+            float modelH = OnnxModel.Input.Height;
 
-            var gain = Math.Max((float)w / model.Input.Width, (float)h / model.Input.Height);
-            var ratio = Math.Min(model.Input.Width / (float)size.Width, model.Input.Height / (float)size.Height);
-            var (xPad, yPad) = ((model.Input.Width - w * ratio) / 2, (model.Input.Height - h * ratio) / 2);
+            // compute scales as floats and use MathF to avoid double/float conversions
+            float scaleW = w / modelW; // (float)w / model.Input.Width
+            float scaleH = h / modelH; // (float)h / model.Input.Height
 
-            return (xPad, yPad, gain, 0);
+            float gain = MathF.Max(scaleW, scaleH);
+
+            // ratio is how source maps into model dimensions
+            float ratio = MathF.Min(modelW / w, modelH / h);
+
+            float xPad = (modelW - w * ratio) * 0.5f;
+            float yPad = (modelH - h * ratio) * 0.5f;
+
+            return (xPad, yPad, gain, 0f);
         }
 
         /// <summary>
@@ -243,11 +253,17 @@ namespace YoloDotNet.Core
         /// <param name="size">The original image size.</param>
         public (float, float, float, float) CalculateStretchedGain(SKSizeI size)
         {
-            var model = OnnxModel;
+            int w = size.Width;
+            int h = size.Height;
 
-            var (w, h) = (size.Width, size.Height); // image w and h
-            var (xGain, yGain) = (model.Input.Width / (float)w, model.Input.Height / (float)h); // x, y gains
-            var (xPad, yPad) = ((model.Input.Width - w * xGain) / 2, (model.Input.Height - h * yGain) / 2); // left, right pads
+            float modelW = OnnxModel.Input.Width;
+            float modelH = OnnxModel.Input.Height;
+
+            float xGain = modelW / w;
+            float yGain = modelH / h;
+
+            float xPad = (modelW - w * xGain) * 0.5f;
+            float yPad = (modelH - h * yGain) * 0.5f;
 
             return (xPad, yPad, xGain, yGain);
         }
