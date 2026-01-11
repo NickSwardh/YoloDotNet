@@ -99,7 +99,7 @@ namespace PoseEstimationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Crosswalk));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.PoseEstimation));
 
             // Run inference
             var results = yolo.RunPoseEstimation(image, confidence: 0.25, iou: 0.7);

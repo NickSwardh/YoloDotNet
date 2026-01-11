@@ -29,7 +29,7 @@ WORKDIR /app
 COPY bin/Release/net8.0/ .
 
 # Runtime configuration
-ENV MODEL_PATH=/app/models/yolov11s.onnx
+ENV MODEL_PATH=/app/models/model.onnx
 ENV ASPNETCORE_URLS=http://+:8080
 
 EXPOSE 8080

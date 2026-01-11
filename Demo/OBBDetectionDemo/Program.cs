@@ -97,7 +97,7 @@ namespace OBBDetectionDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Island));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.ObbDetection));
 
             // Perform obb detection inference.
             var results = yolo.RunObbDetection(image, confidence: 0.25, iou: 0.7);

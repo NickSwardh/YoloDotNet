@@ -19,12 +19,5 @@
   </ItemGroup>
 
 	<!-- Include any file named 'yolov11s.onnx' in the repository and copy it into the output folder under 'models\'. -->
-	<ItemGroup>
-		<None Include="..\..\test\assets\models\yolov11s.onnx">
-			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-			<CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-			<TargetPath>models\%(Filename)%(Extension)</TargetPath>
-		</None>
-	</ItemGroup>
 
 </Project>

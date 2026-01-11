@@ -109,12 +109,12 @@ namespace ObjectDetectionDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Street));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.ObjectDetection));
 
             // Run object detection inference
             var results = yolo.RunObjectDetection(image, confidence: 0.15, iou: 0.7);
 
-            // Draw results
+            // Draw results with optional drawing options
             image.Draw(results, _drawingOptions);
 
             // If using SKImage, the Draw method returns a new SKBitmap with the drawn results.

@@ -98,7 +98,7 @@ namespace ClassificationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Hummingbird));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Classification));
 
             // Perform classification inference.
             // The 'classes' parameter limits the results to the top-N classes.

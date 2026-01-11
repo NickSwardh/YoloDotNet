@@ -107,7 +107,7 @@ namespace SegmentationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.People));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Segmentation));
 
             // Run inference
             var results = yolo.RunSegmentation(image, confidence: 0.24, pixelConfedence: 0.5, iou: 0.7);

@@ -170,7 +170,7 @@ namespace VideoStreamDemo
                 //    It does NOT list supported resolutions or framerates.
                 //
                 //    To determine valid width/height/fps combinations, refer to your device specifications
-                VideoInput = SharedConfig.GetTestVideo(VideoType.PeopleWalking),
+                VideoInput = SharedConfig.GetTestVideo(VideoType.Default),
 
                 // 💡 Optional: Path to save the processed output video file.
                 // Leave unset (null or empty) if you do not want to save output.
