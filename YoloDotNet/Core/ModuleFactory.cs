@@ -102,6 +102,16 @@ namespace YoloDotNet.Core
                     { ModelType.Segmentation, core =>  throw new NotImplementedException() },
                     { ModelType.PoseEstimation, core =>  throw new NotImplementedException() }
                 }
+            },
+            {
+                ModelVersion.RTDETR, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleRtdetr(core) },
+                    { ModelType.ObbDetection, core =>  throw new NotImplementedException() },
+                    { ModelType.Segmentation, core =>  throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core =>  throw new NotImplementedException() }
+                }
             }
         };
 
