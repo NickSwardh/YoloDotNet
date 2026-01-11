@@ -19,7 +19,7 @@ namespace YoloDotNet.Handlers
         /// <summary>
         /// Initializes the buffer pool with a specified image layout and pre-allocates a number of buffers.
         /// </summary>
-        public PinnedMemoryBufferPool(SKImageInfo skInfo, int initialSize = 60)
+        public PinnedMemoryBufferPool(SKImageInfo skInfo, int initialSize = 2)
         {
             _imageInfo = skInfo;
 
