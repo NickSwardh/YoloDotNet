@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
     [MemoryDiagnoser]
     public class DrawPoseEstimationResultsBenchmarks
     {
-        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.PoseEstimation);
 
         private Yolo _yolo;
         private SKBitmap _image;

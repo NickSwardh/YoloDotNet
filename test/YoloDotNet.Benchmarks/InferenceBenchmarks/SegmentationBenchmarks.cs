@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
     [MemoryDiagnoser]
     public class SegmentationBenchmarks
     {
-        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.People);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Segmentation);
         private SKBitmap _image;
         private Yolo _yolo;
 

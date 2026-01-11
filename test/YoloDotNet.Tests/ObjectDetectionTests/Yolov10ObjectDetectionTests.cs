@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV10(ModelType.ObjectDetection);
-            var testImage = SharedConfig.GetTestImage(ImageType.Street);
+            var testImage = SharedConfig.GetTestImage(ImageType.ObjectDetection);
 
             using var yolo = new Yolo(new YoloOptions
             {
@@ -24,7 +24,7 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
             var results = yolo.RunObjectDetection(image, 0.23, 0.7);
 
             // Assert
-            Assert.Equal(29, results.Count);
+            Assert.Equal(34, results.Count);
         }
     }
 }

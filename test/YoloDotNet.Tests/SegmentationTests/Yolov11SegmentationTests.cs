@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.SegmentationTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV11(ModelType.Segmentation);
-            var testImage = SharedConfig.GetTestImage(ImageType.People);
+            var testImage = SharedConfig.GetTestImage(ImageType.Segmentation);
 
             using var yolo = new Yolo(new YoloOptions
             {

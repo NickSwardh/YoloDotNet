@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.ClassificationTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV11(ModelType.Classification);
-            var testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+            var testImage = SharedConfig.GetTestImage(ImageType.Classification);
 
             using var yolo = new Yolo(new YoloOptions
             {

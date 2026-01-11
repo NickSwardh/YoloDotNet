@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
     [MemoryDiagnoser]
     public class DrawSegmentationResultsBenchmarks
     {
-        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Segmentation);
 
         private Yolo _yolo;
         private SKBitmap _image;

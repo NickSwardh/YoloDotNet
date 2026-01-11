@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
     [MemoryDiagnoser]
     public class DrawObbDetectionResultsBenchmarks
     {
-        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Island);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.ObbDetection);
 
         private Yolo _yolo;
         private SKBitmap _image;

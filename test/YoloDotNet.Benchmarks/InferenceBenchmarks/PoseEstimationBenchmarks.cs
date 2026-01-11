@@ -10,7 +10,7 @@ namespace YoloDotNet.Benchmarks.PoseEstimation
         [MemoryDiagnoser]
         public class PoseEstimationBenchmarks
         {
-            private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+            private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Classification);
 
             private Yolo _yolo;
             private SKBitmap _image;

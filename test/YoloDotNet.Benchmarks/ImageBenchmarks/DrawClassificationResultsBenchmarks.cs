@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
     [MemoryDiagnoser]
     public class DrawClassificationResultsBenchmarks
     {
-        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Classification);
 
         private Yolo _yolo;
         private SKBitmap _image;

@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV9(ModelType.ObjectDetection);
-            var testImage = SharedConfig.GetTestImage(ImageType.Street);
+            var testImage = SharedConfig.GetTestImage(ImageType.ObjectDetection);
 
             using var yolo = new Yolo(new YoloOptions
             {

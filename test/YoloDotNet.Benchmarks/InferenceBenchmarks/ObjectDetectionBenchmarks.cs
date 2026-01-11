@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
     [MemoryDiagnoser]
     public class ObjectDetectionBenchmarks
     {
-        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.ObjectDetection);
         private SKBitmap _image;
         private Yolo _yolo;
 

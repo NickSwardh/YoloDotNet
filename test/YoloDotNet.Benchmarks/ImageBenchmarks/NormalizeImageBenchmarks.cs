@@ -10,12 +10,12 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
     [MemoryDiagnoser]
     public class NormalizeImageBenchmarks
     {
-        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Hummingbird);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Classification);
 
         private Yolo _yolo;
         private PinnedMemoryBuffer _pinnedMemoryBuffer;
         private SKBitmap _image;
-        private readonly SKSamplingOptions _samplingOptions;
+        private SKSamplingOptions _samplingOptions;
 
         private long[] _inputShape;
         private int _inputShapeSize;
@@ -26,18 +26,20 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
             // Initialize a Yolo object detection 11 model
             _yolo = YoloCreator.Create(YoloType.V11_Obj_CPU);
 
+            // Store input shape and size for normalization
+            _inputShape = _yolo.OnnxModel.InputShapes.First().Value;
+            _inputShapeSize = _yolo.OnnxModel.InputShapeSize;
+            var width = (int)_inputShape[3];
+            var height = (int)_inputShape[2];
+
             // Create a pinned memory buffer for the model input size
-            var imageInfo = new SKImageInfo(_yolo.OnnxModel.Input.Width, _yolo.OnnxModel.Input.Height, SKColorType.Rgb888x, SKAlphaType.Opaque);
+            var imageInfo = new SKImageInfo(width, height, SKColorType.Rgb888x, SKAlphaType.Opaque);
             _pinnedMemoryBuffer = new PinnedMemoryBuffer(imageInfo);
 
             // Load and resize the test image.
             // Resize it proportionally to fit the model input size and stored in the pinned memory buffer.
             _image = SKBitmap.Decode(_testImage);
             _image.ResizeImageProportional(_samplingOptions, _pinnedMemoryBuffer);
-
-            // Store input shape and size for normalization
-            _inputShape = _yolo.OnnxModel.InputShape;
-            _inputShapeSize = _yolo.OnnxModel.InputShapeSize;
         }
 
         [GlobalCleanup]

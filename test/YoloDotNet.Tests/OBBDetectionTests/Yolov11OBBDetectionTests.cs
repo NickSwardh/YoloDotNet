@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.OBBDetectionTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV11(ModelType.ObbDetection);
-            var testImage = SharedConfig.GetTestImage(ImageType.Island);
+            var testImage = SharedConfig.GetTestImage(ImageType.ObbDetection);
 
             using var yolo = new Yolo(new YoloOptions
             {

@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.PoseEstimationTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV8(ModelType.PoseEstimation);
-            var testImage = SharedConfig.GetTestImage(ImageType.Crosswalk);
+            var testImage = SharedConfig.GetTestImage(ImageType.PoseEstimation);
 
             using var yolo = new Yolo(new YoloOptions
             {
