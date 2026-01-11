@@ -90,7 +90,7 @@ namespace YoloE_SegmentationDemo
                 //   More information about execution providers and setup instructions can be found in the README:
                 //   https://github.com/NickSwardh/YoloDotNet
 
-                ExecutionProvider = new CpuExecutionProvider(model: @"path\to\yoloE_model.onnx"),
+                ExecutionProvider = new CpuExecutionProvider(model: "path/to/model.onnx"),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -107,7 +107,7 @@ namespace YoloE_SegmentationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.People));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Segmentation));
 
             // Run inference
             var results = yolo.RunSegmentation(image, confidence: 0.20, pixelConfedence: 0.5, iou: 0.7);
