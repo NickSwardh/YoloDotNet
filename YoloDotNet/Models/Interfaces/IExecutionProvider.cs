@@ -20,6 +20,8 @@ namespace YoloDotNet.Models.Interfaces
         /// <summary>
         /// Record containing metadata about the ONNX model.
         /// </summary>
-        public OnnxDataRecord OnnxData { get; }
+        public OnnxModel OnnxData { get; }
+
+        public object Session { get; }
     }
 }

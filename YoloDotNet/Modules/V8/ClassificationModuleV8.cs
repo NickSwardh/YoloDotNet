@@ -10,6 +10,7 @@ namespace YoloDotNet.Modules.V8
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
         private ArrayPool<ClassificationEntry> _classificationPool = default!;
+        private List<Classification> _results = default!;
 
         public ClassificationModuleV8(YoloCore yoloCore)
         {
@@ -17,12 +18,12 @@ namespace YoloDotNet.Modules.V8
 
             var poolSize = YoloCore.CalculateBufferPoolSize(_yoloCore.OnnxModel.Labels.Length);
             _classificationPool = ArrayPool<ClassificationEntry>.Create(poolSize, 10);
+            _results = [];
         }
 
         public List<Classification> ProcessImage<T>(T image, double classes, double pixelConfidence, double iou)
         {
             var inferenceResult = _yoloCore.Run(image);
-
             return ClassifyTensor(inferenceResult.OrtSpan0, (int)classes);
         }
 
@@ -35,6 +36,7 @@ namespace YoloDotNet.Modules.V8
         private List<Classification> ClassifyTensor(ReadOnlySpan<float> span, int numberOfClasses)
         {
             var poolBuffer = _classificationPool.Rent(span.Length);
+            _results.Clear();
 
             try
             {
@@ -44,22 +46,21 @@ namespace YoloDotNet.Modules.V8
                     poolBuffer[i] = new ClassificationEntry(span[i], i);
                 }
 
-                // Sort descending by confidence
-                Array.Sort(poolBuffer, (a, b) => b.Confidence.CompareTo(a.Confidence));
+                // Sort only the actual data, not the entire pool buffer.
+                // Sort descending by confidence.
+                Array.Sort(poolBuffer, 0, span.Length, ClassificationEntryComparer.Instance);
 
-                // Take the top-N classes based on numberOfClasses
-                var results = new List<Classification>(numberOfClasses);
                 for (int i = 0; i < numberOfClasses; i++)
                 {
                     var entry = poolBuffer[i];
-                    results.Add(new Classification
+                    _results.Add(new Classification
                     {
                         Confidence = entry.Confidence,
                         Label = _yoloCore.OnnxModel.Labels[entry.LabelId].Name
                     });
                 }
 
-                return results;
+                return _results;
             }
             finally
             {
@@ -70,14 +71,12 @@ namespace YoloDotNet.Modules.V8
         #endregion
 
         #region Helper methods
-
         public void Dispose()
         {
             _yoloCore.Dispose();
 
             GC.SuppressFinalize(this);
         }
-
         #endregion
     }
 
@@ -85,5 +84,11 @@ namespace YoloDotNet.Modules.V8
     {
         public readonly float Confidence = confidence;  // confidence score
         public readonly int LabelId = labelId;          // index into labels array
+    }
+
+    internal sealed class ClassificationEntryComparer : IComparer<ClassificationEntry>
+    {
+        public static readonly ClassificationEntryComparer Instance = new();
+        public int Compare(ClassificationEntry a, ClassificationEntry b) => b.Confidence.CompareTo(a.Confidence);
     }
 }

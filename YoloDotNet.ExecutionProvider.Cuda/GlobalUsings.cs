@@ -9,6 +9,7 @@ global using YoloDotNet.Core;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;
 global using YoloDotNet.Exceptions;
+global using YoloDotNet.Extensions;
 global using YoloDotNet.Models.Interfaces;
 global using YoloDotNet.ExecutionProvider.Cuda.TensorRT;
 

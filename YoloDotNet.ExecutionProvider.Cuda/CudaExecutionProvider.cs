@@ -6,9 +6,10 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 {
     public class CudaExecutionProvider : IExecutionProvider, IDisposable
     {
-        public OnnxDataRecord OnnxData { get; private set; } = default!;
+        public OnnxModel OnnxData { get; private set; } = default!;
+        public object Session => _session;
 
-        #region Fields
+        #region Private Fields
         private InferenceSession _session = default!;
         private OrtIoBinding _ortIoBinding = default!;
         private RunOptions _runOptions = default!;
@@ -17,9 +18,13 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         private float[] _outputBuffer1 = default!;
 
         private long[] _inputShape = default!;
+        private string[] _inputNames;
         private int _inputShapeSize;
-        private TensorElementType _elementDataType = default!;
+        private List<string> _outputNames = default!;
         private int _dataTypeSize;
+        private TensorElementType _elementDataType = default!;
+
+        private IDisposableReadOnlyCollection<OrtValue>? _currentResult;
         #endregion
 
         #region Constructors
@@ -66,15 +71,38 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
             GetOnnxMetaData();
             AllocateOutputBuffers();
+            InitializeInferenceParameters();
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
             _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _elementDataType);
 
-            // Set the input shape for creating tensors during inference.
-            _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
-
         }
+
+        private void InitializeInferenceParameters()
+        {
+            var firstInput = OnnxData.InputShapes.FirstOrDefault();
+
+            if (EqualityComparer<KeyValuePair<string, long[]>>.Default.Equals(firstInput, default))
+                throw new YoloDotNetException("Corrupt or incompatible model. No input shape was found.");
+
+            _inputNames = [firstInput.Key];
+            _inputShape = firstInput.Value;
+            _inputShapeSize = OnnxData.InputShapeSize;
+            _outputNames = [.. OnnxData.OutputShapes.Select(x => x.Key)];
+
+            if (OnnxData.ModelDataType == ModelDataType.Float)
+            {
+                _elementDataType = TensorElementType.Float;
+                _dataTypeSize = sizeof(float);
+            }
+            else
+            {
+                _elementDataType = TensorElementType.Float16;
+                _dataTypeSize = sizeof(ushort);
+            }
+        }
+
         #endregion
 
         #region Run Inference
@@ -82,7 +110,6 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// Runs inference on the provided normalized pixel data.
         /// </summary>
         /// <param name="normalizedPixels"></param>
-        /// <returns></returns>
         unsafe public InferenceResult Run<T>(T[] normalizedPixels) where T : unmanaged
         {
             // Pin the input pixel data in memory to prevent it from being moved by the garbage collector.
@@ -97,33 +124,36 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                     _inputShapeSize * _dataTypeSize // size in bytes (ushort is 2 bytes, float is 4 bytes)
                 );
 
+                // Dispose previous result before running new inference to prevent memory leaks
+                _currentResult?.Dispose();
+
                 // Run inference
-                using var result = _session.Run(
+                _currentResult = _session.Run(
                     _runOptions,
-                    [OnnxData.InputName],
+                    _inputNames,
                     [inputOrtValue],
-                    OnnxData.OutputNames);
+                    _outputNames);
 
                 // Handle output based on the model's data type
                 if (_elementDataType == TensorElementType.Float)
                 {
                     // Extract tensor data from the result
-                    var tensorData0 = result[0].GetTensorDataAsSpan<float>();
+                    var tensorData0 = _currentResult[0].GetTensorDataAsSpan<float>();
                     var tensorData1 = ReadOnlySpan<float>.Empty;
 
-                    if (result.Count == 2)
-                        tensorData1 = result[1].GetTensorDataAsSpan<float>();
+                    if (_currentResult.Count == 2)
+                        tensorData1 = _currentResult[1].GetTensorDataAsSpan<float>();
 
                     // Return the inference result containing the output tensor data
                     return new InferenceResult(tensorData0, tensorData1);
                 }
                 else
                 {
-                    var tensorData0 = result[0].GetTensorDataAsSpan<Float16>();
+                    var tensorData0 = _currentResult[0].GetTensorDataAsSpan<Float16>();
                     var tensorData1 = ReadOnlySpan<Float16>.Empty;
 
-                    if (result.Count == 2)
-                        tensorData1 = result[1].GetTensorDataAsSpan<Float16>();
+                    if (_currentResult.Count == 2)
+                        tensorData1 = _currentResult[1].GetTensorDataAsSpan<Float16>();
 
                     ConvertFloat16ToFloat(tensorData0, tensorData1);
 
@@ -144,39 +174,34 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             if (OnnxData.ModelDataType == ModelDataType.Float)
                 return;
 
-            int items;
-            int elements;
+            int batch, attributes;
+            var outputShape = OnnxData.OutputShapes.ElementAt(0).Value;
 
-            // Calculate the total number of elements for each output tensor and allocate buffers.
-
-            // Classification models only has one output tensor with shape [1, num_classes]
-            if (OnnxData.OutputShapes[0].Length == 2)
+            if (OnnxData.ModelType == ModelType.Classification)
             {
-                (items, elements) = (OnnxData.OutputShapes[0][0], OnnxData.OutputShapes[0][1]);
-                _outputBuffer0 = new float[elements * items];
+                // For classification models, output shape is [Batch, Attributes]
+                (batch, attributes) = (outputShape[0], outputShape[1]);
             }
-            // All other models has an output tensor with shape [1, num_boxes, num_attributes]
             else
             {
-                (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
-                _outputBuffer0 = new float[elements * items];
+                // For other models, output shape is [Batch, Attributes, Predictions]
+                (batch, attributes) = (outputShape[1], outputShape[2]);
             }
 
-            // If there is a second output tensor (segmentation), allocate a buffer for it as well.
+            _outputBuffer0 = new float[attributes * batch];
 
-            // If there is a second output tensor, allocate a buffer for it as well.
-            if (OnnxData.OutputShapes.Length == 2)
+            // Allocate second output buffer if model has two outputs (e.g., segmentation models).
+            if (OnnxData.OutputShapes.Count == 2)
             {
-                (items, elements) = (OnnxData.OutputShapes[1][1], OnnxData.OutputShapes[1][2]);
-                _outputBuffer1 = new float[elements * items];
+                outputShape = OnnxData.OutputShapes.ElementAt(1).Value;
+                var size = outputShape[1] * outputShape[2];
+                _outputBuffer1 = new float[size];
             }
         }
 
         /// <summary>
         /// Creates and configures session options for the ONNX Runtime session.
         /// </summary>
-        /// <param name="gpuId"></param>
-        /// <param name="trtConfig"></param>
         private SessionOptions CreateSessionOptions(int gpuId, TensorRt? trtConfig)
         {
             var options = new SessionOptions
@@ -235,8 +260,6 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Configures the session options to use the CUDA execution provider with specified options.
         /// </summary>
-        /// <param name="gpuId"></param>
-        /// <param name="options"></param>
         private static void ConfigureCuda(int gpuId, SessionOptions options)
         {
             var cudaOptions = new OrtCUDAProviderOptions();
@@ -272,8 +295,6 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Converts Float16 tensor data to Float32 and stores it in pre-allocated output buffers.
         /// </summary>
-        /// <param name="tensorData0"></param>
-        /// <param name="tensorData1"></param>
         unsafe private void ConvertFloat16ToFloat(ReadOnlySpan<Float16> tensorData0, ReadOnlySpan<Float16> tensorData1)
         {
             fixed (Float16* src0 = tensorData0)
@@ -296,46 +317,14 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// Extracts metadata and input/output shapes from the ONNX model.
         /// </summary>
         private void GetOnnxMetaData()
-        {
-            // Extract custom metadata from the ONNX model.
-            var metaData = _session.ModelMetadata.CustomMetadataMap;
-
-            // Get input shape and size.
-            var inputShape = Array.ConvertAll(_session.InputMetadata[_session.InputNames[0]].Dimensions, Convert.ToInt64);
-
-            _inputShapeSize = (int)ShapeUtils.GetSizeForShape(inputShape);
-            _elementDataType = GetModelElementType();
-            _dataTypeSize = _elementDataType == TensorElementType.Float16 ? sizeof(ushort) : sizeof(float);
-
-            // Determine model data type (Float32 or Float16).
-            var modelDataType = _elementDataType == TensorElementType.Float16
-                ? ModelDataType.Float16
-                : ModelDataType.Float;
-
-            // Create OnnxDataRecord to hold model information.
-            OnnxData = new OnnxDataRecord(
-                metaData,
-                modelDataType,
-                _session.InputNames[0],
-                [.. _session.OutputNames],
-                _session.InputMetadata.Values.Select(x => x.Dimensions).First(),
-                [.. _session.OutputMetadata.Values.Select(x => x.Dimensions)],
-                _inputShapeSize,
-                metaData["names"]
-            );
-        }
-
-        /// <summary>
-        /// Gets the tensor element type used by the model (e.g., Float32 or Float16).
-        /// </summary>
-        internal TensorElementType GetModelElementType()
-            => _session.InputMetadata["images"].ElementDataType;
+            => OnnxData = _session.ParseOnnx();
 
         public void Dispose()
         {
             _session?.Dispose();
             _runOptions?.Dispose();
             _ortIoBinding?.Dispose();
+            _currentResult?.Dispose();
 
             GC.SuppressFinalize(this);
         }

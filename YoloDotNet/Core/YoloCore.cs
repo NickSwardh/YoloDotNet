@@ -9,18 +9,21 @@ namespace YoloDotNet.Core
     /// </summary>
     internal class YoloCore(YoloOptions yoloOptions) : IDisposable
     {
-        #region Fields
-        private bool _isDisposed;
+        #region Private Fields
         private PinnedMemoryBufferPool _pinnedMemoryPool = default!;
         private readonly object _progressLock = new();
         private SKImageInfo _imageInfo;
         private long[] _inputShape = default!;
+        private int _modelInputWidth;
+        private int _modelInputHeight;
         private int _inputShapeSize;
         #endregion
 
-        public OnnxModel OnnxModel { get; private set; } = default!;
+        #region Properties
+        public OnnxModel OnnxModel => yoloOptions.ExecutionProvider.OnnxData;
         public YoloOptions YoloOptions { get => yoloOptions; init => yoloOptions = value; }
         public ModelType ModelType => OnnxModel.ModelType;
+        #endregion
 
         /// <summary>
         /// Initializes the YOLO model with the specified model type.
@@ -30,15 +33,15 @@ namespace YoloDotNet.Core
             if (YoloOptions.ExecutionProvider is null)
                 throw new YoloDotNetModelException("Execution Provider is missing. Please add an execution provider.", nameof(YoloOptions));
 
-            OnnxModel = yoloOptions.ExecutionProvider.OnnxData.GetOnnxProperties();
+            _inputShape = OnnxModel.InputShapes.First().Value;
+            _inputShapeSize = OnnxModel.InputShapeSize;
+            _modelInputHeight = (int)_inputShape[2];
+            _modelInputWidth = (int)_inputShape[3];
 
             VerifyExpectedModelType(OnnxModel.ModelType);
 
-            _inputShape = OnnxModel.InputShape;
-            _inputShapeSize = OnnxModel.InputShapeSize;
-
-            var format = (OnnxModel.Input.Channels == 1) ? SKColorType.Gray8 : SKColorType.Rgb888x;
-            _imageInfo = new SKImageInfo(OnnxModel.Input.Width, OnnxModel.Input.Height, format, SKAlphaType.Opaque);
+            var format = (_inputShape[2] == 1) ? SKColorType.Gray8 : SKColorType.Rgb888x;
+            _imageInfo = new SKImageInfo(_modelInputWidth, _modelInputHeight, format, SKAlphaType.Opaque);
 
             _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
 
@@ -121,7 +124,7 @@ namespace YoloDotNet.Core
             var totalPredictions = predictionSpan.Length;
 
             if (totalPredictions == 0)
-                return [];
+                return Span<ObjectResult>.Empty; // ✓ Avoid array allocation
 
             // Sort by confidence
             MemoryExtensions.Sort(predictionSpan, ConfidenceComparer.Instance);
@@ -228,8 +231,8 @@ namespace YoloDotNet.Core
             int w = size.Width;
             int h = size.Height;
 
-            float modelW = OnnxModel.Input.Width;
-            float modelH = OnnxModel.Input.Height;
+            float modelW = _modelInputWidth;
+            float modelH = _modelInputHeight;
 
             // compute scales as floats and use MathF to avoid double/float conversions
             float scaleW = w / modelW; // (float)w / model.Input.Width
@@ -256,8 +259,8 @@ namespace YoloDotNet.Core
             int w = size.Width;
             int h = size.Height;
 
-            float modelW = OnnxModel.Input.Width;
-            float modelH = OnnxModel.Input.Height;
+            float modelW = _modelInputWidth;
+            float modelH = _modelInputHeight;
 
             float xGain = modelW / w;
             float yGain = modelH / h;
@@ -282,9 +285,6 @@ namespace YoloDotNet.Core
         /// </summary>
         public void Dispose()
         {
-            if (_isDisposed)
-                return;
-
             _pinnedMemoryPool?.Dispose();
 
             GC.SuppressFinalize(this);

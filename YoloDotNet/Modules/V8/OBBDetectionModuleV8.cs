@@ -8,6 +8,7 @@ namespace YoloDotNet.Modules.V8
     {
         private readonly YoloCore _yoloCore;
         private readonly ObjectDetectionModuleV8 _objectDetectionModule = default!;
+        private List<OBBDetection> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -15,20 +16,20 @@ namespace YoloDotNet.Modules.V8
         {
             _yoloCore = yoloCore;
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
+            _results = [];
         }
 
         public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
             var inferenceResult = _yoloCore.Run(image);
-
             var detections = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 
             // Convert to List<OBBDetection>
-            var results = new List<OBBDetection>(detections.Length);
+            _results.Clear();
             for (int i = 0; i < detections.Length; i++)
-                results.Add((OBBDetection)detections[i]);
+                _results.Add((OBBDetection)detections[i]);
 
-            return results;
+            return _results;
         }
 
         #region Helper methods

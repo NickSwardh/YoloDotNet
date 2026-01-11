@@ -8,10 +8,11 @@ namespace YoloDotNet.Modules.V8
     {
         private readonly YoloCore _yoloCore;
         private readonly int _labels;
-        private readonly int _channels;
-        private readonly int _channels2;
-        private readonly int _channels3;
-        private readonly int _channels4;
+        private readonly int _attribute;
+        private readonly int _attribute2;
+        private readonly int _attribute3;
+        private readonly int _attribute4;
+        private List<ObjectDetection> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -19,11 +20,19 @@ namespace YoloDotNet.Modules.V8
         {
             _yoloCore = yoloCore;
 
+            // Get output shape from ONNX model. Format: [Batch, Attributes, Predictions]
+            var outputShape = _yoloCore.OnnxModel.OutputShapes.ElementAt(0).Value;
+
+            //_channels = _yoloCore.OnnxModel.Outputs[0].Channels;
+
+            // Get number of 'Predictions' from output shape
+            _attribute = outputShape[2];    // x coordinate
+            _attribute2 = _attribute * 2;   // y coordinate
+            _attribute3 = _attribute * 3;   // width
+            _attribute4 = _attribute * 4;   // height
+
             _labels = _yoloCore.OnnxModel.Labels.Length;
-            _channels = _yoloCore.OnnxModel.Outputs[0].Channels;
-            _channels2 = _channels * 2;
-            _channels3 = _channels * 3;
-            _channels4 = _channels * 4;
+            _results = [];
         }
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
@@ -31,12 +40,11 @@ namespace YoloDotNet.Modules.V8
             var result = _yoloCore.Run(image);
             var detections = ObjectDetection(result, confidence, iou);
 
-            // Convert to List<ObjectDetection>
-            var results = new List<ObjectDetection>(detections.Length);
+            _results.Clear();
             for (int i = 0; i < detections.Length; i++)
-                results.Add((ObjectDetection)detections[i]);
+                _results.Add((ObjectDetection)detections[i]);
 
-            return results;
+            return _results;
         }
 
         #region Helper methods
@@ -44,7 +52,7 @@ namespace YoloDotNet.Modules.V8
         /// <summary>
         /// Detects objects in a tensor and returns a ObjectDetection list.
         /// </summary>
-        /// <param name="imageSize">The image associated with the tensor data.</param>
+        /// <param name="inferenceResult">The inference result containing model output data.</param>
         /// <param name="confidenceThreshold">The confidence threshold for accepting object detections.</param>
         /// <param name="overlapThreshold">The threshold for overlapping boxes to filter detections.</param>
         /// <returns>A list of result models representing detected objects.</returns>
@@ -64,20 +72,20 @@ namespace YoloDotNet.Modules.V8
 
             int validBoxCount = 0;
             //var boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
-            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_channels);
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_attribute);
 
             try
             {
-                for (int i = 0; i < _channels; i++)
+                for (int i = 0; i < _attribute; i++)
                 {
                     // Move forward to confidence value of first label
-                    var labelOffset = i + _channels4;
+                    var labelOffset = i + _attribute4;
 
                     float bestConfidence = 0f;
                     int bestLabelIndex = -1;
 
                     // Get confidence and label for current bounding box
-                    for (var l = 0; l < _labels; l++, labelOffset += _channels)
+                    for (var l = 0; l < _labels; l++, labelOffset += _attribute)
                     {
                         var boxConfidence = ortSpan[labelOffset];
 
@@ -93,11 +101,11 @@ namespace YoloDotNet.Modules.V8
                         continue;
 
                     float x = ortSpan[i];
-                    float y = ortSpan[i + _channels];
-                    float w = ortSpan[i + _channels2];
-                    float h = ortSpan[i + _channels3];
+                    float y = ortSpan[i + _attribute];
+                    float w = ortSpan[i + _attribute2];
+                    float h = ortSpan[i + _attribute3];
 
-                    var (xMin, yMin, xMax, yMax) = (0, 0, 0, 0);
+                    int xMin, yMin, xMax, yMax;
 
                     // Bounding box calculations are based on how the input image was resized
                     // 'Proportional' keeps the original aspect ratio and adds padding around the image
@@ -116,12 +124,7 @@ namespace YoloDotNet.Modules.V8
                         var halfW = w / 2;
                         var halfH = h / 2;
 
-                        // Calculate bounding box coordinates adjusted for stretched scaling and padding
-                        // Clamp ensures the coordinates remain within the valid bounds of the image.
-                        //xMin = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
-                        //yMin = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
-                        //xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
-                        //yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+                        // Manual clamping is faster than Math.Clamp in tight loops
 
                         int val = (int)((x - halfW - xPad) / xGain);
                         xMin = val < 0 ? 0 : (val > width - 1 ? width - 1 : val);
@@ -152,7 +155,7 @@ namespace YoloDotNet.Modules.V8
                         BoundingBox = boundingBox,
                         BoundingBoxUnscaled = boundingBoxUnscaled,
                         BoundingBoxIndex = i,
-                        OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _channels * (4 + _labels)] : 0
+                        OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _attribute * (4 + _labels)] : 0
                     };
                 }
 
