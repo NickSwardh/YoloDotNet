@@ -36,5 +36,11 @@ namespace YoloDotNet.Models
         /// Whether to draw label background.
         /// </summary>
         public bool DrawLabelBackground { get; set; } = true;
+
+        /// <summary>
+        /// Specifies the preferred position for labels relative to bounding boxes.
+        /// Default is <see cref="LabelPosition.Auto"/>, which automatically determines the best position.
+        /// </summary>
+        public LabelPosition LabelPosition { get; set; } = LabelPosition.Auto;
     }
 }

@@ -19,6 +19,7 @@ namespace YoloDotNet.Models
         {
             Font = options.Font,
             FontColor = options.FontColor,
+            FontSize = options.FontSize,
             EnableFontShadow = options.EnableFontShadow,
             EnableDynamicScaling = options.EnableDynamicScaling,
             DrawLabelBackground = options.DrawLabelBackground,
@@ -32,6 +33,7 @@ namespace YoloDotNet.Models
             TailThickness = options.TailThickness,
             TailPaintColorStart = options.TailPaintColorStart,
             TailPaintColorEnd = options.TailPaintColorEnd,
+            LabelPosition = options.LabelPosition,
         };
         #endregion
     }
