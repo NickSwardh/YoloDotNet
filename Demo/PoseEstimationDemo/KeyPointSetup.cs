@@ -1,4 +1,6 @@
-﻿using YoloDotNet.Models;
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+using YoloDotNet.Models;
 
 namespace PoseEstimationDemo
 {

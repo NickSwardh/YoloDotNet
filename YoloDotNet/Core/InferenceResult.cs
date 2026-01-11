@@ -1,4 +1,7 @@
-﻿namespace YoloDotNet.Core
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
 {
     public ref struct InferenceResult
     {

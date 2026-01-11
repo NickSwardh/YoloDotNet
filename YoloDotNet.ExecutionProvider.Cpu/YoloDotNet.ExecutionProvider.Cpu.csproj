@@ -22,7 +22,7 @@ The CPU execution provider runs inference using ONNX Runtime’s built-in CPU ba
 
 This provider is intended for development, testing, CI environments, and production scenarios where GPU or NPU acceleration is not available or required. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design.</PackageReleaseNotes>
     <Title>YoloDotNet CPU Execution Provider</Title>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.Cpu</PackageProjectUrl>
   </PropertyGroup>
 

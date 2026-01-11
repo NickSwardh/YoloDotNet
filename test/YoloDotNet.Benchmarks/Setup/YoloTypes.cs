@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Benchmarks.Setup
@@ -195,5 +195,13 @@ namespace YoloDotNet.Benchmarks.Setup
         V12_Seg_TRT32,
         V12_Seg_TRT16,
         V12_Seg_TRT8,
+
+        //
+
+        RTDETR_Obj_CPU,
+        RTDETR_Obj_GPU,
+        RTDETR_Obj_TRT32,
+        RTDETR_Obj_TRT16,
+        RTDETR_Obj_TRT8,
     }
 }

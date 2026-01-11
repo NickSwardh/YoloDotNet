@@ -1,4 +1,10 @@
-﻿namespace YoloDotNet.Benchmarks.ImageBenchmarks
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+using System.Linq;
+
+namespace YoloDotNet.Benchmarks.ImageBenchmarks
 {
     //[CPUUsageDiagnoser]
     [MemoryDiagnoser]

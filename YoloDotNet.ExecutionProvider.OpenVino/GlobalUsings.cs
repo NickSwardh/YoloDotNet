@@ -1,4 +1,8 @@
-﻿global using Microsoft.ML.OnnxRuntime;
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+global using Microsoft.ML.OnnxRuntime;
 global using Microsoft.ML.OnnxRuntime.Tensors;
 global using YoloDotNet.Core;
 global using YoloDotNet.Enums;

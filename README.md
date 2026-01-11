@@ -142,7 +142,20 @@ YoloDotNet focuses on stable, low-overhead inference where runtime cost is domin
 
 ## License
 
-© 2023–2025 Niklas Swärd  
-Licensed under **GPL v3.0 or later**.
+YoloDotNet is licensed under the [MIT License](./LICENSE.txt) and provides an ONNX inference
+engine for YOLO models exported using Ultralytics YOLO tooling.
 
-See [LICENSE](./LICENSE.txt) for full details.
+This project does **not** include, distribute, download, or bundle any
+pretrained models.
+
+Users must supply their own ONNX models.
+
+YOLO ONNX models produced using Ultralytics tooling are typically licensed
+under **AGPL-3.0** or a separate commercial license from Ultralytics.
+
+YoloDotNet does **not** impose, modify, or transfer any license terms related
+to user-supplied models.
+
+**Users are solely responsible** for ensuring that their use of any model
+complies with the applicable license terms, including requirements related
+to commercial use, distribution, or network deployment.

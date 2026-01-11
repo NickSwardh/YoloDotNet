@@ -21,7 +21,7 @@ Designed for high performance and flexibility, YoloDotNet handles images and vid
 	<Version>4.0</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReleaseNotes>YoloDotNet v4.0 is a major release that introduces a new modular architecture and significantly improves cross-platform support and maintainability.
 
 Execution providers have been fully decoupled from YoloDotNet Core. The core package is now execution-provider agnostic and no longer ships with any ONNX Runtime native dependencies. CPU, CUDA, OpenVINO, and CoreML execution providers are distributed as separate NuGet packages and must be referenced explicitly. Exactly one execution provider should be used per project.

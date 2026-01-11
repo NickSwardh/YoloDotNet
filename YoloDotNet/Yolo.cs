@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet
@@ -11,18 +11,14 @@ namespace YoloDotNet
     public class Yolo(YoloOptions options) : IDisposable
     {
         #region Private fields
-
         private readonly IModule _detection = ModuleFactory.CreateModule(options);
         private FFmpegService _ffmpegService = default!;
-
         #endregion
 
         #region Public Fields
-
         public OnnxModel OnnxModel => _detection.OnnxModel;
         public Action<SKBitmap, long> OnVideoFrameReceived = default!;
         public Action OnVideoEnd = default!;
-
         #endregion
 
         #region Classification
