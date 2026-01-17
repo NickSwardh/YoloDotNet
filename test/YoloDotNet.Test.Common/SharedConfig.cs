@@ -287,6 +287,22 @@ namespace YoloDotNet.Test.Common
         };
 
         /// <summary>
+        /// Test models for Yolo V26
+        /// </summary>
+        /// <param name="modelType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentException"></exception>
+        public static string GetTestModelV26(ModelType modelType) => modelType switch
+        {
+            ModelType.Classification => Path.Join(ModelsFolder, "yolo26s-cls.onnx"),
+            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolo26s.onnx"),
+            ModelType.ObbDetection => Path.Join(ModelsFolder, "yolo26s-obb.onnx"),
+            ModelType.Segmentation => Path.Join(ModelsFolder, "yolo26s-seg.onnx"),
+            ModelType.PoseEstimation => Path.Join(ModelsFolder, "yolo26s-pose.onnx"),
+            _ => throw new ArgumentException("Unknown modeltype.")
+        };
+
+        /// <summary>
         /// Test models for Yolo RT-DETR
         /// </summary>
         /// <param name="modelType"></param>
