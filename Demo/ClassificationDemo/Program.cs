@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -81,7 +81,7 @@ namespace ClassificationDemo
                 //   https://github.com/NickSwardh/YoloDotNet
 
                 // Path or byte[] of the ONNX model to load.
-                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.Classification)),
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.Classification)),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.

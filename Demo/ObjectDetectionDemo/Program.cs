@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -83,7 +83,7 @@ namespace ObjectDetectionDemo
                 ExecutionProvider = new CudaExecutionProvider(
 
                     // Path or byte[] to the ONNX model file.
-                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+                    model: SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
                     gpuId: 0

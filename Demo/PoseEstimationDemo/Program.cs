@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -82,7 +82,7 @@ namespace PoseEstimationDemo
                 //   More information about execution providers and setup instructions can be found in the README:
                 //   https://github.com/NickSwardh/YoloDotNet
 
-                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.PoseEstimation)),
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.PoseEstimation)),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
