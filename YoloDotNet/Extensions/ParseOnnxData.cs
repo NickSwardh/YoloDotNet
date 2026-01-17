@@ -233,6 +233,9 @@ namespace YoloDotNet.Extensions
             // YOLOv12
             var version when version.StartsWith("ultralytics yolov12") => ModelVersion.V12,
 
+            // YOLOv26
+            var version when version.StartsWith("ultralytics yolo26") => ModelVersion.V26,
+
             // YOLO WorldV2
             var version when version.Contains("worldv2") => ModelVersion.V11,
 

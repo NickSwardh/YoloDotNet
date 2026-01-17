@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Core
@@ -91,6 +91,16 @@ namespace YoloDotNet.Core
                     { ModelType.ObbDetection, core => new OBBDetectionModuleV12(core) },
                     { ModelType.Segmentation, core => new SegmentationModuleV12(core) },
                     { ModelType.PoseEstimation, core => new PoseEstimationModuleV12(core) }
+                }
+            },
+            {
+                ModelVersion.V26, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => new ClassificationModuleV26(core) },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV26(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV26(core) },
+                    { ModelType.Segmentation, core => new SegmentationModuleV26(core) },
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV26(core) }
                 }
             },
             {
