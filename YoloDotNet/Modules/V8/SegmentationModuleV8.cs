@@ -112,7 +112,7 @@ namespace YoloDotNet.Modules.V8
                 box.BitPackedPixelMask = PackUpscaledMaskToBitArray(resizedCrop, pixelConfidence);
             }
 
-            return boundingBoxes;//
+            return boundingBoxes;
         }
 
         private MaskWeights32 GetMaskWeightsFromBoundingBoxArea(ObjectResult box, ReadOnlySpan<float> ortSpan0)
