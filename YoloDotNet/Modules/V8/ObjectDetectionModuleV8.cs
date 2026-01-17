@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -71,7 +71,6 @@ namespace YoloDotNet.Modules.V8
             var height = imageSize.Height;
 
             int validBoxCount = 0;
-            //var boxes = _yoloCore.customSizeObjectResultPool.Rent(_channels);
             var boxes = ArrayPool<ObjectResult>.Shared.Rent(_attribute);
 
             try
@@ -167,7 +166,6 @@ namespace YoloDotNet.Modules.V8
             }
             finally
             {
-                //_yoloCore.customSizeObjectResultPool.Return(boxes, clearArray: false);
                 ArrayPool<ObjectResult>.Shared.Return(boxes, false);
             }
         }
