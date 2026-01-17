@@ -273,7 +273,7 @@ namespace YoloDotNet.Extensions
                     canvas.DrawBitmap(pixelMask, box.Left, box.Top, paint);
                 }
             }
-
+            
             if (options.DrawBoundingBoxes is true)
                 image.DrawBoundingBoxes(segmentations, (DetectionDrawingOptions)options);
         }
@@ -979,6 +979,9 @@ namespace YoloDotNet.Extensions
         {
             // Create a bitmap for the pixelmask
             var bitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+            if (packedMask.Length == 0)
+                return bitmap;
 
             // Caclulate total pixels
             var totalPixels = width * height;
