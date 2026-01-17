@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Models.Interfaces
@@ -22,6 +22,14 @@ namespace YoloDotNet.Models.Interfaces
         /// </summary>
         public OnnxModel OnnxData { get; }
 
+        /// <summary>
+        /// Gets the current session associated with the context.
+        /// </summary>
         public object Session { get; }
+
+        /// <summary>
+        /// Releases all resources used by the current instance of the class.
+        /// </summary>
+        public void Dispose();
     }
 }
