@@ -101,6 +101,8 @@ Optionally, NVIDIA TensorRT can be enabled to further optimize models for maximu
 dotnet add package YoloDotNet.ExecutionProvider.Cuda
 ```
 
+> YoloDotNet.ExecutionProvider.Cuda v1.1 requires YoloDotNet version 4.1.
+
 # Usage Example:
 ```csharp
 using YoloDotNet;

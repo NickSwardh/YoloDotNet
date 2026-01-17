@@ -52,6 +52,8 @@ is preferred
 dotnet add package YoloDotNet.ExecutionProvider.DirectML
 ```
 
+> YoloDotNet.ExecutionProvider.DirectML v1.0 requires YoloDotNet version 4.1.
+
 No separate DirectML or DirectX SDK installation is required. DirectML
 is provided as part of Windows and ONNX Runtime.
 

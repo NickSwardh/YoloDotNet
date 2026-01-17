@@ -34,6 +34,8 @@ It is the most portable execution provider and requires no additional dependenci
 No additional installation or configuration is required.\
 Install the NuGet package and run your application — that’s it.
 
+> YoloDotNet.ExecutionProvider.Cpu v1.1 requires YoloDotNet version 4.1.
+
 ### NuGet Package
 ```
 dotnet add package YoloDotNet.ExecutionProvider.Cpu
