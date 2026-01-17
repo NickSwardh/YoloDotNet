@@ -8,36 +8,42 @@
     <Title>YoloDotNet Core</Title>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
     <PackAsTool>False</PackAsTool>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>YoloDotNet is a blazing-fast, modern C# library for real-time object detection, classification, segmentation, OBB, pose estimation — and tracking — using YOLOv5u–v12, YOLO-World, and YOLO-E models.
+    <Description>YoloDotNet is a modular, lightweight C# library for high-performance, real-time
+computer vision and YOLO-based inference in .NET.
 
-Built on .NET 8 and powered by ONNX Runtime, YoloDotNet features a fully modular execution architecture, allowing you to run inference via pluggable execution providers such as CPU, CUDA / TensorRT, Intel OpenVINO, and Apple CoreML across Windows, Linux, and macOS.
+Built on .NET 8 and powered by ONNX Runtime, YoloDotNet provides explicit,
+production-ready inference for modern YOLO model families, including YOLOv5u
+through YOLOv26, YOLO-World, YOLO-E, and RT-DETR.
 
-Designed for high performance and flexibility, YoloDotNet handles images and video streams with low latency, supports live streams and frame skipping, and offers fully customizable visualization pipelines. Whether you’re building smart cameras, real-time analytics, or high-performance machine vision systems, YoloDotNet lets you pick the hardware, platform, and execution backend — and gets out of your way.</Description>
+The library features a fully modular execution architecture with pluggable
+execution providers for CPU, CUDA / TensorRT, Intel OpenVINO, Apple CoreML, and
+DirectML, enabling predictable deployment across Windows, Linux, and macOS.
+
+YoloDotNet intentionally avoids heavy computer vision frameworks such as OpenCV.
+Image handling and preprocessing are performed using SkiaSharp, with no Python
+runtime, no hidden preprocessing, and no implicit behavior.
+
+Designed for low-latency inference and long-running workloads, YoloDotNet gives
+developers full control over execution, memory usage, and preprocessing —
+allowing you to choose the hardware, platform, and execution backend without
+unnecessary abstraction or overhead.</Description>
     <Authors>Niklas Swärd</Authors>
 	<Version>4.0</Version>
     <Company />
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>YoloDotNet v4.0 is a major release that introduces a new modular architecture and significantly improves cross-platform support and maintainability.
+    <PackageReleaseNotes>YoloDotNet v4.1 is a focused update that expands model compatibility and improves runtime performance.
 
-Execution providers have been fully decoupled from YoloDotNet Core. The core package is now execution-provider agnostic and no longer ships with any ONNX Runtime native dependencies. CPU, CUDA, OpenVINO, and CoreML execution providers are distributed as separate NuGet packages and must be referenced explicitly. Exactly one execution provider should be used per project.
+This release adds support for the YOLOv26 model suite and RT-DETR models, extending coverage of modern YOLO-based architectures.
 
-This architectural change is a breaking update for users upgrading from v3.x, as project setup and execution provider configuration have changed. The upside is a much cleaner architecture, fewer native dependency conflicts, and predictable behavior across platforms.
+Performance has been improved across all tasks with reduced allocation pressure, lower per-frame latency, and more stable and efficient video inference.
 
-New execution providers have been added in this release. Intel OpenVINO enables optimized inference on Intel CPUs and integrated GPUs on Windows and Linux. Apple CoreML enables native, hardware-accelerated inference on macOS using Apple’s Core ML framework.
-
-The CUDA execution provider has been improved with more explicit GPU allocation, resulting in smoother and more predictable CUDA and TensorRT performance on NVIDIA hardware.
-
-Support for grayscale-only ONNX models has been added, allowing inference on models exported specifically for single-channel input where color data is unnecessary.
-
-Dependencies have been updated. SkiaSharp has been updated to version 3.119.1, and ONNX Runtime for CUDA has been updated to version 1.23.2.
-
-For detailed installation instructions and execution provider setup, see the execution providers README in the repository.</PackageReleaseNotes>
-    <Copyright>Copyright © 2023 Niklas Swärd</Copyright>
+YoloDotNet has also been relicensed to MIT, simplifying adoption and usage in commercial and open-source projects.</PackageReleaseNotes>
+    <Copyright>Copyright © Niklas Swärd</Copyright>
   </PropertyGroup>
 
   <ItemGroup>
