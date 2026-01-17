@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.ExecutionProvider.Cuda
@@ -8,8 +8,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
     {
         /// <summary>
         /// Allocate GPU memory for input data and ensure memory synchronization.
+        /// Returns the unmanaged pointer allocated with AllocHGlobal so the caller can free it.
         /// </summary>
-        public static void AllocateGpuMemory(this InferenceSession session,
+        public static nint AllocateGpuMemory(this InferenceSession session,
             OrtIoBinding ortIoBinding,
             RunOptions runOptions,
             TensorElementType tensorElementType)
@@ -48,6 +49,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
             // Ensure that the output data is properly synchronized with memory after running the inference.
             ortIoBinding.SynchronizeBoundOutputs();
+
+            // Return the allocated pointer so the caller can free it when done.
+            return allocPtr;
         }
     }
 }

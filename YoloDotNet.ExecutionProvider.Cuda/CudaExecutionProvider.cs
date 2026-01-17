@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.ExecutionProvider.Cuda
@@ -18,13 +18,17 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         private float[] _outputBuffer1 = default!;
 
         private long[] _inputShape = default!;
-        private string[] _inputNames;
+        private string[] _inputNames = default!;
         private int _inputShapeSize;
         private List<string> _outputNames = default!;
         private int _dataTypeSize;
         private TensorElementType _elementDataType = default!;
 
         private IDisposableReadOnlyCollection<OrtValue>? _currentResult;
+
+        // store unmanaged allocation so we can free it later
+        private nint _gpuAllocPtr = nint.Zero;
+
         #endregion
 
         #region Constructors
@@ -75,7 +79,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
             _runOptions = new RunOptions();
             _ortIoBinding = _session.CreateIoBinding();
-            _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _elementDataType);
+            _gpuAllocPtr = _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _elementDataType);
 
         }
 
@@ -321,6 +325,23 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
         public void Dispose()
         {
+            // Dispose any current results first.
+            _currentResult?.Dispose();
+
+            // Free unmanaged GPU allocation if it was allocated.
+            if (_gpuAllocPtr != nint.Zero)
+            {
+                try
+                {
+                    Marshal.FreeHGlobal(_gpuAllocPtr);
+                }
+                catch
+                {
+                    // swallow — best-effort free; do not throw from Dispose.
+                }
+                _gpuAllocPtr = nint.Zero;
+            }
+
             _session?.Dispose();
             _runOptions?.Dispose();
             _ortIoBinding?.Dispose();
