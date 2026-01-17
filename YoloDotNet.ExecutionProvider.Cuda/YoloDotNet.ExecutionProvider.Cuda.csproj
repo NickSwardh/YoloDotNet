@@ -8,7 +8,7 @@
     <Title>YoloDotNet CUDA &amp; TensorRT Execution Provider</Title>
     <Version>1.0</Version>
     <Authors>Niklas Swärd</Authors>
-    <Copyright>Copyright © 2025 Niklas Swärd</Copyright>
+    <Copyright>Copyright © Niklas Swärd</Copyright>
     <PackageIcon>icon.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>CUDA and TensorRT execution provider for YoloDotNet, enabling GPU-accelerated inference on NVIDIA hardware using ONNX Runtime.
@@ -16,14 +16,12 @@
 This execution provider supports CUDA for general GPU acceleration and optional NVIDIA TensorRT integration for maximum performance, lower latency, and optimized engine execution. It is designed for high-throughput and real-time inference workloads on Windows and Linux systems with supported NVIDIA GPUs.
 
 The provider is fully compatible with the YoloDotNet core library and follows the new modular, execution-provider-agnostic architecture introduced in YoloDotNet v4.0.</Description>
-    <PackageTags>yolo;yolodotnet;onnx;onnxruntime;cuda;tensorrt;nvidia;gpu;gpu-acceleration;inference;machine-learning;deep-learning;computer-vision;object-detection;segmentation;pose-estimation;real-time;high-performance;windows;linux</PackageTags>
-    <PackageReleaseNotes>This is the first standalone release of the CUDA execution provider for YoloDotNet following the introduction of the new modular architecture.
-
-The CUDA execution provider enables GPU-accelerated inference using ONNX Runtime’s CUDA backend and supports optional NVIDIA TensorRT integration for maximum performance, lower latency, and optimized execution on supported NVIDIA GPUs.
-
-This provider targets high-performance and real-time inference workloads on Windows and Linux systems and requires the CUDA Toolkit and cuDNN to be installed on the host system. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design.</PackageReleaseNotes>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
+    <PackageReleaseNotes>This release updates the internal execution provider architecture to align with YoloDotNet v4.1. Model parsing and validation are now handled exclusively by the YoloDotNet core library, simplifying execution provider implementations and ensuring consistent model handling across all backends. This execution provider requires YoloDotNet version 4.1.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.Cuda</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
