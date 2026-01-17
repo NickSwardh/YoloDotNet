@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2024-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2024-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Benchmarks.InferenceBenchmarks
@@ -33,9 +33,13 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
             //YoloType.V8_Seg_TRT32,
             //YoloType.V8_Seg_TRT16,
             YoloType.V11_Seg_CPU,
-            YoloType.V11_Seg_GPU
+            YoloType.V11_Seg_GPU,
             //YoloType.V11_Seg_TRT32,
             //YoloType.V11_Seg_TRT16
+            YoloType.V26_Seg_CPU,
+            YoloType.V26_Seg_GPU
+            //YoloType.V26_Seg_TRT32,
+            //YoloType.V26_Seg_TRT16
             )]
         public YoloType YoloParam { get; set; }
 

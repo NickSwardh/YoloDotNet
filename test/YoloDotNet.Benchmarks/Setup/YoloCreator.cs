@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Benchmarks.Setup
@@ -57,6 +57,12 @@ namespace YoloDotNet.Benchmarks.Setup
             "V12_Obb" => SharedConfig.GetTestModelV12(ModelType.ObbDetection),
             "V12_Pos" => SharedConfig.GetTestModelV12(ModelType.PoseEstimation),
             "V12_Seg" => SharedConfig.GetTestModelV12(ModelType.Segmentation),
+
+            "V26_Cls" => SharedConfig.GetTestModelV26(ModelType.Classification),
+            "V26_Obj" => SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
+            "V26_Obb" => SharedConfig.GetTestModelV26(ModelType.ObbDetection),
+            "V26_Pos" => SharedConfig.GetTestModelV26(ModelType.PoseEstimation),
+            "V26_Seg" => SharedConfig.GetTestModelV26(ModelType.Segmentation),
             _ => throw new ArgumentException("Unknown model")
         };
 
