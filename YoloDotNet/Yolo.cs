@@ -205,6 +205,8 @@ namespace YoloDotNet
             _detection.Dispose();
             _ffmpegService?.Dispose();
 
+            options.ExecutionProvider?.Dispose();
+
             GC.SuppressFinalize(this);
         }
 
