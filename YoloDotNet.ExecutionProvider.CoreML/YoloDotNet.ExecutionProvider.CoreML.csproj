@@ -8,7 +8,7 @@
     <Authors>Niklas Swärd</Authors>
     <Copyright>Copyright © Niklas Swärd</Copyright>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>1.0</Version>
+    <Version>1.1</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>YoloDotNet.ExecutionProvider.CoreML enables hardware-accelerated inference on macOS using Apple’s native Core ML framework.
 

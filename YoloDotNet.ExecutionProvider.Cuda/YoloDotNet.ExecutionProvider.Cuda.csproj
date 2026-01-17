@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Title>YoloDotNet CUDA &amp; TensorRT Execution Provider</Title>
-    <Version>1.0</Version>
+    <Version>1.1</Version>
     <Authors>Niklas Swärd</Authors>
     <Copyright>Copyright © Niklas Swärd</Copyright>
     <PackageIcon>icon.png</PackageIcon>

@@ -12,7 +12,7 @@ This execution provider integrates ONNX Runtime with Intel OpenVINO to deliver h
 The provider is fully modular and designed to work with the execution-provider-agnostic YoloDotNet core library introduced in v4.0. Only one execution provider should be referenced per project.</Description>
     <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
     <PackageReleaseNotes>This release updates the internal execution provider architecture to align with YoloDotNet v4.1. Model parsing and validation are now handled exclusively by the YoloDotNet core library, simplifying execution provider implementations and ensuring consistent model handling across all backends. This execution provider requires YoloDotNet version 4.1.</PackageReleaseNotes>
-    <Version>1.0</Version>
+    <Version>1.1</Version>
     <Authors>Niklas Swärd</Authors>
     <Copyright>Copyright © 2025 Niklas Swärd</Copyright>
     <Title>YoloDotNet OpenVINO Execution Provider</Title>
