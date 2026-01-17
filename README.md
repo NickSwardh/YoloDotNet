@@ -142,20 +142,44 @@ YoloDotNet focuses on stable, low-overhead inference where runtime cost is domin
 
 ## License
 
-YoloDotNet is licensed under the [MIT License](./LICENSE.txt) and provides an ONNX inference
+MIT License
+
+Copyright (c) Niklas Swärd
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+### Model Licensing & Responsibility
+
+* YoloDotNet is licensed under the [MIT License](./LICENSE.txt) and provides an ONNX inference
 engine for YOLO models exported using Ultralytics YOLO tooling.
 
-This project does **not** include, distribute, download, or bundle any
+* This project does **not** include, distribute, download, or bundle any
 pretrained models.
 
-Users must supply their own ONNX models.
+* Users must supply their own ONNX models.
 
-YOLO ONNX models produced using Ultralytics tooling are typically licensed
+* YOLO ONNX models produced using Ultralytics tooling are typically licensed
 under **AGPL-3.0** or a separate commercial license from Ultralytics.
 
-YoloDotNet does **not** impose, modify, or transfer any license terms related
+* YoloDotNet does **not** impose, modify, or transfer any license terms related
 to user-supplied models.
 
-**Users are solely responsible** for ensuring that their use of any model
+* **Users are solely responsible** for ensuring that their use of any model
 complies with the applicable license terms, including requirements related
 to commercial use, distribution, or network deployment.
