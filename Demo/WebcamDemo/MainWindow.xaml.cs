@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2024-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using OpenCvSharp;
@@ -52,30 +52,25 @@ namespace WebcamDemo
     /// </summary>
     public partial class MainWindow : Window
     {
-        #region Fields
-
+        #region Private fields
         private readonly Yolo _yolo = default!;
         private readonly SortTracker _sortTracker = default!;
         private SKBitmap _currentFrame = default!;
         private Dispatcher _dispatcher = default!;
-
+        private CancellationTokenSource _cts;
         private bool _runDetection = false;
         private SKRect _rect;
         private Stopwatch _stopwatch = default!;
 
-        private SKImageInfo _imageInfo = default!;
         private bool _isTrackingEnabled;
         private bool _isFilteringEnabled;
         private double _confidenceThreshold;
-
         #endregion
 
         #region Constants
-
         const int WEBCAM_WIDTH = 1280;
         const int WEBCAM_HEIGHT = 720;
         const int FPS = 30;
-
         #endregion
 
         public MainWindow()
@@ -125,7 +120,7 @@ namespace WebcamDemo
                 ExecutionProvider = new CudaExecutionProvider(
 
                     // Path or byte[] of the ONNX model to load.
-                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+                    model: SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
                     gpuId: 0),
@@ -138,16 +133,18 @@ namespace WebcamDemo
                 // Sampling options for resizing; affects inference speed and quality.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
                 SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
+
             });
 
             _dispatcher = Dispatcher.CurrentDispatcher;
 
-            _currentFrame = new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT);
+            _cts = new CancellationTokenSource();
+
+            _currentFrame = new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul);
             _rect = new SKRect(0, 0, WEBCAM_WIDTH, bottom: WEBCAM_HEIGHT);
-            _imageInfo = new SKImageInfo(WEBCAM_WIDTH, WEBCAM_HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul);
 
             // Start the webcam capture on a background thread
-            Task.Run(() => WebcamAsync());
+            Task.Run(() => WebcamAsync(), _cts.Token);
         }
 
         private async Task WebcamAsync()
@@ -165,7 +162,13 @@ namespace WebcamDemo
             using var mat = new Mat();
             using var bgraMat = new Mat();
 
-            while (true)
+            var drawingOptions = new DetectionDrawingOptions
+            {
+                DrawLabels = false
+            };
+
+            // Continuously capture frames from the webcam until cancellation is requested, eg. when closing the window.
+            while (_cts.IsCancellationRequested is false)
             {
                 // Capture the current frame from the webcam
                 capture.Read(mat);
@@ -173,32 +176,30 @@ namespace WebcamDemo
                 // Convert the frame to BGRA color space
                 Cv2.CvtColor(mat, bgraMat, ColorConversionCodes.BGR2BGRA);
 
-                // Create an SKBitmap from the BGRA Mat for processing
-                using var frame = SKImage.FromPixels(_imageInfo, bgraMat.Data);
-
-                _currentFrame?.Dispose();
-                _currentFrame = SKBitmap.FromImage(frame);
+                _currentFrame.SetPixels(bgraMat.Data);
 
                 if (_runDetection)
                 {
                     _stopwatch.Restart();
 
                     // Run object detection on the current frame
-                    var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold, iou: 0.7);
+                    var results = _yolo.RunObjectDetection(_currentFrame, _confidenceThreshold, iou: 0.5);
 
                     _stopwatch.Stop();
 
+                    // Optionally filter results to only include specific class labels
                     if (_isFilteringEnabled)
-                        results = results.FilterLabels(["person", "cat", "dog"]);  // Optionally filter results to include only specific classes (e.g., "person", "cat", "dog")
+                        results = results.FilterLabels(["person", "cat", "dog"]);
 
+                    // Optionally track objects using the SortTracker
                     if (_isTrackingEnabled)
-                        results.Track(_sortTracker); // Optionally track objects using the SortTracker
+                        results.Track(_sortTracker);
 
                     // Draw detection and tracking results on the current frame
                     _currentFrame.Draw(results);
                 }
-               
-                // Update GUI
+
+                // Update the SKElement on the UI thread
                 await _dispatcher.InvokeAsync(() =>
                 {
                     WebCamFrame.InvalidateVisual(); // Notify SKiaSharp to update the frame.
@@ -211,7 +212,9 @@ namespace WebcamDemo
 
                         FrameProcess.Text = $"Processed Frame: {milliseconds:F1}ms ({yoloFps:F1} fps)";
                     }
-                });
+                },
+                DispatcherPriority.Render, // Ensure the UI updates accordingly.
+                _cts.Token);
             }
         }
 
@@ -219,7 +222,6 @@ namespace WebcamDemo
         {
             using var canvas = e.Surface.Canvas;
             canvas.DrawBitmap(_currentFrame, _rect);
-            //canvas.Flush();
         }
 
         private void StartClick(object sender, RoutedEventArgs e)
@@ -242,6 +244,10 @@ namespace WebcamDemo
 
         private void WindowClosing(object sender, System.ComponentModel.CancelEventArgs e)
         {
+            _cts.Cancel();
+
+            Thread.Sleep(500); // Give some time for the webcam task to end gracefully.
+
             _runDetection = false;
             _yolo?.Dispose();
             _currentFrame?.Dispose();

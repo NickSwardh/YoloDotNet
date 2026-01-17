@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Benchmarks.ImageBenchmarks
@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
     [MemoryDiagnoser]
     public class ImageResizeBenchmarks
     {
-        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
+        private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.ObjectDetection);
 
         private PinnedMemoryBuffer _pinnedMemoryBuffer;
         private SKBitmap _image;

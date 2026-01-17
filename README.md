@@ -1,17 +1,31 @@
 # <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet 🚀
 **Blazing-fast, production-ready YOLO inference for .NET**
 
-**YoloDotNet** is a fully featured C# library for real-time computer vision using **YOLOv5u–v12**, **YOLO-World**, and **YOLO-E** models.  
-Built on **.NET 8** and **ONNX Runtime**, it delivers **high-performance, predictable inference** on **Windows, Linux, and macOS** — with explicit control over execution, memory, and preprocessing.
+**YoloDotNet** is a modular, lightweight C# library for real-time computer vision
+and YOLO-based inference in .NET.
+
+It provides high-performance inference for modern YOLO model families (`YOLOv5u` through `YOLOv26`, `YOLO-World`, `YOLO-E`, and `RT-DETR`), with explicit control over execution, memory, and preprocessing.
+
+Built on **.NET 8**, **ONNX Runtime**, and **SkiaSharp**, YoloDotNet intentionally
+avoids heavy computer vision frameworks such as OpenCV.  
+There is no Python runtime, no hidden preprocessing, and no implicit behavior —
+only the components required for fast, predictable inference on **Windows,
+Linux, and macOS**.
 
 No Python. No magic. Just fast, deterministic YOLO — done properly for .NET.
 
 ## ⭐ Why YoloDotNet?
 
+![YOLOv5u](https://img.shields.io/badge/YOLOv5u-supported-2ea44f)
+![YOLOv8-v26](https://img.shields.io/badge/YOLOv8--v26-supported-2ea44f)
+![YOLO-RT-DETR](https://img.shields.io/badge/YOLO--RT--DETR-supported-2ea44f)
+![YOLO-World](https://img.shields.io/badge/YOLO--World-supported-2ea44f)
+![YOLO-E](https://img.shields.io/badge/YOLO--E-supported-2ea44f)
+
 YoloDotNet is designed for developers who need:
 
 - ✅ **Pure .NET** — no Python runtime, no scripts  
-- ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML  
+- ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML, DirectML  
 - ✅ **Explicit configuration** — predictable accuracy and memory usage  
 - ✅ **Production readiness** — engine caching, long-running stability  
 - ✅ **Large image support** — not limited to toy resolutions  
@@ -19,13 +33,13 @@ YoloDotNet is designed for developers who need:
 
 Ideal for **desktop apps, backend services, and real-time vision pipelines** that require deterministic behavior and full control.
 
-## 🆕 What’s New v4
+## 🆕 What’s New v4.1
 
-- Modular execution providers (CPU, CUDA/TensorRT, OpenVINO, CoreML)
-- New OpenVINO and CoreML providers
-- Cleaner dependency graph
-- Improved GPU behavior and predictability
-- Grayscale ONNX model support
+- Added support for `Yolo26` model suite
+- Added support for `RT-DETR` models
+- Improved performance across all tasks, with reduced allocation pressure and lower per-frame latency.
+- Improved performance on video inference
+- [Relicensed to MIT](#license)
 
 📖 Full release history: [CHANGELOG.md](./CHANGELOG.md)
 
@@ -48,6 +62,7 @@ dotnet add package YoloDotNet.ExecutionProvider.Cpu
 dotnet add package YoloDotNet.ExecutionProvider.Cuda
 dotnet add package YoloDotNet.ExecutionProvider.OpenVino
 dotnet add package YoloDotNet.ExecutionProvider.CoreML
+dotnet add package YoloDotNet.ExecutionProvider.DirectML
 ```
 
 > 💡 **Note:** The CUDA execution provider includes optional **TensorRT** acceleration.  
@@ -102,12 +117,13 @@ Includes image inference, video streams, GPU acceleration, segmentation, and lar
 
 ## Execution Providers
 
-| Provider | Windows | Linux | macOS | Documentation |
-|--------|---------|-------|-------|---------------|
-| CPU | ✅ | ✅ | ✅ | [CPU README](./YoloDotNet.ExecutionProvider.Cpu/README.md) |
-| CUDA / TensorRT | ✅ | ✅ | ❌ | [CUDA README](./YoloDotNet.ExecutionProvider.Cuda/README.md) |
-| OpenVINO | ✅ | ✅ | ❌ | [OpenVINO README](./YoloDotNet.ExecutionProvider.OpenVino/README.md) |
-| CoreML | ❌ | ❌ | ✅ | [CoreML README](./YoloDotNet.ExecutionProvider.CoreML/README.md) |
+| Provider           | Windows | Linux | macOS | Documentation |
+|--------------------|---------|-------|-------|---------------|
+| CPU                | ✅      | ✅    | ✅    | [CPU README](./YoloDotNet.ExecutionProvider.Cpu/README.md) |
+| CUDA / TensorRT    | ✅      | ✅    | ❌    | [CUDA README](./YoloDotNet.ExecutionProvider.Cuda/README.md) |
+| OpenVINO           | ✅      | ✅    | ❌    | [OpenVINO README](./YoloDotNet.ExecutionProvider.OpenVino/README.md) |
+| CoreML             | ❌      | ❌    | ✅    | [CoreML README](./YoloDotNet.ExecutionProvider.CoreML/README.md) |
+| DirectML           | ✅      | ❌    | ❌    | [DirectML README](./YoloDotNet.ExecutionProvider.DirectML/README.md) |
 
 > ℹ️ Only **one** execution provider package may be referenced.  
 > Mixing providers will cause native runtime conflicts.
@@ -142,7 +158,61 @@ YoloDotNet focuses on stable, low-overhead inference where runtime cost is domin
 
 ## License
 
-© 2023–2025 Niklas Swärd  
-Licensed under **GPL v3.0 or later**.
+MIT License
 
-See [LICENSE](./LICENSE.txt) for full details.
+Copyright (c) Niklas Swärd
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+### Why MIT?
+
+YoloDotNet is designed as a low-level, production-grade YOLO inference engine.
+It does not include pretrained models, training pipelines, or hosted services.
+
+The MIT license was chosen to maximize freedom and clarity for developers and organizations:
+
+- No copyleft requirements
+- No network-use clauses
+- No restrictions on commercial or proprietary deployment
+
+This makes YoloDotNet suitable for use in enterprise software, embedded systems, backend services, and closed-source products without licensing friction.
+
+Model licensing is entirely separate and is determined by the source and terms of the ONNX models supplied by the user.
+
+---
+
+### Model Licensing & Responsibility
+
+* YoloDotNet is licensed under the [MIT License](./LICENSE.txt) and provides an ONNX inference
+engine for YOLO models exported using Ultralytics YOLO tooling.
+
+* This project does **not** include, distribute, download, or bundle any
+pretrained models.
+
+* Users must supply their own ONNX models.
+
+* YOLO ONNX models produced using Ultralytics tooling are typically licensed
+under **AGPL-3.0** or a separate commercial license from Ultralytics.
+
+* YoloDotNet does **not** impose, modify, or transfer any license terms related
+to user-supplied models.
+
+* **Users are solely responsible** for ensuring that their use of any model
+complies with the applicable license terms, including requirements related
+to commercial use, distribution, or network deployment.

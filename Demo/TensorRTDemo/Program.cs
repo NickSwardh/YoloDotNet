@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -86,7 +86,7 @@ namespace TensorRTDemo
                 ExecutionProvider = new CudaExecutionProvider(
 
                     // Path or byte[] of the ONNX model to load.
-                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+                    model: SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
                     gpuId: 0,
@@ -173,7 +173,7 @@ namespace TensorRTDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Street));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.ObjectDetection));
 
             // Run object detection inference
             var results = yolo.RunObjectDetection(image, confidence: 0.15, iou: 0.7);

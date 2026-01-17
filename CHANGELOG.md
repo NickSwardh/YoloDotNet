@@ -2,7 +2,26 @@
 
 All notable changes to **YoloDotNet** will be documented in this file.
 
-## [4.0] — 2025-12-14
+## [4.1] — Expanded Model Support & MIT Relicense
+
+### ✨ Added
+- Support for the **YOLOv26** model suite.
+- Support for **RT-DETR** models.
+- New **DirectML execution provider** for GPU acceleration on Windows.
+- Improved video inference pipeline with better frame-to-frame stability.
+
+### 🚀 Improved
+- Reduced allocation pressure across all vision tasks.
+- Lower per-frame latency for long-running inference workloads.
+- General performance improvements across CPU and GPU execution providers.
+
+### 🔄 Changed
+- Project relicensed to **MIT** to maximize freedom for commercial and proprietary use.
+  - No copyleft requirements
+  - No network-use clauses
+  - Model licensing remains the responsibility of the user
+
+## [4.0] — Modular Execution Providers
 
 ### Breaking Changes
 - Execution providers are no longer bundled with the core package.

@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Extensions
@@ -273,7 +273,7 @@ namespace YoloDotNet.Extensions
                     canvas.DrawBitmap(pixelMask, box.Left, box.Top, paint);
                 }
             }
-
+            
             if (options.DrawBoundingBoxes is true)
                 image.DrawBoundingBoxes(segmentations, (DetectionDrawingOptions)options);
         }
@@ -436,13 +436,17 @@ namespace YoloDotNet.Extensions
                 labelBgPaint.Color = boxColor;
                 boxPaint.Color = boxColor;
 
-                // Calculate label background rect size
-                var left = box.Left - labelOffset;
-                var top = box.Top - labelBoxHeight;
-                var right = box.Left + labelWidth + (margin * 2);
-                var bottom = box.Top - labelOffset;
+                var labelBoxWidth = labelWidth + (margin * 2);
 
-                var labelBackground = new SKRectI(left, top, right, bottom);
+                // Calculate best label position using priority-based placement
+                var labelBackground = CalculateLabelPosition(
+                    box,
+                    labelBoxWidth,
+                    labelBoxHeight,
+                    labelOffset,
+                    image.Width,
+                    image.Height,
+                    options.LabelPosition);
 
                 // Bounding-box
                 if (options.DrawBoundingBoxes)
@@ -452,14 +456,13 @@ namespace YoloDotNet.Extensions
                 if (options.DrawLabels)
                 {
                     // Calculate label text coordinates
-                    var text_x = labelBackground.Left;// + margin;
+                    var text_x = labelBackground.Left;
                     var text_y = labelBackground.Top + textOffset;
 
                     // Label background
                     if (options.DrawLabelBackground)
                     {
                         text_x += margin;
-                        //text_y += textOffset;
                         canvas.DrawRect(labelBackground, labelBgPaint);
                     }
 
@@ -476,6 +479,317 @@ namespace YoloDotNet.Extensions
                     DrawTrackedTail(canvas, detection.Tail, options);
                 }
             }
+        }
+
+        /// <summary>
+        /// Calculates the optimal position for a label to ensure it remains visible within image bounds.
+        /// </summary>
+        /// <param name="box">The bounding box of the detected object.</param>
+        /// <param name="labelWidth">The width of the label including margins.</param>
+        /// <param name="labelHeight">The height of the label.</param>
+        /// <param name="offset">Offset from the bounding box edge.</param>
+        /// <param name="imageWidth">The width of the image.</param>
+        /// <param name="imageHeight">The height of the image.</param>
+        /// <param name="position">The preferred label position.</param>
+        /// <returns>A rectangle representing the final label position.</returns>
+        private static SKRectI CalculateLabelPosition(
+            SKRectI box,
+            int labelWidth,
+            int labelHeight,
+            int offset,
+            int imageWidth,
+            int imageHeight,
+            LabelPosition position = LabelPosition.Auto)
+        {
+            return position switch
+            {
+                LabelPosition.TopLeft => CalculateTopLeftPosition(box, labelWidth, labelHeight, offset, imageWidth, imageHeight),
+                LabelPosition.TopRight => CalculateTopRightPosition(box, labelWidth, labelHeight, offset, imageWidth, imageHeight),
+                LabelPosition.BottomLeft => CalculateBottomLeftPosition(box, labelWidth, labelHeight, offset, imageWidth, imageHeight),
+                LabelPosition.BottomRight => CalculateBottomRightPosition(box, labelWidth, labelHeight, offset, imageWidth, imageHeight),
+                _ => CalculateAutoPosition(box, labelWidth, labelHeight, offset, imageWidth, imageHeight)
+            };
+        }
+
+        private static SKRectI CalculateAutoPosition(
+            SKRectI box,
+            int labelWidth,
+            int labelHeight,
+            int offset,
+            int imageWidth,
+            int imageHeight)
+        {
+            // Try position 1: Top-left (above and aligned to left of box)
+            var left = box.Left - offset;
+            var top = box.Top - labelHeight;
+            var right = left + labelWidth;
+            var bottom = box.Top - offset;
+
+            // Adjust horizontal position if needed
+            if (left < 0)
+            {
+                left = 0;
+                right = labelWidth;
+            }
+            
+            if (right > imageWidth)
+            {
+                right = Math.Min(imageWidth, box.Right);
+                left = right - labelWidth;
+                
+                if (left < 0)
+                {
+                    left = 0;
+                    right = Math.Min(labelWidth, imageWidth);
+                }
+            }
+
+            // If position above fits vertically, use it
+            if (top >= 0)
+            {
+                return new SKRectI(left, top, right, bottom);
+            }
+
+            // Try position 2: Bottom-left (below and aligned to left of box)
+            top = box.Bottom + offset;
+            bottom = top + labelHeight;
+            left = box.Left - offset;
+            right = left + labelWidth;
+
+            if (left < 0)
+            {
+                left = 0;
+                right = labelWidth;
+            }
+            
+            if (right > imageWidth)
+            {
+                right = Math.Min(imageWidth, box.Right);
+                left = right - labelWidth;
+                
+                if (left < 0)
+                {
+                    left = 0;
+                    right = Math.Min(labelWidth, imageWidth);
+                }
+            }
+
+            // If position below fits vertically, use it
+            if (bottom <= imageHeight)
+            {
+                return new SKRectI(left, top, right, bottom);
+            }
+
+            // Try position 3: Inside box at top-left
+            top = box.Top + offset;
+            bottom = top + labelHeight;
+            left = box.Left + offset;
+            right = left + labelWidth;
+
+            if (right > box.Right - offset)
+            {
+                right = box.Right - offset;
+                left = Math.Max(box.Left + offset, right - labelWidth);
+            }
+
+            if (bottom <= box.Bottom - offset)
+            {
+                return new SKRectI(left, top, right, bottom);
+            }
+
+            // Position 4: Inside box at bottom-left (fallback)
+            bottom = box.Bottom - offset;
+            top = Math.Max(box.Top + offset, bottom - labelHeight);
+            left = box.Left + offset;
+            right = left + labelWidth;
+
+            if (right > box.Right - offset)
+            {
+                right = box.Right - offset;
+                left = Math.Max(box.Left + offset, right - labelWidth);
+            }
+
+            return new SKRectI(left, top, right, bottom);
+        }
+
+        private static SKRectI CalculateTopLeftPosition(
+            SKRectI box,
+            int labelWidth,
+            int labelHeight,
+            int offset,
+            int imageWidth,
+            int imageHeight)
+        {
+            var left = box.Left - offset;
+            var top = box.Top - labelHeight;
+            var right = left + labelWidth;
+            var bottom = box.Top - offset;
+
+            // Adjust if out of bounds
+            if (left < 0)
+            {
+                left = 0;
+                right = labelWidth;
+            }
+            
+            if (right > imageWidth)
+            {
+                right = imageWidth;
+                left = Math.Max(0, right - labelWidth);
+            }
+
+            // If not enough space above, place inside at top-left
+            if (top < 0)
+            {
+                top = box.Top + offset;
+                bottom = top + labelHeight;
+                left = box.Left + offset;
+                right = left + labelWidth;
+
+                // Constrain to image bounds, not box bounds
+                if (right > imageWidth)
+                {
+                    right = imageWidth;
+                    left = Math.Max(0, right - labelWidth);
+                }
+            }
+
+            return new SKRectI(left, top, right, bottom);
+        }
+
+        private static SKRectI CalculateTopRightPosition(
+            SKRectI box,
+            int labelWidth,
+            int labelHeight,
+            int offset,
+            int imageWidth,
+            int imageHeight)
+        {
+            var right = box.Right + offset;
+            var top = box.Top - labelHeight;
+            var left = right - labelWidth;
+            var bottom = box.Top - offset;
+
+            // Adjust if out of bounds
+            if (right > imageWidth)
+            {
+                right = imageWidth;
+                left = right - labelWidth;
+            }
+            
+            if (left < 0)
+            {
+                left = 0;
+                right = Math.Min(labelWidth, imageWidth);
+            }
+
+            // If not enough space above, place inside at top-right
+            if (top < 0)
+            {
+                top = box.Top + offset;
+                bottom = top + labelHeight;
+                right = box.Right - offset;
+                left = right - labelWidth;
+
+                // Constrain to image bounds, not box bounds
+                if (left < 0)
+                {
+                    left = 0;
+                    right = Math.Min(labelWidth, imageWidth);
+                }
+            }
+
+            return new SKRectI(left, top, right, bottom);
+        }
+
+        private static SKRectI CalculateBottomLeftPosition(
+            SKRectI box,
+            int labelWidth,
+            int labelHeight,
+            int offset,
+            int imageWidth,
+            int imageHeight)
+        {
+            var left = box.Left - offset;
+            var top = box.Bottom + offset;
+            var right = left + labelWidth;
+            var bottom = top + labelHeight;
+
+            // Adjust if out of bounds
+            if (left < 0)
+            {
+                left = 0;
+                right = labelWidth;
+            }
+            
+            if (right > imageWidth)
+            {
+                right = imageWidth;
+                left = Math.Max(0, right - labelWidth);
+            }
+
+            // If not enough space below, place inside at bottom-left
+            if (bottom > imageHeight)
+            {
+                bottom = box.Bottom - offset;
+                top = Math.Max(box.Top + offset, bottom - labelHeight);
+                left = box.Left + offset;
+                right = left + labelWidth;
+
+                // Constrain to image bounds, not box bounds
+                if (right > imageWidth)
+                {
+                    right = imageWidth;
+                    left = Math.Max(0, right - labelWidth);
+                }
+            }
+
+            return new SKRectI(left, top, right, bottom);
+        }
+
+        private static SKRectI CalculateBottomRightPosition(
+            SKRectI box,
+            int labelWidth,
+            int labelHeight,
+            int offset,
+            int imageWidth,
+            int imageHeight)
+        {
+            var right = box.Right + offset;
+            var top = box.Bottom + offset;
+            var left = right - labelWidth;
+            var bottom = top + labelHeight;
+
+            // Adjust if out of bounds
+            if (right > imageWidth)
+            {
+                right = imageWidth;
+                left = right - labelWidth;
+            }
+            
+            if (left < 0)
+            {
+                left = 0;
+                right = Math.Min(labelWidth, imageWidth);
+            }
+
+            // If not enough space below, place inside at bottom-right
+            if (bottom > imageHeight)
+            {
+                bottom = box.Bottom - offset;
+                top = Math.Max(box.Top + offset, bottom - labelHeight);
+                right = box.Right - offset;
+                left = right - labelWidth;
+
+                // Constrain to image bounds, not box bounds
+                if (left < 0)
+                {
+                    left = 0;
+                    right = Math.Min(labelWidth, imageWidth);
+                }
+            }
+
+            return new SKRectI(left, top, right, bottom);
         }
 
         /// <summary>
@@ -665,6 +979,9 @@ namespace YoloDotNet.Extensions
         {
             // Create a bitmap for the pixelmask
             var bitmap = new SKBitmap(width, height, SKColorType.Bgra8888, SKAlphaType.Premul);
+
+            if (packedMask.Length == 0)
+                return bitmap;
 
             // Caclulate total pixels
             var totalPixels = width * height;

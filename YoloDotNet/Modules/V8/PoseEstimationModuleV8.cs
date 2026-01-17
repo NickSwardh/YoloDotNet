@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -8,13 +8,29 @@ namespace YoloDotNet.Modules.V8
     {
         private readonly YoloCore _yoloCore;
         private readonly ObjectDetectionModuleV8 _objectDetectionModule;
+        private int _inputChannels;
+        private int _modelOutputChannels;
+        private int _modelOutputElements;
+        private List<PoseEstimation> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
         public PoseEstimationModuleV8(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
+
+            // Get input shape from ONNX model. Format NCHW: [Batch (B), Channels (C), Height (H), Width (W)]
+            var inputShape = _yoloCore.OnnxModel.InputShapes.ElementAt(0).Value;
+
+            // Get output shape from ONNX model. Format: [Batch, Attributes, Predictions]
+            var outputShape = _yoloCore.OnnxModel.OutputShapes.ElementAt(0).Value;
+
+            _inputChannels = (int)inputShape[1];
+            _modelOutputElements = outputShape[1];
+            _modelOutputChannels = outputShape[2];
+
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
+            _results = [];
         }
 
         public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
@@ -23,11 +39,11 @@ namespace YoloDotNet.Modules.V8
             var detections = PoseEstimateImage(inferenceResult, confidence, iou);
 
             // Convert to List<PoseEstimation>
-            var results = new List<PoseEstimation>(detections.Length);
+            _results.Clear();
             for (int i = 0; i < detections.Length; i++)
-                results.Add((PoseEstimation)detections[i]);
+                _results.Add((PoseEstimation)detections[i]);
 
-            return results;
+            return _results;
         }
 
         #region Helper methods
@@ -42,22 +58,21 @@ namespace YoloDotNet.Modules.V8
             var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(imageSize);
 
             var labels = _yoloCore.OnnxModel.Labels.Length;
-            var ouputChannels = _yoloCore.OnnxModel.Outputs[0].Channels;
-            var totalKeypoints = (int)Math.Floor(((double)_yoloCore.OnnxModel.Outputs[0].Elements / _yoloCore.OnnxModel.Input.Channels)) - labels;
+            var totalKeypoints = (int)Math.Floor(((double)_modelOutputElements / _inputChannels)) - labels;
 
             var totalBoxes = boxes.Length;
             for (int i = 0; i < totalBoxes; i++)
             {
                 var box = boxes[i];
                 var poseEstimations = new KeyPoint[totalKeypoints];
-                var keypointOffset = box.BoundingBoxIndex + (ouputChannels * (4 + labels)); // Skip boundingbox + labels (4 + labels) and move forward to the first keypoint
+                var keypointOffset = box.BoundingBoxIndex + (_modelOutputChannels * (4 + labels)); // Skip boundingbox + labels (4 + labels) and move forward to the first keypoint
 
                 for (var j = 0; j < totalKeypoints; j++)
                 {
                     var xIndex = keypointOffset;
-                    var yIndex = xIndex + ouputChannels;
-                    var cIndex = yIndex + ouputChannels;
-                    keypointOffset += ouputChannels * 3;
+                    var yIndex = xIndex + _modelOutputChannels;
+                    var cIndex = yIndex + _modelOutputChannels;
+                    keypointOffset += _modelOutputChannels * 3;
 
                     var x = 0;
                     var y = 0;

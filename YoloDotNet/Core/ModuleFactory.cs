@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Core
@@ -94,10 +94,30 @@ namespace YoloDotNet.Core
                 }
             },
             {
+                ModelVersion.V26, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => new ClassificationModuleV26(core) },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleV26(core) },
+                    { ModelType.ObbDetection, core => new OBBDetectionModuleV26(core) },
+                    { ModelType.Segmentation, core => new SegmentationModuleV26(core) },
+                    { ModelType.PoseEstimation, core => new PoseEstimationModuleV26(core) }
+                }
+            },
+            {
                 ModelVersion.WORLDV2, new Dictionary<ModelType, Func<YoloCore, IModule>>
                 {
                     { ModelType.Classification, core => throw new NotImplementedException() },
                     { ModelType.ObjectDetection, core => new ObjectDetectionModuleWorldV2(core) },
+                    { ModelType.ObbDetection, core =>  throw new NotImplementedException() },
+                    { ModelType.Segmentation, core =>  throw new NotImplementedException() },
+                    { ModelType.PoseEstimation, core =>  throw new NotImplementedException() }
+                }
+            },
+            {
+                ModelVersion.RTDETR, new Dictionary<ModelType, Func<YoloCore, IModule>>
+                {
+                    { ModelType.Classification, core => throw new NotImplementedException() },
+                    { ModelType.ObjectDetection, core => new ObjectDetectionModuleRtdetr(core) },
                     { ModelType.ObbDetection, core =>  throw new NotImplementedException() },
                     { ModelType.Segmentation, core =>  throw new NotImplementedException() },
                     { ModelType.PoseEstimation, core =>  throw new NotImplementedException() }

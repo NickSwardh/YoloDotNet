@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2024-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2024-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V10
@@ -7,6 +7,8 @@ namespace YoloDotNet.Modules.V10
     internal class ObjectDetectionModuleV10 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
+        private int _totalElements;
+        private List<ObjectDetection> _results = default!;
 
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
@@ -17,6 +19,14 @@ namespace YoloDotNet.Modules.V10
         public ObjectDetectionModuleV10(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
+
+            // Get output shape from ONNX model. Format: [Batch, Attributes, Predictions]
+            var outputShape = _yoloCore.OnnxModel.OutputShapes.ElementAt(0).Value;
+            var modelOutputChannels = outputShape[1];
+            var modelOutputElements = outputShape[2];
+            _totalElements = modelOutputChannels * modelOutputElements;
+
+            _results = [];
         }
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
@@ -25,11 +35,11 @@ namespace YoloDotNet.Modules.V10
             var detections = ObjectDetection(inferenceResult, confidence, iou);
 
             // Convert to List<ObjectDetection>
-            var results = new List<ObjectDetection>(detections.Length);
+            _results.Clear();
             for (int i = 0; i < detections.Length; i++)
-                results.Add((ObjectDetection)detections[i]);
+                _results.Add((ObjectDetection)detections[i]);
 
-            return results;
+            return _results;
         }
 
         #region Helper methods
@@ -41,12 +51,9 @@ namespace YoloDotNet.Modules.V10
 
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
-            var channels = _yoloCore.OnnxModel.Outputs[0].Channels;
-            var elements = _yoloCore.OnnxModel.Outputs[0].Elements;
-
             int validBoxCount = 0;
             //var boxes = _yoloCore.customSizeObjectResultPool.Rent(channels * elements);
-            var boxes = ArrayPool<ObjectResult>.Shared.Rent(channels * elements);
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_totalElements);
 
             var width = imageSize.Width;
             var height = imageSize.Height;
@@ -64,7 +71,7 @@ namespace YoloDotNet.Modules.V10
 
                     if (confidence < confidenceThreshold) continue;
 
-                    var (xMin, yMin, xMax, yMax) = (0, 0, 0, 0);
+                    int xMin, yMin, xMax, yMax;
 
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
@@ -95,15 +102,10 @@ namespace YoloDotNet.Modules.V10
                     };
                 }
 
-                // Get only the valid portion of the rented array
-                var resultArray = boxes.AsSpan(0, validBoxCount);
-
-                // Remove overlapping boxes using Non-Maximum Suppression (NMS)
-                return _yoloCore.RemoveOverlappingBoxes(resultArray, overlapThreshold);
+                return boxes.AsSpan(0, validBoxCount);
             }
             finally
             {
-                //_yoloCore.customSizeObjectResultPool.Return(boxes, false);
                 ArrayPool<ObjectResult>.Shared.Return(boxes, false);
             }
         }

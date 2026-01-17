@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2024-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2024-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Benchmarks.InferenceBenchmarks
@@ -8,7 +8,7 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
     [MemoryDiagnoser]
     public class ObjectDetectionBenchmarks
     {
-        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.Street);
+        private readonly string _testImage = SharedConfig.GetTestImage(ImageType.ObjectDetection);
         private SKBitmap _image;
         private Yolo _yolo;
 
@@ -69,10 +69,16 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
             //YoloType.V11_Obj_TRT8,
 
             YoloType.V12_Obj_CPU,
-            YoloType.V12_Obj_GPU
+            YoloType.V12_Obj_GPU,
             //YoloType.V12_Obj_TRT32,
             //YoloType.V12_Obj_TRT16,
-            //YoloType.V12_Obj_TRT8
+            //YoloType.V12_Obj_TRT8,
+
+            YoloType.V26_Obj_CPU,
+            YoloType.V26_Obj_GPU
+            //YoloType.V26_Obj_TRT32,
+            //YoloType.V26_Obj_TRT16,
+            //YoloType.V26_Obj_TRT8
             )]
         public YoloType YoloParam { get; set; }
 

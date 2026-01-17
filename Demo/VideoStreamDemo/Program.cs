@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -112,7 +112,7 @@ namespace VideoStreamDemo
                 ExecutionProvider = new CudaExecutionProvider(
 
                     // Path or byte[] of the ONNX model to load.
-                    model: SharedConfig.GetTestModelV11(ModelType.ObjectDetection),
+                    model: SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
                     gpuId: 0),
@@ -170,7 +170,7 @@ namespace VideoStreamDemo
                 //    It does NOT list supported resolutions or framerates.
                 //
                 //    To determine valid width/height/fps combinations, refer to your device specifications
-                VideoInput = SharedConfig.GetTestVideo(VideoType.PeopleWalking),
+                VideoInput = SharedConfig.GetTestVideo(VideoType.Default),
 
                 // 💡 Optional: Path to save the processed output video file.
                 // Leave unset (null or empty) if you do not want to save output.

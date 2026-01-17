@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Version>1.0</Version>
+    <Version>1.1</Version>
     <Authors>Niklas Swärd</Authors>
     <Description>YoloDotNet.ExecutionProvider.Cpu provides a fully portable CPU-based execution provider for YoloDotNet using ONNX Runtime’s built-in CPU backend.
 
@@ -13,17 +13,15 @@ This execution provider requires no additional system-level dependencies and wor
 
 The CPU provider integrates seamlessly with YoloDotNet’s modular execution provider architecture introduced in v4.0 and supports all inference tasks including object detection, segmentation, classification, pose estimation, and OBB detection.</Description>
     <PackageIcon>icon.png</PackageIcon>
-    <Copyright>Copyright © 2025 Niklas Swärd</Copyright>
+    <Copyright>Copyright © Niklas Swärd</Copyright>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolo-world;yolo-e;onnx;onnxruntime;cpu;execution-provider;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;tracking;image-processing;video-processing;media-processing;computer-vision;machine-learning;deep-learning;real-time;inference;dotnet;cross-platform;windows;linux;macos</PackageTags>
-    <PackageReleaseNotes>This is the first standalone release of the CPU execution provider for YoloDotNet, introduced alongside the new modular architecture.
-
-The CPU execution provider runs inference using ONNX Runtime’s built-in CPU backend and requires no additional system-level dependencies, drivers, or runtimes. It works out of the box on Windows, Linux, and macOS.
-
-This provider is intended for development, testing, CI environments, and production scenarios where GPU or NPU acceleration is not available or required. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design.</PackageReleaseNotes>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
+    <PackageReleaseNotes>This release updates the internal execution provider architecture to align with YoloDotNet v4.1. Model parsing and validation are now handled exclusively by the YoloDotNet core library, simplifying execution provider implementations and ensuring consistent model handling across all backends. This execution provider requires YoloDotNet version 4.1.</PackageReleaseNotes>
     <Title>YoloDotNet CPU Execution Provider</Title>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.Cpu</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

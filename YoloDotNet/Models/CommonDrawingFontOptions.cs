@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Models
@@ -36,5 +36,11 @@ namespace YoloDotNet.Models
         /// Whether to draw label background.
         /// </summary>
         public bool DrawLabelBackground { get; set; } = true;
+
+        /// <summary>
+        /// Specifies the preferred position for labels relative to bounding boxes.
+        /// Default is <see cref="LabelPosition.Auto"/>, which automatically determines the best position.
+        /// </summary>
+        public LabelPosition LabelPosition { get; set; } = LabelPosition.Auto;
     }
 }

@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -87,7 +87,7 @@ namespace SegmentationDemo
                 ExecutionProvider = new CudaExecutionProvider(
 
                     // Path or byte[] of the ONNX model to load.
-                    model: SharedConfig.GetTestModelV11(ModelType.Segmentation),
+                    model: SharedConfig.GetTestModelV26(ModelType.Segmentation),
 
                     // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
                     gpuId: 0),
@@ -107,7 +107,7 @@ namespace SegmentationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.People));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Segmentation));
 
             // Run inference
             var results = yolo.RunSegmentation(image, confidence: 0.24, pixelConfedence: 0.5, iou: 0.7);

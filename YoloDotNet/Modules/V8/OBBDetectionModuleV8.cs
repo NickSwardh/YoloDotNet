@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -8,6 +8,7 @@ namespace YoloDotNet.Modules.V8
     {
         private readonly YoloCore _yoloCore;
         private readonly ObjectDetectionModuleV8 _objectDetectionModule = default!;
+        private List<OBBDetection> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -15,20 +16,24 @@ namespace YoloDotNet.Modules.V8
         {
             _yoloCore = yoloCore;
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
+            _results = [];
+
+            // Override image resize to Proportional for OBB detection
+            // OBB requires proportional resizing to maintain geometric validity
+            yoloCore.YoloOptions.ImageResize = ImageResize.Proportional;
         }
 
         public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
         {
             var inferenceResult = _yoloCore.Run(image);
-
             var detections = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 
             // Convert to List<OBBDetection>
-            var results = new List<OBBDetection>(detections.Length);
+            _results.Clear();
             for (int i = 0; i < detections.Length; i++)
-                results.Add((OBBDetection)detections[i]);
+                _results.Add((OBBDetection)detections[i]);
 
-            return results;
+            return _results;
         }
 
         #region Helper methods

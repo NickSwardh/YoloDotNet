@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Handlers
@@ -19,7 +19,7 @@ namespace YoloDotNet.Handlers
         /// <summary>
         /// Initializes the buffer pool with a specified image layout and pre-allocates a number of buffers.
         /// </summary>
-        public PinnedMemoryBufferPool(SKImageInfo skInfo, int initialSize = 60)
+        public PinnedMemoryBufferPool(SKImageInfo skInfo, int initialSize = 2)
         {
             _imageInfo = skInfo;
 

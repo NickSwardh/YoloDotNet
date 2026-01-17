@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -80,12 +80,12 @@ namespace OBBDetectionDemo
                 //   More information about execution providers and setup instructions can be found in the README:
                 //   https://github.com/NickSwardh/YoloDotNet
 
-                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.ObbDetection)),
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.ObbDetection)),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
                 // Set this accordingly, as it directly impacts the inference results.
-                ImageResize = ImageResize.Proportional,
+                ImageResize = ImageResize.Stretched,
 
                 // Sampling options for resizing; affects inference speed and quality.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
@@ -97,7 +97,7 @@ namespace OBBDetectionDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Island));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.ObbDetection));
 
             // Perform obb detection inference.
             var results = yolo.RunObbDetection(image, confidence: 0.25, iou: 0.7);

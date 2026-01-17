@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -82,7 +82,7 @@ namespace PoseEstimationDemo
                 //   More information about execution providers and setup instructions can be found in the README:
                 //   https://github.com/NickSwardh/YoloDotNet
 
-                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.PoseEstimation)),
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.PoseEstimation)),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -99,7 +99,7 @@ namespace PoseEstimationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Crosswalk));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.PoseEstimation));
 
             // Run inference
             var results = yolo.RunPoseEstimation(image, confidence: 0.25, iou: 0.7);

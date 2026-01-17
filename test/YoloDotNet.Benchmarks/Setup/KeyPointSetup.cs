@@ -1,4 +1,8 @@
-﻿namespace YoloDotNet.Benchmarks.Setup
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2024-2025 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+namespace YoloDotNet.Benchmarks.Setup
 {
     /// <summary>
     /// Demonstrates configuring a custom keypoint marker profile with custom colors and illustrating keypoint connections.

@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2026 Niklas Swärd
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -48,6 +48,9 @@ namespace DockerDemo
 
         private static DetectionDrawingOptions _drawingOptions = default!;
 
+        // Load the YOLOv11s ONNX model from the "models" directory
+        private static string _modelSource = Path.Combine(AppContext.BaseDirectory, "models", "model.onnx");
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
@@ -71,13 +74,10 @@ namespace DockerDemo
         {
             builder.Services.AddControllers();
 
-            // Load the YOLOv11s ONNX model from the "models" directory
-            var modelSource = Path.Combine(AppContext.BaseDirectory, "models", "yolov11s.onnx");
-
             // Ensure the model file exists
-            if (!File.Exists(modelSource))
+            if (!File.Exists(_modelSource))
             {
-                throw new FileNotFoundException($"Model file not found: {modelSource}");
+                throw new FileNotFoundException($"Model file not found: {_modelSource}");
             }
 
             // Register Yolo service with CPU execution provider
@@ -85,7 +85,7 @@ namespace DockerDemo
             {
                 return new Yolo(new YoloOptions
                 {
-                    ExecutionProvider = new CpuExecutionProvider(modelSource),
+                    ExecutionProvider = new CpuExecutionProvider(_modelSource),
                 });
             });
         }

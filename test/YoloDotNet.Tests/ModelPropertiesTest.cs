@@ -1,36 +1,34 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Sw�rd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Tests
 {
     public class ModelPropertiesTest
     {
+        // Shapes from Ultralytics ONNX v8 models
         [Theory]
-        [InlineData(ModelType.Classification, 1, 3, 224, 224, 1, 0, 1000)]
-        [InlineData(ModelType.ObjectDetection, 1, 3, 640, 640, 1, 8400, 84)]
-        [InlineData(ModelType.ObbDetection, 1, 3, 1024, 1024, 1, 21504, 20)]
-        [InlineData(ModelType.Segmentation, 1, 3, 640, 640, 1, 8400, 116, 0, 0, 1, 32, 0, 160, 160)]
-        [InlineData(ModelType.PoseEstimation, 1, 3, 640, 640, 1, 8400, 56)]
+        [InlineData(ModelType.Classification, 1, 3, 224, 224, 1, 1000)]
+        [InlineData(ModelType.ObjectDetection, 1, 3, 640, 640, 1, 84, 8400)]
+        [InlineData(ModelType.ObbDetection, 1, 3, 1024, 1024, 1, 20, 21504)]
+        [InlineData(ModelType.Segmentation, 1, 3, 640, 640, 1, 116, 8400, 1, 32, 160, 160)]
+        [InlineData(ModelType.PoseEstimation, 1, 3, 640, 640, 1, 56, 8400)]
         public void OnnxModel_ValidateProperties_ReturnTrue(
             ModelType modelTypeToTest,
 
             int inputBatch,
             int inputChannels,
-            int inputWidth,
             int inputHeight,
+            int inputWidth,
 
             int output0Batch,
             int output0Channels,
-            int output0Elements,
-            int output0Width = 0,
-            int output0Height = 0,
+            int output0Elements = 0,
 
             int output1Batch = 0,
             int output1Channels = 0,
-            int output1Elements = 0,
-            int output1Width = 0,
-            int output1eight = 0
+            int output1Height = 0,
+            int output1Width = 0
             )
         {
             // Arrange
@@ -42,31 +40,37 @@ namespace YoloDotNet.Tests
             var props = yolo.OnnxModel;
 
             // Act
-            var input = props.Input;
-            var output0 = props.Outputs[0];
-            var output1 = props.Outputs[1];
+            var input = props.InputShapes.First().Value;
+            var output0 = props.OutputShapes.ElementAt(0).Value;
+            //var output1 = props.OutputShapes.ElementAt(1).Value;
 
             // Assert
 
             // Model input
-            Assert.Equal(inputBatch, input.BatchSize);
-            Assert.Equal(inputChannels, input.Channels);
-            Assert.Equal(inputWidth, input.Width);
-            Assert.Equal(inputHeight, input.Height);
+            Assert.Equal(inputBatch, input[0]);
+            Assert.Equal(inputChannels, input[1]);
+            Assert.Equal(inputHeight, input[2]);
+            Assert.Equal(inputWidth, input[3]);
 
             // Model output0
-            Assert.Equal(output0Batch, output0.BatchSize);
-            Assert.Equal(output0Channels, output0.Channels);
-            Assert.Equal(output0Elements, output0.Elements);
-            Assert.Equal(output0Width, output0.Width);
-            Assert.Equal(output0Height, output0.Height);
+            Assert.Equal(output0Batch, output0[0]);
+            Assert.Equal(output0Channels, output0[1]);
 
-            // Model output1
-            Assert.Equal(output1Batch, output1.BatchSize);
-            Assert.Equal(output1Channels, output1.Channels);
-            Assert.Equal(output1Elements, output1.Elements);
-            Assert.Equal(output1Width, output1.Width);
-            Assert.Equal(output1eight, output1.Height);
+            // Skip third dimension check for classification models.
+            if (props.ModelType is not ModelType.Classification)
+                Assert.Equal(output0Elements, output0[2]);
+
+            // If there is a second output (eg., for segmentation), validate that as well
+            if (props.OutputShapes.Count > 1)
+            {
+                var output1 = props.OutputShapes.ElementAt(1).Value;
+
+                // Model output1
+                Assert.Equal(output1Batch, output1[0]);
+                Assert.Equal(output1Channels, output1[1]);
+                Assert.Equal(output1Height, output1[2]);
+                Assert.Equal(output1Width, output1[3]);
+            }
         }
     }
 }

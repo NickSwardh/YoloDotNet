@@ -1,12 +1,16 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
+
+using YoloDotNet.Exceptions;
+using YoloDotNet.Extensions;
 
 namespace YoloDotNet.ExecutionProvider.OpenVino
 {
     public class OpenVinoExecutionProvider : IExecutionProvider, IDisposable
     {
-        public OnnxDataRecord OnnxData { get; private set; } = default!;
+        public OnnxModel OnnxData { get; private set; } = default!;
+        public Object Session => _session;
 
         #region Fields
         private InferenceSession _session = default!;
@@ -15,10 +19,14 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         private float[] _outputBuffer0 = default!;
         private float[] _outputBuffer1 = default!;
 
+        private string[] _inputNames = default!;
         private long[] _inputShape = default!;
         private int _inputShapeSize;
+        private List<string> _outputNames = default!;
         private TensorElementType _elementDataType = default!;
         private int _dataTypeSize;
+
+        private IDisposableReadOnlyCollection<OrtValue>? _currentResult;
         #endregion
 
         #region Constructors
@@ -58,8 +66,33 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
 
             GetOnnxMetaData();
             AllocateOutputBuffers();
+            InitializeInferenceParameters();
 
-            _inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
+            //_inputShape = [.. OnnxData.InputShape.Select(i => (long)i)];
+        }
+
+        private void InitializeInferenceParameters()
+        {
+            var firstInput = OnnxData.InputShapes.FirstOrDefault();
+
+            if (EqualityComparer<KeyValuePair<string, long[]>>.Default.Equals(firstInput, default))
+                throw new YoloDotNetException("Corrupt or incompatible model. No input shape was found.");
+
+            _inputNames = [firstInput.Key];
+            _inputShape = firstInput.Value;
+            _inputShapeSize = OnnxData.InputShapeSize;
+            _outputNames = [.. OnnxData.OutputShapes.Select(x => x.Key)];
+
+            if (OnnxData.ModelDataType == ModelDataType.Float)
+            {
+                _elementDataType = TensorElementType.Float;
+                _dataTypeSize = sizeof(float);
+            }
+            else
+            {
+                _elementDataType = TensorElementType.Float16;
+                _dataTypeSize = sizeof(ushort);
+            }
         }
         #endregion
 
@@ -84,32 +117,32 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                 );
 
                 // Run inference
-                using var result = _session.Run(
+                _currentResult = _session.Run(
                     _runOptions,
-                    [OnnxData.InputName],
+                    _inputNames,
                     [inputOrtValue],
-                    OnnxData.OutputNames);
+                    _outputNames);
 
                 // Handle output based on the model's data type
                 if (_elementDataType == TensorElementType.Float)
                 {
                     // Extract tensor data from the result
-                    var tensorData0 = result[0].GetTensorDataAsSpan<float>();
+                    var tensorData0 = _currentResult[0].GetTensorDataAsSpan<float>();
                     var tensorData1 = ReadOnlySpan<float>.Empty;
 
-                    if (result.Count == 2)
-                        tensorData1 = result[1].GetTensorDataAsSpan<float>();
+                    if (_currentResult.Count == 2)
+                        tensorData1 = _currentResult[1].GetTensorDataAsSpan<float>();
 
                     // Return the inference result containing the output tensor data
                     return new InferenceResult(tensorData0, tensorData1);
                 }
                 else
                 {
-                    var tensorData0 = result[0].GetTensorDataAsSpan<Float16>();
+                    var tensorData0 = _currentResult[0].GetTensorDataAsSpan<Float16>();
                     var tensorData1 = ReadOnlySpan<Float16>.Empty;
 
-                    if (result.Count == 2)
-                        tensorData1 = result[1].GetTensorDataAsSpan<Float16>();
+                    if (_currentResult.Count == 2)
+                        tensorData1 = _currentResult[1].GetTensorDataAsSpan<Float16>();
 
                     ConvertFloat16ToFloat(tensorData0, tensorData1);
 
@@ -172,31 +205,28 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
             if (OnnxData.ModelDataType == ModelDataType.Float)
                 return;
 
-            int items;
-            int elements;
+            int batch, attributes;
+            var outputShape = OnnxData.OutputShapes.ElementAt(0).Value;
 
-            // Calculate the total number of elements for each output tensor and allocate buffers.
-
-            // Classification models only has one output tensor with shape [1, num_classes]
-            if (OnnxData.OutputShapes[0].Length == 2)
+            if (OnnxData.ModelType == ModelType.Classification)
             {
-                (items, elements) = (OnnxData.OutputShapes[0][0], OnnxData.OutputShapes[0][1]);
-                _outputBuffer0 = new float[elements * items];
+                // For classification models, output shape is [Batch, Attributes]
+                (batch, attributes) = (outputShape[0], outputShape[1]);
             }
-            // All other models has an output tensor with shape [1, num_boxes, num_attributes]
             else
             {
-                (items, elements) = (OnnxData.OutputShapes[0][1], OnnxData.OutputShapes[0][2]);
-                _outputBuffer0 = new float[elements * items];
+                // For other models, output shape is [Batch, Attributes, Predictions]
+                (batch, attributes) = (outputShape[1], outputShape[2]);
             }
 
-            // If there is a second output tensor (segmentation), allocate a buffer for it as well.
+            _outputBuffer0 = new float[attributes * batch];
 
-            // If there is a second output tensor, allocate a buffer for it as well.
-            if (OnnxData.OutputShapes.Length == 2)
+            // Allocate second output buffer if model has two outputs (e.g., segmentation models).
+            if (OnnxData.OutputShapes.Count == 2)
             {
-                (items, elements) = (OnnxData.OutputShapes[1][1], OnnxData.OutputShapes[1][2]);
-                _outputBuffer1 = new float[elements * items];
+                outputShape = OnnxData.OutputShapes.ElementAt(1).Value;
+                var size = outputShape[1] * outputShape[2];
+                _outputBuffer1 = new float[size];
             }
         }
 
@@ -227,34 +257,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         /// Extracts metadata and input/output shapes from the ONNX model.
         /// </summary>
         private void GetOnnxMetaData()
-        {
-            // Extract custom metadata from the ONNX model.
-            var metaData = _session.ModelMetadata.CustomMetadataMap;
-
-            // Get input shape and size.
-            var inputShape = Array.ConvertAll(_session.InputMetadata[_session.InputNames[0]].Dimensions, Convert.ToInt64);
-
-            _inputShapeSize = (int)ShapeUtils.GetSizeForShape(inputShape);
-            _elementDataType = GetModelElementType();
-            _dataTypeSize = _elementDataType == TensorElementType.Float16 ? sizeof(ushort) : sizeof(float);
-
-            // Determine model data type (Float32 or Float16).
-            var modelDataType = _elementDataType == TensorElementType.Float16
-                ? ModelDataType.Float16
-                : ModelDataType.Float;
-
-            // Create OnnxDataRecord to hold model information.
-            OnnxData = new OnnxDataRecord(
-                metaData,
-                modelDataType,
-                _session.InputNames[0],
-                [.. _session.OutputNames],
-                _session.InputMetadata.Values.Select(x => x.Dimensions).First(),
-                [.. _session.OutputMetadata.Values.Select(x => x.Dimensions)],
-                _inputShapeSize,
-                metaData["names"]
-            );
-        }
+            => OnnxData = _session.ParseOnnx();
 
         /// <summary>
         /// Gets the tensor element type used by the model (e.g., Float32 or Float16).
@@ -283,6 +286,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         {
             _session?.Dispose();
             _runOptions?.Dispose();
+            _currentResult?.Dispose();
 
             GC.SuppressFinalize(this);
         }

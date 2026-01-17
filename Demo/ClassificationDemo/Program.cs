@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -81,7 +81,7 @@ namespace ClassificationDemo
                 //   https://github.com/NickSwardh/YoloDotNet
 
                 // Path or byte[] of the ONNX model to load.
-                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV11(ModelType.Classification)),
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.Classification)),
 
                 // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
                 // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
@@ -98,7 +98,7 @@ namespace ClassificationDemo
 
             // Load input image as SKBitmap (or SKImage)
             // The image is sourced from SharedConfig for test/demo purposes.
-            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Hummingbird));
+            using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.Classification));
 
             // Perform classification inference.
             // The 'classes' parameter limits the results to the top-N classes.

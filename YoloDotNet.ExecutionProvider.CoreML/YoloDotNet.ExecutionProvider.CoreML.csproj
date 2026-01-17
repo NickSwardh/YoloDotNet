@@ -6,24 +6,22 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Authors>Niklas Swärd</Authors>
-    <Copyright>Copyright © 2025 Niklas Swärd</Copyright>
+    <Copyright>Copyright © Niklas Swärd</Copyright>
     <PackageIcon>icon.png</PackageIcon>
-    <Version>1.0</Version>
+    <Version>1.1</Version>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>YoloDotNet.ExecutionProvider.CoreML provides hardware-accelerated inference on macOS using Apple’s native Core ML framework.
+    <Description>YoloDotNet.ExecutionProvider.CoreML enables hardware-accelerated inference on macOS using Apple’s native Core ML framework.
 
-This execution provider integrates ONNX Runtime’s CoreML backend, enabling efficient inference on Apple devices by leveraging system-level machine learning acceleration. No additional runtimes, drivers, or SDKs are required beyond macOS itself.
+This provider integrates ONNX Runtime’s CoreML execution backend, allowing models to run efficiently on Apple Silicon by leveraging system-level ML acceleration. No external runtimes, drivers, or SDKs are required beyond a supported version of macOS.
 
-The CoreML execution provider is designed to work seamlessly with the modular YoloDotNet core library and supports the new execution-provider-agnostic architecture introduced in YoloDotNet v4.0. It is ideal for macOS applications that require fast, low-power inference using Apple’s native ML stack.</Description>
+Designed for YoloDotNet’s modular, execution-provider-agnostic architecture, the CoreML provider integrates cleanly with the core library and exposes predictable, explicit inference behavior. It is well-suited for macOS applications that require fast, low-power, native inference using Apple’s ML stack without additional dependencies.</Description>
     <PackageTags>yolo;yolodotnet;coreml;apple;macos;onnx;onnxruntime;machine-learning;computer-vision;object-detection;segmentation;pose-estimation;classification;obb;real-time;inference;hardware-acceleration;apple-silicon;intel-mac</PackageTags>
-    <PackageReleaseNotes>This is the first standalone release of the CoreML execution provider for YoloDotNet following the introduction of the new modular architecture.
-
-The CoreML execution provider enables hardware-accelerated inference on macOS using Apple’s native Core ML framework through ONNX Runtime. No additional system-level dependencies, drivers, or runtimes are required.
-
-This provider is intended for macOS applications that benefit from native machine learning acceleration and low-power inference. It is fully compatible with the YoloDotNet core library and follows the new execution-provider-agnostic design introduced in YoloDotNet v4.0.</PackageReleaseNotes>
+    <PackageReleaseNotes>This release updates the internal execution provider architecture to align with YoloDotNet v4.1. Model parsing and validation are now handled exclusively by the YoloDotNet core library, simplifying execution provider implementations and ensuring consistent model handling across all backends. This execution provider requires YoloDotNet version 4.1.</PackageReleaseNotes>
     <Title>YoloDotNet CoreML Execution Provider</Title>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.CoreML</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>

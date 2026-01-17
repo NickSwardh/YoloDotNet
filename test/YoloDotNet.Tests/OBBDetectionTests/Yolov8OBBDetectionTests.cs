@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Tests.OBBDetectionTests
@@ -11,7 +11,7 @@ namespace YoloDotNet.Tests.OBBDetectionTests
         {
             // Arrange
             var model = SharedConfig.GetTestModelV8(ModelType.ObbDetection);
-            var testImage = SharedConfig.GetTestImage(ImageType.Island);
+            var testImage = SharedConfig.GetTestImage(ImageType.ObbDetection);
 
             using var yolo = new Yolo(new YoloOptions
             {

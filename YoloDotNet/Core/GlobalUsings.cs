@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 global using System.Data;
@@ -43,5 +43,7 @@ global using YoloDotNet.Modules.V10;
 global using YoloDotNet.Modules.V11;
 global using YoloDotNet.Modules.V11E;
 global using YoloDotNet.Modules.V12;
+global using YoloDotNet.Modules.V26;
+global using YoloDotNet.Modules.RTDETR;
 global using YoloDotNet.Modules.WorldV2;
 global using YoloDotNet.Modules.Interfaces;

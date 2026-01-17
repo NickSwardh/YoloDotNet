@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Models
@@ -26,6 +26,7 @@ namespace YoloDotNet.Models
         {
             Font = options.Font,
             FontColor = options.FontColor,
+            FontSize = options.FontSize,
             EnableFontShadow = options.EnableFontShadow,
             EnableDynamicScaling = options.EnableDynamicScaling,
             DrawLabelBackground = options.DrawLabelBackground,
@@ -39,6 +40,7 @@ namespace YoloDotNet.Models
             TailThickness = options.TailThickness,
             TailPaintColorStart = options.TailPaintColorStart,
             TailPaintColorEnd = options.TailPaintColorEnd,
+            LabelPosition = options.LabelPosition,
         };
         #endregion
     }

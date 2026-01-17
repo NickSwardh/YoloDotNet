@@ -31,6 +31,8 @@ It automatically leverages Apple Silicon accelerators such as the Neural Engine,
 No additional installation or configuration is required.\
 CoreML is included with macOS and is automatically available at runtime on supported devices.
 
+> YoloDotNet.ExecutionProvider.CoreML v1.1 requires YoloDotNet version 4.1.
+
 ### NuGet Package
 ```
 dotnet add package YoloDotNet.ExecutionProvider.CoreML

@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2023-2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -13,8 +13,9 @@ namespace YoloDotNet.Modules.V8
         private readonly int _maskWidth;
         private readonly int _maskHeight;
         private readonly int _elements;
-        private readonly int _channelsFromOutput0;
-        private readonly int _channelsFromOutput1;
+        private readonly int _predictions;
+        private readonly int _outputShapeMaskChannels;
+        private List<Segmentation> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -33,21 +34,32 @@ namespace YoloDotNet.Modules.V8
             _yoloCore = yoloCore;
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
 
-            // Get model input width and height
-            var inputWidth = _yoloCore.OnnxModel.Input.Width;
-            var inputHeight = _yoloCore.OnnxModel.Input.Height;
+            // Get input shape from ONNX model. Format NCHW: [Batch (B), Channels (C), Height (H), Width (W)]
+            var inputShape = _yoloCore.OnnxModel.InputShapes.ElementAt(0).Value;
+
+            // Get output shape from ONNX model. Format: [Batch, Attributes, Predictions]
+            var outputShape = _yoloCore.OnnxModel.OutputShapes.ElementAt(0).Value;
+
+            // Get output shape from ONNX model. Format: [Batch (B), Channels (C), Height (H), Width (W)]
+            var outputShapeMask = _yoloCore.OnnxModel.OutputShapes.ElementAt(1).Value;
 
             // Get model pixel mask widh and height
-            _maskWidth = _yoloCore.OnnxModel.Outputs[1].Width;
-            _maskHeight = _yoloCore.OnnxModel.Outputs[1].Height;
+            _maskHeight = outputShapeMask[2];
+            _maskWidth = outputShapeMask[3];
 
             _elements = _yoloCore.OnnxModel.Labels.Length + 4; // 4 = the boundingbox dimension (x, y, width, height)
-            _channelsFromOutput0 = _yoloCore.OnnxModel.Outputs[0].Channels;
-            _channelsFromOutput1 = _yoloCore.OnnxModel.Outputs[1].Channels;
+            _predictions = outputShape[2];
+            _outputShapeMaskChannels = outputShapeMask[1];
+
+            // Get model input width and height
+            var inputHeight = inputShape[2];
+            var inputWidth = inputShape[3];
 
             // Calculate scaling factor for downscaling boundingboxes to segmentation pixelmask proportions
             _scalingFactorW = (float)_maskWidth / inputWidth;
             _scalingFactorH = (float)_maskHeight / inputHeight;
+
+            _results = [];
         }
 
         public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
@@ -56,11 +68,11 @@ namespace YoloDotNet.Modules.V8
             var detections = RunSegmentation(inferenceResult, confidence, pixelConfidence, iou);
 
             // Convert to List<PoseEstimation>
-            var results = new List<Segmentation>(detections.Length);
+            _results.Clear();
             for (int i = 0; i < detections.Length; i++)
-                results.Add((Segmentation)detections[i]);
+                _results.Add((Segmentation)detections[i]);
 
-            return results;
+            return _results;
         }
 
         private Span<ObjectResult> RunSegmentation(InferenceResult inferenceResult, double confidence, double pixelConfidence, double iou)
@@ -100,16 +112,16 @@ namespace YoloDotNet.Modules.V8
                 box.BitPackedPixelMask = PackUpscaledMaskToBitArray(resizedCrop, pixelConfidence);
             }
 
-            return boundingBoxes;//
+            return boundingBoxes;
         }
 
         private MaskWeights32 GetMaskWeightsFromBoundingBoxArea(ObjectResult box, ReadOnlySpan<float> ortSpan0)
         {
             MaskWeights32 maskWeights = default;
 
-            var maskOffset = box.BoundingBoxIndex + (_channelsFromOutput0 * _elements);
+            var maskOffset = box.BoundingBoxIndex + (_predictions * _elements);
 
-            for (var m = 0; m < _channelsFromOutput1; m++, maskOffset += _channelsFromOutput0)
+            for (var m = 0; m < _outputShapeMaskChannels; m++, maskOffset += _predictions)
                 maskWeights[m] = ortSpan0[maskOffset];
 
             return maskWeights;

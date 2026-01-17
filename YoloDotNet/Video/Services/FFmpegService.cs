@@ -1,5 +1,5 @@
-﻿// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2025 Niklas Swärd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Video.Services
@@ -30,6 +30,8 @@ namespace YoloDotNet.Video.Services
         private int _videoTargetWidth;
         private double _videoTargetfps;
 
+        private SKBitmap _currentFrame = default!;
+
         public FFmpegService(VideoOptions options, YoloOptions yoloOptions)
         {
             EnsureToolIsInstalled(FFPROBE);
@@ -37,9 +39,12 @@ namespace YoloDotNet.Video.Services
 
             _videoOptions = options;
             _yoloOptions = yoloOptions;
+
             GetVideoSourceDimensions();
             InitializeFFMPEGDecode();
             InitializeFFMPEGEncode();
+
+            _currentFrame = new SKBitmap(_videoTargetWidth, _videoTargetHeight, SKColorType.Bgra8888, SKAlphaType.Opaque);
         }
 
         private void GetVideoSourceDimensions()
@@ -304,91 +309,99 @@ namespace YoloDotNet.Video.Services
         unsafe private void Run(CancellationToken cancellationToken)
         {
             var frameSize = _videoTargetWidth * _videoTargetHeight * 4;
-            var buffer = new byte[frameSize];
-            int frameIndex = 0;
-
-            var shouldCreateVideo = string.IsNullOrEmpty(_videoOptions.VideoOutput) is false;
-
-            _ffmpegDecode.Start();
-            _ffmpegDecode.BeginErrorReadLine();
-
-            if (shouldCreateVideo)
-            {
-                _ffmpegEncode.Start();
-                _ffmpegEncode.BeginErrorReadLine();
-            }
-            
-            using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
-            using Stream? outputStream = shouldCreateVideo
-                ? _ffmpegEncode.StandardInput.BaseStream
-                : default!;
-
-            var frame = new SKBitmap(_videoTargetWidth, _videoTargetHeight, SKColorType.Bgra8888, SKAlphaType.Opaque);
+            var buffer = ArrayPool<byte>.Shared.Rent(frameSize); // Rent from pool
 
             try
             {
-                while (cancellationToken.IsCancellationRequested is false)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
+                int frameIndex = 0;
 
-                    int bytesRead = 0;
+                var shouldCreateVideo = string.IsNullOrEmpty(_videoOptions.VideoOutput) is false;
 
-                    while (bytesRead < frameSize)
-                    {
-                        int read = inputStream.Read(buffer, bytesRead, frameSize - bytesRead);
-
-                        // Exit if stream reached its end.
-                        if (read == 0)
-                        {
-                            OnVideoEnd?.Invoke();
-                            return;
-                        }
-
-                        bytesRead += read;
-                    }
-
-                    // Fill frame with pixels from ffmpeg
-                    fixed (byte* ptr = buffer)
-                    {
-                        frame.SetPixels((nint)ptr);
-                    }
-
-                    // Let user process the frame...
-                    OnFrameReady?.Invoke(frame, frameIndex);
-
-                    // Encode frame back to video?
-                    if (shouldCreateVideo)
-                    {
-                        outputStream.Write(frame.Bytes);
-                    }
-
-                    frameIndex++;
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                // Service stopped by user. Exit gracefully...
-            }
-            catch (IOException ex)
-            {
-                ThrowPlatformSpecificError(ex);
-            }
-            finally
-            {
-                inputStream?.Flush();
-                inputStream?.Close();
-
-                outputStream?.Flush();
-                outputStream?.Close();
-
-                _ffmpegDecode.WaitForExit();
-                _ffmpegDecode.CancelErrorRead();
+                _ffmpegDecode.Start();
+                _ffmpegDecode.BeginErrorReadLine();
 
                 if (shouldCreateVideo)
                 {
-                    _ffmpegEncode.WaitForExit();
-                    _ffmpegEncode.CancelErrorRead();
+                    _ffmpegEncode.Start();
+                    _ffmpegEncode.BeginErrorReadLine();
                 }
+
+                using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
+                using Stream? outputStream = shouldCreateVideo
+                    ? _ffmpegEncode.StandardInput.BaseStream
+                    : default!;
+
+                _currentFrame.Erase(SKColors.Black);
+
+                try
+                {
+                    while (cancellationToken.IsCancellationRequested is false)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        int bytesRead = 0;
+
+                        while (bytesRead < frameSize)
+                        {
+                            int read = inputStream.Read(buffer, bytesRead, frameSize - bytesRead);
+
+                            // Exit if stream reached its end.
+                            if (read == 0)
+                            {
+                                OnVideoEnd?.Invoke();
+                                return;
+                            }
+
+                            bytesRead += read;
+                        }
+
+                        // Fill frame with pixels from ffmpeg
+                        fixed (byte* ptr = buffer)
+                        {
+                            _currentFrame.SetPixels((nint)ptr);
+                        }
+
+                        // Let user process the frame...
+                        OnFrameReady?.Invoke(_currentFrame, frameIndex);
+
+                        // Encode frame back to video?
+                        if (shouldCreateVideo)
+                        {
+                            outputStream.Write(_currentFrame.GetPixelSpan());
+                        }
+
+                        frameIndex++;
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // Service stopped by user. Exit gracefully...
+                }
+                catch (IOException ex)
+                {
+                    ThrowPlatformSpecificError(ex);
+                }
+                finally
+                {
+                    inputStream?.Flush();
+                    inputStream?.Close();
+
+                    outputStream?.Flush();
+                    outputStream?.Close();
+
+                    _ffmpegDecode.WaitForExit();
+                    _ffmpegDecode.CancelErrorRead();
+
+                    if (shouldCreateVideo)
+                    {
+                        _ffmpegEncode.WaitForExit();
+                        _ffmpegEncode.CancelErrorRead();
+                    }
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer, false); // Return to pool
             }
         }
 
@@ -594,6 +607,8 @@ namespace YoloDotNet.Video.Services
 
             _ffmpegDecode?.Dispose();
             _ffmpegDecode?.Dispose();
+
+            _currentFrame?.Dispose();
 
             GC.SuppressFinalize(this);
         }

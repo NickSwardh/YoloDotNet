@@ -23,11 +23,14 @@ Build the project in **Release** mode so all required binaries are available:
 dotnet build -c Release
 ```
 
-> ℹ️ **Important:**  
-> The YOLO model is included automatically as part of the project output.  
+> ℹ️ **Important:**   
 > The project **must** be built in **Release** mode, as the Docker image relies on the Release build output.
 
-### 2. Build the Docker image
+### 2. Add the YOLO model to the Release Bin folder
+
+Copy your YOLO ONNX model (e.g., `yolov11.onnx`) to the Release output folder and rename it to `model.onnx`.
+
+### 3. Build the Docker image
 
 From the root of this demo project (where the Dockerfile is located):
 
@@ -35,7 +38,7 @@ From the root of this demo project (where the Dockerfile is located):
 docker build -t yolodotnet:demo .
 ```
 
-### 3. Run the container
+### 4. Run the container
 
 ```bash
 docker run -p 8080:8080 yolodotnet:demo

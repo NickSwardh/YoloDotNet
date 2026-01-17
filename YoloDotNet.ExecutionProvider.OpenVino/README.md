@@ -36,6 +36,8 @@ It is particularly well-suited for Intel hardware and edge deployments where eff
 dotnet add package YoloDotNet.ExecutionProvider.OpenVino
 ```
 
+> YoloDotNet.ExecutionProvider.OpenVino v1.1 requires YoloDotNet version 4.1.
+
 # Usage Example:
 ```csharp
 using var yolo = new Yolo(new YoloOptions
