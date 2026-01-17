@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -17,6 +17,10 @@ namespace YoloDotNet.Modules.V8
             _yoloCore = yoloCore;
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
             _results = [];
+
+            // Override image resize to Proportional for OBB detection
+            // OBB requires proportional resizing to maintain geometric validity
+            yoloCore.YoloOptions.ImageResize = ImageResize.Proportional;
         }
 
         public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
