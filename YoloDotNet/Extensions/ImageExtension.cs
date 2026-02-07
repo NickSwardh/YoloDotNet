@@ -301,7 +301,7 @@ namespace YoloDotNet.Extensions
         /// Extracts contour/edge points from a bit-packed pixel mask.
         /// A pixel is considered an edge if it is "on" and has at least one "off" neighbor.
         /// </summary>
-        private static List<SKPoint> ExtractContourPoints(byte[] packedMask, int width, int height)
+        internal static List<SKPoint> ExtractContourPoints(byte[] packedMask, int width, int height)
         {
             var contourPoints = new List<SKPoint>();
 
@@ -346,13 +346,152 @@ namespace YoloDotNet.Extensions
         /// Checks if a pixel is set (on) in the bit-packed mask.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool IsPixelSet(byte[] packedMask, int pixelIndex)
+        internal static bool IsPixelSet(byte[] packedMask, int pixelIndex)
         {
             int byteIndex = pixelIndex >> 3;     // pixelIndex / 8
             int bitIndex = pixelIndex & 0b0111;  // pixelIndex % 8
             return (packedMask[byteIndex] & (1 << bitIndex)) != 0;
         }
 
+        /// <summary>
+        /// Extracts ordered contour points from a bit-packed pixel mask using boundary tracing.
+        /// Returns points in sequential order around the contour, suitable for polygon representation.
+        /// </summary>
+        /// <param name="packedMask">The bit-packed pixel mask.</param>
+        /// <param name="width">Width of the mask.</param>
+        /// <param name="height">Height of the mask.</param>
+        /// <param name="maxPoints">Maximum number of points to return (simplification via sampling).</param>
+        /// <returns>Ordered list of contour points.</returns>
+        internal static List<SKPoint> ExtractOrderedContourPoints(byte[] packedMask, int width, int height, int maxPoints = 100)
+        {
+            if (packedMask.Length == 0)
+                return [];
+
+            // First, extract all edge points (unordered)
+            var edgePoints = ExtractContourPoints(packedMask, width, height);
+
+            if (edgePoints.Count < 3)
+                return edgePoints;
+
+            // Convert to HashSet for O(1) lookup
+            var edgeSet = new HashSet<(int, int)>();
+            foreach (var p in edgePoints)
+                edgeSet.Add(((int)p.X, (int)p.Y));
+
+            // Find starting point (topmost, then leftmost edge pixel)
+            var start = edgePoints.OrderBy(p => p.Y).ThenBy(p => p.X).First();
+            int startX = (int)start.X;
+            int startY = (int)start.Y;
+
+            var contour = new List<SKPoint>();
+            var visited = new HashSet<(int, int)>();
+
+            // 8-directional offsets (clockwise starting from left)
+            int[] dx = [-1, -1, 0, 1, 1, 1, 0, -1];
+            int[] dy = [0, -1, -1, -1, 0, 1, 1, 1];
+
+            int x = startX, y = startY;
+            int dir = 0;
+            int maxIterations = edgePoints.Count * 2; // Safety limit
+            int iterations = 0;
+
+            do
+            {
+                if (!visited.Contains((x, y)))
+                {
+                    contour.Add(new SKPoint(x, y));
+                    visited.Add((x, y));
+                }
+
+                // Find next edge pixel in clockwise order
+                bool found = false;
+                int searchStart = (dir + 5) % 8; // Start from backtrack direction + 1
+
+                for (int i = 0; i < 8; i++)
+                {
+                    int checkDir = (searchStart + i) % 8;
+                    int nx = x + dx[checkDir];
+                    int ny = y + dy[checkDir];
+
+                    // Only move to pixels that are in our edge set
+                    if (edgeSet.Contains((nx, ny)) && !visited.Contains((nx, ny)))
+                    {
+                        x = nx;
+                        y = ny;
+                        dir = checkDir;
+                        found = true;
+                        break;
+                    }
+                }
+
+                // If no unvisited neighbor found, try to find any adjacent edge pixel to continue
+                if (!found)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        int checkDir = (searchStart + i) % 8;
+                        int nx = x + dx[checkDir];
+                        int ny = y + dy[checkDir];
+
+                        if (nx == startX && ny == startY && contour.Count >= 3)
+                        {
+                            // We've completed the loop
+                            found = false;
+                            break;
+                        }
+
+                        if (edgeSet.Contains((nx, ny)))
+                        {
+                            x = nx;
+                            y = ny;
+                            dir = checkDir;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                iterations++;
+                if (!found || iterations >= maxIterations)
+                    break;
+
+            } while (contour.Count < edgePoints.Count);
+
+            // Simplify by sampling if too many points
+            if (contour.Count > maxPoints)
+            {
+                var simplified = new List<SKPoint>();
+                float step = (float)contour.Count / maxPoints;
+
+                for (float i = 0; i < contour.Count; i += step)
+                    simplified.Add(contour[(int)i]);
+
+                return simplified;
+            }
+
+            return contour;
+        }
+
+        /// <summary>
+        /// Extracts ordered contour points from a segmentation result.
+        /// Points are in absolute image coordinates (not normalized).
+        /// </summary>
+        /// <param name="segmentation">The segmentation result containing the bit-packed pixel mask.</param>
+        /// <param name="maxPoints">Maximum number of contour points to return (default: 100). Reduces points via sampling if exceeded.</param>
+        /// <returns>Array of contour points in absolute image coordinates, or empty array if no mask data.</returns>
+        public static SKPoint[] GetContourPoints(this Segmentation segmentation, int maxPoints = 100)
+        {
+            if (segmentation.BitPackedPixelMask.Length == 0)
+                return [];
+
+            var box = segmentation.BoundingBox;
+            var contourPoints = ExtractOrderedContourPoints(segmentation.BitPackedPixelMask, box.Width, box.Height, maxPoints);
+
+            // Convert from mask-relative to absolute image coordinates
+            return [.. contourPoints.Select(p => new SKPoint(box.Left + p.X, box.Top + p.Y))];
+        }
+        
+        
         /// <summary>
         /// Draws contour points on a canvas with specified thickness.
         /// </summary>

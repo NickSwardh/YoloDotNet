@@ -3,6 +3,7 @@
 // https://github.com/NickSwardh/YoloDotNet
 
 global using System.Data;
+global using System.Text;
 global using System.Buffers;
 global using System.Diagnostics;
 global using System.Globalization;
