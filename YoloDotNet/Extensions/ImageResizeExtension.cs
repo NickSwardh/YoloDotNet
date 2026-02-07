@@ -13,6 +13,7 @@ namespace YoloDotNet.Extensions
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
         /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
             SKImage image = default!;
@@ -51,6 +52,7 @@ namespace YoloDotNet.Extensions
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
         /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
         {
             SKImage image = default!;
@@ -83,6 +85,7 @@ namespace YoloDotNet.Extensions
             var srcRect = new SKRect(0, 0, width, height);
             var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
 
+            // Draw the resized image onto the pinned memory buffer canvas as RGB888x with padding
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
             var w = image.Width;
             var h = image.Height;
@@ -102,6 +105,7 @@ namespace YoloDotNet.Extensions
         /// <param name="inputShape">The shape of the input tensor.</param>
         /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
         /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe public static void NormalizePixelsToArray(this IntPtr pixelsPtr,
             long[] inputShape,
             int tensorBufferSize,
@@ -124,7 +128,7 @@ namespace YoloDotNet.Extensions
                 {
                     // Read only the grayscale component (assumed in R channel)
                     dst[i] = src[srcIndex] * inv255;
-                }
+            }
             }
             else
             {
@@ -134,11 +138,11 @@ namespace YoloDotNet.Extensions
 
                 int srcIndex = 0;
                 for (int i = 0; i < totalPixels; i++, srcIndex += 4)
-                {
+        {
                     dstR[i] = src[srcIndex] * inv255;
                     dstG[i] = src[srcIndex + 1] * inv255;
                     dstB[i] = src[srcIndex + 2] * inv255;
-                }
+            }
             }
         }
 
@@ -149,6 +153,7 @@ namespace YoloDotNet.Extensions
         /// <param name="inputShape"></param>
         /// <param name="tensorBufferSize"></param>
         /// <param name="tensorArrayBuffer"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe public static void NormalizePixelsToArray(this IntPtr pixelsPtr,
             long[] inputShape,
             int tensorBufferSize,
@@ -213,7 +218,7 @@ namespace YoloDotNet.Extensions
                 if (mantissa == 0)
                     return (ushort)(sign | 0x7C00); // Inf
                 return (ushort)(sign | 0x7C00 | (mantissa >> 13)); // NaN
-            }
+                }
             else
             {
                 if (exponent > 30)

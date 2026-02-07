@@ -249,19 +249,19 @@ namespace YoloDotNet.Extensions
             // Apply pixelmap on original image
             using var canvas = new SKCanvas(image);
 
+            var totalColors = options.BoundingBoxHexColors.Length;
+
             if (options.DrawSegmentationPixelMask is true)
             {
-                var totalColors = options.BoundingBoxHexColors.Length;
-
                 foreach (var segmentation in segmentations)
                 {
                     var box = segmentation.BoundingBox;
 
-                    var pixelMask = segmentation.BitPackedPixelMask.UnpackToBitmap(box.Width, box.Height);
+                    using var pixelMask = segmentation.BitPackedPixelMask.UnpackToBitmap(box.Width, box.Height);
 
-                    // Get class color
+                    // Get class color with pixel mask opacity
                     var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
-                    var color = HexToRgbaSkia(hexColor, options.BoundingBoxOpacity);
+                    var color = HexToRgbaSkia(hexColor, options.PixelMaskOpacity);
 
                     using var paint = new SKPaint
                     {
@@ -273,7 +273,7 @@ namespace YoloDotNet.Extensions
                     canvas.DrawBitmap(pixelMask, box.Left, box.Top, paint);
                 }
             }
-            
+
             if (options.DrawContour is true)
             {
                 foreach (var segmentation in segmentations)
@@ -388,8 +388,8 @@ namespace YoloDotNet.Extensions
 
             options ??= ImageConfig.DefaultPoseDrawingOptions;
 
-            // If no keypoints are defined and only bounding boxes should be drawn, render bounding boxes and return early.
-            if (options.KeyPointMarkers.Length == 0 && options.DrawBoundingBoxes)
+            // If no keypoints are defined, render bounding boxes/labels and return early.
+            if (options.KeyPointMarkers.Length == 0 && (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail))
             {
                 image.DrawBoundingBoxes(poseEstimations, (DetectionDrawingOptions)options);
                 return;
@@ -447,7 +447,8 @@ namespace YoloDotNet.Extensions
                 }
             }
 
-            if (options.DrawBoundingBoxes)
+            // Call DrawBoundingBoxes if any of its features are enabled (bounding boxes, labels, or tracked tails)
+            if (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail)
                 image.DrawBoundingBoxes(poseEstimations, (DetectionDrawingOptions)options);
         }
 
