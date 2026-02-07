@@ -14,6 +14,21 @@ namespace YoloDotNet.Models
         /// </summary>
         public bool DrawSegmentationPixelMask { get; set; } = true;
 
+        /// <summary>
+        /// Opacity level applied to the pixel mask.
+        /// </summary>
+        public int PixelMaskOpacity { get; set; } = 128;
+
+        /// <summary>
+        /// Whether to draw contour lines around the segmentation mask.
+        /// </summary>
+        public bool DrawContour { get; set; } = false;
+
+        /// <summary>
+        /// Thickness of the contour line in pixels.
+        /// </summary>
+        public int ContourThickness { get; set; } = 2;
+
         #region Mapping method
         public static explicit operator DetectionDrawingOptions(SegmentationDrawingOptions options) => new()
         {

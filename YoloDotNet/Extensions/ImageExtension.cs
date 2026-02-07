@@ -274,8 +274,106 @@ namespace YoloDotNet.Extensions
                 }
             }
             
-            if (options.DrawBoundingBoxes is true)
+            if (options.DrawContour is true)
+            {
+                foreach (var segmentation in segmentations)
+                {
+                    var box = segmentation.BoundingBox;
+
+                    // Get class color
+                    var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
+                    var color = HexToRgbaSkia(hexColor, options.BoundingBoxOpacity);
+
+                    // Extract contour points from the bit-packed mask
+                    var contourPoints = ExtractContourPoints(segmentation.BitPackedPixelMask, box.Width, box.Height);
+
+                    // Draw contour on canvas
+                    DrawContourOnCanvas(canvas, contourPoints, box.Left, box.Top, color, options.ContourThickness);
+                }
+            }
+
+            // Call DrawBoundingBoxes if any of its features are enabled (bounding boxes, labels, or tracked tails)
+            if (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail)
                 image.DrawBoundingBoxes(segmentations, (DetectionDrawingOptions)options);
+        }
+
+        /// <summary>
+        /// Extracts contour/edge points from a bit-packed pixel mask.
+        /// A pixel is considered an edge if it is "on" and has at least one "off" neighbor.
+        /// </summary>
+        private static List<SKPoint> ExtractContourPoints(byte[] packedMask, int width, int height)
+        {
+            var contourPoints = new List<SKPoint>();
+
+            if (packedMask.Length == 0)
+                return contourPoints;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int pixelIndex = y * width + x;
+
+                    // Check if this pixel is "on"
+                    if (!IsPixelSet(packedMask, pixelIndex))
+                        continue;
+
+                    // Check 4-connectivity neighbors (up, down, left, right)
+                    bool isEdge = false;
+
+                    // Check left neighbor
+                    if (x == 0 || !IsPixelSet(packedMask, pixelIndex - 1))
+                        isEdge = true;
+                    // Check right neighbor
+                    else if (x == width - 1 || !IsPixelSet(packedMask, pixelIndex + 1))
+                        isEdge = true;
+                    // Check top neighbor
+                    else if (y == 0 || !IsPixelSet(packedMask, pixelIndex - width))
+                        isEdge = true;
+                    // Check bottom neighbor
+                    else if (y == height - 1 || !IsPixelSet(packedMask, pixelIndex + width))
+                        isEdge = true;
+
+                    if (isEdge)
+                        contourPoints.Add(new SKPoint(x, y));
+                }
+            }
+
+            return contourPoints;
+        }
+
+        /// <summary>
+        /// Checks if a pixel is set (on) in the bit-packed mask.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsPixelSet(byte[] packedMask, int pixelIndex)
+        {
+            int byteIndex = pixelIndex >> 3;     // pixelIndex / 8
+            int bitIndex = pixelIndex & 0b0111;  // pixelIndex % 8
+            return (packedMask[byteIndex] & (1 << bitIndex)) != 0;
+        }
+
+        /// <summary>
+        /// Draws contour points on a canvas with specified thickness.
+        /// </summary>
+        private static void DrawContourOnCanvas(SKCanvas canvas, List<SKPoint> contourPoints, int offsetX, int offsetY, SKColor color, int thickness)
+        {
+            if (contourPoints.Count == 0)
+                return;
+
+            using var paint = new SKPaint
+            {
+                Color = color,
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true
+            };
+
+            float radius = thickness / 2f;
+
+            foreach (var point in contourPoints)
+            {
+                canvas.DrawCircle(point.X + offsetX, point.Y + offsetY, radius, paint);
+            }
         }
 
         /// <summary>
