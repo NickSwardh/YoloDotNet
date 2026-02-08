@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -23,7 +23,7 @@ namespace YoloDotNet.Modules.V8
 
         public List<Classification> ProcessImage<T>(T image, double classes, double pixelConfidence, double iou)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, null);
             return ClassifyTensor(inferenceResult.OrtSpan0, (int)classes);
         }
 

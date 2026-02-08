@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V12
@@ -19,8 +19,8 @@ namespace YoloDotNet.Modules.V12
             _obbDetectionModuleV8 = new OBBDetectionModuleV8(_yoloCore);
         }
 
-        public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
-            => _obbDetectionModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
+        public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
+            => _obbDetectionModuleV8.ProcessImage(image, confidence, pixelConfidence, iou, roi);
 
         #region Helper methods
 

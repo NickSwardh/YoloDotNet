@@ -45,11 +45,13 @@ namespace YoloDotNet.Tests.OBBDetectionTests
             //var image = SKImage.FromEncodedData(testImage);
             using var image = SKBitmap.Decode(testImage);
 
+            var roi = SKRectI.Create(800, 6, 211, 193);
+
             // Act
-            var results = yolo.RunObbDetection(image, 0.25, 0.45);
+            var results = yolo.RunObbDetection(image, 0.25, 0.45, roi);
 
             // Assert
-            Assert.Equal(5, results.Count);
+            Assert.Single(results);
         }
     }
 }

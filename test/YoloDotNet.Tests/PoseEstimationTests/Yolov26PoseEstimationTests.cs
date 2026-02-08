@@ -26,5 +26,28 @@ namespace YoloDotNet.Tests.PoseEstimationTests
             // Assert
             Assert.Equal(9, results.Count);
         }
+
+        [Fact]
+        public void RunPoseEstimation_Yolov26_ROI_GetExpectedNumberOfPoseEstimations_AssertTrue()
+        {
+            // Arrange
+            var model = SharedConfig.GetTestModelV26(ModelType.PoseEstimation);
+            var testImage = SharedConfig.GetTestImage(ImageType.PoseEstimation);
+
+            using var yolo = new Yolo(new YoloOptions
+            {
+                ExecutionProvider = new CpuExecutionProvider(model)
+            });
+
+            using var image = SKBitmap.Decode(testImage);
+
+            var roi = SKRectI.Create(472, 263, 139, 428);
+
+            // Act
+            var results = yolo.RunPoseEstimation(image, 0.23, 0.7, roi);
+
+            // Assert
+            Assert.Equal(2, results.Count);
+        }
     }
 }

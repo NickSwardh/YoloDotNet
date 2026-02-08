@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Extensions
@@ -9,58 +9,34 @@ namespace YoloDotNet.Extensions
         /// <summary>
         /// Resizes the input image to the target dimensions by stretching it to fit the model input size, returning a pointer to RGB888x pixel data and the new dimensions.
         /// </summary>
+        /// <remarks>
+        /// This method is intended for models trained on stretched (non-aspect-ratio-preserving) datasets.
+        /// Using this with models trained on letterbox/proportional preprocessing may reduce inference accuracy.
+        /// For standard models, use <see cref="ResizeImageProportional{T}"/> instead.
+        /// </remarks>
         /// <param name="img">The original image to resize.</param>
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
-        /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
-        public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        /// <param name="roi">Optional region of interest to crop before resizing.</param>
+        /// <returns>The dimensions of the input image (or ROI if specified), required for bounding box scaling.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
         {
             SKImage image = default!;
             var createdImage = false;
 
             if (img is SKImage skImage)
-                image = skImage;
-            else if (img is SKBitmap skBitmap)
             {
-                image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
-                createdImage = true;
+                image = roi.HasValue
+                    ? YoloCore.CropToRoi(skImage, (SKRectI)roi)
+                    : skImage;
             }
-
-            int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
-            int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
-
-            var srcRect = new SKRect(0, 0, image.Width, image.Height);
-            var destRect = new SKRect(0, 0, modelWidth, modelHeight);
-
-            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions);
-            var w = image.Width;
-            var h = image.Height;
-
-            // Only dispose if we created a bew SKImage from SKBitmap
-            if (createdImage)
-                image?.Dispose();
-
-            // Return the original image dimensions, which are required to correctly scale bounding boxes
-            return new SKSizeI(w, h);
-        }
-
-        /// <summary>
-        /// Resizes the input image proportionally to fit the model input size, with RGB888x format and padded borders, returning a pointer to the pixel data and the new image dimensions.
-        /// </summary>
-        /// <param name="img">The original image to resize.</param>
-        /// <param name="samplingOptions">Sampling options used during resizing.</param>
-        /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
-        /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
-        public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
-        {
-            SKImage image = default!;
-            var createdImage = false;
-
-            if (img is SKImage skImage)
-                image = skImage;
             else if (img is SKBitmap skBitmap)
             {
-                image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+                image = roi.HasValue
+                    ? YoloCore.CropToRoi(skBitmap, (SKRectI)roi)
+                    : SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+
                 createdImage = true;
             }
 
@@ -69,30 +45,90 @@ namespace YoloDotNet.Extensions
             int width = image.Width;
             int height = image.Height;
 
-            // Calculate the new image size based on the aspect ratio
-            float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
+            // Stretch the image to fit the model input size regardless of aspect ratio and cropped ROI.
+            // This may distort the image but ensures it matches the model's expected input dimensions.
+            var srcRect = new SKRect(0, 0, image.Width, image.Height);
+            var destRect = new SKRect(0, 0, modelWidth, modelHeight);
 
-            // Use integer rounding instead of Math.Round
-            int newWidth = (int)((width * scaleFactor) + 0.5f);
-            int newHeight = (int)((height * scaleFactor) + 0.5f);
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions);
 
-            // Calculate the destination rectangle within the model dimensions
-            int x = (modelWidth - newWidth) / 2;
-            int y = (modelHeight - newHeight) / 2;
-
-            var srcRect = new SKRect(0, 0, width, height);
-            var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
-
-            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
-            var w = image.Width;
-            var h = image.Height;
-
-            // Only dispose if we created a bew SKImage from SKBitmap
-            if (createdImage)
+            // Only dispose if we created a new SKImage from SKBitmap or if we cropped to a ROI, since cropping creates a new SKImage instance
+            if (createdImage || roi.HasValue)
                 image?.Dispose();
 
-            // Return the original image dimensions, which are required to correctly scale bounding boxes
-            return new SKSizeI(w, h);
+            // Return the input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
+            return new SKSizeI(width, height);
+        }
+
+        /// <summary>
+        /// Resizes the input image proportionally to fit the model input size, with RGB888x format and padded borders, returning a pointer to the pixel data and the new image dimensions.
+        /// </summary>
+        /// <param name="img">The original image to resize.</param>
+        /// <param name="samplingOptions">Sampling options used during resizing.</param>
+        /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
+        /// <param name="roi">Optional region of interest to crop before resizing.</param>
+        /// <returns>The dimensions of the input image (or ROI if specified), required for bounding box scaling.</returns>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
+        {
+            SKImage image = default!;
+            var createdImage = false;
+
+            if (img is SKImage skImage)
+            {
+                image = roi.HasValue
+                    ? YoloCore.CropToRoi(skImage, (SKRectI)roi)
+                    : skImage;
+            }
+            else if (img is SKBitmap skBitmap)
+            {
+                image = roi.HasValue
+                    ? YoloCore.CropToRoi(skBitmap, (SKRectI)roi)
+                    : SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+
+                createdImage = true;
+            }
+
+            int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
+            int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
+            int width = image.Width;
+            int height = image.Height;
+
+            // If the image is smaller than the model input size, we can draw it directly onto the pinned memory buffer canvas without resizing, which avoids unnecessary resampling and preserves image quality.
+            if (width < modelWidth && height < modelHeight)
+            {
+                int x = (modelWidth - width) / 2;
+                int y = (modelHeight - height) / 2;
+                var srcRect = new SKRect(0, 0, width, height);
+                var dstRect = new SKRect(x, y, x + width, y + height);
+                pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
+            }
+            else
+            {
+                // Calculate the new image size based on the aspect ratio
+                float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
+
+                // Use integer rounding instead of Math.Round
+                int newWidth = (int)((width * scaleFactor) + 0.5f);
+                int newHeight = (int)((height * scaleFactor) + 0.5f);
+
+                // Calculate the destination rectangle within the model dimensions
+                int x = (modelWidth - newWidth) / 2;
+                int y = (modelHeight - newHeight) / 2;
+
+                var srcRect = new SKRect(0, 0, width, height);
+                var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
+
+                // Draw the resized image onto the pinned memory buffer canvas as RGB888x with padding
+                pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
+            }
+
+            // Only dispose if we created a new SKImage from SKBitmap or if we cropped to a ROI, since cropping creates a new SKImage instance
+            if (createdImage || roi.HasValue)
+                image?.Dispose();
+
+            // Return the input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
+            return new SKSizeI(width, height);
         }
 
         /// <summary>
@@ -102,6 +138,7 @@ namespace YoloDotNet.Extensions
         /// <param name="inputShape">The shape of the input tensor.</param>
         /// <param name="tensorBufferSize">The size of the tensor buffer, which should be equal to the product of the input shape dimensions.</param>
         /// <param name="tensorArrayBuffer">A pre-allocated float array buffer to store the normalized pixel values.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe public static void NormalizePixelsToArray(this IntPtr pixelsPtr,
             long[] inputShape,
             int tensorBufferSize,
@@ -124,7 +161,7 @@ namespace YoloDotNet.Extensions
                 {
                     // Read only the grayscale component (assumed in R channel)
                     dst[i] = src[srcIndex] * inv255;
-                }
+            }
             }
             else
             {
@@ -134,11 +171,11 @@ namespace YoloDotNet.Extensions
 
                 int srcIndex = 0;
                 for (int i = 0; i < totalPixels; i++, srcIndex += 4)
-                {
+        {
                     dstR[i] = src[srcIndex] * inv255;
                     dstG[i] = src[srcIndex + 1] * inv255;
                     dstB[i] = src[srcIndex + 2] * inv255;
-                }
+            }
             }
         }
 
@@ -149,6 +186,7 @@ namespace YoloDotNet.Extensions
         /// <param name="inputShape"></param>
         /// <param name="tensorBufferSize"></param>
         /// <param name="tensorArrayBuffer"></param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         unsafe public static void NormalizePixelsToArray(this IntPtr pixelsPtr,
             long[] inputShape,
             int tensorBufferSize,
@@ -213,7 +251,7 @@ namespace YoloDotNet.Extensions
                 if (mantissa == 0)
                     return (ushort)(sign | 0x7C00); // Inf
                 return (ushort)(sign | 0x7C00 | (mantissa >> 13)); // NaN
-            }
+                }
             else
             {
                 if (exponent > 30)

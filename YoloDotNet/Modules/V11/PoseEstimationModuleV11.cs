@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2024-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2024-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V11
@@ -19,8 +19,8 @@ namespace YoloDotNet.Modules.V11
             _poseEstimationModuleV8 = new PoseEstimationModuleV8(_yoloCore);
         }
 
-        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
-            => _poseEstimationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou);
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
+            => _poseEstimationModuleV8.ProcessImage(image, confidence, pixelConfidence, iou, roi);
 
         #region Helper methods
 

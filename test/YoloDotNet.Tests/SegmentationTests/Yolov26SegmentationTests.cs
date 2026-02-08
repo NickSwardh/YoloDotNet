@@ -26,5 +26,28 @@ namespace YoloDotNet.Tests.SegmentationTests
             // Assert
             Assert.Equal(19, results.Count);
         }
+
+        [Fact]
+        public void RunSegmentation_Yolov26_ROI_GetExpectedNumberOfSegmentations_AssertTrue()
+        {
+            // Arrange
+            var model = SharedConfig.GetTestModelV26(ModelType.Segmentation);
+            var testImage = SharedConfig.GetTestImage(ImageType.Segmentation);
+
+            using var yolo = new Yolo(new YoloOptions
+            {
+                ExecutionProvider = new CpuExecutionProvider(model)
+            });
+
+            using var image = SKBitmap.Decode(testImage);
+
+            var roi = SKRectI.Create(228, 415, 163, 324);
+
+            // Act
+            var results = yolo.RunSegmentation(image, 0.23, 0.7, roi: roi);
+
+            // Assert
+            Assert.Single(results);
+        }
     }
 }

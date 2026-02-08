@@ -249,19 +249,19 @@ namespace YoloDotNet.Extensions
             // Apply pixelmap on original image
             using var canvas = new SKCanvas(image);
 
+            var totalColors = options.BoundingBoxHexColors.Length;
+
             if (options.DrawSegmentationPixelMask is true)
             {
-                var totalColors = options.BoundingBoxHexColors.Length;
-
                 foreach (var segmentation in segmentations)
                 {
                     var box = segmentation.BoundingBox;
 
-                    var pixelMask = segmentation.BitPackedPixelMask.UnpackToBitmap(box.Width, box.Height);
+                    using var pixelMask = segmentation.BitPackedPixelMask.UnpackToBitmap(box.Width, box.Height);
 
-                    // Get class color
+                    // Get class color with pixel mask opacity
                     var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
-                    var color = HexToRgbaSkia(hexColor, options.BoundingBoxOpacity);
+                    var color = HexToRgbaSkia(hexColor, options.PixelMaskOpacity);
 
                     using var paint = new SKPaint
                     {
@@ -273,9 +273,246 @@ namespace YoloDotNet.Extensions
                     canvas.DrawBitmap(pixelMask, box.Left, box.Top, paint);
                 }
             }
-            
-            if (options.DrawBoundingBoxes is true)
+
+            if (options.DrawContour is true)
+            {
+                foreach (var segmentation in segmentations)
+                {
+                    var box = segmentation.BoundingBox;
+
+                    // Get class color
+                    var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
+                    var color = HexToRgbaSkia(hexColor, options.BoundingBoxOpacity);
+
+                    // Extract contour points from the bit-packed mask
+                    var contourPoints = ExtractContourPoints(segmentation.BitPackedPixelMask, box.Width, box.Height);
+
+                    // Draw contour on canvas
+                    DrawContourOnCanvas(canvas, contourPoints, box.Left, box.Top, color, options.ContourThickness);
+                }
+            }
+
+            // Call DrawBoundingBoxes if any of its features are enabled (bounding boxes, labels, or tracked tails)
+            if (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail)
                 image.DrawBoundingBoxes(segmentations, (DetectionDrawingOptions)options);
+        }
+
+        /// <summary>
+        /// Extracts contour/edge points from a bit-packed pixel mask.
+        /// A pixel is considered an edge if it is "on" and has at least one "off" neighbor.
+        /// </summary>
+        internal static List<SKPoint> ExtractContourPoints(byte[] packedMask, int width, int height)
+        {
+            var contourPoints = new List<SKPoint>();
+
+            if (packedMask.Length == 0)
+                return contourPoints;
+
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int pixelIndex = y * width + x;
+
+                    // Check if this pixel is "on"
+                    if (!IsPixelSet(packedMask, pixelIndex))
+                        continue;
+
+                    // Check 4-connectivity neighbors (up, down, left, right)
+                    bool isEdge = false;
+
+                    // Check left neighbor
+                    if (x == 0 || !IsPixelSet(packedMask, pixelIndex - 1))
+                        isEdge = true;
+                    // Check right neighbor
+                    else if (x == width - 1 || !IsPixelSet(packedMask, pixelIndex + 1))
+                        isEdge = true;
+                    // Check top neighbor
+                    else if (y == 0 || !IsPixelSet(packedMask, pixelIndex - width))
+                        isEdge = true;
+                    // Check bottom neighbor
+                    else if (y == height - 1 || !IsPixelSet(packedMask, pixelIndex + width))
+                        isEdge = true;
+
+                    if (isEdge)
+                        contourPoints.Add(new SKPoint(x, y));
+                }
+            }
+
+            return contourPoints;
+        }
+
+        /// <summary>
+        /// Checks if a pixel is set (on) in the bit-packed mask.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool IsPixelSet(byte[] packedMask, int pixelIndex)
+        {
+            int byteIndex = pixelIndex >> 3;     // pixelIndex / 8
+            int bitIndex = pixelIndex & 0b0111;  // pixelIndex % 8
+            return (packedMask[byteIndex] & (1 << bitIndex)) != 0;
+        }
+
+        /// <summary>
+        /// Extracts ordered contour points from a bit-packed pixel mask using boundary tracing.
+        /// Returns points in sequential order around the contour, suitable for polygon representation.
+        /// </summary>
+        /// <param name="packedMask">The bit-packed pixel mask.</param>
+        /// <param name="width">Width of the mask.</param>
+        /// <param name="height">Height of the mask.</param>
+        /// <param name="maxPoints">Maximum number of points to return (simplification via sampling).</param>
+        /// <returns>Ordered list of contour points.</returns>
+        internal static List<SKPoint> ExtractOrderedContourPoints(byte[] packedMask, int width, int height, int maxPoints = 100)
+        {
+            if (packedMask.Length == 0)
+                return [];
+
+            // First, extract all edge points (unordered)
+            var edgePoints = ExtractContourPoints(packedMask, width, height);
+
+            if (edgePoints.Count < 3)
+                return edgePoints;
+
+            // Convert to HashSet for O(1) lookup
+            var edgeSet = new HashSet<(int, int)>();
+            foreach (var p in edgePoints)
+                edgeSet.Add(((int)p.X, (int)p.Y));
+
+            // Find starting point (topmost, then leftmost edge pixel)
+            var start = edgePoints.OrderBy(p => p.Y).ThenBy(p => p.X).First();
+            int startX = (int)start.X;
+            int startY = (int)start.Y;
+
+            var contour = new List<SKPoint>();
+            var visited = new HashSet<(int, int)>();
+
+            // 8-directional offsets (clockwise starting from left)
+            int[] dx = [-1, -1, 0, 1, 1, 1, 0, -1];
+            int[] dy = [0, -1, -1, -1, 0, 1, 1, 1];
+
+            int x = startX, y = startY;
+            int dir = 0;
+            int maxIterations = edgePoints.Count * 2; // Safety limit
+            int iterations = 0;
+
+            do
+            {
+                if (!visited.Contains((x, y)))
+                {
+                    contour.Add(new SKPoint(x, y));
+                    visited.Add((x, y));
+                }
+
+                // Find next edge pixel in clockwise order
+                bool found = false;
+                int searchStart = (dir + 5) % 8; // Start from backtrack direction + 1
+
+                for (int i = 0; i < 8; i++)
+                {
+                    int checkDir = (searchStart + i) % 8;
+                    int nx = x + dx[checkDir];
+                    int ny = y + dy[checkDir];
+
+                    // Only move to pixels that are in our edge set
+                    if (edgeSet.Contains((nx, ny)) && !visited.Contains((nx, ny)))
+                    {
+                        x = nx;
+                        y = ny;
+                        dir = checkDir;
+                        found = true;
+                        break;
+                    }
+                }
+
+                // If no unvisited neighbor found, try to find any adjacent edge pixel to continue
+                if (!found)
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        int checkDir = (searchStart + i) % 8;
+                        int nx = x + dx[checkDir];
+                        int ny = y + dy[checkDir];
+
+                        if (nx == startX && ny == startY && contour.Count >= 3)
+                        {
+                            // We've completed the loop
+                            found = false;
+                            break;
+                        }
+
+                        if (edgeSet.Contains((nx, ny)))
+                        {
+                            x = nx;
+                            y = ny;
+                            dir = checkDir;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                iterations++;
+                if (!found || iterations >= maxIterations)
+                    break;
+
+            } while (contour.Count < edgePoints.Count);
+
+            // Simplify by sampling if too many points
+            if (contour.Count > maxPoints)
+            {
+                var simplified = new List<SKPoint>();
+                float step = (float)contour.Count / maxPoints;
+
+                for (float i = 0; i < contour.Count; i += step)
+                    simplified.Add(contour[(int)i]);
+
+                return simplified;
+            }
+
+            return contour;
+        }
+
+        /// <summary>
+        /// Extracts ordered contour points from a segmentation result.
+        /// Points are in absolute image coordinates (not normalized).
+        /// </summary>
+        /// <param name="segmentation">The segmentation result containing the bit-packed pixel mask.</param>
+        /// <param name="maxPoints">Maximum number of contour points to return (default: 100). Reduces points via sampling if exceeded.</param>
+        /// <returns>Array of contour points in absolute image coordinates, or empty array if no mask data.</returns>
+        public static SKPoint[] GetContourPoints(this Segmentation segmentation, int maxPoints = 100)
+        {
+            if (segmentation.BitPackedPixelMask.Length == 0)
+                return [];
+
+            var box = segmentation.BoundingBox;
+            var contourPoints = ExtractOrderedContourPoints(segmentation.BitPackedPixelMask, box.Width, box.Height, maxPoints);
+
+            // Convert from mask-relative to absolute image coordinates
+            return [.. contourPoints.Select(p => new SKPoint(box.Left + p.X, box.Top + p.Y))];
+        }
+        
+        
+        /// <summary>
+        /// Draws contour points on a canvas with specified thickness.
+        /// </summary>
+        private static void DrawContourOnCanvas(SKCanvas canvas, List<SKPoint> contourPoints, int offsetX, int offsetY, SKColor color, int thickness)
+        {
+            if (contourPoints.Count == 0)
+                return;
+
+            using var paint = new SKPaint
+            {
+                Color = color,
+                Style = SKPaintStyle.Fill,
+                IsAntialias = true
+            };
+
+            float radius = thickness / 2f;
+
+            foreach (var point in contourPoints)
+            {
+                canvas.DrawCircle(point.X + offsetX, point.Y + offsetY, radius, paint);
+            }
         }
 
         /// <summary>
@@ -290,8 +527,8 @@ namespace YoloDotNet.Extensions
 
             options ??= ImageConfig.DefaultPoseDrawingOptions;
 
-            // If no keypoints are defined and only bounding boxes should be drawn, render bounding boxes and return early.
-            if (options.KeyPointMarkers.Length == 0 && options.DrawBoundingBoxes)
+            // If no keypoints are defined, render bounding boxes/labels and return early.
+            if (options.KeyPointMarkers.Length == 0 && (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail))
             {
                 image.DrawBoundingBoxes(poseEstimations, (DetectionDrawingOptions)options);
                 return;
@@ -349,7 +586,8 @@ namespace YoloDotNet.Extensions
                 }
             }
 
-            if (options.DrawBoundingBoxes)
+            // Call DrawBoundingBoxes if any of its features are enabled (bounding boxes, labels, or tracked tails)
+            if (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail)
                 image.DrawBoundingBoxes(poseEstimations, (DetectionDrawingOptions)options);
         }
 

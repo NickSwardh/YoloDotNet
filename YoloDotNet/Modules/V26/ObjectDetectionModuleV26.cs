@@ -9,7 +9,6 @@ namespace YoloDotNet.Modules.V26
         private readonly YoloCore _yoloCore;
         private int _totalElements;
         private List<ObjectDetection> _results = default!;
-        private ObjectResult[] _boxes = default!;
 
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
@@ -28,21 +27,15 @@ namespace YoloDotNet.Modules.V26
             _totalElements = modelOutputChannels * modelOutputElements;
 
             _results = [];
-            _boxes = new ObjectResult[_totalElements];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this method better performance
-        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou = 0)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou = 0, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence);
 
-            // Convert to List<ObjectDetection>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((ObjectDetection)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (ObjectDetection)r);
         }
 
         #region Helper methods
@@ -55,59 +48,64 @@ namespace YoloDotNet.Modules.V26
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             int validBoxCount = 0;
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_totalElements);
 
-            var width = imageSize.Width;
-            var height = imageSize.Height;
-
-            for (var i = 0; i < ortSpan.Length; i += 6)
+            try
             {
-                var confidence = ortSpan[i + 4];
-
-                // Filter out low confidence boxes
-                if (confidence < confidenceThreshold)
-                    continue;
-
-                // Extract box data
-                var x = ortSpan[i];
-                var y = ortSpan[i + 1];
-                var w = ortSpan[i + 2];
-                var h = ortSpan[i + 3];
-                var labelIndex = ortSpan[i + 5];
-
-                int xMin, yMin, xMax, yMax;
-
-                if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
+                for (var i = 0; i < ortSpan.Length; i += 6)
                 {
-                    // Undo padding and rescale boxes to original image size
-                    xMin = (int)((x - xPad) * xGain);
-                    yMin = (int)((y - yPad) * xGain);
-                    xMax = (int)((w - xPad) * xGain);
-                    yMax = (int)((h - yPad) * xGain);
+                    var confidence = ortSpan[i + 4];
+
+                    // Filter out low confidence boxes
+                    if (confidence < confidenceThreshold)
+                        continue;
+
+                    // Extract box data
+                    var x = ortSpan[i];
+                    var y = ortSpan[i + 1];
+                    var w = ortSpan[i + 2];
+                    var h = ortSpan[i + 3];
+                    var labelIndex = ortSpan[i + 5];
+
+                    int xMin, yMin, xMax, yMax;
+
+                    if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
+                    {
+                        // Undo padding and rescale boxes to original image size
+                        xMin = (int)((x - xPad) * xGain);
+                        yMin = (int)((y - yPad) * xGain);
+                        xMax = (int)((w - xPad) * xGain);
+                        yMax = (int)((h - yPad) * xGain);
+                    }
+                    else
+                    {
+                        // Rescale boxes to original image size
+                        xMin = (int)(x / xGain);
+                        yMin = (int)(y / yGain);
+                        xMax = (int)(w / xGain);
+                        yMax = (int)(h / yGain);
+                    }
+
+                    var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
+                    var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
+
+                    // Add box to results
+                    boxes[validBoxCount++] = new ObjectResult
+                    {
+                        Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
+                        Confidence = confidence,
+                        BoundingBox = boundingBox,
+                        BoundingBoxUnscaled = boundingBoxUnscaled,
+                        BoundingBoxIndex = i
+                    };
                 }
-                else 
-                {
-                    // Rescale boxes to original image size
-                    xMin = (int)(x / xGain);
-                    yMin = (int)(y / yGain);
-                    xMax = (int)(w / xGain);
-                    yMax = (int)(h / yGain);
-                }
 
-                var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-                var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
-
-                // Add box to results
-                _boxes[validBoxCount++] = new ObjectResult
-                {
-                    Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
-                    Confidence = confidence,
-                    BoundingBox = boundingBox,
-                    BoundingBoxUnscaled = boundingBoxUnscaled,
-                    BoundingBoxIndex = i
-                };
+                return boxes.AsSpan(0, validBoxCount);
             }
-
-            return _boxes.AsSpan(0, validBoxCount);
+            finally
+            {
+                ArrayPool<ObjectResult>.Shared.Return(boxes);
+            }
         }
 
         public void Dispose()

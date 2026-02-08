@@ -13,7 +13,6 @@ namespace YoloDotNet.Modules.V26
         private int _totalKeyPoints;
         private int _stride;
         private List<PoseEstimation> _results = default!;
-        private ObjectResult[] _boxes = default!;
         private KeyPoint[] _keyPoints = default!;
 
         public event EventHandler VideoProgressEvent = delegate { };
@@ -42,21 +41,15 @@ namespace YoloDotNet.Modules.V26
 
             // Initialize reusable arrays
             _results = [];
-            _boxes = new ObjectResult[_totalElements];
             _keyPoints = new KeyPoint[_totalKeyPoints];
         }
 
-        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence, iou);
 
-            // Convert to List<ObjectDetection>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((PoseEstimation)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (PoseEstimation)r);
         }
 
         #region Helper methods
@@ -69,75 +62,83 @@ namespace YoloDotNet.Modules.V26
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             int validBoxCount = 0;
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_totalElements);
 
             var keypointDataSize = _totalKeyPoints * _keypointDimension;
 
-            for (var i = 0; i < ortSpan.Length; i += _stride)
+            try
             {
-                var confidence = ortSpan[i + 4];
-                if (confidence < confidenceThreshold) continue;
-
-                var x = ortSpan[i];
-                var y = ortSpan[i + 1];
-                var w = ortSpan[i + 2];
-                var h = ortSpan[i + 3];
-                var labelIndex = ortSpan[i + 5];
-
-                int xMin, yMin, xMax, yMax, keyPointIndex = 0;
-                var offset = i + _dimensions;
-
-                if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
+                for (var i = 0; i < ortSpan.Length; i += _stride)
                 {
-                    xMin = (int)((x - xPad) * xGain);
-                    yMin = (int)((y - yPad) * xGain);
-                    xMax = (int)((w - xPad) * xGain);
-                    yMax = (int)((h - yPad) * xGain);
+                    var confidence = ortSpan[i + 4];
+                    if (confidence < confidenceThreshold) continue;
 
-                    // Extract keypoints
-                    for (int k = offset; k < keypointDataSize + offset; k += 3)
+                    var x = ortSpan[i];
+                    var y = ortSpan[i + 1];
+                    var w = ortSpan[i + 2];
+                    var h = ortSpan[i + 3];
+                    var labelIndex = ortSpan[i + 5];
+
+                    int xMin, yMin, xMax, yMax, keyPointIndex = 0;
+                    var offset = i + _dimensions;
+
+                    if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
-                        // Get keypoint coordinates and confidence and rescale to original image size
-                        var keypointX = (int)((ortSpan[k] - xPad) * xGain);
-                        var keypointY = (int)((ortSpan[k + 1] - yPad) * xGain);
-                        var keypointConf = ortSpan[k + 2];
+                        xMin = (int)((x - xPad) * xGain);
+                        yMin = (int)((y - yPad) * xGain);
+                        xMax = (int)((w - xPad) * xGain);
+                        yMax = (int)((h - yPad) * xGain);
 
-                        _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
+                        // Extract keypoints
+                        for (int k = offset; k < keypointDataSize + offset; k += 3)
+                        {
+                            // Get keypoint coordinates and confidence and rescale to original image size
+                            var keypointX = (int)((ortSpan[k] - xPad) * xGain);
+                            var keypointY = (int)((ortSpan[k + 1] - yPad) * xGain);
+                            var keypointConf = ortSpan[k + 2];
+
+                            _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
+                        }
                     }
-                }
-                else // Stretched
-                {
-                    xMin = (int)(x / xGain);
-                    yMin = (int)(y / yGain);
-                    xMax = (int)(w / xGain);
-                    yMax = (int)(h / yGain);
-
-                    // Extract keypoints
-                    for (int k = offset; k < keypointDataSize + offset; k += 3)
+                    else // Stretched
                     {
-                        // Get keypoint coordinates and confidence and rescale to original image size
-                        var keypointX = (int)(ortSpan[k] / xGain);
-                        var keypointY = (int)(ortSpan[k + 1] / yGain);
-                        var keypointConf = ortSpan[k + 2];
+                        xMin = (int)(x / xGain);
+                        yMin = (int)(y / yGain);
+                        xMax = (int)(w / xGain);
+                        yMax = (int)(h / yGain);
 
-                        _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
+                        // Extract keypoints
+                        for (int k = offset; k < keypointDataSize + offset; k += 3)
+                        {
+                            // Get keypoint coordinates and confidence and rescale to original image size
+                            var keypointX = (int)(ortSpan[k] / xGain);
+                            var keypointY = (int)(ortSpan[k + 1] / yGain);
+                            var keypointConf = ortSpan[k + 2];
+
+                            _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
+                        }
                     }
+
+                    var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
+                    var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
+
+                    boxes[validBoxCount++] = new ObjectResult
+                    {
+                        Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
+                        Confidence = confidence,
+                        BoundingBox = boundingBox,
+                        BoundingBoxUnscaled = boundingBoxUnscaled,
+                        BoundingBoxIndex = i,
+                        KeyPoints = [.. _keyPoints]
+                    };
                 }
 
-                var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-                var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
-
-                _boxes[validBoxCount++] = new ObjectResult
-                {
-                    Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
-                    Confidence = confidence,
-                    BoundingBox = boundingBox,
-                    BoundingBoxUnscaled = boundingBoxUnscaled,
-                    BoundingBoxIndex = i,
-                    KeyPoints = [.. _keyPoints]
-                };
+                return boxes.AsSpan(0, validBoxCount);
             }
-
-            return _boxes.AsSpan(0, validBoxCount);
+            finally
+            {
+                ArrayPool<ObjectResult>.Shared.Return(boxes);
+            }
         }
 
         public void Dispose()

@@ -27,7 +27,6 @@ namespace YoloDotNet.Modules.V26
         private readonly int _predictions;
         private readonly int _outputShapeMaskChannels;
         private List<Segmentation> _results = default!;
-        private ObjectResult[] _boxes = default!;
         private MaskWeights32 _maskWeights32 = default;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
@@ -65,21 +64,15 @@ namespace YoloDotNet.Modules.V26
             _scalingFactorW = (float)_maskWidth / inputWidth;
             _scalingFactorH = (float)_maskHeight / inputHeight;
 
-            _boxes = new ObjectResult[_totalElements];
             _results = [];
         }
 
-        public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = RunSegmentation(inferenceResult, confidence, pixelConfidence);
 
-            // Convert to List<PoseEstimation>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((Segmentation)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (Segmentation)r);
         }
 
         private Span<ObjectResult> RunSegmentation(InferenceResult inferenceResult, double confidenceThreshold, double pixelConfidence)
@@ -92,6 +85,7 @@ namespace YoloDotNet.Modules.V26
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             int validBoxCount = 0;
+            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_totalElements);
 
             try
             {
@@ -139,7 +133,7 @@ namespace YoloDotNet.Modules.V26
                     var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
                     var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
 
-                    _boxes[validBoxCount] = new ObjectResult
+                    boxes[validBoxCount] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
@@ -170,20 +164,24 @@ namespace YoloDotNet.Modules.V26
                         Avx2LinearResizer.ScalePixels(cropped, resizedCrop);
                     else
                         cropped.ScalePixels(resizedCrop, ImageConfig.SegmentationResamplingOptions);
-                    
+
                     // Pack the upscaled mask (now matches returned BoundingBox dimensions)
-                    _boxes[validBoxCount].BitPackedPixelMask = PackUpscaledMaskToBitArray(resizedCrop, pixelConfidence);
+                    boxes[validBoxCount].BitPackedPixelMask = PackUpscaledMaskToBitArray(resizedCrop, pixelConfidence);
 
                     validBoxCount++;
                 }
+
+                return boxes.AsSpan(0, validBoxCount);
+
             }
             finally
             {
                 // Clear mask weights for next run
                 _maskWeights32 = default;
-            }
 
-            return _boxes.AsSpan(0, validBoxCount);
+                // Return rented array
+                ArrayPool<ObjectResult>.Shared.Return(boxes);
+            }
         }
 
         private SKRectI DownscaleBoundingBoxToSegmentationOutput(SKRect box)

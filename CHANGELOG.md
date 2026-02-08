@@ -2,6 +2,19 @@
 
 All notable changes to **YoloDotNet** will be documented in this file.
 
+## [4.2] — Usability, ROI & Segmentation Enhancements
+
+### ✨ Added
+- Option to define a **Region of Interest (ROI)** to run inference on specific areas of an image or video stream.
+  - Useful for surveillance, monitoring zones, and performance optimization.
+- Option to **draw edges** on segmented objects.
+- Helper methods: `ToJson()` and `SaveJson()` for exporting inference results as JSON.
+- Helper methods: `ToYoloFormat()` and `SaveYoloFormat()` for saving inference results as YOLO-annotated data.
+- Helper method: `GetContourPoints()` for extracting ordered contour points from segmented objects.
+
+### 🔄 Changed
+- Updated **YOLOv26 inference execution** to align with other tasks, improving consistency and overall execution efficiency.
+
 ## [4.1] — Expanded Model Support & MIT Relicense
 
 ### ✨ Added

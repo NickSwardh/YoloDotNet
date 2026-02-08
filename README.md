@@ -1,4 +1,4 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet 🚀
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v4.2 🚀
 **Blazing-fast, production-ready YOLO inference for .NET**
 
 **YoloDotNet** is a modular, lightweight C# library for real-time computer vision
@@ -27,24 +27,57 @@ YoloDotNet is designed for developers who need:
 - ✅ **Pure .NET** — no Python runtime, no scripts  
 - ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML, DirectML  
 - ✅ **Explicit configuration** — predictable accuracy and memory usage  
-- ✅ **Production readiness** — engine caching, long-running stability  
-- ✅ **Large image support** — not limited to toy resolutions  
+- ✅ **Production readiness** — engine caching, long-running stability
 - ✅ **Multiple vision tasks** — detection, OBB, segmentation, pose, classification  
 
 Ideal for **desktop apps, backend services, and real-time vision pipelines** that require deterministic behavior and full control.
 
-## 🆕 What’s New v4.1
+## 🆕 What’s New v4.2
 
-- Added support for `Yolo26` model suite
-- Added support for `RT-DETR` models
-- Improved performance across all tasks, with reduced allocation pressure and lower per-frame latency.
-- Improved performance on video inference
-- [Relicensed to MIT](#license)
+- Added **Region of Interest (ROI)** support, allowing inference to run on selected areas of an image or video stream  
+  *(useful for surveillance, monitoring zones, and performance-focused pipelines)*
+- Added the option to **draw edges on segmented objects** for improved visual clarity
+- Added helper methods for **JSON export**:
+  - `ToJson()` — convert inference results to JSON
+  - `SaveJson()` — save inference results directly to a JSON file
+- Added helper methods for **YOLO-formatted annotations**:
+  - `ToYoloFormat()` — convert results to YOLO annotation format
+  - `SaveYoloFormat()` — save results as YOLO-compatible training data
+- Added `GetContourPoints()` helper for extracting **ordered contour points** from segmented objects
+- Updated **YOLOv26 inference execution** to align with other tasks, improving **consistency and overall execution efficiency**
 
 📖 Full release history: [CHANGELOG.md](./CHANGELOG.md)
 
+> [!TIP]
+> **See the demos**  
+> Practical, runnable examples showcasing YoloDotNet features are available in the demo projects:  
+> 👉 [Browse the demo folder](./Demo)
 
 ## 🚀 Quick Start
+
+### 💡 ONNX Model Export Requirements
+
+- For **YOLOv26 models**, export with **opset=18**
+- For **YOLOv5u–YOLOv12**, export with **opset=17**
+
+> [!IMPORTANT]
+> Using the correct opset ensures optimal compatibility and performance with ONNX Runtime.  
+> For more information on how to export models to ONNX, refer to https://docs.ultralytics.com/modes/export/
+
+**Example export commands (Ultralytics CLI):**
+```bash
+# For YOLOv5u–YOLOv12 (opset 17)
+yolo export model=yolov8n.pt format=onnx opset=17
+
+# For YOLOv26 (opset 18)
+yolo export model=yolo26n.pt format=onnx opset=18
+```
+
+> [!WARNING]
+> **Model License Notice:**  
+> YoloDotNet is MIT licensed, but **most Ultralytics YOLO models are AGPL-3.0 or require a commercial license for commercial use**.  
+> You are responsible for ensuring your use of any model complies with its license.  
+> See [Ultralytics Model Licensing](https://www.ultralytics.com/license/) for details.
 
 ### 1️⃣ Install the core package
 
@@ -52,7 +85,7 @@ Ideal for **desktop apps, backend services, and real-time vision pipelines** tha
 dotnet add package YoloDotNet
 ```
 
-### 2️⃣ Install **exactly one** execution provider
+### 2️⃣ Install **exactly one**(!) execution provider
 
 ```bash
 # CPU (recommended starting point)
@@ -73,6 +106,8 @@ dotnet add package YoloDotNet.ExecutionProvider.DirectML
 ```csharp
 using SkiaSharp;
 using YoloDotNet;
+using YoloDotNet.Models;
+using YoloDotNet.Extensions;
 using YoloDotNet.ExecutionProvider.Cpu;
 
 using var yolo = new Yolo(new YoloOptions
@@ -82,6 +117,8 @@ using var yolo = new Yolo(new YoloOptions
 
 using var image = SKBitmap.Decode("image.jpg");
 
+// Note: The IoU parameter is used for NMS-based models.
+// For YOLOv10 and YOLOv26, IoU is ignored since post-processing is handled internally by the model.
 var results = yolo.RunObjectDetection(image, confidence: 0.25, iou: 0.7);
 
 image.Draw(results);
@@ -106,6 +143,18 @@ These settings directly control the accuracy–performance tradeoff and should b
 |---------------|------------------|---------------|--------------|-----------------|
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
+
+
+## ✅ Verified YOLO Models
+
+The following YOLO models have been **tested and verified** with YoloDotNet using
+official Ultralytics exports and default heads.
+
+| Classification | Object Detection | Segmentation | Pose Estimation | OBB Detection |
+|----------------|------------------|--------------|------------------|---------------|
+| YOLOv8-cls<br>YOLOv11-cls<br>YOLOv12-cls<br>YOLOv26-cls | YOLOv5u<br>YOLOv8<br>YOLOv9<br>YOLOv10<br>YOLOv11<br>YOLOv12<br>YOLOv26<br>RT-DETR | YOLOv8-seg<br>YOLOv11-seg<br>YOLOv12-seg<br>YOLOv26-seg<br>YOLO-World (v2) | YOLOv8-pose<br>YOLOv11-pose<br>YOLOv12-pose<br>YOLOv26-pose | YOLOv8-obb<br>YOLOv11-obb<br>YOLOv12-obb<br>YOLOv26-obb<br> |
+
+
 
 ## 📁 Demos
 
@@ -179,21 +228,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-
-### Why MIT?
-
-YoloDotNet is designed as a low-level, production-grade YOLO inference engine.
-It does not include pretrained models, training pipelines, or hosted services.
-
-The MIT license was chosen to maximize freedom and clarity for developers and organizations:
-
-- No copyleft requirements
-- No network-use clauses
-- No restrictions on commercial or proprietary deployment
-
-This makes YoloDotNet suitable for use in enterprise software, embedded systems, backend services, and closed-source products without licensing friction.
-
-Model licensing is entirely separate and is determined by the source and terms of the ONNX models supplied by the user.
 
 ---
 
