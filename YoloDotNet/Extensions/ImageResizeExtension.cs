@@ -9,10 +9,16 @@ namespace YoloDotNet.Extensions
         /// <summary>
         /// Resizes the input image to the target dimensions by stretching it to fit the model input size, returning a pointer to RGB888x pixel data and the new dimensions.
         /// </summary>
+        /// <remarks>
+        /// This method is intended for models trained on stretched (non-aspect-ratio-preserving) datasets.
+        /// Using this with models trained on letterbox/proportional preprocessing may reduce inference accuracy.
+        /// For standard models, use <see cref="ResizeImageProportional{T}"/> instead.
+        /// </remarks>
         /// <param name="img">The original image to resize.</param>
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
-        /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
+        /// <param name="roi">Optional region of interest to crop before resizing.</param>
+        /// <returns>The dimensions of the input image (or ROI if specified), required for bounding box scaling.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
         {
@@ -39,18 +45,18 @@ namespace YoloDotNet.Extensions
             int width = image.Width;
             int height = image.Height;
 
+            // Stretch the image to fit the model input size regardless of aspect ratio and cropped ROI.
+            // This may distort the image but ensures it matches the model's expected input dimensions.
             var srcRect = new SKRect(0, 0, image.Width, image.Height);
             var destRect = new SKRect(0, 0, modelWidth, modelHeight);
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions);
-            var w = image.Width;
-            var h = image.Height;
 
-            // Only dispose if we created a bew SKImage from SKBitmap
+            // Only dispose if we created a new SKImage from SKBitmap or if we cropped to a ROI, since cropping creates a new SKImage instance
             if (createdImage || roi.HasValue)
                 image?.Dispose();
 
-            // Return the original image dimensions, which are required to correctly scale bounding boxes
+            // Return the input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
             return new SKSizeI(width, height);
         }
 
@@ -60,7 +66,8 @@ namespace YoloDotNet.Extensions
         /// <param name="img">The original image to resize.</param>
         /// <param name="samplingOptions">Sampling options used during resizing.</param>
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
-        /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
+        /// <param name="roi">Optional region of interest to crop before resizing.</param>
+        /// <returns>The dimensions of the input image (or ROI if specified), required for bounding box scaling.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
         {
@@ -120,7 +127,7 @@ namespace YoloDotNet.Extensions
             if (createdImage || roi.HasValue)
                 image?.Dispose();
 
-            // Return the original image dimensions, which are required to correctly scale bounding boxes
+            // Return the input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
             return new SKSizeI(width, height);
         }
 
