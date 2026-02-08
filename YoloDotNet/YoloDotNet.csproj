@@ -1,74 +1,69 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-<PropertyGroup>
-  <TargetFramework>net8.0</TargetFramework>
-  <LangVersion>latest</LangVersion>
-  <ImplicitUsings>enable</ImplicitUsings>
-  <Nullable>enable</Nullable>
-  <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
-  <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-    <Title>YoloDotNet Core</Title>
-    <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
-    <PackAsTool>False</PackAsTool>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <Description>YoloDotNet is a modular, lightweight C# library for high-performance, real-time
-computer vision and YOLO-based inference in .NET.
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<LangVersion>latest</LangVersion>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+		<Title>YoloDotNet Core</Title>
+		<PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
+		<PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
+		<PackAsTool>False</PackAsTool>
+		<PackageIcon>icon.png</PackageIcon>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<Description>YoloDotNet is a modular, lightweight C# library for high-performance, real-time computer vision and YOLO-based inference in .NET.
 
-Built on .NET 8 and powered by ONNX Runtime, YoloDotNet provides explicit,
-production-ready inference for modern YOLO model families, including YOLOv5u
-through YOLOv26, YOLO-World, YOLO-E, and RT-DETR.
+Built on .NET 8 and powered by ONNX Runtime, YoloDotNet provides explicit, production-ready inference for modern YOLO model families, including YOLOv5u through YOLOv26, YOLO-World, YOLO-E, and RT-DETR.
 
-The library features a fully modular execution architecture with pluggable
-execution providers for CPU, CUDA / TensorRT, Intel OpenVINO, Apple CoreML, and
-DirectML, enabling predictable deployment across Windows, Linux, and macOS.
+The library features a fully modular execution architecture with pluggable execution providers for CPU, CUDA / TensorRT, Intel OpenVINO, Apple CoreML, and DirectML, enabling predictable deployment across Windows, Linux, and macOS.
 
-YoloDotNet intentionally avoids heavy computer vision frameworks such as OpenCV.
-Image handling and preprocessing are performed using SkiaSharp, with no Python
-runtime, no hidden preprocessing, and no implicit behavior.
+YoloDotNet intentionally avoids heavy computer vision frameworks such as OpenCV. Image handling and preprocessing are performed using SkiaSharp, with no Python runtime, no hidden preprocessing, and no implicit behavior.
 
-Designed for low-latency inference and long-running workloads, YoloDotNet gives
-developers full control over execution, memory usage, and preprocessing —
-allowing you to choose the hardware, platform, and execution backend without
-unnecessary abstraction or overhead.</Description>
-    <Authors>Niklas Swärd</Authors>
-	<Version>4.1</Version>
-    <Company />
-    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageReleaseNotes>YoloDotNet v4.1 is a focused update that expands model compatibility and improves runtime performance.
+Designed for low-latency inference and long-running workloads, YoloDotNet gives developers full control over execution, memory usage, and preprocessing — allowing you to choose the hardware, platform, and execution backend without unnecessary abstraction or overhead.
+		</Description>
+		<Authors>Niklas Swärd</Authors>
+		<Version>4.2</Version>
+		<Company />
+		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReleaseNotes>YoloDotNet v4.2 focuses on usability, ROI support, and segmentation enhancements.
 
-This release adds support for the YOLOv26 model suite and RT-DETR models, extending coverage of modern YOLO-based architectures.
+This release adds Region of Interest (ROI) support, allowing inference on specific areas of an image or video stream — useful for surveillance, monitoring zones, and performance optimization.
 
-Performance has been improved across all tasks with reduced allocation pressure, lower per-frame latency, and more stable and efficient video inference.
+New helper methods include ToJson() and SaveJson() for exporting results as JSON, ToYoloFormat() and SaveYoloFormat() for YOLO-annotated data export, and GetContourPoints() for extracting ordered contour points from segmented objects.
 
-YoloDotNet has also been relicensed to MIT, simplifying adoption and usage in commercial and open-source projects.</PackageReleaseNotes>
-    <Copyright>Copyright © Niklas Swärd</Copyright>
-  </PropertyGroup>
+Segmentation now supports drawing edges on segmented objects.
 
-  <ItemGroup>
-    <None Include="..\README.md">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-	<None Include="..\CHANGELOG.md">
-	  <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-	</None>
-	<None Include="..\AccuracyAndConfiguration.md">
-      <Pack>True</Pack>
-	  <PackagePath>\</PackagePath>
-	</None>
-    <None Include="..\icon.png">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
-  </ItemGroup>
+Updated YOLOv26 inference execution to align with other tasks, improving consistency and overall execution efficiency.
 
-  <ItemGroup>
-    <PackageReference Include="SkiaSharp" Version="3.119.1" />
-  </ItemGroup>
-	
+Check out the demo projects on GitHub for hands-on examples: https://github.com/NickSwardh/YoloDotNet/tree/master/Demo</PackageReleaseNotes>
+		<Copyright>Copyright © Niklas Swärd</Copyright>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\CHANGELOG.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\AccuracyAndConfiguration.md">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+		<None Include="..\icon.png">
+			<Pack>True</Pack>
+			<PackagePath>\</PackagePath>
+		</None>
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SkiaSharp" Version="3.119.1" />
+	</ItemGroup>
+
 </Project>
