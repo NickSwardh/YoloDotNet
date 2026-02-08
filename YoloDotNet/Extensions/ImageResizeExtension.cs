@@ -14,21 +14,30 @@ namespace YoloDotNet.Extensions
         /// <param name="pinnedMemoryBuffer">A pinned memory buffer where the resized image will be written.</param>
         /// <returns>A tuple containing a pointer to the resized image data and its dimensions.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer)
+        public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
         {
             SKImage image = default!;
             var createdImage = false;
 
             if (img is SKImage skImage)
-                image = skImage;
+            {
+                image = roi.HasValue
+                    ? YoloCore.CropToRoi(skImage, (SKRectI)roi)
+                    : skImage;
+            }
             else if (img is SKBitmap skBitmap)
             {
-                image = SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+                image = roi.HasValue
+                    ? YoloCore.CropToRoi(skBitmap, (SKRectI)roi)
+                    : SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+
                 createdImage = true;
             }
 
             int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
             int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
+            int width = image.Width;
+            int height = image.Height;
 
             var srcRect = new SKRect(0, 0, image.Width, image.Height);
             var destRect = new SKRect(0, 0, modelWidth, modelHeight);
@@ -38,11 +47,11 @@ namespace YoloDotNet.Extensions
             var h = image.Height;
 
             // Only dispose if we created a bew SKImage from SKBitmap
-            if (createdImage)
+            if (createdImage || roi.HasValue)
                 image?.Dispose();
 
             // Return the original image dimensions, which are required to correctly scale bounding boxes
-            return new SKSizeI(w, h);
+            return new SKSizeI(width, height);
         }
 
         /// <summary>

@@ -65,7 +65,7 @@ namespace YoloDotNet.Core
                     var originalImageSize =
                         YoloOptions.ImageResize == ImageResize.Proportional
                             ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer, roi)
-                            : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
+                            : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer, roi);
 
                     InferenceResult inferenceResult;
 
