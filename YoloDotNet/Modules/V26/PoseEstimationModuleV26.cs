@@ -44,17 +44,12 @@ namespace YoloDotNet.Modules.V26
             _keyPoints = new KeyPoint[_totalKeyPoints];
         }
 
-        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence, iou);
 
-            // Convert to List<ObjectDetection>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((PoseEstimation)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (PoseEstimation)r);
         }
 
         #region Helper methods

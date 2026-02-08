@@ -30,17 +30,12 @@ namespace YoloDotNet.Modules.V26
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this method better performance
-        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou = 0)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou = 0, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence);
 
-            // Convert to List<ObjectDetection>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((ObjectDetection)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (ObjectDetection)r);
         }
 
         #region Helper methods

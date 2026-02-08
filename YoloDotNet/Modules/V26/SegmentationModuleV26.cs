@@ -67,17 +67,12 @@ namespace YoloDotNet.Modules.V26
             _results = [];
         }
 
-        public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = RunSegmentation(inferenceResult, confidence, pixelConfidence);
 
-            // Convert to List<PoseEstimation>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((Segmentation)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (Segmentation)r);
         }
 
         private Span<ObjectResult> RunSegmentation(InferenceResult inferenceResult, double confidenceThreshold, double pixelConfidence)

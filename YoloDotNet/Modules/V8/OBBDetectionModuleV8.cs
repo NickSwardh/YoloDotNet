@@ -23,17 +23,12 @@ namespace YoloDotNet.Modules.V8
             yoloCore.YoloOptions.ImageResize = ImageResize.Proportional;
         }
 
-        public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 
-            // Convert to List<OBBDetection>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((OBBDetection)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (OBBDetection)r);
         }
 
         #region Helper methods

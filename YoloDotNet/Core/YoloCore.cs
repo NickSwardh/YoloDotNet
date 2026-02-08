@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Core
@@ -53,7 +53,7 @@ namespace YoloDotNet.Core
         /// </summary>
         /// <param name="image">The input image to process.</param>
         /// <returns>InferenceResult()</returns>
-        public InferenceResult Run<T>(T image)
+        public InferenceResult Run<T>(T image, SKRectI? roi)
         {
             lock (_progressLock)
             {
@@ -64,7 +64,7 @@ namespace YoloDotNet.Core
                     // Resize image to model input size and store in pinned buffer for faster access
                     var originalImageSize =
                         YoloOptions.ImageResize == ImageResize.Proportional
-                            ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer)
+                            ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer, roi)
                             : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer);
 
                     InferenceResult inferenceResult;
@@ -234,6 +234,18 @@ namespace YoloDotNet.Core
             float modelW = _modelInputWidth;
             float modelH = _modelInputHeight;
 
+            float xPad, yPad;
+
+            // If image is smaller than model input, it was centered without scaling.
+            // In this case, gain is 1.0 and padding is half the difference between model input and image size.
+            if (w < _modelInputWidth && h < _modelInputHeight)
+            {
+                xPad = (modelW - w) * 0.5f;
+                yPad = (modelH - h) * 0.5f;
+
+                return (xPad, yPad, 1.0f, 0f);  // gain = 1.0 (no scaling)
+            }
+
             // compute scales as floats and use MathF to avoid double/float conversions
             float scaleW = w / modelW; // (float)w / model.Input.Width
             float scaleH = h / modelH; // (float)h / model.Input.Height
@@ -243,8 +255,8 @@ namespace YoloDotNet.Core
             // ratio is how source maps into model dimensions
             float ratio = MathF.Min(modelW / w, modelH / h);
 
-            float xPad = (modelW - w * ratio) * 0.5f;
-            float yPad = (modelH - h * ratio) * 0.5f;
+            xPad = (modelW - w * ratio) * 0.5f;
+            yPad = (modelH - h * ratio) * 0.5f;
 
             return (xPad, yPad, gain, 0f);
         }
@@ -262,14 +274,66 @@ namespace YoloDotNet.Core
             float modelW = _modelInputWidth;
             float modelH = _modelInputHeight;
 
+            float xPad, yPad;
+
+            // If image is smaller than model input, it was centered without scaling.
+            // In this case, gains are 1.0 and padding is half the difference between model input and image size.
+            if (w < _modelInputWidth && h < _modelInputHeight)
+            {
+                xPad = (modelW - w) * 0.5f;
+                yPad = (modelH - h) * 0.5f;
+
+                return (xPad, yPad, 1.0f, 1.0f);  // gains = 1.0 (no scaling)
+            }
+
             float xGain = modelW / w;
             float yGain = modelH / h;
 
-            float xPad = (modelW - w * xGain) * 0.5f;
-            float yPad = (modelH - h * yGain) * 0.5f;
+            xPad = (modelW - w * xGain) * 0.5f;
+            yPad = (modelH - h * yGain) * 0.5f;
 
             return (xPad, yPad, xGain, yGain);
         }
+
+        /// <summary>
+        /// Crops the SKBitmap to the specified ROI.
+        /// </summary>
+        internal static SKImage CropToRoi(SKBitmap image, SKRectI roi)
+        {
+            using var cropped = new SKBitmap(roi.Width, roi.Height, image.ColorType, image.AlphaType);
+            using var canvas = new SKCanvas(cropped);
+
+            canvas.DrawBitmap(image, roi, new SKRect(0, 0, roi.Width, roi.Height));
+
+            return SKImage.FromBitmap(cropped);
+        }
+
+        /// <summary>
+        /// Crops the SKImage to the specified ROI.
+        /// </summary>
+        internal static SKImage CropToRoi(SKImage image, SKRectI roi)
+            => image.Subset(roi) ?? throw new InvalidOperationException("Failed to create image subset.");
+
+        /// <summary>
+        /// Transforms a bounding box from ROI-relative coordinates to original image coordinates.
+        /// </summary>
+        internal static SKRectI TransformRoiBoundingBox(SKRectI box, SKRectI roi)
+            => new(
+                box.Left + roi.Left,
+                box.Top + roi.Top,
+                box.Right + roi.Left,
+                box.Bottom + roi.Top
+            );
+
+        /// <summary>
+        /// Transforms keypoints from ROI-relative coordinates to original image coordinates.
+        /// </summary>
+        internal static KeyPoint[] TransformKeyPoints(KeyPoint[] keyPoints, SKRectI roi)
+            => keyPoints.Select(kp => kp with
+            {
+                X = kp.X + roi.Left,
+                Y = kp.Y + roi.Top
+            }).ToArray();
 
         /// <summary>
         /// Verify that loaded model is of the expected type
@@ -278,6 +342,44 @@ namespace YoloDotNet.Core
         {
             if (expectedModelType.Equals(OnnxModel.ModelType) is false)
                 throw new YoloDotNetModelMismatchException($"Loaded ONNX-model is of type {OnnxModel.ModelType} and can't be used for {expectedModelType}.");
+        }
+
+        /// <summary>
+        /// Converts a collection of object detection results to a list of the specified type, optionally transforming
+        /// bounding boxes and keypoints based on a region of interest.
+        /// </summary>
+        internal static List<T> InferenceResultsToType<T>(
+            Span<ObjectResult> detections,
+            SKRectI? roi,
+            List<T> results,
+            Func<ObjectResult, T> converter)
+        {
+            results.Clear();
+
+            // If ROI is provided, transform bounding boxes and keypoints back to original image coordinates before converting to the desired type.
+            if (roi.HasValue)
+            {
+                var roiValue = roi.Value;
+                for (int i = 0; i < detections.Length; i++)
+                {
+                    detections[i].BoundingBox = TransformRoiBoundingBox(detections[i].BoundingBox, roiValue);
+
+                    // Transform pose estimation keypoints back to original image coordinates.
+                    if (typeof(T) == typeof(PoseEstimation))
+                    {
+                        detections[i].KeyPoints = TransformKeyPoints(detections[i].KeyPoints, roiValue);
+                    }
+
+                    results.Add(converter(detections[i]));
+                }
+            }
+            else
+            {
+                for (int i = 0; i < detections.Length; i++)
+                    results.Add(converter(detections[i]));
+            }
+
+            return results;
         }
 
         /// <summary>

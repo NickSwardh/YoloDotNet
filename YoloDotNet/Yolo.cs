@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet
@@ -51,9 +51,10 @@ namespace YoloDotNet
         /// <param name="img">The SKBitmap to obb detect.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of classification results.</returns>
-        public List<ObjectDetection> RunObjectDetection(SKBitmap img, double confidence = 0.2, double iou = 0.7)
-            => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
+        public List<ObjectDetection> RunObjectDetection(SKBitmap img, double confidence = 0.2, double iou = 0.7, SKRectI? roi = null)
+            => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou, roi);
 
         /// <summary>
         /// Run object detection on an Image.
@@ -61,9 +62,10 @@ namespace YoloDotNet
         /// <param name="img">The SKImage to obb detect.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of classification results.</returns>
-        public List<ObjectDetection> RunObjectDetection(SKImage img, double confidence = 0.2, double iou = 0.7)
-             => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
+        public List<ObjectDetection> RunObjectDetection(SKImage img, double confidence = 0.2, double iou = 0.7, SKRectI? roi = null)
+             => ((IObjectDetectionModule)_detection).ProcessImage(img, confidence, 0, iou, roi);
 
         #endregion
 
@@ -75,9 +77,10 @@ namespace YoloDotNet
         /// <param name="img">The SKBitmap to obb detect.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<OBBDetection> RunObbDetection(SKBitmap img, double confidence = 0.2, double iou = 0.7)
-            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
+        public List<OBBDetection> RunObbDetection(SKBitmap img, double confidence = 0.2, double iou = 0.7, SKRectI? roi = null)
+            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou, roi);
 
         /// <summary>
         /// Run oriented bounding bBox detection on an image.
@@ -85,9 +88,10 @@ namespace YoloDotNet
         /// <param name="img">The SKImage to obb detect.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<OBBDetection> RunObbDetection(SKImage img, double confidence = 0.2, double iou = 0.7)
-            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou);
+        public List<OBBDetection> RunObbDetection(SKImage img, double confidence = 0.2, double iou = 0.7, SKRectI? roi = null)
+            => ((IOBBDetectionModule)_detection).ProcessImage(img, confidence, 0, iou, roi);
 
         #endregion
 
@@ -99,9 +103,10 @@ namespace YoloDotNet
         /// <param name="img">The SKBitmap to segmentate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<Segmentation> RunSegmentation(SKBitmap img, double confidence = 0.2, double pixelConfedence = 0.65, double iou = 0.7)
-            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
+        public List<Segmentation> RunSegmentation(SKBitmap img, double confidence = 0.2, double pixelConfedence = 0.65, double iou = 0.7, SKRectI? roi = null)
+            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou, roi);
 
         /// <summary>
         /// Run segmentation on an image.
@@ -109,9 +114,10 @@ namespace YoloDotNet
         /// <param name="img">The SKImage to segmentate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.2, double pixelConfedence = 0.65, double iou = 0.7)
-            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou);
+        public List<Segmentation> RunSegmentation(SKImage img, double confidence = 0.2, double pixelConfedence = 0.65, double iou = 0.7, SKRectI? roi = null)
+            => ((ISegmentationModule)_detection).ProcessImage(img, confidence, pixelConfedence, iou, roi);
 
         #endregion
 
@@ -123,9 +129,10 @@ namespace YoloDotNet
         /// <param name="img">The SKBitmap to pose estimate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<PoseEstimation> RunPoseEstimation(SKBitmap img, double confidence = 0.2, double iou = 0.7)
-            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
+        public List<PoseEstimation> RunPoseEstimation(SKBitmap img, double confidence = 0.2, double iou = 0.7, SKRectI? roi = null)
+            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou, roi);
 
         /// <summary>
         /// Run pose estimation on an image.
@@ -133,9 +140,10 @@ namespace YoloDotNet
         /// <param name="img">The SKImage to pose estimate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
+        /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
-        public List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence = 0.2, double iou = 0.7)
-            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou);
+        public List<PoseEstimation> RunPoseEstimation(SKImage img, double confidence = 0.2, double iou = 0.7, SKRectI? roi = null)
+            => ((IPoseEstimationModule)_detection).ProcessImage(img, confidence, 0, iou, roi);
 
         #endregion
 

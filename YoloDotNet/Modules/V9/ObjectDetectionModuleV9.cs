@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V9
@@ -19,8 +19,8 @@ namespace YoloDotNet.Modules.V9
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
         }
 
-        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
-            => _objectDetectionModule.ProcessImage(image, confidence, pixelConfidence, iou);
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
+            => _objectDetectionModule.ProcessImage(image, confidence, pixelConfidence, iou, roi);
 
         public void Dispose()
         {

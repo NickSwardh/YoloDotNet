@@ -35,16 +35,12 @@ namespace YoloDotNet.Modules.V8
             _results = [];
         }
 
-        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var result = _yoloCore.Run(image);
+            var result = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(result, confidence, iou);
 
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((ObjectDetection)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (ObjectDetection)r);
         }
 
         #region Helper methods

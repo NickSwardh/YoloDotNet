@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Modules.V8
@@ -33,17 +33,12 @@ namespace YoloDotNet.Modules.V8
             _results = [];
         }
 
-        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou)
+        public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image);
+            var inferenceResult = _yoloCore.Run(image, roi);
             var detections = PoseEstimateImage(inferenceResult, confidence, iou);
 
-            // Convert to List<PoseEstimation>
-            _results.Clear();
-            for (int i = 0; i < detections.Length; i++)
-                _results.Add((PoseEstimation)detections[i]);
-
-            return _results;
+            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (PoseEstimation)r);
         }
 
         #region Helper methods
