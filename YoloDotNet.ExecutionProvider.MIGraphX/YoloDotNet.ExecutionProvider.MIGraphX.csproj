@@ -1,0 +1,49 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Title>YoloDotNet MIGraphX Execution Provider</Title>
+    <Version>1.0</Version>
+    <Authors>Niklas Swärd</Authors>
+    <Copyright>Copyright © Niklas Swärd</Copyright>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Description>MIGraphX execution provider for YoloDotNet, enabling GPU-accelerated inference on AMD ROCm hardware using ONNX Runtime.
+
+This execution provider supports AMD's MIGraphX for high-performance GPU acceleration on AMD Radeon and Instinct GPUs. It is designed for real-time inference workloads on Linux systems with ROCm support.
+
+The provider is fully compatible with the YoloDotNet core library and follows the modular, execution-provider-agnostic architecture introduced in YoloDotNet v4.0.</Description>
+    <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;migraphx;rocm;amd;gpu;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
+    <PackageReleaseNotes>Initial release of MIGraphX execution provider for YoloDotNet. Provides GPU acceleration on AMD hardware with ROCm support. Requires YoloDotNet version 4.1 or higher.</PackageReleaseNotes>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.MIGraphX</PackageProjectUrl>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\icon.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>

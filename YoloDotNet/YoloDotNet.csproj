@@ -10,7 +10,7 @@
 		<Title>YoloDotNet Core</Title>
 		<PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet</PackageProjectUrl>
 		<RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
-		<PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
+		<PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;amd;rocm;migraphx;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
 		<PackAsTool>False</PackAsTool>
 		<PackageIcon>icon.png</PackageIcon>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
@@ -18,7 +18,7 @@
 
 Built on .NET 8 and powered by ONNX Runtime, YoloDotNet provides explicit, production-ready inference for modern YOLO model families, including YOLOv5u through YOLOv26, YOLO-World, YOLO-E, and RT-DETR.
 
-The library features a fully modular execution architecture with pluggable execution providers for CPU, CUDA / TensorRT, Intel OpenVINO, Apple CoreML, and DirectML, enabling predictable deployment across Windows, Linux, and macOS.
+The library features a fully modular execution architecture with pluggable execution providers for CPU, CUDA / TensorRT, AMD MIGraphX, Intel OpenVINO, Apple CoreML, and DirectML, enabling predictable deployment across Windows, Linux, and macOS.
 
 YoloDotNet intentionally avoids heavy computer vision frameworks such as OpenCV. Image handling and preprocessing are performed using SkiaSharp, with no Python runtime, no hidden preprocessing, and no implicit behavior.
 
