@@ -25,7 +25,7 @@ No Python. No magic. Just fast, deterministic YOLO — done properly for .NET.
 YoloDotNet is designed for developers who need:
 
 - ✅ **Pure .NET** — no Python runtime, no scripts  
-- ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML, DirectML  
+- ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML, DirectML, MIGraphX  
 - ✅ **Explicit configuration** — predictable accuracy and memory usage  
 - ✅ **Production readiness** — engine caching, long-running stability
 - ✅ **Multiple vision tasks** — detection, OBB, segmentation, pose, classification  
@@ -92,10 +92,11 @@ dotnet add package YoloDotNet
 dotnet add package YoloDotNet.ExecutionProvider.Cpu
 
 # Hardware-accelerated execution (choose one)
-dotnet add package YoloDotNet.ExecutionProvider.Cuda
-dotnet add package YoloDotNet.ExecutionProvider.OpenVino
-dotnet add package YoloDotNet.ExecutionProvider.CoreML
-dotnet add package YoloDotNet.ExecutionProvider.DirectML
+dotnet add package YoloDotNet.ExecutionProvider.Cuda      # NVIDIA GPU
+dotnet add package YoloDotNet.ExecutionProvider.MIGraphX  # AMD GPU (ROCm)
+dotnet add package YoloDotNet.ExecutionProvider.OpenVino  # Intel hardware
+dotnet add package YoloDotNet.ExecutionProvider.CoreML    # Apple Silicon
+dotnet add package YoloDotNet.ExecutionProvider.DirectML  # Windows GPU (universal)
 ```
 
 > 💡 **Note:** The CUDA execution provider includes optional **TensorRT** acceleration.  
@@ -166,13 +167,14 @@ Includes image inference, video streams, GPU acceleration, segmentation, and lar
 
 ## Execution Providers
 
-| Provider           | Windows | Linux | macOS | Documentation |
-|--------------------|---------|-------|-------|---------------|
-| CPU                | ✅      | ✅    | ✅    | [CPU README](./YoloDotNet.ExecutionProvider.Cpu/README.md) |
-| CUDA / TensorRT    | ✅      | ✅    | ❌    | [CUDA README](./YoloDotNet.ExecutionProvider.Cuda/README.md) |
-| OpenVINO           | ✅      | ✅    | ❌    | [OpenVINO README](./YoloDotNet.ExecutionProvider.OpenVino/README.md) |
-| CoreML             | ❌      | ❌    | ✅    | [CoreML README](./YoloDotNet.ExecutionProvider.CoreML/README.md) |
-| DirectML           | ✅      | ❌    | ❌    | [DirectML README](./YoloDotNet.ExecutionProvider.DirectML/README.md) |
+| Provider           | Windows | Linux | macOS | Hardware | Documentation |
+|--------------------|---------|-------|-------|----------|---------------|
+| CPU                | ✅      | ✅    | ✅    | All      | [CPU README](./YoloDotNet.ExecutionProvider.Cpu/README.md) |
+| CUDA / TensorRT    | ✅      | ✅    | ❌    | NVIDIA GPU | [CUDA README](./YoloDotNet.ExecutionProvider.Cuda/README.md) |
+| MIGraphX           | ❌      | ✅    | ❌    | AMD GPU (ROCm) | [MIGraphX README](./YoloDotNet.ExecutionProvider.MIGraphX/README.md) |
+| OpenVINO           | ✅      | ✅    | ❌    | Intel    | [OpenVINO README](./YoloDotNet.ExecutionProvider.OpenVino/README.md) |
+| CoreML             | ❌      | ❌    | ✅    | Apple Silicon | [CoreML README](./YoloDotNet.ExecutionProvider.CoreML/README.md) |
+| DirectML           | ✅      | ❌    | ❌    | Windows GPU | [DirectML README](./YoloDotNet.ExecutionProvider.DirectML/README.md) |
 
 > ℹ️ Only **one** execution provider package may be referenced.  
 > Mixing providers will cause native runtime conflicts.
