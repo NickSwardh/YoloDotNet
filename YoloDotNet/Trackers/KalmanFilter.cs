@@ -1,236 +1,108 @@
-﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Trackers
 {
+    /// <summary>
+    /// Constant-velocity Kalman filter that tracks a 2D point (e.g. a bounding box center).
+    /// Position is in pixels and velocity in pixels per frame.
+    /// </summary>
+    /// <remarks>
+    /// The X and Y axes don't influence each other in this model, so the filter runs as two
+    /// independent 1D filters. That gives the same result as the full 4x4 matrix form,
+    /// without allocating matrices or inverting them every frame.
+    /// </remarks>
     public class KalmanFilter(float x, float y)
     {
-        // [x, y, dx, dy] → position and speed
-        private float[] _state = [x, y, 0, 0];
+        // Initial uncertainty (variance): the position comes from a detection, the velocity is unknown.
+        private const float InitialPositionVariance = 10f;
+        private const float InitialVelocityVariance = 1000f;
 
-        // Confidence in our guess
-        private float[,] _covariance = new float[,]
-        {
-            { 2, 0, 0, 0 },    // x (more confident)
-            { 0, 2, 0, 0 },    // y (more confident)
-            { 0, 0, 50, 0 },   // dx (very unsure)
-            { 0, 0, 0, 50 }    // dy (very unsure)
-        };
+        // How much the detector's box center jitters between frames (px²).
+        private const float MeasurementNoise = 4f;
 
-        // These control how much we trust motion and measurement
-        private readonly float[,] _measurementNoise = new float[,]
-        {
-            { 0.05f, 0 },
-            { 0, 0.05f }
-        };
+        // How much the velocity may change between frames (acceleration noise).
+        private const float ProcessNoise = 1f;
 
-        private readonly float _sigmaP = 0.5f;  // Noise for position
-        private readonly float _sigmaV = 0.1f;  // Noise for velocity
-        private readonly float _dt = 1f / 30f;  // Time step (1 frame at 30 FPS)
+        private AxisFilter _x = new(x);
+        private AxisFilter _y = new(y);
+
+        private readonly float[] _state = new float[4];
 
         /// <summary>
-        /// Predicts the next state (position and velocity) based on motion.
+        /// Moves the estimate one frame ahead using the current velocity.
+        /// Call once per frame, before <see cref="Update"/>.
         /// </summary>
         public void Predict()
         {
-            // 1. Use speed to guess next position
-            _state[0] += _state[2] * _dt; // x = x + dx * dt
-            _state[1] += _state[3] * _dt; // y = y + dy * dt
-
-            // 2. Create a transition matrix F (how state changes over time)
-            float[,] f = new float[,]
-            {
-                { 1, 0, _dt, 0 },
-                { 0, 1, 0, _dt },
-                { 0, 0, 1, 0 },
-                { 0, 0, 0, 1 }
-            };
-
-            // 3. Compute new covariance: P = F * P * F^T + Q
-            float[,] newCov = Multiply(Multiply(f, _covariance), Transpose(f));
-            float[,] q = GetProcessNoise();
-            _covariance = Add(newCov, q);
+            _x.Predict();
+            _y.Predict();
         }
 
         /// <summary>
-        /// Updates the predicted state with a new measurement.
+        /// Corrects the estimate with a measured position.
         /// </summary>
         /// <param name="x">Measured X position.</param>
         /// <param name="y">Measured Y position.</param>
         public void Update(float x, float y)
         {
-            // Measurement vector z = [x, y]
-            float[] z = new float[] { x, y };
+            _x.Update(x);
+            _y.Update(y);
+        }
 
-            // Measurement matrix H (we only measure x and y)
-            float[,] h = new float[,]
+        /// <summary>
+        /// Returns the current estimate as [x, y, dx, dy].
+        /// The returned array is reused by the filter; copy it if you need to keep the values.
+        /// </summary>
+        public float[] GetState()
+        {
+            _state[0] = _x.Position;
+            _state[1] = _y.Position;
+            _state[2] = _x.Velocity;
+            _state[3] = _y.Velocity;
+            return _state;
+        }
+
+        /// <summary>
+        /// 1D constant-velocity Kalman filter (time step = 1 frame).
+        /// Covariance is the symmetric 2x2 matrix [[pp, pv], [pv, vv]].
+        /// </summary>
+        private struct AxisFilter(float position)
+        {
+            public float Position = position;
+            public float Velocity = 0f;
+
+            private float _pp = InitialPositionVariance;
+            private float _pv = 0f;
+            private float _vv = InitialVelocityVariance;
+
+            public void Predict()
             {
-                { 1, 0, 0, 0 },
-                { 0, 1, 0, 0 }
-            };
+                Position += Velocity;
 
-            // Innovation: y = z - H * x
-            float[] yVec = Subtract(z, Multiply(h, _state));
+                // P = F·P·Fᵀ + Q, with F = [[1, 1], [0, 1]] and Q from a random-acceleration model
+                _pp += 2f * _pv + _vv + ProcessNoise / 4f;
+                _pv += _vv + ProcessNoise / 2f;
+                _vv += ProcessNoise;
+            }
 
-            // S = H * P * H^T + R (measurement prediction)
-            float[,] s = Add(Multiply(Multiply(h, _covariance), Transpose(h)), _measurementNoise);
-
-            // Kalman Gain K = P * H^T * S^-1
-            float[,] k = Multiply(Multiply(_covariance, Transpose(h)), Inverse2x2(s));
-
-            // New state = old + K * residual
-            float[] correction = Multiply(k, yVec);
-            _state = Add(_state, correction);
-
-            // New covariance: (I - K * H) * P
-            float[,] kh = Multiply(k, h);
-            float[,] i = Identity(4);
-            float[,] temp = Subtract(i, kh);
-            _covariance = Multiply(temp, _covariance);
-        }
-
-        /// <summary>
-        /// Returns the current estimated state [x, y, dx, dy].
-        /// </summary>
-        public float[] GetState() => _state;
-
-        /// <summary>
-        /// Calculates the process noise matrix (uncertainty from motion).
-        /// </summary>
-        private float[,] GetProcessNoise()
-        {
-            float p2 = _sigmaP * _sigmaP;
-            float v2 = _sigmaV * _sigmaV;
-
-            return new float[,]
+            public void Update(float measurement)
             {
-                { p2, 0, _sigmaP * _dt, 0 },
-                { 0, p2, 0, _sigmaP * _dt },
-                { _sigmaP * _dt, 0, v2, 0 },
-                { 0, _sigmaP * _dt, 0, v2 }
-            };
-        }
+                // Innovation variance is always > 0 since MeasurementNoise > 0, so no division by zero
+                var innovationVariance = _pp + MeasurementNoise;
+                var positionGain = _pp / innovationVariance;
+                var velocityGain = _pv / innovationVariance;
 
-        /// <summary>
-        /// Multiplies a matrix by a vector.
-        /// </summary>
-        private static float[] Multiply(float[,] mat, float[] vec)
-        {
-            float[] result = new float[mat.GetLength(0)];
-            for (int i = 0; i < result.Length; i++)
-                for (int j = 0; j < vec.Length; j++)
-                    result[i] += mat[i, j] * vec[j];
-            return result;
-        }
+                var residual = measurement - Position;
+                Position += positionGain * residual;
+                Velocity += velocityGain * residual;
 
-        /// <summary>
-        /// Multiplies two matrices.
-        /// </summary>
-        private static float[,] Multiply(float[,] a, float[,] b)
-        {
-            int rows = a.GetLength(0);
-            int cols = b.GetLength(1);
-            int shared = a.GetLength(1);
-            float[,] result = new float[rows, cols];
-
-            for (int i = 0; i < rows; i++)
-                for (int j = 0; j < cols; j++)
-                    for (int k = 0; k < shared; k++)
-                        result[i, j] += a[i, k] * b[k, j];
-
-            return result;
-        }
-
-        /// <summary>
-        /// Adds two matrices together.
-        /// </summary>
-        private static float[,] Add(float[,] a, float[,] b)
-        {
-            int rows = a.GetLength(0), cols = a.GetLength(1);
-            float[,] result = new float[rows, cols];
-            for (int i = 0; i < rows; i++)
-                for (int j = 0; j < cols; j++)
-                    result[i, j] = a[i, j] + b[i, j];
-            return result;
-        }
-
-        /// <summary>
-        /// Adds two vectors together.
-        /// </summary>
-        private static float[] Add(float[] a, float[] b)
-        {
-            float[] result = new float[a.Length];
-            for (int i = 0; i < a.Length; i++)
-                result[i] = a[i] + b[i];
-            return result;
-        }
-
-        /// <summary>
-        /// Subtracts one vector from another.
-        /// </summary>
-        private static float[] Subtract(float[] a, float[] b)
-        {
-            float[] result = new float[a.Length];
-            for (int i = 0; i < a.Length; i++)
-                result[i] = a[i] - b[i];
-            return result;
-        }
-
-        /// <summary>
-        /// Subtracts one matrix from another.
-        /// </summary>
-        private static float[,] Subtract(float[,] a, float[,] b)
-        {
-            int rows = a.GetLength(0), cols = a.GetLength(1);
-            float[,] result = new float[rows, cols];
-            for (int i = 0; i < rows; i++)
-                for (int j = 0; j < cols; j++)
-                    result[i, j] = a[i, j] - b[i, j];
-            return result;
-        }
-
-        /// <summary>
-        /// Transposes a matrix (rows become columns).
-        /// </summary>
-        private static float[,] Transpose(float[,] mat)
-        {
-            int rows = mat.GetLength(0), cols = mat.GetLength(1);
-            float[,] result = new float[cols, rows];
-            for (int i = 0; i < rows; i++)
-                for (int j = 0; j < cols; j++)
-                    result[j, i] = mat[i, j];
-            return result;
-        }
-
-        /// <summary>
-        /// Calculates the inverse of a 2x2 matrix.
-        /// </summary>
-        private static float[,] Inverse2x2(float[,] mat)
-        {
-            float a = mat[0, 0], b = mat[0, 1];
-            float c = mat[1, 0], d = mat[1, 1];
-            float det = a * d - b * c;
-            if (Math.Abs(det) < 1e-6f)
-                throw new Exception("Matrix is singular and cannot be inverted.");
-            float invDet = 1f / det;
-
-            return new float[,]
-            {
-                { d * invDet, -b * invDet },
-                { -c * invDet, a * invDet }
-            };
-        }
-
-        /// <summary>
-        /// Creates an identity matrix of a given size.
-        /// </summary>
-        private static float[,] Identity(int size)
-        {
-            float[,] result = new float[size, size];
-            for (int i = 0; i < size; i++)
-                result[i, i] = 1;
-            return result;
+                // P = (I - K·H)·P
+                _vv -= velocityGain * _pv;
+                _pv *= 1f - positionGain;
+                _pp *= 1f - positionGain;
+            }
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Trackers
@@ -7,10 +7,12 @@ namespace YoloDotNet.Trackers
     /// <summary>
     /// Stores a fixed-length queue of tail points to track and visualize the movement tail of an object.
     /// </summary>
-    /// <param name="maxLength"></param>
+    /// <param name="maxLength">Maximum number of points kept. The oldest point is dropped when full.</param>
     public class TailTrack(int maxLength)
     {
-        private readonly int _maxLength = maxLength;
+        private readonly int _maxLength = maxLength > 0
+            ? maxLength
+            : throw new ArgumentOutOfRangeException(nameof(maxLength), maxLength, "Must be greater than 0.");
         private readonly Queue<SKPoint> _positions = new (maxLength);
 
         /// <summary>

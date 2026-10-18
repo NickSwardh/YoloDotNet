@@ -1,210 +1,279 @@
-﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Trackers
 {
+    /// <summary>
+    /// Multi-object tracker based on SORT (Simple Online and Realtime Tracking), with ByteTrack-style
+    /// matching of low-confidence detections. Gives each object a stable Id and a movement tail across frames.
+    /// </summary>
+    /// <remarks>
+    /// Not thread-safe. Use one instance per video stream, and call <see cref="UpdateTracker{T}"/> once per frame, in order.
+    /// </remarks>
     public partial class SortTracker
     {
+        // Active tracks, keyed by an internal key. The public Id is only assigned once a track is confirmed.
         private readonly Dictionary<int, TrackedObject> _trackedObjects = [];
 
+        private int _nextKey = 0;
         private int _nextId = 0;
-        private readonly int _maxAge;
-        private readonly float _costThreshold;
-        private readonly int _tailLength;
 
-        public SortTracker(float costThreshold = 0.5f, int maxAge = 3, int tailLength = 30)
+        private readonly float _costThreshold;
+        private readonly int _maxAge;
+        private readonly int _tailLength;
+        private readonly float _highConfidenceThreshold;
+        private readonly int _minHits;
+
+        // Cost given to pairs that must never match (different class, or too far apart).
+        // Anything at or above the threshold is rejected after solving; keeping it close to real costs
+        // instead of using a huge number keeps the solver numerically stable.
+        private readonly float _blockedCost;
+
+        /// <summary>
+        /// Creates a new SORT tracker.
+        /// </summary>
+        /// <param name="costThreshold">
+        /// Maximum matching cost for assigning a detection to a track. Lower = stricter matching.
+        /// Cost = (1 - IoU) + center distance divided by the tracked box diagonal, so movement is measured relative to object size.
+        /// </param>
+        /// <param name="maxAge">Number of frames an unmatched track is kept before removal. Higher values survive longer occlusions.</param>
+        /// <param name="tailLength">Maximum number of points kept in each track's tail.</param>
+        /// <param name="highConfidenceThreshold">
+        /// Enables ByteTrack-style two-stage matching when greater than 0. Detections with confidence at or above this value
+        /// are matched first and may start new tracks. Detections below it are only used to keep existing tracks alive
+        /// (e.g. partially occluded objects) and are removed from the list if they don't match a track.
+        /// Run inference with a lower confidence than this value to benefit from it. Default 0 (disabled).
+        /// </param>
+        /// <param name="minHits">
+        /// Number of matched frames before a new track is confirmed and receives an Id.
+        /// Tentative tracks have a null Id and are discarded as soon as they miss a frame, so short-lived
+        /// false or duplicate detections don't consume Ids. Default 3. Use 1 to assign Ids immediately.
+        /// </param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when a parameter is outside its valid range.</exception>
+        public SortTracker(float costThreshold = 0.5f, int maxAge = 3, int tailLength = 30, float highConfidenceThreshold = 0f, int minHits = 3)
         {
+            if (float.IsFinite(costThreshold) is false || costThreshold <= 0)
+                throw new ArgumentOutOfRangeException(nameof(costThreshold), costThreshold, "Must be a finite value greater than 0.");
+
+            if (float.IsFinite(highConfidenceThreshold) is false || highConfidenceThreshold < 0 || highConfidenceThreshold > 1)
+                throw new ArgumentOutOfRangeException(nameof(highConfidenceThreshold), highConfidenceThreshold, "Must be between 0 and 1.");
+
+            ArgumentOutOfRangeException.ThrowIfNegative(maxAge);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(tailLength);
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minHits);
+
             _costThreshold = costThreshold;
             _maxAge = maxAge;
             _tailLength = tailLength;
+            _highConfidenceThreshold = highConfidenceThreshold;
+            _minHits = minHits;
+            _blockedCost = costThreshold + 1f;
         }
 
         /// <summary>
-        /// Updates the tracker state with the current detections.
+        /// Updates the tracker with the detections from the current frame.
+        /// Sets <see cref="IDetection.Id"/> and <see cref="IDetection.Tail"/> on matched detections.
         /// </summary>
         /// <typeparam name="T">A detection type implementing <see cref="IDetection"/>.</typeparam>
-        /// <param name="detections">List of detections from the current frame.</param>
+        /// <param name="detections">
+        /// Detections from the current frame. When <c>highConfidenceThreshold</c> is enabled, low-confidence
+        /// detections that don't match an existing track are removed from this list.
+        /// </param>
         /// <remarks>
-        /// The method performs the following steps:
-        /// <list type="bullet">
-        /// <item>Predicts new positions of existing tracked objects using a Kalman filter.</item>
-        /// <item>Matches current detections to active tracks using a cost matrix and assignment algorithm.</item>
-        /// <item>Adds new detections as untracked objects when no matching track is found.</item>
-        /// <item>Initializes tracking if no active tracks exist.</item>
-        /// <item>Removes old tracked objects that have exceeded the maximum allowed age.</item>
+        /// Steps per frame:
+        /// <list type="number">
+        /// <item>Predict where every track will be in this frame (Kalman filter).</item>
+        /// <item>Match high-confidence detections to tracks.</item>
+        /// <item>Match low-confidence detections to the remaining confirmed tracks, and drop the ones that don't match.</item>
+        /// <item>Start new tracks for unmatched high-confidence detections.</item>
+        /// <item>Age tracks and remove the ones that have been missing too long.</item>
         /// </list>
         /// </remarks>
+        /// <exception cref="ArgumentNullException">Thrown when <paramref name="detections"/> is null.</exception>
         public void UpdateTracker<T>(List<T> detections) where T : IDetection
         {
-            // If there is nothing to track, no further processing needed...
-            if (detections.Count == 0)
-            {
-                RemoveOldTrackedObjects();
-                return;
-            }
+            ArgumentNullException.ThrowIfNull(detections);
 
-            // Predict new positions using Kalman Filter
+            // Predict every frame, including empty ones, so missing objects keep moving in time
             foreach (var trackedObject in _trackedObjects.Values)
                 trackedObject.KalmanPredict();
 
-            // Get previous boundingboxes based on previous _trackCounter
-            var activeTracks = _trackedObjects.Where(x => x.Value.Age <= _maxAge).ToList();
+            if (detections.Count > 0)
+                MatchFrame(detections);
 
-            // Update existing tracked objects and add new untracked objects.
-            if (activeTracks.Count > 0)
-            {
-                var costMatrix = CalculateCostMatrix(activeTracks, detections);
-
-                // Match detected objects with tracked objects
-                var assignedIds = MatchPredictedObjects(detections, activeTracks, costMatrix);
-
-                // Add untracked new objects to tracker
-                AddUntrackedObjects(detections, assignedIds);
-            }
-            else
-            {
-                // Tracker is empty; create new tracks for all current detections.
-                CreateInitialTracks(detections);
-            }
-            
             RemoveOldTrackedObjects();
         }
 
         /// <summary>
-        /// Adds new tracks for detections that were not matched to any existing tracked object.
-        /// Called after the assignment phase.
-        /// </summary>
-        private void AddUntrackedObjects<T>(List<T> detections, HashSet<int> assignedDetections) where T : IDetection
-        {
-            // Add new untracked objects     
-            for (int i = 0; i < detections.Count; i++)
-            {
-                if (assignedDetections.Contains(i) is false)
-                {
-                    _nextId++;
-
-                    detections[i].Id = _nextId;
-                    _trackedObjects[_nextId] = new TrackedObject(detections[i], _tailLength);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Adds new untracked objects to the tracker.  
-        /// Used when the tracker is empty and all detections are considered new.
+        /// Creates a new track for every detection, without matching against existing tracks.
         /// </summary>
         public void CreateInitialTracks<T>(List<T> detections) where T : IDetection
         {
-            foreach (var detection in detections)
-            {
-                _nextId++;
+            ArgumentNullException.ThrowIfNull(detections);
 
-                detection.Id = _nextId;
-                _trackedObjects[_nextId] = new TrackedObject(detection, _tailLength);
+            foreach (var detection in detections)
+                CreateTrack(detection);
+        }
+
+        private void MatchFrame<T>(List<T> detections) where T : IDetection
+        {
+            var highIndices = new List<int>(detections.Count);
+            var lowIndices = new List<int>();
+
+            for (int i = 0; i < detections.Count; i++)
+            {
+                if (detections[i].Confidence >= _highConfidenceThreshold)
+                    highIndices.Add(i);
+                else
+                    lowIndices.Add(i);
+            }
+
+            // Tracks still waiting for a match this frame. Matched tracks are removed from this list.
+            var unmatchedTracks = new List<TrackedObject>(_trackedObjects.Values);
+
+            // Stage 1: high-confidence detections
+            var matchedHigh = MatchDetections(detections, highIndices, unmatchedTracks);
+
+            // Stage 2: low-confidence detections may only keep confirmed tracks alive
+            unmatchedTracks.RemoveAll(track => track.Id is null);
+            var matchedLow = MatchDetections(detections, lowIndices, unmatchedTracks);
+
+            foreach (var index in highIndices)
+            {
+                if (matchedHigh.Contains(index) is false)
+                    CreateTrack(detections[index]);
+            }
+
+            // Remove unmatched low-confidence detections (likely noise). Back to front, so earlier indices stay valid.
+            for (int i = lowIndices.Count - 1; i >= 0; i--)
+            {
+                if (matchedLow.Contains(lowIndices[i]) is false)
+                    detections.RemoveAt(lowIndices[i]);
             }
         }
 
+        private void CreateTrack(IDetection detection)
+        {
+            var track = new TrackedObject(detection, _tailLength);
+
+            if (_minHits == 1)
+                track.Id = ++_nextId;
+
+            detection.Id = track.Id;
+            _trackedObjects[++_nextKey] = track;
+        }
+
         /// <summary>
-        /// Removes tracked objects that have not been matched for more than <c>_maxAge</c> frames.
+        /// Ages all tracks by one frame. Removes tracks that have been missing for more than <c>maxAge</c> frames,
+        /// and tentative tracks that missed a single frame.
         /// </summary>
         private void RemoveOldTrackedObjects()
         {
-            foreach (var track in _trackedObjects.ToList())
+            // Removing during enumeration is safe for Dictionary in .NET Core 3.0+
+            foreach (var (key, track) in _trackedObjects)
             {
-                track.Value.Age++;
+                track.Age++;
 
-                if (track.Value.Age > _maxAge)
-                {
-                    _trackedObjects.Remove(track.Key);
-                }
+                // Age is 1 right after a match, so > 1 means the track was not matched this frame
+                var isTentativeAndMissed = track.Id is null && track.Age > 1;
+
+                if (track.Age > _maxAge || isTentativeAndMissed)
+                    _trackedObjects.Remove(key);
             }
         }
 
         /// <summary>
-        /// Computes the cost matrix between active tracks and current detections,
-        /// based on IoU and normalized center-point distance.
+        /// Matches the given detections to the given tracks with the lowest total cost.
+        /// Matched tracks are updated and removed from <paramref name="tracks"/>.
         /// </summary>
-        private static float[,] CalculateCostMatrix<T>(List<KeyValuePair<int, TrackedObject>> activeTracks, List<T> detections) where T : IDetection
+        /// <returns>Indices (into <paramref name="detections"/>) of the detections that were matched.</returns>
+        private HashSet<int> MatchDetections<T>(List<T> detections, List<int> detectionIndices, List<TrackedObject> tracks) where T : IDetection
         {
-            // Define array for storing costMatrix
-            var costMatrix = new float[activeTracks.Count, detections.Count];
+            var matched = new HashSet<int>();
 
-            for (int i = 0; i < activeTracks.Count; i++)
+            if (tracks.Count == 0 || detectionIndices.Count == 0)
+                return matched;
+
+            var costMatrix = CalculateCostMatrix(tracks, detections, detectionIndices);
+            var assignment = LAPJV.Solve(costMatrix);
+            var matchedRows = new bool[assignment.Length];
+
+            for (int row = 0; row < assignment.Length; row++)
             {
-                var track = activeTracks[i].Value;
-                var predictedState = track.GetPredictedState();
+                int column = assignment[row];
 
-                float predictedX = predictedState[0];
-                float predictedY = predictedState[1];
+                // The solver pairs as many as it can, so pairs over the threshold must be rejected here
+                if (column == -1 || costMatrix[row, column] >= _costThreshold)
+                    continue;
 
-                for (int j = 0; j < detections.Count; j++)
+                var detection = detections[detectionIndices[column]];
+                var track = tracks[row];
+
+                track.Age = 0;
+                track.Hits++;
+
+                if (track.Id is null && track.Hits >= _minHits)
+                    track.Id = ++_nextId;
+
+                detection.Id = track.Id;
+                track.TrackBoundingBox(detection);
+
+                matched.Add(detectionIndices[column]);
+                matchedRows[row] = true;
+            }
+
+            // Remove matched tracks back to front, so earlier indices stay valid
+            for (int row = matchedRows.Length - 1; row >= 0; row--)
+            {
+                if (matchedRows[row])
+                    tracks.RemoveAt(row);
+            }
+
+            return matched;
+        }
+
+        /// <summary>
+        /// Builds the cost of pairing each track (row) with each detection (column).
+        /// Cost = (1 - IoU with the predicted box) + distance from the predicted center relative to the box diagonal.
+        /// Pairs with different classes, or with a cost at or above the threshold, get the blocked cost.
+        /// </summary>
+        private float[,] CalculateCostMatrix<T>(List<TrackedObject> tracks, List<T> detections, List<int> detectionIndices) where T : IDetection
+        {
+            var costMatrix = new float[tracks.Count, detectionIndices.Count];
+
+            for (int row = 0; row < tracks.Count; row++)
+            {
+                var track = tracks[row];
+                var predictedBox = track.GetPredictedBox();
+                var trackLabel = track.BoundingBox.Label.Index;
+
+                // At least 1 to avoid dividing by zero for degenerate boxes
+                var diagonal = MathF.Max(Length(predictedBox.Width, predictedBox.Height), 1f);
+
+                for (int column = 0; column < detectionIndices.Count; column++)
                 {
-                    var detectionBox = detections[j].BoundingBox;
-                    var iouCost = 1 - YoloCore.CalculateIoU(track.BoundingBox.BoundingBox, detectionBox);
+                    var detection = detections[detectionIndices[column]];
 
-                    var distance = CalculateDistance(predictedX, predictedY, detectionBox.MidX, detectionBox.MidY);
-                    var distanceCost = distance / 100.0f; // Normalize distance
+                    if (detection.Label.Index != trackLabel)
+                    {
+                        costMatrix[row, column] = _blockedCost;
+                        continue;
+                    }
 
-                    costMatrix[i, j] = iouCost + distanceCost;
+                    var detectionBox = detection.BoundingBox;
+                    var iouCost = 1f - YoloCore.CalculateIoU(predictedBox, detectionBox);
+                    var distance = Length(predictedBox.MidX - detectionBox.MidX, predictedBox.MidY - detectionBox.MidY);
+                    var cost = iouCost + distance / diagonal;
+
+                    costMatrix[row, column] = cost < _costThreshold ? cost : _blockedCost;
                 }
             }
 
             return costMatrix;
         }
 
-        /// <summary>
-        /// Matches current detections to existing active tracks using the LAPJV assignment algorithm
-        /// based on the provided cost matrix. Updates tracked objects for matched detections,
-        /// resets their age, and returns the set of assigned detection indices.
-        /// </summary>
-        private HashSet<int> MatchPredictedObjects<T>(List<T> detections, List<KeyValuePair<int, TrackedObject>> activeTracks, float[,] costMatrix) where T : IDetection
-        {
-            // Solve assignment using LAPJV algorithm.
-            float[,] originalCostMatrix = (float[,])costMatrix.Clone();
-            var assignment = LAPJV.Solve(costMatrix);
-
-            // Assign detections to existing tracks
-            var assignedDetections = new HashSet<int>();
-
-            for (int i = 0; i < assignment.Length; i++)
-            {
-                var trackId = activeTracks[i].Key;
-                var trackedBox = activeTracks[i].Value;
-
-                int detectionIndex = assignment[i];
-
-                // If a tracked Id is not found, add to age and remove if it's not detected in the last x frames
-                if (detectionIndex == -1)
-                    continue;
-
-                var cost = originalCostMatrix[i, detectionIndex];
-
-                if (cost < _costThreshold) // Instead of < 0.2f
-                {
-                    var box = detections[detectionIndex];
-
-                    // Set Id of detected boundingbox
-                    box.Id = trackId;
-
-                    // Reset tracked box age counter
-                    trackedBox.Age = 0;
-                    trackedBox.TrackBoundingBox(box);
-
-                    assignedDetections.Add(detectionIndex);
-                }
-            }
-
-            return assignedDetections;
-        }
-        /// <summary>
-        /// Calculate distance between two bounding box centers.
-        /// </summary>
-        private static float CalculateDistance(float predictedX, float predictedY, float detectionX, float detectionY)
-        {
-            var dx = predictedX - detectionX;
-            var dy = predictedY - detectionY;
-            return (float)Math.Sqrt(dx * dx + dy * dy); // Euclidean distance
-        }
+        private static float Length(float dx, float dy)
+            => MathF.Sqrt(dx * dx + dy * dy);
     }
 }
