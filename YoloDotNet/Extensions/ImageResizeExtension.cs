@@ -149,33 +149,76 @@ namespace YoloDotNet.Extensions
             var width = (int)inputShape[3];
             int totalPixels = width * height;
 
-            float inv255 = 1.0f / 255.0f;
+            const float inv255 = 1.0f / 255.0f;
             byte* src = (byte*)pixelsPtr;
 
-            if (colorChannels == 1)
+            // Pin the destination buffer for the duration of the write to avoid the GC
+            // relocating the rented array while raw pointers are in use.
+            fixed (float* dst = tensorArrayBuffer)
             {
-                float* dst = (float*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
-                int srcIndex = 0;
-
-                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
-                {
-                    // Read only the grayscale component (assumed in R channel)
-                    dst[i] = src[srcIndex] * inv255;
+                if (colorChannels == 1)
+                    NormalizeGrayscaleToFloat(src, dst, totalPixels, inv255);
+                else
+                    NormalizeRgbToFloat(src, dst, totalPixels, inv255);
             }
-            }
-            else
-            {
-                float* dstR = (float*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
-                float* dstG = dstR + totalPixels;
-                float* dstB = dstG + totalPixels;
+        }
 
-                int srcIndex = 0;
-                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
+        /// <summary>
+        /// Normalizes a single grayscale channel (read from the R component of the RGBX source) into a planar float buffer.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static unsafe void NormalizeGrayscaleToFloat(byte* src, float* dst, int totalPixels, float inv255)
         {
-                    dstR[i] = src[srcIndex] * inv255;
-                    dstG[i] = src[srcIndex + 1] * inv255;
-                    dstB[i] = src[srcIndex + 2] * inv255;
+            int srcIndex = 0;
+            for (int i = 0; i < totalPixels; i++, srcIndex += 4)
+                dst[i] = src[srcIndex] * inv255; // Read only the grayscale component (assumed in R channel)
+        }
+
+        /// <summary>
+        /// Normalizes interleaved RGBX pixel data into three planar float channels (R, G, B).
+        /// Uses SSSE3/SSE4.1 to de-interleave and convert four pixels per iteration when available,
+        /// falling back to a scalar loop otherwise (and for the trailing pixels).
+        /// </summary>
+        private static unsafe void NormalizeRgbToFloat(byte* src, float* dst, int totalPixels, float inv255)
+        {
+            float* dstR = dst;
+            float* dstG = dstR + totalPixels;
+            float* dstB = dstG + totalPixels;
+
+            int i = 0;
+
+            if (Ssse3.IsSupported && Sse41.IsSupported)
+            {
+                var scale = Vector128.Create(inv255);
+
+                // pshufb masks that gather one channel's byte from each of four RGBX pixels into the
+                // low four bytes of the vector (0x80 selects a zero byte for the unused upper lanes).
+                var rMask = Vector128.Create((byte)0, 4, 8, 12, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
+                var gMask = Vector128.Create((byte)1, 5, 9, 13, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
+                var bMask = Vector128.Create((byte)2, 6, 10, 14, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80);
+
+                int limit = totalPixels - 4;
+                for (; i <= limit; i += 4)
+                {
+                    var pixels = Sse2.LoadVector128(src + i * 4); // four RGBX pixels (16 bytes)
+
+                    var r = Sse2.ConvertToVector128Single(Sse41.ConvertToVector128Int32(Ssse3.Shuffle(pixels, rMask)));
+                    var g = Sse2.ConvertToVector128Single(Sse41.ConvertToVector128Int32(Ssse3.Shuffle(pixels, gMask)));
+                    var b = Sse2.ConvertToVector128Single(Sse41.ConvertToVector128Int32(Ssse3.Shuffle(pixels, bMask)));
+
+                    Sse.Store(dstR + i, Sse.Multiply(r, scale));
+                    Sse.Store(dstG + i, Sse.Multiply(g, scale));
+                    Sse.Store(dstB + i, Sse.Multiply(b, scale));
+                }
             }
+
+            // Scalar tail (and full fallback when SIMD is unavailable).
+            for (; i < totalPixels; i++)
+            {
+                int srcIndex = i * 4;
+                dstR[i] = src[srcIndex] * inv255;
+                dstG[i] = src[srcIndex + 1] * inv255;
+                dstB[i] = src[srcIndex + 2] * inv255;
             }
         }
 
