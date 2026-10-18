@@ -131,8 +131,10 @@ namespace WebcamDemo
                 ImageResize = ImageResize.Proportional,
 
                 // Sampling options for resizing; affects inference speed and quality.
+                // Bilinear matches the resize YOLO models are trained with, and takes YoloDotNet's fast AVX2 resize path
+                // for opaque 32-bit frames like these.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
-                SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
+                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
 
             });
 
@@ -140,7 +142,8 @@ namespace WebcamDemo
 
             _cts = new CancellationTokenSource();
 
-            _currentFrame = new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT, SKColorType.Bgra8888, SKAlphaType.Premul);
+            // Webcam frames are fully opaque (BGR2BGRA sets every alpha to 255), so label them Opaque.
+            _currentFrame = new SKBitmap(WEBCAM_WIDTH, WEBCAM_HEIGHT, SKColorType.Bgra8888, SKAlphaType.Opaque);
             _rect = new SKRect(0, 0, WEBCAM_WIDTH, bottom: WEBCAM_HEIGHT);
 
             // Start the webcam capture on a background thread
