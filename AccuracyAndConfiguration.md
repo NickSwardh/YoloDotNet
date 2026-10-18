@@ -25,12 +25,23 @@ There is no one-size-fits-all configuration. Optimal settings depend on your dat
     * Define how pixel data is resampled when resizing (e.g., **`Cubic`**, **`NearestNeighbor`**, **`Bilinear`**). This choice has a direct impact on the accuracy of your detections, as different resampling methods can slightly alter object shapes and edges.
     * YoloDotNet default:
         ```csharp
-        SamplingOptions = new SKSamplingOptions(SKFilterMode.Nearest, SKMipmapMode.None);
+        SamplingOptions = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None);
         ```
-        This default prioritizes **deterministic behavior and performance** while matching common training pipelines.
-        Changing the sampling method may improve visual quality, but can subtly affect detection accuracy.
+        Bilinear resampling is what YOLO models are trained and validated with, so this default gives the most
+        accurate detections. 32-bit BGRA/RGBA images (decoded files, video frames, bitmaps created in code) are resized
+        with YoloDotNet's fast AVX2 path, which is about as fast as nearest-neighbour. Other sampling methods are drawn
+        by SkiaSharp exactly as configured, and can subtly change detection results.
 
-        💡 **Tip:** Check the [ResizeImage Benchmarks](./test/YoloDotNet.Benchmarks/ImageExtensionTests/ResizeImageTests.cs) for examples of different `SamplingOptions` and to help you choose the best settings for your needs.
+    * **Transparency:** like the training pipeline, YoloDotNet ignores the alpha channel of 32-bit images and uses
+      each pixel's stored colour. Opaque images are unaffected. SkiaSharp decodes images with transparency
+      premultiplied by default, which darkens transparent areas (fully transparent pixels become black). To give the
+      model exactly what it was trained on, decode such images unpremultiplied:
+        ```csharp
+        using var codec = SKCodec.Create(path);
+        using var bitmap = SKBitmap.Decode(codec, codec.Info.WithAlphaType(SKAlphaType.Unpremul));
+        ```
+
+        💡 **Tip:** Check the [ResizeImage Benchmarks](./test/YoloDotNet.Benchmarks/ImageBenchmarks/ImageResizeBenchmarks.cs) for examples of different `SamplingOptions` and to help you choose the best settings for your needs.
 
 3. **Confidence & IoU Thresholds**
     
