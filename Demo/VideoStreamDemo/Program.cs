@@ -70,10 +70,13 @@ namespace VideoStreamDemo
         {
             // (Optional) Create a new SortTracker instance with configurable parameters:
             // - costThreshold: matching cost threshold for assigning detections to tracks (lower = stricter matching).
-            // - maxAge: number of frames to keep unmatched tracks before removal.
+            //   Cost = (1 - IoU) + center distance relative to the object's size.
+            // - maxAge: number of frames to keep unmatched tracks before removal (higher = survives longer occlusions).
             // - tailLength: length of the track history for visualization or analysis.
+            // - highConfidenceThreshold: enables ByteTrack-style matching. Detections at or above this confidence start tracks,
+            //   weaker ones (inference confidence below, see RunObjectDetection) only keep existing tracks alive, e.g. partially occluded people.
             // Note: There is no one-size-fits-all setting; these parameters often require some tinkering to find the best balance for your specific use case.
-            _sortTracker = new SortTracker(0.5f, 5, 60);
+            _sortTracker = new SortTracker(costThreshold: 0.7f, maxAge: 30, tailLength: 60, highConfidenceThreshold: 0.25f);
 
             CreateOutputFolder();
             SetDrawingOptions();
@@ -261,7 +264,8 @@ namespace VideoStreamDemo
                 //   - iou: Intersection-over-union threshold for non-maximum suppression.
                 //
                 // This will return a list of detected objects with bounding boxes and scores.
-                var result = yolo.RunObjectDetection(frame, confidence: 0.25, iou: 0.5)
+                // Confidence is set below the tracker's highConfidenceThreshold (0.25) so weak detections can keep tracks alive.
+                var result = yolo.RunObjectDetection(frame, confidence: 0.1, iou: 0.5)
 
                     // 💡 (Optional) Filter results to include only specified class labels.
                     // In this case: keep only detections of "person".
