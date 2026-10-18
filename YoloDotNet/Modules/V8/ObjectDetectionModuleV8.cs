@@ -2,6 +2,8 @@
 // SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
+using System.Numerics;
+
 namespace YoloDotNet.Modules.V8
 {
     internal class ObjectDetectionModuleV8 : IObjectDetectionModule
@@ -68,32 +70,23 @@ namespace YoloDotNet.Modules.V8
 
             int validBoxCount = 0;
             var boxes = ArrayPool<ObjectResult>.Shared.Rent(_attribute);
+            var bestConfidences = ArrayPool<float>.Shared.Rent(_attribute);
+            var bestLabelIndices = ArrayPool<int>.Shared.Rent(_attribute);
 
             try
             {
+                // Find the best label and its confidence for every bounding box
+                FindBestLabels(ortSpan, bestConfidences.AsSpan(0, _attribute), bestLabelIndices.AsSpan(0, _attribute));
+
                 for (int i = 0; i < _attribute; i++)
                 {
-                    // Move forward to confidence value of first label
-                    var labelOffset = i + _attribute4;
-
-                    float bestConfidence = 0f;
-                    int bestLabelIndex = -1;
-
-                    // Get confidence and label for current bounding box
-                    for (var l = 0; l < _labels; l++, labelOffset += _attribute)
-                    {
-                        var boxConfidence = ortSpan[labelOffset];
-
-                        if (boxConfidence > bestConfidence)
-                        {
-                            bestConfidence = boxConfidence;
-                            bestLabelIndex = l;
-                        }
-                    }
+                    float bestConfidence = bestConfidences[i];
 
                     // Stop early if confidence is low
                     if (bestConfidence < confidenceThreshold)
                         continue;
+
+                    int bestLabelIndex = bestLabelIndices[i];
 
                     float x = ortSpan[i];
                     float y = ortSpan[i + _attribute];
@@ -163,6 +156,51 @@ namespace YoloDotNet.Modules.V8
             finally
             {
                 ArrayPool<ObjectResult>.Shared.Return(boxes, false);
+                ArrayPool<float>.Shared.Return(bestConfidences, false);
+                ArrayPool<int>.Shared.Return(bestLabelIndices, false);
+            }
+        }
+
+        /// <summary>
+        /// Finds the highest label confidence, and the index of that label, for every bounding box.
+        /// </summary>
+        /// <remarks>
+        /// The output tensor is laid out as [attributes, predictions], so the confidences of one box are
+        /// <c>predictions</c> floats apart. Scanning label by label instead reads each label row sequentially
+        /// and compares several boxes per instruction. As before, a box starts at confidence 0 with no label,
+        /// and only a strictly higher confidence replaces the current best, so ties keep the first label.
+        /// </remarks>
+        private void FindBestLabels(ReadOnlySpan<float> ortSpan, Span<float> bestConfidences, Span<int> bestLabelIndices)
+        {
+            bestConfidences.Clear();
+            bestLabelIndices.Fill(-1);
+
+            var confidenceVectors = MemoryMarshal.Cast<float, Vector<float>>(bestConfidences);
+            var labelVectors = MemoryMarshal.Cast<int, Vector<int>>(bestLabelIndices);
+            int vectorizedCount = confidenceVectors.Length * Vector<float>.Count;
+
+            for (int l = 0; l < _labels; l++)
+            {
+                var labelRow = ortSpan.Slice(_attribute4 + l * _attribute, _attribute);
+                var rowVectors = MemoryMarshal.Cast<float, Vector<float>>(labelRow);
+                var label = new Vector<int>(l);
+
+                for (int v = 0; v < confidenceVectors.Length; v++)
+                {
+                    var isHigher = Vector.GreaterThan(rowVectors[v], confidenceVectors[v]);
+                    confidenceVectors[v] = Vector.ConditionalSelect(isHigher, rowVectors[v], confidenceVectors[v]);
+                    labelVectors[v] = Vector.ConditionalSelect(isHigher, label, labelVectors[v]);
+                }
+
+                // Scalar tail for the boxes that don't fill a whole vector
+                for (int i = vectorizedCount; i < _attribute; i++)
+                {
+                    if (labelRow[i] > bestConfidences[i])
+                    {
+                        bestConfidences[i] = labelRow[i];
+                        bestLabelIndices[i] = l;
+                    }
+                }
             }
         }
 
