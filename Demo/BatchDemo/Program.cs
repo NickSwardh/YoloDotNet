@@ -82,8 +82,9 @@ namespace BatchDemo
                 ImageResize = ImageResize.Proportional,
 
                 // Sampling options for resizing; affects inference speed and quality.
+                // Bilinear matches the resize YOLO models are trained with, and takes YoloDotNet's fast AVX2 resize path for opaque images.
                 // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
-                SamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None) // YoloDotNet default
+                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
             });
 
             // Print model type
