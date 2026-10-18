@@ -200,34 +200,23 @@ namespace YoloDotNet.Modules.V26
             return new SKRectI(left, top, right, bottom);
         }
 
-        unsafe void ApplySegmentationPixelMask(SKBitmap bitmap, SKRect bbox, ReadOnlySpan<float> outputOrtSpan, MaskWeights32 maskWeights)
+        void ApplySegmentationPixelMask(SKBitmap bitmap, SKRect bbox, ReadOnlySpan<float> outputOrtSpan, MaskWeights32 maskWeights)
         {
             var scaledBoundingBox = DownscaleBoundingBoxToSegmentationOutput(bbox);
 
-            int startX = Math.Max(0, (int)scaledBoundingBox.Left);
-            int endX = Math.Min(_maskWidth - 1, (int)scaledBoundingBox.Right);
-            int startY = Math.Max(0, (int)scaledBoundingBox.Top);
-            int endY = Math.Min(_maskHeight - 1, (int)scaledBoundingBox.Bottom);
+            int startX = Math.Max(0, scaledBoundingBox.Left);
+            int endX = Math.Min(_maskWidth - 1, scaledBoundingBox.Right);
+            int startY = Math.Max(0, scaledBoundingBox.Top);
+            int endY = Math.Min(_maskHeight - 1, scaledBoundingBox.Bottom);
 
-            int stride = bitmap.RowBytes;
-            byte* ptr = (byte*)bitmap.GetPixels().ToPointer();
-
-            for (int y = startY; y <= endY; y++)
-            {
-                byte* row = ptr + y * stride;
-
-                for (int x = startX; x <= endX; x++)
-                {
-                    float pixelWeight = 0;
-                    int offset = x + y * _maskWidth;
-
-                    for (int p = 0; p < 32; p++, offset += _maskWidth * _maskHeight)
-                        pixelWeight += outputOrtSpan[offset] * maskWeights[p];
-
-                    pixelWeight = YoloCore.Sigmoid(pixelWeight);
-                    row[x] = (byte)(pixelWeight * 255); // write directly to Gray8 bitmap
-                }
-            }
+            SegmentationMaskProcessor.Apply(
+                bitmap,
+                outputOrtSpan,
+                maskWeights,
+                _outputShapeMaskChannels,
+                _maskWidth,
+                _maskHeight,
+                startX, startY, endX, endY);
         }
 
         unsafe private byte[] PackUpscaledMaskToBitArray(SKBitmap resizedBitmap, double confidenceThreshold)
