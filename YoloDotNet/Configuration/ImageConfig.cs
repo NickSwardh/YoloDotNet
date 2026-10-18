@@ -38,7 +38,11 @@ namespace YoloDotNet.Configuration
 
         public static readonly SKColor PoseMarkerColor = new(255, 246, 51, DEFAULT_OPACITY); // #FFF633 - Goblin Torchlight Yellow
 
-        public static readonly SKSamplingOptions DefaultSamplingOptions = new(SKFilterMode.Nearest, SKMipmapMode.None);
+        // Bilinear without mipmaps matches the bilinear resize used when YOLO models are trained and validated.
+        public static readonly SKSamplingOptions DefaultSamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None);
+
+        // Letterbox padding colour (gray 114) that YOLO models are trained with.
+        public static readonly SKColor LetterboxPaddingColor = new(114, 114, 114);
         public static readonly SKSamplingOptions SegmentationResamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None);
 
         public static readonly SKPaint PaintFill = new()

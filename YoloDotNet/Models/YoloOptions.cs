@@ -20,13 +20,12 @@ namespace YoloDotNet.Models
         public ImageResize ImageResize { get; set; }
 
         /// <summary>
-        /// SkiaSharp sampling options optimized for efficient downscaling.
+        /// SkiaSharp sampling options used when resizing the input image to the model input size.
         /// </summary>
         /// <remarks>
         /// - **Default:** Linear filtering (`SKFilterMode.Linear`) with no mipmap interpolation (`SKMipmapMode.None`).
-        /// - **Performance:** Fast and efficient for downscaling.
-        /// - **Quality:** Produces smooth results with minimal aliasing.
-        /// - **Best Use Case:** Ideal when reducing image size while maintaining a balance between speed and quality.
+        /// - **Accuracy:** Matches the bilinear resize YOLO models are trained and validated with.
+        /// - **Performance:** `SKFilterMode.Nearest` is slightly faster, but changes the model input and therefore the detections.
         /// - **Modifiability:** This property can be changed at runtime to adjust filtering behavior.
         /// </remarks>
         public SKSamplingOptions SamplingOptions { get; set; } = ImageConfig.DefaultSamplingOptions;

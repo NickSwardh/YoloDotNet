@@ -29,29 +29,27 @@ namespace YoloDotNet.Handlers
 
         /// <summary>
         /// Retrieves a buffer from the pool, or creates a new one if the pool is empty.
+        /// The buffer is filled with the letterbox padding colour before it is handed out.
         /// </summary>
         public PinnedMemoryBuffer Rent()
         {
-            if (_pool.TryTake(out var buffer))
-                return buffer;
-
             // Pool exhausted — create a new buffer as a fallback
-            return new PinnedMemoryBuffer(_imageInfo); // fallback
+            if (!_pool.TryTake(out var buffer))
+                buffer = new PinnedMemoryBuffer(_imageInfo);
+
+            // IMPORTANT: Clear on rent (not on return) so freshly allocated buffers, which start zeroed (black),
+            // get the same padding as reused ones. This also avoids leaking old frame data into subsequent frames.
+            buffer.TargetBitmap.Erase(ImageConfig.LetterboxPaddingColor);
+
+            return buffer;
         }
 
         /// <summary>
-        /// Returns a used buffer back to the pool after clearing its contents.
+        /// Returns a used buffer back to the pool.
         /// </summary>
         /// <param name="buffer">The buffer to be returned and reused.</param>
         public void Return(PinnedMemoryBuffer buffer)
-        {
-            // IMPORTANT: Clear the bitmap before reuse to prevent visual artifacts.
-            // This avoids leaking old frame data into subsequent frames.
-            // Using SKColors.Empty fills with transparent black (0,0,0,0).
-            buffer.TargetBitmap.Erase(SKColors.Empty);
-
-            _pool.Add(buffer);
-        }
+            => _pool.Add(buffer);
 
         /// <summary>
         /// Releases all resources used by the pool.

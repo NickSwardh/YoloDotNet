@@ -234,17 +234,8 @@ namespace YoloDotNet.Core
             float modelW = _modelInputWidth;
             float modelH = _modelInputHeight;
 
-            float xPad, yPad;
-
-            // If image is smaller than model input, it was centered without scaling.
-            // In this case, gain is 1.0 and padding is half the difference between model input and image size.
-            if (w < _modelInputWidth && h < _modelInputHeight)
-            {
-                xPad = (modelW - w) * 0.5f;
-                yPad = (modelH - h) * 0.5f;
-
-                return (xPad, yPad, 1.0f, 0f);  // gain = 1.0 (no scaling)
-            }
+            // Images smaller than the model input are scaled up by ResizeImageProportional, so the same
+            // aspect-ratio-preserving gain applies to every input size.
 
             // compute scales as floats and use MathF to avoid double/float conversions
             float scaleW = w / modelW; // (float)w / model.Input.Width
@@ -255,8 +246,8 @@ namespace YoloDotNet.Core
             // ratio is how source maps into model dimensions
             float ratio = MathF.Min(modelW / w, modelH / h);
 
-            xPad = (modelW - w * ratio) * 0.5f;
-            yPad = (modelH - h * ratio) * 0.5f;
+            float xPad = (modelW - w * ratio) * 0.5f;
+            float yPad = (modelH - h * ratio) * 0.5f;
 
             return (xPad, yPad, gain, 0f);
         }
@@ -274,23 +265,13 @@ namespace YoloDotNet.Core
             float modelW = _modelInputWidth;
             float modelH = _modelInputHeight;
 
-            float xPad, yPad;
-
-            // If image is smaller than model input, it was centered without scaling.
-            // In this case, gains are 1.0 and padding is half the difference between model input and image size.
-            if (w < _modelInputWidth && h < _modelInputHeight)
-            {
-                xPad = (modelW - w) * 0.5f;
-                yPad = (modelH - h) * 0.5f;
-
-                return (xPad, yPad, 1.0f, 1.0f);  // gains = 1.0 (no scaling)
-            }
-
+            // ResizeImageStretched always stretches the full image to the model input, including images
+            // smaller than the model input, so there is never any padding to account for.
             float xGain = modelW / w;
             float yGain = modelH / h;
 
-            xPad = (modelW - w * xGain) * 0.5f;
-            yPad = (modelH - h * yGain) * 0.5f;
+            float xPad = (modelW - w * xGain) * 0.5f;
+            float yPad = (modelH - h * yGain) * 0.5f;
 
             return (xPad, yPad, xGain, yGain);
         }

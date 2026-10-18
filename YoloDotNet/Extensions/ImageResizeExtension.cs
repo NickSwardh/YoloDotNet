@@ -22,23 +22,11 @@ namespace YoloDotNet.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSizeI ResizeImageStretched<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
         {
-            SKImage image = default!;
-            var createdImage = false;
+            // Fast path for opaque 32-bit images with the default bilinear filter; everything else is drawn by SkiaSharp.
+            if (TryResizeBilinear(img, samplingOptions, pinnedMemoryBuffer, roi, stretch: true, out var resizedSize))
+                return resizedSize;
 
-            if (img is SKImage skImage)
-            {
-                image = roi.HasValue
-                    ? YoloCore.CropToRoi(skImage, (SKRectI)roi)
-                    : skImage;
-            }
-            else if (img is SKBitmap skBitmap)
-            {
-                image = roi.HasValue
-                    ? YoloCore.CropToRoi(skBitmap, (SKRectI)roi)
-                    : SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
-
-                createdImage = true;
-            }
+            var image = SourceImage(img, roi, out var createdImage);
 
             int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
             int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
@@ -52,9 +40,9 @@ namespace YoloDotNet.Extensions
 
             pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, destRect, samplingOptions);
 
-            // Only dispose if we created a new SKImage from SKBitmap or if we cropped to a ROI, since cropping creates a new SKImage instance
-            if (createdImage || roi.HasValue)
-                image?.Dispose();
+            // Only dispose if a new SKImage was created for drawing, not the caller's own image
+            if (createdImage)
+                image.Dispose();
 
             // Return the input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
             return new SKSizeI(width, height);
@@ -71,64 +59,184 @@ namespace YoloDotNet.Extensions
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static SKSizeI ResizeImageProportional<T>(this T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi = null)
         {
-            SKImage image = default!;
-            var createdImage = false;
+            // Fast path for opaque 32-bit images with the default bilinear filter; everything else is drawn by SkiaSharp.
+            if (TryResizeBilinear(img, samplingOptions, pinnedMemoryBuffer, roi, stretch: false, out var resizedSize))
+                return resizedSize;
 
-            if (img is SKImage skImage)
-            {
-                image = roi.HasValue
-                    ? YoloCore.CropToRoi(skImage, (SKRectI)roi)
-                    : skImage;
-            }
-            else if (img is SKBitmap skBitmap)
-            {
-                image = roi.HasValue
-                    ? YoloCore.CropToRoi(skBitmap, (SKRectI)roi)
-                    : SKImage.FromPixels(skBitmap.Info, skBitmap.GetPixels());
+            var image = SourceImage(img, roi, out var createdImage);
 
-                createdImage = true;
-            }
-
-            int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
-            int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
             int width = image.Width;
             int height = image.Height;
 
-            // If the image is smaller than the model input size, we can draw it directly onto the pinned memory buffer canvas without resizing, which avoids unnecessary resampling and preserves image quality.
-            if (width < modelWidth && height < modelHeight)
-            {
-                int x = (modelWidth - width) / 2;
-                int y = (modelHeight - height) / 2;
-                var srcRect = new SKRect(0, 0, width, height);
-                var dstRect = new SKRect(x, y, x + width, y + height);
-                pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
-            }
-            else
-            {
-                // Calculate the new image size based on the aspect ratio
-                float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
+            var srcRect = new SKRect(0, 0, width, height);
+            var dstRect = (SKRect)ProportionalDestination(width, height, pinnedMemoryBuffer.ImageInfo.Width, pinnedMemoryBuffer.ImageInfo.Height);
 
-                // Use integer rounding instead of Math.Round
-                int newWidth = (int)((width * scaleFactor) + 0.5f);
-                int newHeight = (int)((height * scaleFactor) + 0.5f);
+            // Draw the resized image onto the pinned memory buffer canvas as RGB888x, padded with the letterbox colour
+            pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
 
-                // Calculate the destination rectangle within the model dimensions
-                int x = (modelWidth - newWidth) / 2;
-                int y = (modelHeight - newHeight) / 2;
-
-                var srcRect = new SKRect(0, 0, width, height);
-                var dstRect = new SKRect(x, y, x + newWidth, y + newHeight);
-
-                // Draw the resized image onto the pinned memory buffer canvas as RGB888x with padding
-                pinnedMemoryBuffer.Canvas.DrawImage(image, srcRect, dstRect, samplingOptions);
-            }
-
-            // Only dispose if we created a new SKImage from SKBitmap or if we cropped to a ROI, since cropping creates a new SKImage instance
-            if (createdImage || roi.HasValue)
-                image?.Dispose();
+            // Only dispose if a new SKImage was created for drawing, not the caller's own image
+            if (createdImage)
+                image.Dispose();
 
             // Return the input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
             return new SKSizeI(width, height);
+        }
+
+        /// <summary>
+        /// The area of the model input that an image of the given size fills when it is scaled proportionally and centred.
+        /// </summary>
+        /// <remarks>
+        /// Images smaller than the model input are scaled up as well, so objects reach the scale the model was trained on.
+        /// </remarks>
+        private static SKRectI ProportionalDestination(int width, int height, int modelWidth, int modelHeight)
+        {
+            float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
+
+            // Use integer rounding instead of Math.Round
+            int newWidth = (int)((width * scaleFactor) + 0.5f);
+            int newHeight = (int)((height * scaleFactor) + 0.5f);
+
+            // Centre the image within the model dimensions
+            int x = (modelWidth - newWidth) / 2;
+            int y = (modelHeight - newHeight) / 2;
+
+            return new SKRectI(x, y, x + newWidth, y + newHeight);
+        }
+
+        /// <summary>
+        /// Labels 32-bit RGBA/BGRA pixels as opaque, so that their alpha channel is ignored and the stored colours are used.
+        /// Other pixel formats are returned unchanged.
+        /// </summary>
+        /// <remarks>
+        /// YOLO models are trained on images loaded without their alpha channel: a pixel's stored colour is used whatever
+        /// its transparency, not blended with a background. Ignoring alpha here gives the model the same input.
+        /// For images with transparency that requires the stored colours to still be there: decode them with
+        /// <see cref="SKAlphaType.Unpremul"/>. SkiaSharp decodes them premultiplied by default, which has already
+        /// multiplied each colour by its alpha (fully transparent pixels become black). Opaque images are unaffected.
+        /// </remarks>
+        private static SKImageInfo IgnoreAlpha(SKImageInfo info)
+            => (info.ColorType == SKColorType.Bgra8888 || info.ColorType == SKColorType.Rgba8888) && info.AlphaType != SKAlphaType.Opaque
+                ? info.WithAlphaType(SKAlphaType.Opaque)
+                : info;
+
+        /// <summary>
+        /// The image SkiaSharp draws from: the input image (or its ROI), with the alpha channel of 32-bit pixels ignored.
+        /// </summary>
+        /// <param name="created">True when the returned image was created here and must be disposed by the caller.</param>
+        private static SKImage SourceImage<T>(T img, SKRectI? roi, out bool created)
+        {
+            if (img is SKBitmap bitmap)
+            {
+                created = true;
+
+                // ROIs that reach outside the bitmap are copied into a ROI-sized bitmap, as before
+                if (roi.HasValue && !new SKRectI(0, 0, bitmap.Width, bitmap.Height).Contains(roi.Value))
+                    return YoloCore.CropToRoi(bitmap, roi.Value);
+
+                var image = SKImage.FromPixels(IgnoreAlpha(bitmap.Info), bitmap.GetPixels(), bitmap.RowBytes);
+
+                if (!roi.HasValue)
+                    return image;
+
+                using (image)
+                    return YoloCore.CropToRoi(image, roi.Value);
+            }
+
+            if (img is SKImage skImage)
+            {
+                // Images with raster pixels are relabelled; others (for example lazily decoded ones) are drawn as they are
+                var source = skImage;
+                created = false;
+
+                using (var pixmap = skImage.PeekPixels())
+                {
+                    if (pixmap is not null && IgnoreAlpha(pixmap.Info).AlphaType != pixmap.AlphaType)
+                    {
+                        source = SKImage.FromPixels(IgnoreAlpha(pixmap.Info), pixmap.GetPixels(), pixmap.RowBytes);
+                        created = true;
+                    }
+                }
+
+                if (!roi.HasValue)
+                    return source;
+
+                var cropped = YoloCore.CropToRoi(source, roi.Value);
+
+                if (created)
+                    source.Dispose();
+
+                created = true;
+                return cropped;
+            }
+
+            throw new ArgumentException($"Unsupported image type {typeof(T).Name}. Use SKBitmap or SKImage.", nameof(img));
+        }
+
+        /// <summary>
+        /// Resizes with <see cref="Avx2BilinearImageResizer"/> when the image and sampling options allow it. That is about
+        /// 3x faster than drawing through SkiaSharp and gives the same pixels, to within 1 in rare cases.
+        /// </summary>
+        /// <returns>
+        /// True when the image was resized, with the source size (the ROI size if specified) in <paramref name="size"/>.
+        /// False when SkiaSharp should draw it instead; nothing has been written then.
+        /// </returns>
+        private static bool TryResizeBilinear<T>(T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi, bool stretch, out SKSizeI size)
+        {
+            size = default;
+
+            // Only the default filter, bilinear without mipmaps; any other sampling is left to SkiaSharp.
+            if (!Avx2BilinearImageResizer.IsSupported
+                || samplingOptions.UseCubic
+                || samplingOptions.IsAniso
+                || samplingOptions.Filter != SKFilterMode.Linear
+                || samplingOptions.Mipmap != SKMipmapMode.None)
+                return false;
+
+            // Images without raster pixels (for example lazily decoded ones) have no pixmap and are drawn by SkiaSharp.
+            using var pixmap = img switch
+            {
+                SKBitmap bitmap => bitmap.PeekPixels(),
+                SKImage image => image.PeekPixels(),
+                _ => null
+            };
+
+            if (pixmap is null)
+                return false;
+
+            // The same pixels, with the alpha channel ignored (see IgnoreAlpha)
+            using var opaque = new SKPixmap(IgnoreAlpha(pixmap.Info), pixmap.GetPixels(), pixmap.RowBytes);
+
+            // A ROI is read in place instead of being copied. ROIs that reach outside the image keep the SkiaSharp path.
+            SKPixmap? subset = null;
+
+            if (roi.HasValue)
+            {
+                if (!new SKRectI(0, 0, opaque.Width, opaque.Height).Contains(roi.Value))
+                    return false;
+
+                subset = opaque.ExtractSubset(roi.Value);
+
+                if (subset is null)
+                    return false;
+            }
+
+            using (subset)
+            {
+                var source = subset ?? opaque;
+                int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
+                int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
+
+                var destination = stretch
+                    ? new SKRectI(0, 0, modelWidth, modelHeight)
+                    : ProportionalDestination(source.Width, source.Height, modelWidth, modelHeight);
+
+                if (!Avx2BilinearImageResizer.TryResize(source, pinnedMemoryBuffer.Pointer, pinnedMemoryBuffer.ImageInfo.RowBytes, destination))
+                    return false;
+
+                // The input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes
+                size = new SKSizeI(source.Width, source.Height);
+                return true;
+            }
         }
 
         /// <summary>
