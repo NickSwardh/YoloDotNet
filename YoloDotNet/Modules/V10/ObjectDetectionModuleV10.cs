@@ -8,7 +8,6 @@ namespace YoloDotNet.Modules.V10
     {
         private readonly YoloCore _yoloCore;
         private int _totalElements;
-        private List<ObjectDetection> _results = default!;
 
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
@@ -26,15 +25,14 @@ namespace YoloDotNet.Modules.V10
             var modelOutputElements = outputShape[2];
             _totalElements = modelOutputChannels * modelOutputElements;
 
-            _results = [];
         }
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (ObjectDetection)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (ObjectDetection)r);
         }
 
         #region Helper methods
@@ -97,7 +95,9 @@ namespace YoloDotNet.Modules.V10
                     };
                 }
 
-                return boxes.AsSpan(0, validBoxCount);
+                // Copy the results out: 'boxes' goes back to the shared ArrayPool in the finally block below,
+                // where any other inference call could rent and overwrite it.
+                return boxes.AsSpan(0, validBoxCount).ToArray();
             }
             finally
             {

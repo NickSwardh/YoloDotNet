@@ -22,7 +22,6 @@ namespace YoloDotNet.Modules.RTDETR
         private readonly int _modelInputHeight;
         private readonly int _totalLabels;
         private readonly int _classOffset;
-        private List<ObjectDetection> _results = default!;
         #endregion
 
         public ObjectDetectionModuleRtdetr(YoloCore yoloCore)
@@ -43,15 +42,14 @@ namespace YoloDotNet.Modules.RTDETR
             _totalLabels = OnnxModel.Labels.Length;
             _classOffset = 4;  // Offset to skip the first 4 bounding box parameters (x, y, width, height)
 
-            _results = [];
         }
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (ObjectDetection)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (ObjectDetection)r);
         }
 
         #region Helper methods
@@ -142,7 +140,9 @@ namespace YoloDotNet.Modules.RTDETR
                 }
 
                 // Get only the valid portion of the rented array
-                return boxes.AsSpan(0, validBoxCount);
+                // Copy the results out: 'boxes' goes back to the shared ArrayPool in the finally block below,
+                // where any other inference call could rent and overwrite it.
+                return boxes.AsSpan(0, validBoxCount).ToArray();
             }
             finally
             {

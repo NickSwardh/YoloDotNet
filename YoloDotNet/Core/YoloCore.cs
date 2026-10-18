@@ -11,7 +11,6 @@ namespace YoloDotNet.Core
     {
         #region Private Fields
         private PinnedMemoryBufferPool _pinnedMemoryPool = default!;
-        private readonly object _progressLock = new();
         private SKImageInfo _imageInfo;
         private long[] _inputShape = default!;
         private int _modelInputWidth;
@@ -51,62 +50,64 @@ namespace YoloDotNet.Core
         /// <summary>
         /// Runs the YOLO model on the provided image and returns the inference results.
         /// </summary>
+        /// <remarks>
+        /// Safe to call from several threads at once: every call rents its own image and tensor buffers and owns its
+        /// own output. Execution providers whose runtime cannot run one session concurrently serialize the inference
+        /// call themselves, so resizing, normalization and post-processing of other calls can still overlap with it.
+        /// </remarks>
         /// <param name="image">The input image to process.</param>
         /// <returns>InferenceResult()</returns>
         public InferenceResult Run<T>(T image, SKRectI? roi)
         {
-            lock (_progressLock)
+            var pinnedBuffer = _pinnedMemoryPool.Rent();
+
+            try
             {
-                var pinnedBuffer = _pinnedMemoryPool.Rent();
+                // Resize image to model input size and store in pinned buffer for faster access
+                var originalImageSize =
+                    YoloOptions.ImageResize == ImageResize.Proportional
+                        ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer, roi)
+                        : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer, roi);
 
-                try
+                InferenceResult inferenceResult;
+
+                if (OnnxModel.ModelDataType == ModelDataType.Float16)
                 {
-                    // Resize image to model input size and store in pinned buffer for faster access
-                    var originalImageSize =
-                        YoloOptions.ImageResize == ImageResize.Proportional
-                            ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer, roi)
-                            : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer, roi);
+                    var pixelBuffer = ArrayPool<ushort>.Shared.Rent(_inputShapeSize);
 
-                    InferenceResult inferenceResult;
-
-                    if (OnnxModel.ModelDataType == ModelDataType.Float16)
+                    try
                     {
-                        var pixelBuffer = ArrayPool<ushort>.Shared.Rent(_inputShapeSize);
-
-                        try
-                        {
-                            pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, pixelBuffer);
-                            inferenceResult = YoloOptions.ExecutionProvider.Run<ushort>(pixelBuffer);
-                        }
-                        finally
-                        {
-                            ArrayPool<ushort>.Shared.Return(pixelBuffer, clearArray: false);
-                        }
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, pixelBuffer);
+                        inferenceResult = YoloOptions.ExecutionProvider.Run<ushort>(pixelBuffer);
                     }
-                    else
+                    finally
                     {
-                        var pixelBuffer = ArrayPool<float>.Shared.Rent(_inputShapeSize);
-
-                        try
-                        {
-                            pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, pixelBuffer);
-                            inferenceResult = YoloOptions.ExecutionProvider.Run<float>(pixelBuffer);
-                        }
-                        finally
-                        {
-                            ArrayPool<float>.Shared.Return(pixelBuffer, clearArray: false);
-                        }
+                        ArrayPool<ushort>.Shared.Return(pixelBuffer, clearArray: false);
                     }
-
-                    // Attach original image size for downstream box scaling
-                    inferenceResult.ImageOriginalSize = originalImageSize;
-
-                    return inferenceResult;
                 }
-                finally
+                else
                 {
-                    _pinnedMemoryPool.Return(pinnedBuffer);
+                    var pixelBuffer = ArrayPool<float>.Shared.Rent(_inputShapeSize);
+
+                    try
+                    {
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, pixelBuffer);
+                        inferenceResult = YoloOptions.ExecutionProvider.Run<float>(pixelBuffer);
+                    }
+                    finally
+                    {
+                        ArrayPool<float>.Shared.Return(pixelBuffer, clearArray: false);
+                    }
                 }
+
+                // Attach original image size for downstream box scaling
+                inferenceResult.ImageOriginalSize = originalImageSize;
+
+                return inferenceResult;
+            }
+            finally
+            {
+                _pinnedMemoryPool.Return(pinnedBuffer);
             }
         }
 
@@ -117,7 +118,10 @@ namespace YoloDotNet.Core
         /// </summary>
         /// <param name="predictionSpan">A span with predition results</param>
         /// <param name="iouThreshold">Higher Iou-threshold result in fewer detections by excluding overlapping boxes.</param>
-        /// <returns>A filtered Span<ObjectResult> with non-overlapping bounding boxes based on confidence scores.</returns>
+        /// <returns>
+        /// The non-overlapping bounding boxes, sorted by confidence, as the leading part of <paramref name="predictionSpan"/>.
+        /// The kept boxes are compacted in place, so the result is only valid for as long as <paramref name="predictionSpan"/> is.
+        /// </returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Span<ObjectResult> RemoveOverlappingBoxes(Span<ObjectResult> predictionSpan, double iouThreshold)
         {
@@ -129,34 +133,28 @@ namespace YoloDotNet.Core
             // Sort by confidence
             MemoryExtensions.Sort(predictionSpan, ConfidenceComparer.Instance);
 
-            var buffer = ArrayPool<ObjectResult>.Shared.Rent(totalPredictions);
-
-            try
+            // Compact the kept boxes to the front of the span. The write index never passes the read index,
+            // so every box is read before its slot can be overwritten, and no separate buffer is needed.
+            var counter = 0;
+            for (int i = 0; i < totalPredictions; i++)
             {
-                var counter = 0;
-                for (int i = 0; i < totalPredictions; i++)
+                var item = predictionSpan[i];
+
+                bool overlapFound = false;
+                for (int j = 0; j < counter; j++)
                 {
-                    var item = predictionSpan[i];
-
-                    bool overlapFound = false;
-                    for (int j = 0; j < counter; j++)
+                    if (CalculateIoU(item.BoundingBox, predictionSpan[j].BoundingBox) > iouThreshold)
                     {
-                        if (CalculateIoU(item.BoundingBox, buffer[j].BoundingBox) > iouThreshold)
-                        {
-                            overlapFound = true;
-                            break;
-                        }
+                        overlapFound = true;
+                        break;
                     }
-
-                    if (!overlapFound)
-                        buffer[counter++] = item;
                 }
-                return buffer.AsSpan(0, counter);
+
+                if (!overlapFound)
+                    predictionSpan[counter++] = item;
             }
-            finally
-            {
-                ArrayPool<ObjectResult>.Shared.Return(buffer, false);
-            }
+
+            return predictionSpan[..counter];
         }
 
         /// <summary>
@@ -329,13 +327,16 @@ namespace YoloDotNet.Core
         /// Converts a collection of object detection results to a list of the specified type, optionally transforming
         /// bounding boxes and keypoints based on a region of interest.
         /// </summary>
+        /// <remarks>
+        /// Returns a new list on every call, so results handed to one caller are never cleared or refilled by another
+        /// call on the same instance (for example when inference runs in parallel).
+        /// </remarks>
         internal static List<T> InferenceResultsToType<T>(
             Span<ObjectResult> detections,
             SKRectI? roi,
-            List<T> results,
             Func<ObjectResult, T> converter)
         {
-            results.Clear();
+            var results = new List<T>(detections.Length);
 
             // If ROI is provided, transform bounding boxes and keypoints back to original image coordinates before converting to the desired type.
             if (roi.HasValue)

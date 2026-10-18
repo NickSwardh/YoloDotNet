@@ -15,7 +15,6 @@ namespace YoloDotNet.Modules.V8
         private readonly int _elements;
         private readonly int _predictions;
         private readonly int _outputShapeMaskChannels;
-        private List<Segmentation> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -59,15 +58,14 @@ namespace YoloDotNet.Modules.V8
             _scalingFactorW = (float)_maskWidth / inputWidth;
             _scalingFactorH = (float)_maskHeight / inputHeight;
 
-            _results = [];
         }
 
         public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = RunSegmentation(inferenceResult, confidence, pixelConfidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (Segmentation)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (Segmentation)r);
         }
 
         private Span<ObjectResult> RunSegmentation(InferenceResult inferenceResult, double confidence, double pixelConfidence, double iou)

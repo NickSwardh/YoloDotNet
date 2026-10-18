@@ -10,7 +10,6 @@ namespace YoloDotNet.Modules.V8
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
         private ArrayPool<ClassificationEntry> _classificationPool = default!;
-        private List<Classification> _results = default!;
 
         public ClassificationModuleV8(YoloCore yoloCore)
         {
@@ -18,12 +17,11 @@ namespace YoloDotNet.Modules.V8
 
             var poolSize = YoloCore.CalculateBufferPoolSize(_yoloCore.OnnxModel.Labels.Length);
             _classificationPool = ArrayPool<ClassificationEntry>.Create(poolSize, 10);
-            _results = [];
         }
 
         public List<Classification> ProcessImage<T>(T image, double classes, double pixelConfidence, double iou)
         {
-            var inferenceResult = _yoloCore.Run(image, null);
+            using var inferenceResult = _yoloCore.Run(image, null);
             return ClassifyTensor(inferenceResult.OrtSpan0, (int)classes);
         }
 
@@ -36,7 +34,7 @@ namespace YoloDotNet.Modules.V8
         private List<Classification> ClassifyTensor(ReadOnlySpan<float> span, int numberOfClasses)
         {
             var poolBuffer = _classificationPool.Rent(span.Length);
-            _results.Clear();
+            var results = new List<Classification>(numberOfClasses);
 
             try
             {
@@ -53,14 +51,14 @@ namespace YoloDotNet.Modules.V8
                 for (int i = 0; i < numberOfClasses; i++)
                 {
                     var entry = poolBuffer[i];
-                    _results.Add(new Classification
+                    results.Add(new Classification
                     {
                         Confidence = entry.Confidence,
                         Label = _yoloCore.OnnxModel.Labels[entry.LabelId].Name
                     });
                 }
 
-                return _results;
+                return results;
             }
             finally
             {

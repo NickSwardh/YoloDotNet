@@ -11,7 +11,6 @@ namespace YoloDotNet.Modules.V8
         private int _inputChannels;
         private int _modelOutputChannels;
         private int _modelOutputElements;
-        private List<PoseEstimation> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -30,15 +29,14 @@ namespace YoloDotNet.Modules.V8
             _modelOutputChannels = outputShape[2];
 
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
-            _results = [];
         }
 
         public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = PoseEstimateImage(inferenceResult, confidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (PoseEstimation)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (PoseEstimation)r);
         }
 
         #region Helper methods

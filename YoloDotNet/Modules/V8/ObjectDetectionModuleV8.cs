@@ -14,7 +14,6 @@ namespace YoloDotNet.Modules.V8
         private readonly int _attribute2;
         private readonly int _attribute3;
         private readonly int _attribute4;
-        private List<ObjectDetection> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -34,15 +33,14 @@ namespace YoloDotNet.Modules.V8
             _attribute4 = _attribute * 4;   // height
 
             _labels = _yoloCore.OnnxModel.Labels.Length;
-            _results = [];
         }
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var result = _yoloCore.Run(image, roi);
+            using var result = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(result, confidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (ObjectDetection)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (ObjectDetection)r);
         }
 
         #region Helper methods
@@ -151,7 +149,9 @@ namespace YoloDotNet.Modules.V8
                 var resultArray = boxes.AsSpan(0, validBoxCount);
 
                 // Remove overlapping boxes using Non-Maximum Suppression (NMS)
-                return _yoloCore.RemoveOverlappingBoxes(resultArray, overlapThreshold);
+                // Copy the results out: NMS compacts them inside 'boxes', which goes back to the shared ArrayPool
+                // in the finally block below, where any other inference call could rent and overwrite it.
+                return _yoloCore.RemoveOverlappingBoxes(resultArray, overlapThreshold).ToArray();
             }
             finally
             {

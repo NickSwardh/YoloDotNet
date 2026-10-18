@@ -12,7 +12,6 @@ namespace YoloDotNet.Modules.V26
         private int _keypointDimension;
         private int _totalKeyPoints;
         private int _stride;
-        private List<PoseEstimation> _results = default!;
         private KeyPoint[] _keyPoints = default!;
 
         public event EventHandler VideoProgressEvent = delegate { };
@@ -40,16 +39,15 @@ namespace YoloDotNet.Modules.V26
             _totalKeyPoints = keyPointsSize / _keypointDimension;
 
             // Initialize reusable arrays
-            _results = [];
             _keyPoints = new KeyPoint[_totalKeyPoints];
         }
 
         public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = ObjectDetection(inferenceResult, confidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (PoseEstimation)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (PoseEstimation)r);
         }
 
         #region Helper methods
@@ -133,7 +131,9 @@ namespace YoloDotNet.Modules.V26
                     };
                 }
 
-                return boxes.AsSpan(0, validBoxCount);
+                // Copy the results out: 'boxes' goes back to the shared ArrayPool in the finally block below,
+                // where any other inference call could rent and overwrite it.
+                return boxes.AsSpan(0, validBoxCount).ToArray();
             }
             finally
             {

@@ -8,7 +8,6 @@ namespace YoloDotNet.Modules.V8
     {
         private readonly YoloCore _yoloCore;
         private readonly ObjectDetectionModuleV8 _objectDetectionModule = default!;
-        private List<OBBDetection> _results = default!;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -16,7 +15,6 @@ namespace YoloDotNet.Modules.V8
         {
             _yoloCore = yoloCore;
             _objectDetectionModule = new ObjectDetectionModuleV8(_yoloCore);
-            _results = [];
 
             // Override image resize to Proportional for OBB detection
             // OBB requires proportional resizing to maintain geometric validity
@@ -25,10 +23,10 @@ namespace YoloDotNet.Modules.V8
 
         public List<OBBDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = _objectDetectionModule.ObjectDetection(inferenceResult, confidence, iou);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (OBBDetection)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (OBBDetection)r);
         }
 
         #region Helper methods

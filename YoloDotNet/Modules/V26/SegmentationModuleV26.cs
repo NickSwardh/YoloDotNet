@@ -26,7 +26,6 @@ namespace YoloDotNet.Modules.V26
         private readonly int _elements;
         private readonly int _predictions;
         private readonly int _outputShapeMaskChannels;
-        private List<Segmentation> _results = default!;
         private MaskWeights32 _maskWeights32 = default;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
@@ -64,15 +63,14 @@ namespace YoloDotNet.Modules.V26
             _scalingFactorW = (float)_maskWidth / inputWidth;
             _scalingFactorH = (float)_maskHeight / inputHeight;
 
-            _results = [];
         }
 
         public List<Segmentation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
-            var inferenceResult = _yoloCore.Run(image, roi);
+            using var inferenceResult = _yoloCore.Run(image, roi);
             var detections = RunSegmentation(inferenceResult, confidence, pixelConfidence);
 
-            return YoloCore.InferenceResultsToType(detections, roi, _results, r => (Segmentation)r);
+            return YoloCore.InferenceResultsToType(detections, roi, r => (Segmentation)r);
         }
 
         private Span<ObjectResult> RunSegmentation(InferenceResult inferenceResult, double confidenceThreshold, double pixelConfidence)
@@ -171,7 +169,9 @@ namespace YoloDotNet.Modules.V26
                     validBoxCount++;
                 }
 
-                return boxes.AsSpan(0, validBoxCount);
+                // Copy the results out: 'boxes' goes back to the shared ArrayPool in the finally block below,
+                // where any other inference call could rent and overwrite it.
+                return boxes.AsSpan(0, validBoxCount).ToArray();
 
             }
             finally
