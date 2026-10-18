@@ -240,33 +240,49 @@ namespace YoloDotNet.Extensions
             var width = (int)inputShape[3];
             int totalPixels = width * height;
 
-            float inv255 = 1.0f / 255.0f;
             byte* src = (byte*)pixelsPtr;
 
-            if (colorChannels == 1)
+            // Pin the destination buffer and the lookup table for the duration of the write to avoid the GC
+            // relocating them while raw pointers are in use.
+            fixed (ushort* dst = tensorArrayBuffer)
+            fixed (ushort* byteToHalf = _byteToNormalizedHalf)
             {
-                ushort* dst = (ushort*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
-                int srcIndex = 0;
-
-                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
+                if (colorChannels == 1)
                 {
-                    dst[i] = FloatToUshort(src[srcIndex] * inv255);
+                    int srcIndex = 0;
+                    for (int i = 0; i < totalPixels; i++, srcIndex += 4)
+                        dst[i] = byteToHalf[src[srcIndex]];
+                }
+                else
+                {
+                    ushort* dstR = dst;
+                    ushort* dstG = dstR + totalPixels;
+                    ushort* dstB = dstG + totalPixels;
+
+                    int srcIndex = 0;
+                    for (int i = 0; i < totalPixels; i++, srcIndex += 4)
+                    {
+                        dstR[i] = byteToHalf[src[srcIndex]];
+                        dstG[i] = byteToHalf[src[srcIndex + 1]];
+                        dstB[i] = byteToHalf[src[srcIndex + 2]];
+                    }
                 }
             }
-            else
-            {
-                ushort* dstR = (ushort*)Unsafe.AsPointer(ref tensorArrayBuffer[0]);
-                ushort* dstG = dstR + totalPixels;
-                ushort* dstB = dstG + totalPixels;
+        }
 
-                int srcIndex = 0;
-                for (int i = 0; i < totalPixels; i++, srcIndex += 4)
-                {
-                    dstR[i] = FloatToUshort(src[srcIndex] * inv255);
-                    dstG[i] = FloatToUshort(src[srcIndex + 1] * inv255);
-                    dstB[i] = FloatToUshort(src[srcIndex + 2] * inv255);
-                }
-            }
+        // Normalized half-precision value for every possible byte: FloatToUshort(b / 255) for b = 0..255.
+        // A pixel channel is a byte, so a table lookup replaces the per-value float-to-half conversion.
+        private static readonly ushort[] _byteToNormalizedHalf = BuildByteToNormalizedHalfTable();
+
+        private static ushort[] BuildByteToNormalizedHalfTable()
+        {
+            const float inv255 = 1.0f / 255.0f;
+            var table = new ushort[256];
+
+            for (int b = 0; b < table.Length; b++)
+                table[b] = FloatToUshort(b * inv255);
+
+            return table;
         }
 
         // Helper method to convert float to half-precision (16-bit) float (ushort)
