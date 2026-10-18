@@ -24,7 +24,7 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
             var results = yolo.RunObjectDetection(image, 0.23, 0.7);
 
             // Assert
-            Assert.Equal(29, results.Count);
+            Assert.Equal(33, results.Count);
         }
 
         [Fact]

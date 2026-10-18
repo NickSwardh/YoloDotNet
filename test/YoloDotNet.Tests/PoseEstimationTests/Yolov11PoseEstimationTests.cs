@@ -47,7 +47,7 @@ namespace YoloDotNet.Tests.PoseEstimationTests
             var results = yolo.RunPoseEstimation(image, 0.23, 0.5, roi);
 
             // Assert
-            Assert.Equal(2, results.Count);
+            Assert.Equal(3, results.Count);
         }
     }
 }

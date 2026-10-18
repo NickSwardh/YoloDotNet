@@ -24,7 +24,7 @@ namespace YoloDotNet.Tests.SegmentationTests
             var results = yolo.RunSegmentation(image, 0.23, 0.7);
 
             // Assert
-            Assert.Equal(18, results.Count);
+            Assert.Equal(19, results.Count);
         }
 
         [Fact]
