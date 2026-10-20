@@ -98,12 +98,10 @@ namespace YoloDotNet.Modules.V8
                     // 'Stretched' scales the image to fill the dimensions, possibly distorting the aspect ratio
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
-                        var gain = xGain; // Scale factor for proportional resizing
-
-                        xMin = (int)((x - w / 2 - xPad) * gain);
-                        yMin = (int)((y - h / 2 - yPad) * gain);
-                        xMax = (int)((x + w / 2 - xPad) * gain);
-                        yMax = (int)((y + h / 2 - yPad) * gain);
+                        xMin = (int)MathF.Round((x - w / 2 - xPad) * xGain);
+                        yMin = (int)MathF.Round((y - h / 2 - yPad) * yGain);
+                        xMax = (int)MathF.Round((x + w / 2 - xPad) * xGain);
+                        yMax = (int)MathF.Round((y + h / 2 - yPad) * yGain);
                     }
                     else
                     {
@@ -112,34 +110,26 @@ namespace YoloDotNet.Modules.V8
 
                         // Manual clamping is faster than Math.Clamp in tight loops
 
-                        int val = (int)((x - halfW - xPad) / xGain);
+                        int val = (int)MathF.Round((x - halfW - xPad) / xGain);
                         xMin = val < 0 ? 0 : (val > width - 1 ? width - 1 : val);
 
-                        int valY = (int)((y - halfH - yPad) / yGain);
+                        int valY = (int)MathF.Round((y - halfH - yPad) / yGain);
                         yMin = valY < 0 ? 0 : (valY > height - 1 ? height - 1 : valY);
 
-                        int valXMax = (int)((x + halfW - xPad) / xGain);
+                        int valXMax = (int)MathF.Round((x + halfW - xPad) / xGain);
                         xMax = valXMax < 0 ? 0 : (valXMax > width - 1 ? width - 1 : valXMax);
 
-                        int valYMax = (int)((y + halfH - yPad) / yGain);
+                        int valYMax = (int)MathF.Round((y + halfH - yPad) / yGain);
                         yMax = valYMax < 0 ? 0 : (valYMax > height - 1 ? height - 1 : valYMax);
                     }
 
-                    // Unscaled coordinates for resized input image
-                    var sxMin = (int)(x - w / 2);
-                    var syMin = (int)(y - h / 2);
-                    var sxMax = (int)(x + w / 2);
-                    var syMax = (int)(y + h / 2);
-
                     var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-                    var boundingBoxUnscaled = new SKRectI(sxMin, syMin, sxMax, syMax);
 
                     boxes[validBoxCount++] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[bestLabelIndex],
                         Confidence = bestConfidence,
                         BoundingBox = boundingBox,
-                        BoundingBoxUnscaled = boundingBoxUnscaled,
                         BoundingBoxIndex = i,
                         OrientationAngle = _yoloCore.OnnxModel.ModelType == ModelType.ObbDetection ? ortSpan[i + _attribute * (4 + _labels)] : 0
                     };

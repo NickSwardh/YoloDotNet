@@ -21,10 +21,10 @@ namespace YoloDotNet.Tests.SegmentationTests
             using var image = SKBitmap.Decode(testImage);
 
             // Act
-            var results = yolo.RunSegmentation(image, 0.23, 0.7);
+            var results = yolo.RunSegmentation(image, 0.25, 0.5);
 
             // Assert
-            Assert.Equal(23, results.Count);
+            Assert.Equal(22, results.Count);
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace YoloDotNet.Tests.SegmentationTests
             var roi = SKRectI.Create(228, 415, 131, 310);
 
             // Act
-            var results = yolo.RunSegmentation(image, 0.23, 0.7, roi: roi);
+            var results = yolo.RunSegmentation(image, 0.25, 0.5, roi: roi);
 
             // Assert
             Assert.Single(results);

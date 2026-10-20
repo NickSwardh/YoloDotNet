@@ -82,17 +82,17 @@ namespace YoloDotNet.Modules.V26
 
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
-                        xMin = (int)((x - xPad) * xGain);
-                        yMin = (int)((y - yPad) * xGain);
-                        xMax = (int)((w - xPad) * xGain);
-                        yMax = (int)((h - yPad) * xGain);
+                        xMin = (int)MathF.Round((x - xPad) * xGain);
+                        yMin = (int)MathF.Round((y - yPad) * yGain);
+                        xMax = (int)MathF.Round((w - xPad) * xGain);
+                        yMax = (int)MathF.Round((h - yPad) * yGain);
 
                         // Extract keypoints
                         for (int k = offset; k < keypointDataSize + offset; k += 3)
                         {
                             // Get keypoint coordinates and confidence and rescale to original image size
-                            var keypointX = (int)((ortSpan[k] - xPad) * xGain);
-                            var keypointY = (int)((ortSpan[k + 1] - yPad) * xGain);
+                            var keypointX = (int)MathF.Round((ortSpan[k] - xPad) * xGain);
+                            var keypointY = (int)MathF.Round((ortSpan[k + 1] - yPad) * yGain);
                             var keypointConf = ortSpan[k + 2];
 
                             _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
@@ -100,17 +100,17 @@ namespace YoloDotNet.Modules.V26
                     }
                     else // Stretched
                     {
-                        xMin = (int)(x / xGain);
-                        yMin = (int)(y / yGain);
-                        xMax = (int)(w / xGain);
-                        yMax = (int)(h / yGain);
+                        xMin = (int)MathF.Round(x / xGain);
+                        yMin = (int)MathF.Round(y / yGain);
+                        xMax = (int)MathF.Round(w / xGain);
+                        yMax = (int)MathF.Round(h / yGain);
 
                         // Extract keypoints
                         for (int k = offset; k < keypointDataSize + offset; k += 3)
                         {
                             // Get keypoint coordinates and confidence and rescale to original image size
-                            var keypointX = (int)(ortSpan[k] / xGain);
-                            var keypointY = (int)(ortSpan[k + 1] / yGain);
+                            var keypointX = (int)MathF.Round(ortSpan[k] / xGain);
+                            var keypointY = (int)MathF.Round(ortSpan[k + 1] / yGain);
                             var keypointConf = ortSpan[k + 2];
 
                             _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
@@ -118,14 +118,12 @@ namespace YoloDotNet.Modules.V26
                     }
 
                     var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-                    var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
 
                     boxes[validBoxCount++] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
                         BoundingBox = boundingBox,
-                        BoundingBoxUnscaled = boundingBoxUnscaled,
                         BoundingBoxIndex = i,
                         KeyPoints = [.. _keyPoints]
                     };

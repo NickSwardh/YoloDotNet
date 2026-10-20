@@ -48,7 +48,7 @@ namespace YoloDotNet.Modules.V8
             var imageSize = inferenceResult.ImageOriginalSize;
             var ortSpan = inferenceResult.OrtSpan0;
 
-            var (xPad, yPad, gain, _) = _yoloCore.CalculateGain(imageSize);
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
             var labels = _yoloCore.OnnxModel.Labels.Length;
             var totalKeypoints = (int)Math.Floor(((double)_modelOutputElements / _inputChannels)) - labels;
@@ -67,26 +67,18 @@ namespace YoloDotNet.Modules.V8
                     var cIndex = yIndex + _modelOutputChannels;
                     keypointOffset += _modelOutputChannels * 3;
 
-                    var x = 0;
-                    var y = 0;
+                    int x, y;
 
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
-                        x = (int)((ortSpan[xIndex] - xPad) * gain);
-                        y = (int)((ortSpan[yIndex] - yPad) * gain);
+                        x = (int)MathF.Round((ortSpan[xIndex] - xPad) * xGain);
+                        y = (int)MathF.Round((ortSpan[yIndex] - yPad) * yGain);
                     }
                     else
                     {
-                        // Map keypoints proportionally into resized bounding box
-                        var relativeX = (ortSpan[xIndex] - box.BoundingBoxUnscaled.Left) / box.BoundingBoxUnscaled.Width;
-                        var relativeY = (ortSpan[yIndex] - box.BoundingBoxUnscaled.Top) / box.BoundingBoxUnscaled.Height;
-
-                        x = (int)(box.BoundingBox.Left + relativeX * box.BoundingBox.Width);
-                        y = (int)(box.BoundingBox.Top + relativeY * box.BoundingBox.Height);
-
-                        // Clamp to ensure keypoint is inside box
-                        x = Math.Clamp(x, box.BoundingBox.Left, box.BoundingBox.Right - 1);
-                        y = Math.Clamp(y, box.BoundingBox.Top, box.BoundingBox.Bottom - 1);
+                        // Rescale keypoints directly to the original image size, like the bounding box
+                        x = (int)MathF.Round((ortSpan[xIndex] - xPad) / xGain);
+                        y = (int)MathF.Round((ortSpan[yIndex] - yPad) / yGain);
                     }
 
                     var confidence = ortSpan[cIndex];

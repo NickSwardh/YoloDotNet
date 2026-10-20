@@ -105,9 +105,9 @@ namespace YoloDotNet.Modules.RTDETR
                     {
                         // Proportional: uniform scaling with letterbox padding
                         halfWidthScaled = (w * _modelInputWidth * 0.5f) * xGain;
-                        halfHeightScaled = (h * _modelInputHeight * 0.5f) * xGain;
+                        halfHeightScaled = (h * _modelInputHeight * 0.5f) * yGain;
                         xCenterOriginal = (x * _modelInputWidth - xPad) * xGain;
-                        yCenterOriginal = (y * _modelInputHeight - yPad) * xGain;
+                        yCenterOriginal = (y * _modelInputHeight - yPad) * yGain;
                     }
                     else
                     {
@@ -119,10 +119,10 @@ namespace YoloDotNet.Modules.RTDETR
                     }
 
                     // Calculate corners with manual clamping for better performance
-                    int xMinTemp = (int)(xCenterOriginal - halfWidthScaled);
-                    int yMinTemp = (int)(yCenterOriginal - halfHeightScaled);
-                    int xMaxTemp = (int)(xCenterOriginal + halfWidthScaled);
-                    int yMaxTemp = (int)(yCenterOriginal + halfHeightScaled);
+                    int xMinTemp = (int)MathF.Round(xCenterOriginal - halfWidthScaled);
+                    int yMinTemp = (int)MathF.Round(yCenterOriginal - halfHeightScaled);
+                    int xMaxTemp = (int)MathF.Round(xCenterOriginal + halfWidthScaled);
+                    int yMaxTemp = (int)MathF.Round(yCenterOriginal + halfHeightScaled);
 
                     // Manual clamping is faster than Math.Clamp in tight loops
                     var xMin = xMinTemp < 0 ? 0 : (xMinTemp >= imageSize.Width ? imageSize.Width - 1 : xMinTemp);

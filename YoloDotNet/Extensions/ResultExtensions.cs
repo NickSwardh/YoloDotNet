@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Niklas Sw�rd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 #pragma warning disable IL2026 // Reflection-based serialization
@@ -37,7 +37,7 @@ namespace YoloDotNet.Extensions
 
         #endregion
 
-            #region YOLO Format Export - Classification (Not Supported)
+        #region YOLO Format Export - Classification (Not Supported)
 
         /// <exception cref="NotSupportedException">Classification does not support YOLO annotation format.</exception>
         public static string ToYoloFormat(this IEnumerable<Classification> results, SKBitmap image)
@@ -202,18 +202,18 @@ namespace YoloDotNet.Extensions
             {
                 var box = d.BoundingBox;
 
-                // Extract ordered contour points from the bit-packed mask
-                var contourPoints = ImageExtension.ExtractOrderedContourPoints(d.BitPackedPixelMask, box.Width, box.Height, maxPoints: 50);
+                // Ordered points of the object's main outline, in image coordinates
+                var contourPoints = d.GetContourPoints(maxPoints: 50);
 
                 sb.Append(d.Label.Index);
 
-                if (contourPoints.Count >= 3)
+                if (contourPoints.Length >= 3)
                 {
                     foreach (var point in contourPoints)
                     {
-                        // Convert from mask-relative to image coordinates, then normalize
-                        var px = (box.Left + point.X) / w;
-                        var py = (box.Top + point.Y) / h;
+                        // Normalize image coordinates
+                        var px = point.X / w;
+                        var py = point.Y / h;
                         sb.Append(string.Format(CultureInfo.InvariantCulture, " {0:F6} {1:F6}", px, py));
                     }
                 }
@@ -405,12 +405,12 @@ namespace YoloDotNet.Extensions
             writer.WriteEndObject();
 
             // ContourPoints (computed during serialization)
-            if (value.BitPackedPixelMask.Length > 0)
+            if (value.Contours.Length > 0)
             {
-                var box = value.BoundingBox;
-                var contourPoints = ImageExtension.ExtractOrderedContourPoints(value.BitPackedPixelMask, box.Width, box.Height);
+                // Ordered points of the object's main outline, in image coordinates
+                var contourPoints = value.GetContourPoints();
 
-                if (contourPoints.Count > 0)
+                if (contourPoints.Length > 0)
                 {
                     writer.WritePropertyName("contourPoints");
                     writer.WriteStartArray();
@@ -418,8 +418,8 @@ namespace YoloDotNet.Extensions
                     foreach (var point in contourPoints)
                     {
                         writer.WriteStartObject();
-                        writer.WriteNumber("x", box.Left + point.X);
-                        writer.WriteNumber("y", box.Top + point.Y);
+                        writer.WriteNumber("x", point.X);
+                        writer.WriteNumber("y", point.Y);
                         writer.WriteEndObject();
                     }
 

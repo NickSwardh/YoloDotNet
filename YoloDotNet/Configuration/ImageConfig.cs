@@ -17,9 +17,6 @@ namespace YoloDotNet.Configuration
 
         public const int DEFAULT_OPACITY = 128;
 
-        public const int SEGMENTATION_MASK_OPACITY = 80;
-        public const float SEGMENTATION_PIXEL_THRESHOLD = .68f;
-
         public const float POSE_KEYPOINT_THRESHOLD = 0.65f;
 
         // Image size used for GPU memory allocation.
@@ -43,7 +40,6 @@ namespace YoloDotNet.Configuration
 
         // Letterbox padding colour (gray 114) that YOLO models are trained with.
         public static readonly SKColor LetterboxPaddingColor = new(114, 114, 114);
-        public static readonly SKSamplingOptions SegmentationResamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None);
 
         public static readonly SKPaint PaintFill = new()
         {
@@ -69,11 +65,6 @@ namespace YoloDotNet.Configuration
         {
             Color = new SKColor(0, 0, 0, DEFAULT_OPACITY),
             IsAntialias = true
-        };
-
-        public static readonly SKPaint EdgeBlur = new()
-        {
-            ImageFilter = SKImageFilter.CreateBlur(0.8f, 0.8f)
         };
 
         public static readonly ClassificationDrawingOptions DefaultClassificationDrawingOptions = new();

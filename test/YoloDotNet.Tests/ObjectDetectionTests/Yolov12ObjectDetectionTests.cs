@@ -21,10 +21,10 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
             using var image = SKBitmap.Decode(testImage);
 
             // Act
-            var results = yolo.RunObjectDetection(image, 0.23, 0.7);
+            var results = yolo.RunObjectDetection(image, 0.25, 0.5);
 
             // Assert
-            Assert.Equal(30, results.Count);
+            Assert.Equal(27, results.Count);
         }
 
         [Fact]
@@ -44,7 +44,7 @@ namespace YoloDotNet.Tests.ObjectDetectionTests
             var roi = SKRectI.Create(246, 350, 265, 117);
 
             // Act
-            var results = yolo.RunObjectDetection(image, 0.23, 0.7, roi);
+            var results = yolo.RunObjectDetection(image, 0.25, 0.5, roi);
 
             // Assert
             Assert.Equal(2, results.Count);

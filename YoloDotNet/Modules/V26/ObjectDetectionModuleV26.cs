@@ -70,22 +70,21 @@ namespace YoloDotNet.Modules.V26
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
                         // Undo padding and rescale boxes to original image size
-                        xMin = (int)((x - xPad) * xGain);
-                        yMin = (int)((y - yPad) * xGain);
-                        xMax = (int)((w - xPad) * xGain);
-                        yMax = (int)((h - yPad) * xGain);
+                        xMin = (int)MathF.Round((x - xPad) * xGain);
+                        yMin = (int)MathF.Round((y - yPad) * yGain);
+                        xMax = (int)MathF.Round((w - xPad) * xGain);
+                        yMax = (int)MathF.Round((h - yPad) * yGain);
                     }
                     else
                     {
                         // Rescale boxes to original image size
-                        xMin = (int)(x / xGain);
-                        yMin = (int)(y / yGain);
-                        xMax = (int)(w / xGain);
-                        yMax = (int)(h / yGain);
+                        xMin = (int)MathF.Round(x / xGain);
+                        yMin = (int)MathF.Round(y / yGain);
+                        xMax = (int)MathF.Round(w / xGain);
+                        yMax = (int)MathF.Round(h / yGain);
                     }
 
                     var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-                    var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
 
                     // Add box to results
                     boxes[validBoxCount++] = new ObjectResult
@@ -93,7 +92,6 @@ namespace YoloDotNet.Modules.V26
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
                         BoundingBox = boundingBox,
-                        BoundingBoxUnscaled = boundingBoxUnscaled,
                         BoundingBoxIndex = i
                     };
                 }

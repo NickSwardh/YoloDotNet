@@ -113,7 +113,7 @@ namespace ObjectDetectionDemo
             using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.ObjectDetection));
 
             // Run object detection inference
-            var results = yolo.RunObjectDetection(image, confidence: 0.15, iou: 0.7);
+            var results = yolo.RunObjectDetection(image, confidence: 0.25, iou: 0.5);
 
             // Draw results with optional drawing options
             image.Draw(results, _drawingOptions);

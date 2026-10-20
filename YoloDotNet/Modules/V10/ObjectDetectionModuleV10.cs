@@ -68,22 +68,20 @@ namespace YoloDotNet.Modules.V10
 
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
-                        xMin = (int)((x - xPad) * xGain);
-                        yMin = (int)((y - yPad) * xGain);
-                        xMax = (int)((w - xPad) * xGain);
-                        yMax = (int)((h - yPad) * xGain);
+                        xMin = (int)MathF.Round((x - xPad) * xGain);
+                        yMin = (int)MathF.Round((y - yPad) * yGain);
+                        xMax = (int)MathF.Round((w - xPad) * xGain);
+                        yMax = (int)MathF.Round((h - yPad) * yGain);
                     }
                     else
                     {
-                        var halfW = w / 2;
-                        var halfH = h / 2;
-
-                        // Calculate bounding box coordinates adjusted for stretched scaling and padding
+                        // The model outputs corner coordinates (x1, y1, x2, y2), as in the proportional branch.
+                        // Rescale them to the original image size for stretched scaling and padding.
                         // Clamp ensures the coordinates remain within the valid bounds of the image.
-                        xMin = Math.Clamp((int)((x - halfW - xPad) / xGain), 0, width - 1);
-                        yMin = Math.Clamp((int)((y - halfH - yPad) / yGain), 0, height - 1);
-                        xMax = Math.Clamp((int)((x + halfW - xPad) / xGain), 0, width - 1);
-                        yMax = Math.Clamp((int)((y + halfH - yPad) / yGain), 0, height - 1);
+                        xMin = Math.Clamp((int)MathF.Round((x - xPad) / xGain), 0, width - 1);
+                        yMin = Math.Clamp((int)MathF.Round((y - yPad) / yGain), 0, height - 1);
+                        xMax = Math.Clamp((int)MathF.Round((w - xPad) / xGain), 0, width - 1);
+                        yMax = Math.Clamp((int)MathF.Round((h - yPad) / yGain), 0, height - 1);
                     }
 
                     boxes[validBoxCount++] = new ObjectResult

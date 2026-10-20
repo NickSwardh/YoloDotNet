@@ -22,19 +22,14 @@ namespace YoloDotNet.Models
         public SKRectI BoundingBox { get; set; }
 
         /// <summary>
-        /// Region of interest (bounding box) of the detected object for ONNX model dimensions.
-        /// </summary>
-        public SKRect BoundingBoxUnscaled { get; set; }
-
-        /// <summary>
         /// Index of bounding box
         /// </summary>
         public int BoundingBoxIndex { get; set; }
 
         /// <summary>
-        /// Bit-packed mask where each bit represents a pixel with confidence above a threshold (1 = present, 0 = absent).
+        /// Outlines of the segmentation mask: closed polygons in image coordinates (see <see cref="Segmentation.Contours"/>).
         /// </summary>
-        public byte[] BitPackedPixelMask { get; set; } = [];
+        public SKPoint[][] Contours { get; set; } = [];
 
         /// <summary>
         /// Confidence value, X and Y coordinates for Pose Estimation key points
@@ -67,7 +62,7 @@ namespace YoloDotNet.Models
             Label = result.Label,
             Confidence = result.Confidence,
             BoundingBox = result.BoundingBox,
-            BitPackedPixelMask = result.BitPackedPixelMask
+            Contours = result.Contours
         };
 
         public static explicit operator PoseEstimation(ObjectResult result) => new()

@@ -85,20 +85,18 @@ namespace YoloDotNet.Modules.V26
 
                     // The model outputs are center-x/center-y/width/height.
                     // Convert to corner coordinates using half width/height and apply padding+gain.
-                    xMin = (int)((x - halfW - xPad) * xGain);
-                    yMin = (int)((y - halfH - yPad) * xGain);
-                    xMax = (int)((x + halfW - xPad) * xGain);
-                    yMax = (int)((y + halfH - yPad) * xGain);
+                    xMin = (int)MathF.Round((x - halfW - xPad) * xGain);
+                    yMin = (int)MathF.Round((y - halfH - yPad) * yGain);
+                    xMax = (int)MathF.Round((x + halfW - xPad) * xGain);
+                    yMax = (int)MathF.Round((y + halfH - yPad) * yGain);
 
                     var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-                    var boundingBoxUnscaled = new SKRectI((int)x, (int)y, (int)w, (int)h);
 
                     boxes[validBoxCount++] = new ObjectResult
                     {
                         Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
                         Confidence = confidence,
                         BoundingBox = boundingBox,
-                        BoundingBoxUnscaled = boundingBoxUnscaled,
                         BoundingBoxIndex = i,
                         OrientationAngle = angle
                     };

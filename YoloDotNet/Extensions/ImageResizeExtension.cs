@@ -88,13 +88,14 @@ namespace YoloDotNet.Extensions
         /// <remarks>
         /// Images smaller than the model input are scaled up as well, so objects reach the scale the model was trained on.
         /// </remarks>
-        private static SKRectI ProportionalDestination(int width, int height, int modelWidth, int modelHeight)
+        internal static SKRectI ProportionalDestination(int width, int height, int modelWidth, int modelHeight)
         {
-            float scaleFactor = Math.Min((float)modelWidth / width, (float)modelHeight / height);
+            double scaleFactor = Math.Min((double)modelWidth / width, (double)modelHeight / height);
 
-            // Use integer rounding instead of Math.Round
-            int newWidth = (int)((width * scaleFactor) + 0.5f);
-            int newHeight = (int)((height * scaleFactor) + 0.5f);
+            // Round half to even in double precision, as the Ultralytics letterbox does, so that the
+            // model receives the same input (e.g. 853 * 0.5 = 426.5 is resized to 426 rows, not 427).
+            int newWidth = (int)Math.Round(width * scaleFactor, MidpointRounding.ToEven);
+            int newHeight = (int)Math.Round(height * scaleFactor, MidpointRounding.ToEven);
 
             // Centre the image within the model dimensions
             int x = (modelWidth - newWidth) / 2;
@@ -418,7 +419,7 @@ namespace YoloDotNet.Extensions
                 if (mantissa == 0)
                     return (ushort)(sign | 0x7C00); // Inf
                 return (ushort)(sign | 0x7C00 | (mantissa >> 13)); // NaN
-                }
+            }
             else
             {
                 if (exponent > 30)

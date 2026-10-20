@@ -163,24 +163,6 @@ namespace YoloDotNet.Core
         public static int CalculateBufferPoolSize(int bufferSize) => 1 << (int)Math.Ceiling(Math.Log2(bufferSize));
 
         /// <summary>
-        /// Squash value to a number between 0 and 1
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float Sigmoid(float value) => 1 / (1 + MathF.Exp(-value));
-
-        /// <summary>
-        /// Calculate pixel luminance
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte CalculatePixelLuminance(float value) => (byte)(255 - value * 255);
-
-        /// <summary>
-        /// Calculate pixel by byte to confidence
-        /// </summary>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static float CalculatePixelConfidence(byte value) => value / 255F;
-
-        /// <summary>
         /// Calculate radian to degree
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -224,30 +206,21 @@ namespace YoloDotNet.Core
         /// so that the detected object can be resized to match the original image size.
         /// </summary>
         /// <param name="size">The original image size.</param>
+        /// <returns>The letterbox padding and the per-axis gain (original size / resized size), so that
+        /// <c>original = (model - pad) * gain</c>.</returns>
         public (float, float, float, float) CalculateProportionalGain(SKSizeI size)
         {
             int w = size.Width;
             int h = size.Height;
 
-            float modelW = _modelInputWidth;
-            float modelH = _modelInputHeight;
+            // Invert the exact area ResizeImageProportional draws the image into: its integer offset and
+            // rounded size. Images smaller than the model input are scaled up there as well.
+            var destination = ImageResizeExtension.ProportionalDestination(w, h, _modelInputWidth, _modelInputHeight);
 
-            // Images smaller than the model input are scaled up by ResizeImageProportional, so the same
-            // aspect-ratio-preserving gain applies to every input size.
+            float xGain = (float)w / destination.Width;
+            float yGain = (float)h / destination.Height;
 
-            // compute scales as floats and use MathF to avoid double/float conversions
-            float scaleW = w / modelW; // (float)w / model.Input.Width
-            float scaleH = h / modelH; // (float)h / model.Input.Height
-
-            float gain = MathF.Max(scaleW, scaleH);
-
-            // ratio is how source maps into model dimensions
-            float ratio = MathF.Min(modelW / w, modelH / h);
-
-            float xPad = (modelW - w * ratio) * 0.5f;
-            float yPad = (modelH - h * ratio) * 0.5f;
-
-            return (xPad, yPad, gain, 0f);
+            return (destination.Left, destination.Top, xGain, yGain);
         }
 
         /// <summary>
@@ -315,6 +288,12 @@ namespace YoloDotNet.Core
             }).ToArray();
 
         /// <summary>
+        /// Transforms segmentation mask outlines from ROI-relative coordinates to original image coordinates.
+        /// </summary>
+        internal static SKPoint[][] TransformContours(SKPoint[][] contours, SKRectI roi)
+            => contours.Select(contour => contour.Select(p => new SKPoint(p.X + roi.Left, p.Y + roi.Top)).ToArray()).ToArray();
+
+        /// <summary>
         /// Verify that loaded model is of the expected type
         /// </summary>
         public void VerifyExpectedModelType(ModelType expectedModelType)
@@ -350,6 +329,12 @@ namespace YoloDotNet.Core
                     if (typeof(T) == typeof(PoseEstimation))
                     {
                         detections[i].KeyPoints = TransformKeyPoints(detections[i].KeyPoints, roiValue);
+                    }
+
+                    // Transform segmentation mask outlines back to original image coordinates.
+                    if (typeof(T) == typeof(Segmentation))
+                    {
+                        detections[i].Contours = TransformContours(detections[i].Contours, roiValue);
                     }
 
                     results.Add(converter(detections[i]));
