@@ -19,7 +19,7 @@ namespace YoloDotNet.Benchmarks.ImageBenchmarks
         {
             _drawingOptions = new PoseDrawingOptions
             {
-                KeyPointMarkers = CustomKeyPointColorMap.KeyPoints
+                PoseKeyPoints = PoseKeyPoints.Load(SharedConfig.PoseKeyPointsFile)
             };
         }
 

@@ -112,7 +112,7 @@ namespace YoloDotNet.Extensions
 
         /// <summary>
         /// Draws pose-estimated keypoints and bounding boxes directly on the provided <see cref="SKBitmap"/>.
-        /// This method mutates the bitmap by overlaying joint points, skeleton connections, and optional bounding boxes.
+        /// This method mutates the bitmap by overlaying joint points, keypoint connections, and optional bounding boxes.
         /// </summary>
         /// <param name="image">The image on which to draw pose estimations.</param>
         /// <param name="poseEstimations">A list of pose estimations.</param>
@@ -397,8 +397,10 @@ namespace YoloDotNet.Extensions
 
             options ??= ImageConfig.DefaultPoseDrawingOptions;
 
-            // If no keypoints are defined, render bounding boxes/labels and return early.
-            if (options.KeyPointMarkers.Length == 0 && (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail))
+            var poseKeyPoints = options.PoseKeyPoints;
+
+            // If no pose keypoints are defined, render bounding boxes/labels and return early.
+            if (poseKeyPoints is null && (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail))
             {
                 image.DrawBoundingBoxes(poseEstimations, (DetectionDrawingOptions)options);
                 return;
@@ -407,9 +409,11 @@ namespace YoloDotNet.Extensions
             var circleRadius = image.CalculateDynamicSize(ImageConfig.KEYPOINT_SIZE);
             var lineSize = image.CalculateDynamicSize(options!.BorderThickness);
             var confidenceThreshold = options.PoseConfidence;
-            var hasPoseMarkers = options.KeyPointMarkers.Length > 0;
-            var emptyPoseMarker = new KeyPointMarker();
+            var defaultColor = options.DefaultPoseColor;
             var alpha = options!.BoundingBoxOpacity;
+
+            if (poseKeyPoints is not null && (alpha < 0 || alpha > 255))
+                throw new ArgumentOutOfRangeException(nameof(options), "BoundingBoxOpacity must be between 0-255.");
 
             using var paint = new SKPaint() { Style = SKPaintStyle.Fill, IsAntialias = true };
             using var keyPointLinePaint = new SKPaint { StrokeWidth = lineSize, IsAntialias = true };
@@ -419,39 +423,45 @@ namespace YoloDotNet.Extensions
             {
                 var keyPoints = poseEstimation.KeyPoints.AsSpan();
 
-                for (int i = 0; i < keyPoints.Length; i++)
+                // Lines stop at the edge of the keypoints they connect (see DrawKeyPointLine), so with translucent
+                // colors no line shows through a keypoint. Pass 0 draws the lines, pass 1 the keypoints over their ends.
+                for (int pass = 0; pass < 2; pass++)
                 {
-                    var keyPoint = keyPoints[i];
+                    var drawLines = pass == 0;
 
-                    if (keyPoint.Confidence < confidenceThreshold)
-                        continue;
-
-                    var poseMap = hasPoseMarkers
-                        ? options.KeyPointMarkers[i]
-                        : emptyPoseMarker;
-
-                    var color = hasPoseMarkers
-                        ? HexToRgbaSkia(poseMap.Color, alpha)
-                        : options.DefaultPoseColor;
-
-                    // Draw keypoint
-                    paint.Color = color;
-                    canvas.DrawCircle(keyPoint.X, keyPoint.Y, circleRadius, paint);
-
-                    // Draw lines between key-points
-                    foreach (var connection in poseMap.Connections)
+                    for (int i = 0; i < keyPoints.Length; i++)
                     {
-                        var markerDestination = poseEstimation.KeyPoints[connection.Index];
+                        var keyPoint = keyPoints[i];
 
-                        if (markerDestination.Confidence < confidenceThreshold)
+                        if (keyPoint.Confidence < confidenceThreshold)
                             continue;
 
-                        keyPointLinePaint.Color = HexToRgbaSkia(connection.Color, alpha);
+                        var start = new SKPoint(keyPoint.X, keyPoint.Y);
 
-                        canvas.DrawLine(
-                             new SKPoint(keyPoint.X, keyPoint.Y),
-                            new SKPoint(markerDestination.X, markerDestination.Y),
-                            keyPointLinePaint);
+                        if (poseKeyPoints is not null && i < poseKeyPoints.KeyPointCount)
+                        {
+                            if (drawLines is false)
+                            {
+                                paint.Color = poseKeyPoints.KeyPointColors[i] is { } keyPointColor ? keyPointColor.WithAlpha((byte)alpha) : defaultColor;
+                                canvas.DrawCircle(start, circleRadius, paint);
+                                continue;
+                            }
+
+                            foreach (var (to, connectionColor) in poseKeyPoints.ConnectionsByKeyPoint[i])
+                            {
+                                if (to >= keyPoints.Length || keyPoints[to].Confidence < confidenceThreshold)
+                                    continue;
+
+                                keyPointLinePaint.Color = connectionColor is { } lineColor ? lineColor.WithAlpha((byte)alpha) : defaultColor;
+                                DrawKeyPointLine(canvas, start, new SKPoint(keyPoints[to].X, keyPoints[to].Y), circleRadius, keyPointLinePaint);
+                            }
+                        }
+                        else if (drawLines is false)
+                        {
+                            // Keypoint without a definition
+                            paint.Color = defaultColor;
+                            canvas.DrawCircle(start, circleRadius, paint);
+                        }
                     }
                 }
             }
@@ -459,6 +469,22 @@ namespace YoloDotNet.Extensions
             // Call DrawBoundingBoxes if any of its features are enabled (bounding boxes, labels, or tracked tails)
             if (options.DrawBoundingBoxes || options.DrawLabels || options.DrawTrackedTail)
                 image.DrawBoundingBoxes(poseEstimations, (DetectionDrawingOptions)options);
+        }
+
+        /// <summary>
+        /// Draws a line between two keypoints, trimmed so it starts and ends at the edge of their circles
+        /// instead of their centers. Keypoints that overlap get no line.
+        /// </summary>
+        private static void DrawKeyPointLine(SKCanvas canvas, SKPoint from, SKPoint to, float keyPointRadius, SKPaint paint)
+        {
+            var direction = to - from;
+            var length = direction.Length;
+
+            if (length <= 2 * keyPointRadius)
+                return;
+
+            var trim = new SKPoint(direction.X / length * keyPointRadius, direction.Y / length * keyPointRadius);
+            canvas.DrawLine(from + trim, to - trim, paint);
         }
 
         /// <summary>

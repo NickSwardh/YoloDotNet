@@ -53,6 +53,11 @@ namespace YoloDotNet.Test.Common
         /// </summary>
         public static string AbsoluteAssetsPath => ResolveAbsoluteAssetsPath();
 
+        /// <summary>
+        /// Path to the pose estimation keypoint file (&lt;assets&gt;/PoseKeyPoints/pose-keypoints.json).
+        /// </summary>
+        public static string PoseKeyPointsFile => Path.Join(AbsoluteAssetsPath, "PoseKeyPoints", "pose-keypoints.json");
+
         private static string ResolveModelsFolder()
         {
             // explicit per-folder override

@@ -19,13 +19,13 @@ namespace PoseEstimationDemo
     /// Demonstrates pose estimation on static images using the YoloDotNet library.
     /// 
     /// This demo loads a sample image, runs pose estimation inference to detect human keypoints and skeletal structure,
-    /// overlays the detected poses with keypoints, skeleton connections, bounding boxes, labels, and confidence scores,
+    /// overlays the detected poses with keypoints, keypoint connections, bounding boxes, labels, and confidence scores,
     /// and saves the annotated image to disk.
     /// 
     /// Features included:
     /// - Model initialization with configurable hardware acceleration and image preprocessing options
     /// - Static image inference returning detailed keypoints for detected persons
-    /// - Flexible drawing options for rendering keypoints, skeleton connections, bounding boxes, labels, and confidence
+    /// - Flexible drawing options for rendering keypoints, keypoint connections, bounding boxes, labels, and confidence
     /// - Support for custom keypoint markers and adjustable confidence thresholds
     /// - Saving output images with quality control and automated output folder management
     /// - Console reporting of detected poses and their confidence scores
@@ -154,10 +154,11 @@ namespace PoseEstimationDemo
 
                 BoundingBoxOpacity = 128,
 
-                // Specifies the keypoints and their connection map used for drawing.
-                KeyPointMarkers = CustomKeyPointColorMap.KeyPoints,
+                // Pose keypoints used to color and connect keypoints. pose-keypoints.json is copied to the output folder;
+                // copy and edit it to describe the keypoints of your own pose model. Load it once at startup.
+                PoseKeyPoints = PoseKeyPoints.Load(Path.Combine(AppContext.BaseDirectory, "pose-keypoints.json")),
 
-                // Draw keypoints and their connections by defining an array of keypoint markers.
+                // Minimum keypoint confidence required for drawing.
                 PoseConfidence = 0.65f
 
                 // The following options configure tracked object tails, which visualize 

@@ -13,4 +13,8 @@
     <ProjectReference Include="..\..\YoloDotNet\YoloDotNet.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\test\assets\PoseKeyPoints\pose-keypoints.json" Link="pose-keypoints.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

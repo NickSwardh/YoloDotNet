@@ -1,0 +1,52 @@
+﻿{
+  // 17 COCO keypoints, in the order the Ultralytics pose models output them.
+  // Copy this file and edit it to describe the keypoints of your own pose model.
+  "name": "pose-keypoints",
+  "colors": {
+    "head": "#A2FF33",
+    "arms": "#33ACFF",
+    "legs": "#FFF633",
+    "torso": "#FF33AC"
+  },
+  "keypoints": [
+    { "name": "nose", "color": "head" },
+    { "name": "left_eye", "color": "head" },
+    { "name": "right_eye", "color": "head" },
+    { "name": "left_ear", "color": "head" },
+    { "name": "right_ear", "color": "head" },
+    { "name": "left_shoulder", "color": "arms" },
+    { "name": "right_shoulder", "color": "arms" },
+    { "name": "left_elbow", "color": "arms" },
+    { "name": "right_elbow", "color": "arms" },
+    { "name": "left_wrist", "color": "arms" },
+    { "name": "right_wrist", "color": "arms" },
+    { "name": "left_hip", "color": "legs" },
+    { "name": "right_hip", "color": "legs" },
+    { "name": "left_knee", "color": "legs" },
+    { "name": "right_knee", "color": "legs" },
+    { "name": "left_ankle", "color": "legs" },
+    { "name": "right_ankle", "color": "legs" }
+  ],
+  // A connection without a color uses the color of its "from" keypoint.
+  "connections": [
+    { "from": "nose", "to": "left_eye" },
+    { "from": "nose", "to": "right_eye" },
+    { "from": "left_eye", "to": "right_eye" },
+    { "from": "left_ear", "to": "left_eye" },
+    { "from": "left_ear", "to": "left_shoulder" },
+    { "from": "right_ear", "to": "right_eye" },
+    { "from": "right_ear", "to": "right_shoulder" },
+    { "from": "left_shoulder", "to": "right_shoulder" },
+    { "from": "left_shoulder", "to": "left_elbow" },
+    { "from": "left_shoulder", "to": "left_hip", "color": "torso" },
+    { "from": "right_shoulder", "to": "right_elbow" },
+    { "from": "right_shoulder", "to": "right_hip", "color": "torso" },
+    { "from": "left_elbow", "to": "left_wrist" },
+    { "from": "right_elbow", "to": "right_wrist" },
+    { "from": "left_hip", "to": "right_hip", "color": "torso" },
+    { "from": "left_hip", "to": "left_knee" },
+    { "from": "right_hip", "to": "right_knee" },
+    { "from": "left_knee", "to": "left_ankle" },
+    { "from": "right_knee", "to": "right_ankle" }
+  ]
+}
