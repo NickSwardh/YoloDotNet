@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2023-2025 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
@@ -37,6 +37,16 @@ namespace YoloDotNet.Models
         public byte[] BitPackedPixelMask { get; set; } = [];
 
         /// <summary>
+        /// Width of <see cref="BitPackedPixelMask"/> in pixels. 0 means the mask matches <see cref="BoundingBox"/> width.
+        /// </summary>
+        public int MaskWidth { get; set; }
+
+        /// <summary>
+        /// Height of <see cref="BitPackedPixelMask"/> in pixels. 0 means the mask matches <see cref="BoundingBox"/> height.
+        /// </summary>
+        public int MaskHeight { get; set; }
+
+        /// <summary>
         /// Confidence value, X and Y coordinates for Pose Estimation key points
         /// </summary>
         public KeyPoint[] KeyPoints { get; set; } = [];
@@ -67,7 +77,9 @@ namespace YoloDotNet.Models
             Label = result.Label,
             Confidence = result.Confidence,
             BoundingBox = result.BoundingBox,
-            BitPackedPixelMask = result.BitPackedPixelMask
+            BitPackedPixelMask = result.BitPackedPixelMask,
+            MaskWidth = result.MaskWidth,
+            MaskHeight = result.MaskHeight
         };
 
         public static explicit operator PoseEstimation(ObjectResult result) => new()

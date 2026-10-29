@@ -30,5 +30,15 @@ namespace YoloDotNet.Models
         /// - **Modifiability:** This property can be changed at runtime to adjust filtering behavior.
         /// </remarks>
         public SKSamplingOptions SamplingOptions { get; set; } = ImageConfig.DefaultSamplingOptions;
+
+        /// <summary>
+        /// Optional channel-wise input mean used after scaling pixels to 0..1.
+        /// </summary>
+        public float[]? ImageMean { get; set; }
+
+        /// <summary>
+        /// Optional channel-wise input standard deviation used after scaling pixels to 0..1.
+        /// </summary>
+        public float[]? ImageStd { get; set; }
     }
 }

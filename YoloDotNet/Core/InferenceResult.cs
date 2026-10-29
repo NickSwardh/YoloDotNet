@@ -8,6 +8,7 @@ namespace YoloDotNet.Core
     {
         public ReadOnlySpan<float> OrtSpan0 { get; set; }
         public ReadOnlySpan<float> OrtSpan1 { get; set; }
+        public ReadOnlySpan<float> OrtSpan2 { get; set; }
         public SKSizeI ImageOriginalSize { get; set; }
 
         public InferenceResult()
@@ -16,10 +17,12 @@ namespace YoloDotNet.Core
 
         public InferenceResult(
             ReadOnlySpan<float> ortSpan0,
-            ReadOnlySpan<float> ortSpan1)
+            ReadOnlySpan<float> ortSpan1,
+            ReadOnlySpan<float> ortSpan2 = default)
         {
             OrtSpan0 = ortSpan0;
             OrtSpan1 = ortSpan1;
+            OrtSpan2 = ortSpan2;
         }
     }
 }

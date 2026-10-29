@@ -232,6 +232,10 @@ _pkginfo.txt
 # Allow TensorRT calibration .cache files to be tracked!
 !test/assets/cache/*.cache
 
+# RF-DETR demo weights are downloaded locally by Demo/RFDETRNanoDemo/download-rfdetr-nano.py.
+test/assets/Models/rfdetr-nano.onnx
+test/assets/Models/.roboflow-cache/
+
 # Others
 ClientBin/
 ~$*

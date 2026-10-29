@@ -19,6 +19,7 @@ namespace YoloDotNet.Enums
         V12,
         V26,
         RTDETR,
+        RFDETR,
         WORLDV2
     }
 }

@@ -17,6 +17,8 @@ namespace YoloDotNet.Core
         private int _modelInputWidth;
         private int _modelInputHeight;
         private int _inputShapeSize;
+        private float[] _floatInputBuffer = [];
+        private ushort[] _halfInputBuffer = [];
         #endregion
 
         #region Properties
@@ -45,6 +47,11 @@ namespace YoloDotNet.Core
 
             _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
 
+            if (OnnxModel.ModelDataType == ModelDataType.Float16)
+                _halfInputBuffer = GC.AllocateUninitializedArray<ushort>(_inputShapeSize, pinned: true);
+            else
+                _floatInputBuffer = GC.AllocateUninitializedArray<float>(_inputShapeSize, pinned: true);
+
             FrameSaveService.Start();
         }
 
@@ -52,65 +59,182 @@ namespace YoloDotNet.Core
         /// Runs the YOLO model on the provided image and returns the inference results.
         /// </summary>
         /// <param name="image">The input image to process.</param>
+        /// <param name="roi">Optional region of interest.</param>
+        /// <param name="compress">为 false 时跳过缩放。调用方已将图片处理成模型输入尺寸时使用。</param>
         /// <returns>InferenceResult()</returns>
-        public InferenceResult Run<T>(T image, SKRectI? roi)
+        public InferenceResult Run<T>(T image, SKRectI? roi, bool compress = true)
         {
             lock (_progressLock)
             {
+                var sizeMatches = MatchesModelInputSize(image, roi, _modelInputWidth, _modelInputHeight);
+                var skipResize = !compress || sizeMatches;
+
+                // 尺寸已经对齐时直接写成 NCHW，不再经过 Canvas。
+                if (sizeMatches && TryNormalizeMatched(image, roi, out var directSize))
+                {
+                    var directResult = ExecuteInference();
+                    directResult.ImageOriginalSize = directSize;
+                    return directResult;
+                }
+
                 var pinnedBuffer = _pinnedMemoryPool.Rent();
 
                 try
                 {
-                    // Resize image to model input size and store in pinned buffer for faster access
-                    var originalImageSize =
-                        YoloOptions.ImageResize == ImageResize.Proportional
+                    // 已是模型输入尺寸，或调用方明确关闭压缩时，按原像素写入，不再缩放。
+                    var originalImageSize = skipResize
+                        ? image.CopyImage(pinnedBuffer, roi)
+                        : YoloOptions.ImageResize == ImageResize.Proportional
                             ? image.ResizeImageProportional(YoloOptions.SamplingOptions, pinnedBuffer, roi)
                             : image.ResizeImageStretched(YoloOptions.SamplingOptions, pinnedBuffer, roi);
 
-                    InferenceResult inferenceResult;
-
                     if (OnnxModel.ModelDataType == ModelDataType.Float16)
-                    {
-                        var pixelBuffer = ArrayPool<ushort>.Shared.Rent(_inputShapeSize);
-
-                        try
-                        {
-                            pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, pixelBuffer);
-                            inferenceResult = YoloOptions.ExecutionProvider.Run<ushort>(pixelBuffer);
-                        }
-                        finally
-                        {
-                            ArrayPool<ushort>.Shared.Return(pixelBuffer, clearArray: false);
-                        }
-                    }
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, _halfInputBuffer, YoloOptions.ImageMean, YoloOptions.ImageStd);
                     else
-                    {
-                        var pixelBuffer = ArrayPool<float>.Shared.Rent(_inputShapeSize);
+                        pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, _floatInputBuffer, YoloOptions.ImageMean, YoloOptions.ImageStd);
 
-                        try
-                        {
-                            pinnedBuffer.Pointer.NormalizePixelsToArray(_inputShape, _inputShapeSize, pixelBuffer);
-                            inferenceResult = YoloOptions.ExecutionProvider.Run<float>(pixelBuffer);
-                        }
-                        finally
-                        {
-                            ArrayPool<float>.Shared.Return(pixelBuffer, clearArray: false);
-                        }
-                    }
-
-                    // Attach original image size for downstream box scaling
+                    var inferenceResult = ExecuteInference();
                     inferenceResult.ImageOriginalSize = originalImageSize;
-
                     return inferenceResult;
                 }
                 finally
                 {
-                    _pinnedMemoryPool.Return(pinnedBuffer);
+                    _pinnedMemoryPool.Return(pinnedBuffer, clear: !skipResize && YoloOptions.ImageResize == ImageResize.Proportional);
                 }
             }
         }
 
+        private bool TryNormalizeMatched<T>(T image, SKRectI? roi, out SKSizeI sourceSize)
+        {
+            var channels = (int)_inputShape[1];
+            var mean = YoloOptions.ImageMean;
+            var std = YoloOptions.ImageStd;
+
+            if (OnnxModel.ModelDataType == ModelDataType.Float16)
+            {
+                return image.TryNormalizeMatched(
+                    _modelInputWidth,
+                    _modelInputHeight,
+                    channels,
+                    _halfInputBuffer,
+                    out sourceSize,
+                    roi,
+                    mean,
+                    std);
+            }
+
+            return image.TryNormalizeMatched(
+                _modelInputWidth,
+                _modelInputHeight,
+                channels,
+                _floatInputBuffer,
+                out sourceSize,
+                roi,
+                mean,
+                std);
+        }
+
+        private InferenceResult ExecuteInference()
+        {
+            if (OnnxModel.ModelDataType == ModelDataType.Float16)
+                return YoloOptions.ExecutionProvider.Run<ushort>(_halfInputBuffer);
+
+            return YoloOptions.ExecutionProvider.Run<float>(_floatInputBuffer);
+        }
+
+        /// <summary>
+        /// 用最小堆从 <paramref name="scores"/> 选出最大的 <paramref name="keep"/> 个，并按分数从高到低写回。
+        /// 分数保持原值，调用方再决定是否做 Sigmoid。
+        /// </summary>
+        internal static int SelectTopIndices(ReadOnlySpan<float> scores, int keep, int[] indices, float[] selected)
+        {
+            var count = scores.Length;
+            if (count == 0 || keep <= 0 || indices.Length == 0 || selected.Length == 0)
+                return 0;
+
+            var k = Math.Min(keep, Math.Min(count, Math.Min(indices.Length, selected.Length)));
+
+            for (var i = 0; i < k; i++)
+            {
+                indices[i] = i;
+                selected[i] = scores[i];
+            }
+
+            for (var i = k / 2 - 1; i >= 0; i--)
+                SiftMin(selected, indices, k, i);
+
+            for (var i = k; i < count; i++)
+            {
+                var score = scores[i];
+                if (score <= selected[0])
+                    continue;
+
+                selected[0] = score;
+                indices[0] = i;
+                SiftMin(selected, indices, k, 0);
+            }
+
+            for (var end = k - 1; end > 0; end--)
+            {
+                (selected[0], selected[end]) = (selected[end], selected[0]);
+                (indices[0], indices[end]) = (indices[end], indices[0]);
+                SiftMin(selected, indices, end, 0);
+            }
+
+            return k;
+        }
+
+        private static void SiftMin(float[] scores, int[] indices, int length, int parent)
+        {
+            while (true)
+            {
+                var left = parent * 2 + 1;
+                if (left >= length)
+                    return;
+
+                var right = left + 1;
+                var smallest = right < length && scores[right] < scores[left] ? right : left;
+                if (scores[parent] <= scores[smallest])
+                    return;
+
+                (scores[parent], scores[smallest]) = (scores[smallest], scores[parent]);
+                (indices[parent], indices[smallest]) = (indices[smallest], indices[parent]);
+                parent = smallest;
+            }
+        }
+
         #region Helper methods
+
+        /// <summary>
+        /// 源图（或 ROI）宽高已经等于模型输入时，不需要再缩放。
+        /// </summary>
+        private static bool MatchesModelInputSize<T>(T image, SKRectI? roi, int modelWidth, int modelHeight)
+        {
+            int width;
+            int height;
+
+            if (roi.HasValue)
+            {
+                width = roi.Value.Width;
+                height = roi.Value.Height;
+            }
+            else if (image is SKBitmap bitmap)
+            {
+                width = bitmap.Width;
+                height = bitmap.Height;
+            }
+            else if (image is SKImage skImage)
+            {
+                width = skImage.Width;
+                height = skImage.Height;
+            }
+            else
+            {
+                return false;
+            }
+
+            return width == modelWidth && height == modelHeight;
+        }
 
         /// <summary>
         /// Removes overlapping bounding boxes in a list of object detection results.

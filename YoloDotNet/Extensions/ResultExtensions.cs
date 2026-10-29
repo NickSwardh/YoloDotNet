@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Niklas Swärd
+// SPDX-FileCopyrightText: 2026 Niklas Swï¿½rd
 // https://github.com/NickSwardh/YoloDotNet
 
 #pragma warning disable IL2026 // Reflection-based serialization
@@ -408,22 +408,28 @@ namespace YoloDotNet.Extensions
             if (value.BitPackedPixelMask.Length > 0)
             {
                 var box = value.BoundingBox;
-                var contourPoints = ImageExtension.ExtractOrderedContourPoints(value.BitPackedPixelMask, box.Width, box.Height);
-
-                if (contourPoints.Count > 0)
+                var (maskWidth, maskHeight) = value.PixelMaskSize();
+                if (maskWidth > 0 && maskHeight > 0 && (long)maskWidth * maskHeight <= value.BitPackedPixelMask.Length * 8L)
                 {
-                    writer.WritePropertyName("contourPoints");
-                    writer.WriteStartArray();
+                    var contourPoints = ImageExtension.ExtractOrderedContourPoints(value.BitPackedPixelMask, maskWidth, maskHeight);
+                    var scaleX = maskWidth == box.Width ? 1d : (double)box.Width / maskWidth;
+                    var scaleY = maskHeight == box.Height ? 1d : (double)box.Height / maskHeight;
 
-                    foreach (var point in contourPoints)
+                    if (contourPoints.Count > 0)
                     {
-                        writer.WriteStartObject();
-                        writer.WriteNumber("x", box.Left + point.X);
-                        writer.WriteNumber("y", box.Top + point.Y);
-                        writer.WriteEndObject();
-                    }
+                        writer.WritePropertyName("contourPoints");
+                        writer.WriteStartArray();
 
-                    writer.WriteEndArray();
+                        foreach (var point in contourPoints)
+                        {
+                            writer.WriteStartObject();
+                            writer.WriteNumber("x", box.Left + point.X * scaleX);
+                            writer.WriteNumber("y", box.Top + point.Y * scaleY);
+                            writer.WriteEndObject();
+                        }
+
+                        writer.WriteEndArray();
+                    }
                 }
             }
 

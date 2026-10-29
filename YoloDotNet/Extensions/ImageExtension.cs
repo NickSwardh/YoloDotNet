@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT
 // SPDX-FileCopyrightText: 2023-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
@@ -251,44 +251,20 @@ namespace YoloDotNet.Extensions
 
             var totalColors = options.BoundingBoxHexColors.Length;
 
-            if (options.DrawSegmentationPixelMask is true)
+            var drawMask = options.DrawSegmentationPixelMask is true;
+            var drawContour = options.DrawContour is true;
+            if (drawMask || drawContour)
             {
                 foreach (var segmentation in segmentations)
                 {
                     var box = segmentation.BoundingBox;
+                    if (!TryGetPixelMask(segmentation, out var maskWidth, out var maskHeight))
+                        continue;
 
-                    using var pixelMask = segmentation.BitPackedPixelMask.UnpackToBitmap(box.Width, box.Height);
-
-                    // Get class color with pixel mask opacity
                     var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
-                    var color = HexToRgbaSkia(hexColor, options.PixelMaskOpacity);
-
-                    using var paint = new SKPaint
-                    {
-                        ColorFilter = CreateGrayscaleToColorFilter(color),
-                        BlendMode = SKBlendMode.SrcOver // Black pixels will be transparent
-                    };
-
-                    // Draw the unpacked mask over original
-                    canvas.DrawBitmap(pixelMask, box.Left, box.Top, paint);
-                }
-            }
-
-            if (options.DrawContour is true)
-            {
-                foreach (var segmentation in segmentations)
-                {
-                    var box = segmentation.BoundingBox;
-
-                    // Get class color
-                    var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
-                    var color = HexToRgbaSkia(hexColor, options.BoundingBoxOpacity);
-
-                    // Extract contour points from the bit-packed mask
-                    var contourPoints = ExtractContourPoints(segmentation.BitPackedPixelMask, box.Width, box.Height);
-
-                    // Draw contour on canvas
-                    DrawContourOnCanvas(canvas, contourPoints, box.Left, box.Top, color, options.ContourThickness);
+                    var fill = drawMask ? HexToRgbaSkia(hexColor, options.PixelMaskOpacity) : SKColors.Empty;
+                    var contour = drawContour ? HexToRgbaSkia(hexColor, options.BoundingBoxOpacity) : SKColors.Empty;
+                    DrawPackedMaskPreview(canvas, segmentation.BitPackedPixelMask, maskWidth, maskHeight, box, fill, contour);
                 }
             }
 
@@ -305,7 +281,10 @@ namespace YoloDotNet.Extensions
         {
             var contourPoints = new List<SKPoint>();
 
-            if (packedMask.Length == 0)
+            if (packedMask.Length == 0 || width <= 0 || height <= 0)
+                return contourPoints;
+
+            if ((long)width * height > packedMask.Length * 8L)
                 return contourPoints;
 
             for (int y = 0; y < height; y++)
@@ -485,19 +464,46 @@ namespace YoloDotNet.Extensions
                 return [];
 
             var box = segmentation.BoundingBox;
-            var contourPoints = ExtractOrderedContourPoints(segmentation.BitPackedPixelMask, box.Width, box.Height, maxPoints);
+            if (!TryGetPixelMask(segmentation, out var maskWidth, out var maskHeight))
+                return [];
+
+            var contourPoints = ExtractOrderedContourPoints(segmentation.BitPackedPixelMask, maskWidth, maskHeight, maxPoints);
+            var scaleX = maskWidth == box.Width ? 1f : box.Width / (float)maskWidth;
+            var scaleY = maskHeight == box.Height ? 1f : box.Height / (float)maskHeight;
 
             // Convert from mask-relative to absolute image coordinates
-            return [.. contourPoints.Select(p => new SKPoint(box.Left + p.X, box.Top + p.Y))];
+            return [.. contourPoints.Select(p => new SKPoint(box.Left + p.X * scaleX, box.Top + p.Y * scaleY))];
+        }
+
+        private static bool TryGetPixelMask(Segmentation segmentation, out int width, out int height)
+        {
+            (width, height) = segmentation.PixelMaskSize();
+            var packed = segmentation.BitPackedPixelMask;
+            return packed.Length > 0
+                && width > 0
+                && height > 0
+                && (long)width * height <= packed.Length * 8L;
+        }
+
+        private static void ScaleContour(List<SKPoint> points, float scaleX, float scaleY)
+        {
+            if (scaleX == 1f && scaleY == 1f)
+                return;
+
+            for (var i = 0; i < points.Count; i++)
+            {
+                var point = points[i];
+                points[i] = new SKPoint(point.X * scaleX, point.Y * scaleY);
+            }
         }
         
         
         /// <summary>
         /// Draws contour points on a canvas with specified thickness.
         /// </summary>
-        private static void DrawContourOnCanvas(SKCanvas canvas, List<SKPoint> contourPoints, int offsetX, int offsetY, SKColor color, int thickness)
+        private static void DrawContourOnCanvas(SKCanvas canvas, List<SKPoint> contourPoints, int offsetX, int offsetY, SKColor color, float radius)
         {
-            if (contourPoints.Count == 0)
+            if (contourPoints.Count == 0 || radius <= 0)
                 return;
 
             using var paint = new SKPaint
@@ -506,13 +512,153 @@ namespace YoloDotNet.Extensions
                 Style = SKPaintStyle.Fill,
                 IsAntialias = true
             };
-
-            float radius = thickness / 2f;
-
+            using var path = new SKPath();
             foreach (var point in contourPoints)
+                path.AddCircle(point.X + offsetX, point.Y + offsetY, radius);
+
+            canvas.DrawPath(path, paint);
+        }
+
+        /// <summary>
+        /// Draws a bit-packed mask from a fixed-size preview. Work stays bounded by
+        /// <see cref="MaxDrawEdge"/>, so a larger detection box does not scan more pixels.
+        /// </summary>
+        private static void DrawPackedMaskPreview(
+            SKCanvas canvas,
+            byte[] packed,
+            int maskWidth,
+            int maskHeight,
+            SKRectI box,
+            SKColor fill,
+            SKColor contour)
+        {
+            if (maskWidth <= 0 || maskHeight <= 0 || box.Width <= 0 || box.Height <= 0)
+                return;
+
+            var (drawWidth, drawHeight) = DrawGridSize(maskWidth, maskHeight);
+            var grid = SampleMaskGrid(packed, maskWidth, maskHeight, drawWidth, drawHeight);
+            using var bitmap = new SKBitmap(drawWidth, drawHeight, SKColorType.Bgra8888, SKAlphaType.Premul);
+            if (!RasterizeMaskPreview(bitmap, grid, drawWidth, drawHeight, fill, contour))
+                return;
+
+            using var paint = new SKPaint();
+            if (drawWidth == box.Width && drawHeight == box.Height)
             {
-                canvas.DrawCircle(point.X + offsetX, point.Y + offsetY, radius, paint);
+                canvas.DrawBitmap(bitmap, box.Left, box.Top, paint);
+                return;
             }
+
+#pragma warning disable CS0618 // DrawBitmap still honors FilterQuality in this SkiaSharp build.
+            paint.FilterQuality = SKFilterQuality.Low;
+#pragma warning restore CS0618
+            canvas.DrawBitmap(bitmap, new SKRect(box.Left, box.Top, box.Right, box.Bottom), paint);
+        }
+
+        private const int MaxDrawEdge = 512;
+
+        private static (int Width, int Height) DrawGridSize(int maskWidth, int maskHeight)
+        {
+            var longest = Math.Max(maskWidth, maskHeight);
+            if (longest <= MaxDrawEdge)
+                return (maskWidth, maskHeight);
+
+            var scale = MaxDrawEdge / (float)longest;
+            return (
+                Math.Max(1, (int)MathF.Round(maskWidth * scale)),
+                Math.Max(1, (int)MathF.Round(maskHeight * scale)));
+        }
+
+        private static byte[] SampleMaskGrid(byte[] packed, int maskWidth, int maskHeight, int drawWidth, int drawHeight)
+        {
+            var grid = new byte[drawWidth * drawHeight];
+            for (var y = 0; y < drawHeight; y++)
+            {
+                var sourceY = SampleIndex(y, drawHeight, maskHeight);
+                var sourceRow = sourceY * maskWidth;
+                var destinationRow = y * drawWidth;
+                for (var x = 0; x < drawWidth; x++)
+                {
+                    var sourceX = SampleIndex(x, drawWidth, maskWidth);
+                    if (IsPixelSet(packed, sourceRow + sourceX))
+                        grid[destinationRow + x] = 1;
+                }
+            }
+
+            return grid;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static int SampleIndex(int pixel, int drawCount, int maskCount)
+        {
+            var index = (int)((pixel + 0.5f) * maskCount / drawCount);
+            if (index >= maskCount)
+                return maskCount - 1;
+            if (index < 0)
+                return 0;
+            return index;
+        }
+
+        private static unsafe bool RasterizeMaskPreview(SKBitmap bitmap, byte[] grid, int drawWidth, int drawHeight, SKColor fill, SKColor contour)
+        {
+            var fillPixel = Premultiply(fill);
+            var contourPixel = Premultiply(contour);
+            var any = false;
+            var pixels = (byte*)bitmap.GetPixels();
+            var stride = bitmap.RowBytes;
+
+            for (var y = 0; y < drawHeight; y++)
+            {
+                var row = y * drawWidth;
+                var destination = pixels + y * stride;
+                for (var x = 0; x < drawWidth; x++)
+                {
+                    var offset = x * 4;
+                    if (grid[row + x] == 0)
+                    {
+                        destination[offset] = 0;
+                        destination[offset + 1] = 0;
+                        destination[offset + 2] = 0;
+                        destination[offset + 3] = 0;
+                        continue;
+                    }
+
+                    var edge = contourPixel.Alpha != 0 && (
+                        x == 0 || y == 0 || x == drawWidth - 1 || y == drawHeight - 1
+                        || grid[row + x - 1] == 0
+                        || grid[row + x + 1] == 0
+                        || grid[row - drawWidth + x] == 0
+                        || grid[row + drawWidth + x] == 0);
+                    var pixel = edge ? contourPixel : fillPixel;
+                    if (pixel.Alpha == 0)
+                    {
+                        destination[offset] = 0;
+                        destination[offset + 1] = 0;
+                        destination[offset + 2] = 0;
+                        destination[offset + 3] = 0;
+                        continue;
+                    }
+
+                    any = true;
+                    destination[offset] = pixel.Blue;
+                    destination[offset + 1] = pixel.Green;
+                    destination[offset + 2] = pixel.Red;
+                    destination[offset + 3] = pixel.Alpha;
+                }
+            }
+
+            return any;
+        }
+
+        private readonly record struct PremulColor(byte Blue, byte Green, byte Red, byte Alpha);
+
+        private static PremulColor Premultiply(SKColor color)
+        {
+            var alpha = color.Alpha;
+            return new PremulColor(
+                (byte)(color.Blue * alpha / 255),
+                (byte)(color.Green * alpha / 255),
+                (byte)(color.Red * alpha / 255),
+                alpha);
         }
 
         /// <summary>
@@ -615,6 +761,13 @@ namespace YoloDotNet.Extensions
                 Color = options.FontColor,
                 IsAntialias = true
             };
+            using var textStroke = new SKPaint
+            {
+                Color = SKColors.Black,
+                Style = SKPaintStyle.Stroke,
+                StrokeWidth = Math.Max(2f, options.FontSize / 6f),
+                IsAntialias = true
+            };
 
             var fontSize = options?.EnableDynamicScaling ?? true
                 ? image.CalculateDynamicSize(font.Size)
@@ -632,10 +785,10 @@ namespace YoloDotNet.Extensions
                 font.Size = fontSize;
             }
 
+            textStroke.StrokeWidth = Math.Max(3f, font.Size / 10f);
             var margin = (int)fontSize / 2;
             var labelBoxHeight = (int)fontSize * 2;
             var textOffset = (int)(fontSize + margin) - (margin / 2);
-            var shadowOffset = ImageConfig.SHADOW_OFFSET;
             var labelOffset = (int)borderThickness / 2;
 
             // Label box background paint
@@ -671,7 +824,8 @@ namespace YoloDotNet.Extensions
                 var labelText = LabelText(text, detection.Confidence, options.DrawConfidenceScore);
                 var labelWidth = (int)font.MeasureText(labelText);
 
-                labelBgPaint.Color = boxColor;
+                var labelPlate = HexToRgbaSkia(hex, Math.Max(options.BoundingBoxOpacity, 230));
+                labelBgPaint.Color = labelPlate;
                 boxPaint.Color = boxColor;
 
                 var labelBoxWidth = labelWidth + (margin * 2);
@@ -704,10 +858,7 @@ namespace YoloDotNet.Extensions
                         canvas.DrawRect(labelBackground, labelBgPaint);
                     }
 
-                    // Text shadow
-                    if (options.EnableFontShadow)
-                        canvas.DrawText(labelText, text_x + shadowOffset, text_y + shadowOffset, font, ImageConfig.TextShadowPaint);
-
+                    canvas.DrawText(labelText, text_x, text_y, font, textStroke);
                     canvas.DrawText(labelText, text_x, text_y, font, fontColor);
                 }
 

@@ -40,15 +40,20 @@ namespace YoloDotNet.Handlers
         }
 
         /// <summary>
-        /// Returns a used buffer back to the pool after clearing its contents.
+        /// Returns a used buffer back to the pool after optionally clearing its contents.
         /// </summary>
         /// <param name="buffer">The buffer to be returned and reused.</param>
-        public void Return(PinnedMemoryBuffer buffer)
+        /// <param name="clear">
+        /// Stretch fills the entire model canvas, so clearing is unnecessary.
+        /// Proportional letterbox leaves padding that must be reset between frames.
+        /// </param>
+        public void Return(PinnedMemoryBuffer buffer, bool clear = true)
         {
             // IMPORTANT: Clear the bitmap before reuse to prevent visual artifacts.
             // This avoids leaking old frame data into subsequent frames.
             // Using SKColors.Empty fills with transparent black (0,0,0,0).
-            buffer.TargetBitmap.Erase(SKColors.Empty);
+            if (clear)
+                buffer.TargetBitmap.Erase(SKColors.Empty);
 
             _pool.Add(buffer);
         }

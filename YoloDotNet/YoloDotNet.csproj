@@ -66,4 +66,8 @@ Check out the demo projects on GitHub for hands-on examples: https://github.com/
 		<PackageReference Include="SkiaSharp" Version="3.119.1" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<InternalsVisibleTo Include="YoloDotNet.Tests" />
+	</ItemGroup>
+
 </Project>

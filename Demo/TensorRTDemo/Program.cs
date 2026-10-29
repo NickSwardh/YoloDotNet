@@ -133,7 +133,7 @@ namespace TensorRTDemo
                         //
                         // If left empty, a default internal prefix will be used.
 
-                        Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", "yolov11s.cache"),
+                        Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", "yolov26s.cache"),
                         // Optional path to a TensorRT INT8 calibration cache file.
                         // This is only used when INT8 precision mode is explicitly enabled; otherwise, it is ignored.
                         // You may leave this empty if you're not using INT8 mode.

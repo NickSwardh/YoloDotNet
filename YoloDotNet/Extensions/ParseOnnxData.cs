@@ -7,21 +7,31 @@ namespace YoloDotNet.Extensions
     public static class ParseOnnxData
     {
 
-        public static OnnxModel ParseOnnx(this object onnxData)
+        public static OnnxModel ParseOnnx(
+            this object onnxData,
+            ModelType? modelTypeOverride = null,
+            ModelVersion? modelVersionOverride = null,
+            string[]? labelsOverride = null)
         {
             var inputs = GetShape<long>(onnxData, "InputMetadata");
             var outputs = GetShape<int>(onnxData, "OutputMetadata");
 
             var metadata = GetMetadata(onnxData);
+            var labels = labelsOverride is not null
+                ? MapLabels(labelsOverride)
+                : metadata.TryGetValue("names", out var names)
+                    ? MapLabelsAndColors(names)
+                    : InferLabels(outputs);
+
             var model = new OnnxModel
             {
                 InputShapes = inputs,
                 OutputShapes = outputs,
                 CustomMetaData = metadata,
                 ModelDataType = GetModelDataType(onnxData),
-                ModelType = GetModelType(metadata["task"]),
-                ModelVersion = GetModelVersion(metadata["description"]),
-                Labels = MapLabelsAndColors(metadata["names"]),
+                ModelType = modelTypeOverride ?? GetModelType(metadata, outputs),
+                ModelVersion = modelVersionOverride ?? GetModelVersion(metadata, outputs),
+                Labels = labels,
                 InputShapeSize = CalculateTotalInputShapeSize(inputs.First().Value)
             };
 
@@ -175,6 +185,27 @@ namespace YoloDotNet.Extensions
             })];
         }
 
+        private static LabelModel[] MapLabels(string[] labels)
+            => [.. labels.Select((label, index) => new LabelModel
+            {
+                Index = index,
+                Name = label
+            })];
+
+        private static LabelModel[] InferLabels(Dictionary<string, int[]> outputs)
+        {
+            var classCount = TryGetRfdetrClassCount(outputs);
+
+            if (classCount is null)
+                throw new YoloDotNetModelException("ONNX model is missing label metadata. Provide labels through the execution provider.");
+
+            return [.. Enumerable.Range(0, classCount.Value).Select(index => new LabelModel
+            {
+                Index = index,
+                Name = index == 0 ? "background_class" : $"class_{index}"
+            })];
+        }
+
         /// <summary>
         /// Calculates the total number of elements in a tensor based on its shape dimensions.
         /// </summary>
@@ -198,6 +229,19 @@ namespace YoloDotNet.Extensions
             return shapeSize;
         }
 
+        private static ModelType GetModelType(Dictionary<string, string> metadata, Dictionary<string, int[]> outputs)
+        {
+            if (metadata.TryGetValue("task", out var modelType))
+                return GetModelType(modelType);
+
+            if (IsRfdetrOutput(outputs))
+                return IsRfdetrSegmentationOutput(outputs)
+                    ? ModelType.Segmentation
+                    : ModelType.ObjectDetection;
+
+            throw new YoloDotNetModelException("Unsupported task");
+        }
+
         private static ModelType GetModelType(string modelType) => modelType switch
         {
             "classify" => ModelType.Classification,
@@ -211,6 +255,17 @@ namespace YoloDotNet.Extensions
         /// <summary>
         /// Get ONNX model version
         /// </summary>
+        private static ModelVersion GetModelVersion(Dictionary<string, string> metadata, Dictionary<string, int[]> outputs)
+        {
+            if (metadata.TryGetValue("description", out var modelDescription))
+                return GetModelVersion(modelDescription);
+
+            if (IsRfdetrOutput(outputs))
+                return ModelVersion.RFDETR;
+
+            throw new YoloDotNetModelException("Onnx model not supported!");
+        }
+
         private static ModelVersion GetModelVersion(string modelDescription) => modelDescription.ToLower() switch
         {
             // YOLOv5
@@ -247,6 +302,22 @@ namespace YoloDotNet.Extensions
 
             _ => throw new YoloDotNetModelException("Onnx model not supported!")
         };
+
+        private static bool IsRfdetrOutput(Dictionary<string, int[]> outputs)
+            => (outputs.Count == 2 || outputs.Count == 3)
+               && outputs.ContainsKey("dets")
+               && outputs.ContainsKey("labels")
+               && outputs["dets"] is [_, _, 4];
+
+        private static bool IsRfdetrSegmentationOutput(Dictionary<string, int[]> outputs)
+            => IsRfdetrOutput(outputs)
+               && outputs.ContainsKey("masks")
+               && outputs["masks"].Length == 4;
+
+        private static int? TryGetRfdetrClassCount(Dictionary<string, int[]> outputs)
+            => IsRfdetrOutput(outputs) && outputs["labels"].Length == 3
+                ? outputs["labels"][2]
+                : null;
         #endregion
     }
 }

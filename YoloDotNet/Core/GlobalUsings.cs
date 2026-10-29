@@ -46,5 +46,6 @@ global using YoloDotNet.Modules.V11E;
 global using YoloDotNet.Modules.V12;
 global using YoloDotNet.Modules.V26;
 global using YoloDotNet.Modules.RTDETR;
+global using YoloDotNet.Modules.RFDETR;
 global using YoloDotNet.Modules.WorldV2;
 global using YoloDotNet.Modules.Interfaces;

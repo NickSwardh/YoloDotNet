@@ -16,6 +16,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
         private float[] _outputBuffer0 = default!;
         private float[] _outputBuffer1 = default!;
+        private float[] _outputBuffer2 = default!;
 
         private long[] _inputShape = default!;
         private string[] _inputNames = default!;
@@ -23,6 +24,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         private List<string> _outputNames = default!;
         private int _dataTypeSize;
         private TensorElementType _elementDataType = default!;
+        private ModelType? _modelTypeOverride;
+        private ModelVersion? _modelVersionOverride;
+        private string[]? _labelsOverride;
 
         private IDisposableReadOnlyCollection<OrtValue>? _currentResult;
 
@@ -38,8 +42,17 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <param name="model"></param>
         /// <param name="gpuId"></param>
         /// <param name="trtConfig"></param>
-        public CudaExecutionProvider(string model, int gpuId = 0, TensorRt? trtConfig = null)
+        public CudaExecutionProvider(
+            string model,
+            int gpuId = 0,
+            TensorRt? trtConfig = null,
+            ModelType? modelType = null,
+            ModelVersion? modelVersion = null,
+            string[]? labels = null)
         {
+            _modelTypeOverride = modelType;
+            _modelVersionOverride = modelVersion;
+            _labelsOverride = labels;
             InitializeYolo(model, gpuId, trtConfig);
         }
 
@@ -49,8 +62,17 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <param name="model"></param>
         /// <param name="gpuId"></param>
         /// <param name="trtConfig"></param>
-        public CudaExecutionProvider(byte[] model, int gpuId = 0, TensorRt? trtConfig = null)
+        public CudaExecutionProvider(
+            byte[] model,
+            int gpuId = 0,
+            TensorRt? trtConfig = null,
+            ModelType? modelType = null,
+            ModelVersion? modelVersion = null,
+            string[]? labels = null)
         {
+            _modelTypeOverride = modelType;
+            _modelVersionOverride = modelVersion;
+            _labelsOverride = labels;
             InitializeYolo(model, gpuId, trtConfig);
         }
         #endregion
@@ -144,25 +166,33 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                     // Extract tensor data from the result
                     var tensorData0 = _currentResult[0].GetTensorDataAsSpan<float>();
                     var tensorData1 = ReadOnlySpan<float>.Empty;
+                    var tensorData2 = ReadOnlySpan<float>.Empty;
 
-                    if (_currentResult.Count == 2)
+                    if (_currentResult.Count > 1)
                         tensorData1 = _currentResult[1].GetTensorDataAsSpan<float>();
 
+                    if (_currentResult.Count > 2)
+                        tensorData2 = _currentResult[2].GetTensorDataAsSpan<float>();
+
                     // Return the inference result containing the output tensor data
-                    return new InferenceResult(tensorData0, tensorData1);
+                    return new InferenceResult(tensorData0, tensorData1, tensorData2);
                 }
                 else
                 {
                     var tensorData0 = _currentResult[0].GetTensorDataAsSpan<Float16>();
                     var tensorData1 = ReadOnlySpan<Float16>.Empty;
+                    var tensorData2 = ReadOnlySpan<Float16>.Empty;
 
-                    if (_currentResult.Count == 2)
+                    if (_currentResult.Count > 1)
                         tensorData1 = _currentResult[1].GetTensorDataAsSpan<Float16>();
 
-                    ConvertFloat16ToFloat(tensorData0, tensorData1);
+                    if (_currentResult.Count > 2)
+                        tensorData2 = _currentResult[2].GetTensorDataAsSpan<Float16>();
+
+                    ConvertFloat16ToFloat(tensorData0, tensorData1, tensorData2);
 
                     // Return the inference result containing the output tensor data
-                    return new InferenceResult(_outputBuffer0, _outputBuffer1);
+                    return new InferenceResult(_outputBuffer0, _outputBuffer1, _outputBuffer2);
                 }
             }
         }
@@ -178,29 +208,31 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             if (OnnxData.ModelDataType == ModelDataType.Float)
                 return;
 
-            int batch, attributes;
             var outputShape = OnnxData.OutputShapes.ElementAt(0).Value;
-
-            if (OnnxData.ModelType == ModelType.Classification)
-            {
-                // For classification models, output shape is [Batch, Attributes]
-                (batch, attributes) = (outputShape[0], outputShape[1]);
-            }
-            else
-            {
-                // For other models, output shape is [Batch, Attributes, Predictions]
-                (batch, attributes) = (outputShape[1], outputShape[2]);
-            }
-
-            _outputBuffer0 = new float[attributes * batch];
+            _outputBuffer0 = new float[CalculateElementCount(outputShape)];
 
             // Allocate second output buffer if model has two outputs (e.g., segmentation models).
-            if (OnnxData.OutputShapes.Count == 2)
+            if (OnnxData.OutputShapes.Count > 1)
             {
                 outputShape = OnnxData.OutputShapes.ElementAt(1).Value;
-                var size = outputShape[1] * outputShape[2];
-                _outputBuffer1 = new float[size];
+                _outputBuffer1 = new float[CalculateElementCount(outputShape)];
             }
+
+            if (OnnxData.OutputShapes.Count > 2)
+            {
+                outputShape = OnnxData.OutputShapes.ElementAt(2).Value;
+                _outputBuffer2 = new float[CalculateElementCount(outputShape)];
+            }
+        }
+
+        private static int CalculateElementCount(int[] shape)
+        {
+            var size = 1;
+
+            foreach (var dimension in shape)
+                size *= dimension;
+
+            return size;
         }
 
         /// <summary>
@@ -299,21 +331,30 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Converts Float16 tensor data to Float32 and stores it in pre-allocated output buffers.
         /// </summary>
-        unsafe private void ConvertFloat16ToFloat(ReadOnlySpan<Float16> tensorData0, ReadOnlySpan<Float16> tensorData1)
+        unsafe private void ConvertFloat16ToFloat(
+            ReadOnlySpan<Float16> tensorData0,
+            ReadOnlySpan<Float16> tensorData1,
+            ReadOnlySpan<Float16> tensorData2)
         {
             fixed (Float16* src0 = tensorData0)
             fixed (Float16* src1 = tensorData1)
+            fixed (Float16* src2 = tensorData2)
             fixed (float* dst0 = _outputBuffer0)
             fixed (float* dst1 = _outputBuffer1)
+            fixed (float* dst2 = _outputBuffer2)
             {
                 int len0 = tensorData0.Length;
                 int len1 = tensorData1.Length;
+                int len2 = tensorData2.Length;
 
                 for (int i = 0; i < len0; i++)
                     dst0[i] = (float)src0[i];
 
                 for (int i = 0; i < len1; i++)
                     dst1[i] = (float)src1[i];
+
+                for (int i = 0; i < len2; i++)
+                    dst2[i] = (float)src2[i];
             }
         }
 
@@ -321,7 +362,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// Extracts metadata and input/output shapes from the ONNX model.
         /// </summary>
         private void GetOnnxMetaData()
-            => OnnxData = _session.ParseOnnx();
+            => OnnxData = _session.ParseOnnx(_modelTypeOverride, _modelVersionOverride, _labelsOverride);
 
         public void Dispose()
         {
