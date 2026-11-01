@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Video.Services
@@ -49,6 +49,10 @@ namespace YoloDotNet.Video.Services
 
         private void GetVideoSourceDimensions()
         {
+            if (string.IsNullOrWhiteSpace(_videoOptions.VideoInput))
+                throw new YoloDotNetVideoException("No video input set. Set VideoOptions.VideoInput to a video file, stream URL or video device.",
+                    nameof(VideoOptions.VideoInput));
+
             if (_videoOptions.VideoInput.StartsWith("device=", StringComparison.OrdinalIgnoreCase))
             {
                 var (deviceName, width, height, fps) = GetDeviceInfo();
@@ -72,6 +76,8 @@ namespace YoloDotNet.Video.Services
                 return;
             }
 
+            EnsureVideoInputExists(_videoOptions.VideoInput);
+
             var metadata = GetVideoInfo(_videoOptions.VideoInput);
 
             var (newWidth, newHeight) = CalculateProportionalResize(metadata, _videoOptions);
@@ -91,6 +97,19 @@ namespace YoloDotNet.Video.Services
                 _videoOptions.FrameRate,
                 metadata.TotalFrames,
                 CalculateTargetFramesCount(metadata));
+        }
+
+        /// <summary>
+        /// Reports a missing local video file by name. Without this, ffprobe returns no streams for it and the error only
+        /// says that the stream is invalid. Stream URLs (rtmp://, rtsp://, http:// etc.) are left to ffprobe.
+        /// </summary>
+        private static void EnsureVideoInputExists(string videoInput)
+        {
+            var isStream = Uri.TryCreate(videoInput, UriKind.Absolute, out var uri) && uri.IsFile is false;
+
+            if (isStream is false && File.Exists(videoInput) is false)
+                throw new YoloDotNetVideoException($"Video file not found: '{Path.GetFullPath(videoInput)}'.",
+                    nameof(VideoOptions.VideoInput));
         }
 
         public (string, int, int, float) GetDeviceInfo()
@@ -141,6 +160,12 @@ namespace YoloDotNet.Video.Services
             string error = ffprobe.StandardError.ReadToEnd();
 
             ffprobe.WaitForExit();
+
+            // Unreachable streams and unreadable files produce no output at all, which is not valid JSON.
+            if (string.IsNullOrWhiteSpace(output))
+                throw new YoloDotNetVideoException($"Could not read video from '{videoPath}'. Check that the file is a valid video, " +
+                    $"or that the stream is reachable.{(string.IsNullOrWhiteSpace(error) ? "" : $" ffprobe: {error.Trim()}")}",
+                    nameof(VideoOptions.VideoInput));
 
             using var doc = JsonDocument.Parse(output);
 

@@ -59,6 +59,11 @@ namespace YoloDotNet.Core
         /// <returns>InferenceResult()</returns>
         public InferenceResult Run<T>(T image, SKRectI? roi)
         {
+            // SKBitmap.Decode and SKImage.FromEncodedData return null instead of throwing for a missing or unreadable file.
+            if (image is null)
+                throw new ArgumentNullException(nameof(image), "The image is null. If it was loaded from a file, check that the file " +
+                    "exists and is a supported image format: SKBitmap.Decode and SKImage.FromEncodedData return null when loading fails.");
+
             var stretch = YoloOptions.ImageResize != ImageResize.Proportional;
 
             if (OnnxModel.ModelDataType == ModelDataType.Float && _inputShape[0] == 1 && _inputShape[1] == 3)
