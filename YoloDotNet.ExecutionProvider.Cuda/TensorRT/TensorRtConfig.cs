@@ -1,8 +1,12 @@
-﻿namespace YoloDotNet.ExecutionProvider.Cuda.TensorRT
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
+// https://github.com/NickSwardh/YoloDotNet
+
+namespace YoloDotNet.ExecutionProvider.Cuda.TensorRT
 {
     internal static class TensorRtConfig
     {
-        public static void ConfigureTensorRT(this SessionOptions options, int gpuId, TensorRt tensorRtModel)
+        public static void ConfigureTensorRT(this SessionOptions options, int gpuId, TensorRt tensorRtModel, bool enableCudaGraph)
         {
             using var tensorOptions = new OrtTensorRTProviderOptions();
 
@@ -57,12 +61,16 @@
                 { "trt_auxiliary_streams", "0" },
                 // Set maximum number of auxiliary streams per inference stream. 0 = optimal memory usage.
 
-                { "trt_builder_optimization_level", tensorRtModel.BuilderOptimizationLevel.ToString() }
+                { "trt_builder_optimization_level", tensorRtModel.BuilderOptimizationLevel.ToString() },
                 // Set the builder optimization level to use when building the engine. A higher level
                 // allows TensorRT to spend more building time on more optimization options.
                 //
                 // WARNING: levels below 3 do not guarantee good engine performance, but greatly improve
                 // build time. Default 3, valid range[0 - 5].
+
+                { "trt_cuda_graph_enable", enableCudaGraph ? "1" : "0" }
+                // Capture the engine's GPU work as a CUDA graph on the first run and replay it on later runs.
+                // Requires fixed input sizes and a model that runs entirely on TensorRT.
             };
 
             switch (tensorRtModel.Precision)

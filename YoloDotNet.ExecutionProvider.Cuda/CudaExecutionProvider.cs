@@ -32,38 +32,25 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Constructs a CudaExecutionProvider for running ONNX models using CUDA and optionally TensorRT.
         /// </summary>
-        /// <param name="model"></param>
-        /// <param name="gpuId"></param>
-        /// <param name="trtConfig"></param>
-        public CudaExecutionProvider(string model, int gpuId = 0, TensorRt? trtConfig = null)
+        /// <param name="model">Path to the ONNX model file.</param>
+        /// <param name="gpuId">GPU device ID (0 and above), or -1 for CPU execution.</param>
+        /// <param name="trtConfig">TensorRT settings. When set, the model runs on TensorRT with CUDA as fallback.</param>
+        /// <param name="enableCudaGraph">
+        /// Records the GPU work on the first inference and replays it on later calls, for CUDA and TensorRT alike.
+        /// Requires fixed input sizes, a GPU device ID of 0 or above, and a model that runs entirely on the GPU
+        /// (entirely on TensorRT when <paramref name="trtConfig"/> is set). Models that don't qualify fail when the
+        /// provider is created.
+        /// </param>
+        public CudaExecutionProvider(string model, int gpuId = 0, TensorRt? trtConfig = null, bool enableCudaGraph = false)
         {
-            InitializeYolo(model, gpuId, trtConfig);
+            InitializeYolo(model, gpuId, trtConfig, enableCudaGraph);
         }
 
-        /// <summary>
-        /// Overload: Constructs a CudaExecutionProvider for running ONNX models using CUDA and optionally TensorRT.
-        /// </summary>
-        /// <param name="model"></param>
-        /// <param name="gpuId"></param>
-        /// <param name="trtConfig"></param>
-        public CudaExecutionProvider(byte[] model, int gpuId = 0, TensorRt? trtConfig = null)
+        /// <inheritdoc cref="CudaExecutionProvider(string, int, TensorRt?, bool)"/>
+        /// <param name="model">The ONNX model as a byte array.</param>
+        public CudaExecutionProvider(byte[] model, int gpuId = 0, TensorRt? trtConfig = null, bool enableCudaGraph = false)
         {
-            InitializeYolo(model, gpuId, trtConfig);
-        }
-
-        /// <summary>
-        /// Creates a CUDA session with optional graph replay. Requires static tensor shapes and a model whose
-        /// operations can all execute on CUDA. The first inference captures the graph; subsequent calls replay it.
-        /// </summary>
-        public CudaExecutionProvider(string model, bool enableCudaGraph, int gpuId = 0)
-        {
-            InitializeYolo(model, gpuId, null, enableCudaGraph);
-        }
-
-        /// <inheritdoc cref="CudaExecutionProvider(string, bool, int)"/>
-        public CudaExecutionProvider(byte[] model, bool enableCudaGraph, int gpuId = 0)
-        {
-            InitializeYolo(model, gpuId, null, enableCudaGraph);
+            InitializeYolo(model, gpuId, trtConfig, enableCudaGraph);
         }
         #endregion
 
@@ -71,10 +58,11 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Initializes the ONNX Runtime session, configures the CUDA execution provider and allocates resources.
         /// </summary>
-        /// <param name="model"></param>
-        /// <param name="gpuId"></param>
-        /// <param name="trtConfig"></param>
-        private void InitializeYolo(object model, int gpuId, TensorRt? trtConfig, bool enableCudaGraph = false)
+        /// <param name="model">Model file path or bytes.</param>
+        /// <param name="gpuId">GPU device ID, or -1 for CPU.</param>
+        /// <param name="trtConfig">Optional TensorRT settings.</param>
+        /// <param name="enableCudaGraph">Replay the inference as a CUDA graph (CUDA or TensorRT).</param>
+        private void InitializeYolo(object model, int gpuId, TensorRt? trtConfig, bool enableCudaGraph)
         {
             if (enableCudaGraph && gpuId < 0)
                 throw new ArgumentException("CUDA Graphs require a GPU device ID of 0 or greater.", nameof(gpuId));
@@ -201,11 +189,12 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             {
                 if (trtConfig is not null)
                 {
-                    options.ConfigureTensorRT(gpuId, trtConfig);
+                    options.ConfigureTensorRT(gpuId, trtConfig, enableCudaGraph);
                 }
 
                 // Keep operations TensorRT cannot execute on CUDA where possible, before falling back to CPU.
-                ConfigureCuda(gpuId, options, enableCudaGraph);
+                // With TensorRT, the graph is captured by TensorRT, so CUDA keeps graph capture off.
+                ConfigureCuda(gpuId, options, enableCudaGraph && trtConfig is null);
             }
             else if (gpuId == -1)
             {
