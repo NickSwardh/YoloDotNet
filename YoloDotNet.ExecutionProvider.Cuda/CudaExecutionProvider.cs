@@ -349,7 +349,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// Extracts metadata and input/output shapes from the ONNX model.
         /// </summary>
         private void GetOnnxMetaData()
-            => OnnxData = _session.ParseOnnx();
+            => OnnxData = _session.ToOnnxModel();
 
         public void Dispose()
         {

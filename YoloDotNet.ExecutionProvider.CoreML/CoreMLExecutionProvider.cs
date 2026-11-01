@@ -229,7 +229,7 @@ namespace YoloDotNet.ExecutionProvider.CoreML
         /// Extracts metadata and input/output shapes from the ONNX model.
         /// </summary>
         private void GetOnnxMetaData()
-            => OnnxData = _session.ParseOnnx();
+            => OnnxData = _session.ToOnnxModel();
 
         /// <summary>
         /// Gets the tensor element type used by the model (e.g., Float32 or Float16).

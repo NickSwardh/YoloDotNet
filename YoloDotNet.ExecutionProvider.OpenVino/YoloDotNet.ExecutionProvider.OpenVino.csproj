@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Description>YoloDotNet OpenVINO Execution Provider enables optimized inference using Intel® OpenVINO™ on supported Intel CPUs, integrated GPUs, and accelerators.
 
@@ -34,6 +35,8 @@ The provider is fully modular and designed to work with the execution-provider-a
   <ItemGroup>
     <PackageReference Include="Intel.ML.OnnxRuntime.OpenVino" Version="1.22.0" />
   </ItemGroup>
+
+  <Import Project="..\YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems" Label="Shared" />
 
   <ItemGroup>
     <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />

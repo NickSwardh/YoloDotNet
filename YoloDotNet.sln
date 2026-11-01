@@ -169,4 +169,11 @@ Global
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C3673E62-2658-4C27-9C6A-A3215F416E05}
 	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems*{5f01895b-338c-4564-8355-8b6e3d2f3521}*SharedItemsImports = 5
+		YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems*{ac239da6-5cb8-41ec-894d-e8c9aafae1cc}*SharedItemsImports = 5
+		YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems*{c05a0795-10c5-4ba0-9bbe-218d0fd4ccfc}*SharedItemsImports = 5
+		YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems*{ca6c81fb-1482-4175-97c4-38e7aed4ce5c}*SharedItemsImports = 5
+		YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems*{e418f3ba-f51d-468e-befd-47e0f053ab70}*SharedItemsImports = 5
+	EndGlobalSection
 EndGlobal

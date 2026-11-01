@@ -183,7 +183,7 @@ namespace YoloDotNet.Video.Services
 
                 json = json.Replace("[", "").Replace("]", "");
 
-                return JsonSerializer.Deserialize<Metadata>(json) ?? new();
+                return JsonSerializer.Deserialize(json, MetadataJsonContext.Default.Metadata) ?? new();
             }
             else
                 throw new YoloDotNetVideoException("The specified video stream is invalid and could not be processed. ", nameof(_videoOptions.VideoInput));

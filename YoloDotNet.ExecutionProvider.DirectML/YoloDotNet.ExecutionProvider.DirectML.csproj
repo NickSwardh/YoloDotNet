@@ -4,6 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Copytight @ Niklas Swärd</Copyright>
@@ -36,6 +37,8 @@ Designed for YoloDotNet’s modular, execution-provider-agnostic architecture, t
   <ItemGroup>
     <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
   </ItemGroup>
+
+  <Import Project="..\YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems" Label="Shared" />
 
   <ItemGroup>
     <ProjectReference Include="..\YoloDotNet\YoloDotNet.csproj" />

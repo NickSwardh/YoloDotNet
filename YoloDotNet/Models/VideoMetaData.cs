@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 namespace YoloDotNet.Models
@@ -36,5 +36,13 @@ namespace YoloDotNet.Models
         public double FPS => (double)FrameRateNumerator / FrameRateDenominator;
 
         public long TotalFrames => ((int)Math.Floor(FPS * Duration)) - 1; // Set -1 to keep total frames zero-index.
+    }
+
+    /// <summary>
+    /// Source-generated JSON metadata for <see cref="Metadata"/>, so reading ffprobe's output works in trimmed and AOT apps.
+    /// </summary>
+    [JsonSerializable(typeof(Metadata))]
+    internal partial class MetadataJsonContext : JsonSerializerContext
+    {
     }
 }

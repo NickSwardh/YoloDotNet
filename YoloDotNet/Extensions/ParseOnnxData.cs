@@ -6,155 +6,38 @@ namespace YoloDotNet.Extensions
 {
     public static class ParseOnnxData
     {
-
-        public static OnnxModel ParseOnnx(this object onnxData)
-        {
-            var inputs = GetShape<long>(onnxData, "InputMetadata");
-            var outputs = GetShape<int>(onnxData, "OutputMetadata");
-
-            var metadata = GetMetadata(onnxData);
-            var model = new OnnxModel
+        /// <summary>
+        /// Creates the model information from the values an execution provider reads from its ONNX Runtime session.
+        /// </summary>
+        /// <param name="inputs">Shape of each model input, by tensor name.</param>
+        /// <param name="outputs">Shape of each model output, by tensor name.</param>
+        /// <param name="metadata">The model's custom metadata (Ultralytics exports store the task, description and class names here).</param>
+        /// <param name="modelDataType">Element type of the model's input tensor.</param>
+        public static OnnxModel CreateOnnxModel(Dictionary<string, long[]> inputs, Dictionary<string, int[]> outputs,
+            Dictionary<string, string> metadata, ModelDataType modelDataType)
+            => new()
             {
                 InputShapes = inputs,
                 OutputShapes = outputs,
                 CustomMetaData = metadata,
-                ModelDataType = GetModelDataType(onnxData),
+                ModelDataType = modelDataType,
                 ModelType = GetModelType(metadata["task"]),
                 ModelVersion = GetModelVersion(metadata["description"]),
                 Labels = MapLabelsAndColors(metadata["names"]),
                 InputShapeSize = CalculateTotalInputShapeSize(inputs.First().Value)
             };
 
-            return model;
-        }
+        /// <summary>
+        /// Removed: execution providers now read the model information themselves and call <see cref="CreateOnnxModel"/>.
+        /// Kept only so that execution providers built for an earlier YoloDotNet version fail with a clear message.
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Execution providers call CreateOnnxModel instead.", error: true)]
+        public static OnnxModel ParseOnnx(this object onnxData)
+            => throw new YoloDotNetModelException("This execution provider is not compatible with this version of YoloDotNet. " +
+                "Update your YoloDotNet.ExecutionProvider package to the latest version.");
 
         #region Helper Methods
-        /// <summary>
-        /// Retrieves the shape dimensions for each input or output from an ONNX model property and returns them as a dictionary.
-        /// </summary>
-        private static Dictionary<string, T[]> GetShape<T>(object onnxData, string propertyName)
-        {
-            try
-            {
-                var metadataProperty = onnxData.GetType().GetProperty(propertyName)
-                    ?? throw new YoloDotNetModelException($"{propertyName} property not found on ONNX model.");
-
-                var metadata = metadataProperty.GetValue(onnxData)
-                    ?? throw new YoloDotNetModelException($"{propertyName} value is null.");
-
-                var shapes = new Dictionary<string, T[]>();
-
-                foreach (var item in (dynamic)metadata)
-                {
-                    var tensorName = (string)item.Key;
-
-                    var valueProperty = item.GetType().GetProperty("Value");
-                    var valueData = valueProperty.GetValue(item);
-
-                    var dimensionsProperty = valueData.GetType().GetProperty("Dimensions");
-                    var dimensions = dimensionsProperty.GetValue(valueData);
-
-                    var dimensionsList = new List<T>();
-
-                    foreach (var dimension in (dynamic)dimensions)
-                    {
-                        var dim = (T)Convert.ChangeType(dimension, typeof(T));
-
-                        dimensionsList.Add(dim);
-                    }
-
-                    shapes.Add(tensorName, [.. dimensionsList]);
-                }
-
-                return shapes;
-            }
-            catch (YoloDotNetModelException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new YoloDotNetModelException($"Failed to retrieve {propertyName} from ONNX model.", ex);
-            }
-        }
-
-        /// <summary>
-        /// Retrieves the custom metadata key-value pairs from the specified ONNX model data object.
-        /// </summary>
-        private static Dictionary<string, string> GetMetadata(object onnxData)
-        {
-            try
-            {
-                var modelMetadataProperty = onnxData.GetType().GetProperty("ModelMetadata")
-                    ?? throw new InvalidOperationException("ModelMetadata property not found.");
-
-                var modelMetadata = modelMetadataProperty.GetValue(onnxData)
-                    ?? throw new InvalidOperationException("ModelMetadata value is null.");
-
-                var customMetadataMapProperty = modelMetadata.GetType().GetProperty("CustomMetadataMap")
-                    ?? throw new InvalidOperationException("CustomMetadataMap property not found.");
-
-                var customMetadataMap = customMetadataMapProperty.GetValue(modelMetadata)
-                    ?? throw new InvalidOperationException("CustomMetadataMap value is null.");
-
-                var metadataCollection = new Dictionary<string, string>();
-
-                foreach (var item in (dynamic)customMetadataMap)
-                {
-                    metadataCollection.Add(item.Key, item.Value);
-                }
-
-                return metadataCollection;
-            }
-            catch (Exception)
-            {
-                // Return empty dictionary if metadata cannot be retrieved
-                return [];
-            }
-        }
-
-        /// <summary>
-        /// Determines the data type used by the ONNX model's input tensor.
-        /// </summary>
-        private static ModelDataType GetModelDataType(object onnxData)
-        {
-            try
-            {
-                var inputMetadataProperty = onnxData.GetType().GetProperty("InputMetadata")
-                    ?? throw new YoloDotNetModelException("InputMetadata could not be retrieved from ONNX model.");
-
-                var inputMetadata = inputMetadataProperty.GetValue(onnxData)
-                    ?? throw new YoloDotNetModelException("InputMetadata value is null.");
-
-                // Get the first input's element data type
-                foreach (var item in (dynamic)inputMetadata)
-                {
-                    var itemType = item.GetType();
-                    var valueProperty = itemType.GetProperty("Value");
-                    var valueData = valueProperty.GetValue(item);
-
-                    var elementDataTypeProperty = valueData.GetType().GetProperty("ElementDataType");
-                    var elementDataType = elementDataTypeProperty.GetValue(valueData)?.ToString();
-
-                    // Check if the element data type is Float16
-                    return string.Equals(elementDataType, "Float16", StringComparison.OrdinalIgnoreCase)
-                        ? ModelDataType.Float16
-                        : ModelDataType.Float;
-                }
-
-                // Default to Float if no inputs found
-                return ModelDataType.Float;
-            }
-            catch (YoloDotNetModelException)
-            {
-                throw;
-            }
-            catch (Exception ex)
-            {
-                throw new YoloDotNetModelException("Failed to retrieve model data type from ONNX model.", ex);
-            }
-        }
-
         /// <summary>
         /// Maps ONNX labels to corresponding colors for visualization.
         /// </summary>
