@@ -174,14 +174,27 @@ namespace YoloDotNet.Extensions
         }
 
         /// <summary>
-        /// Resizes with <see cref="Avx2BilinearImageResizer"/> when the image and sampling options allow it. That is about
-        /// 3x faster than drawing through SkiaSharp and gives the same pixels, to within 1 in rare cases.
+        /// Resizes with <see cref="Avx2BilinearImageResizer"/> when the image and sampling options allow it.
         /// </summary>
         /// <returns>
         /// True when the image was resized, with the source size (the ROI size if specified) in <paramref name="size"/>.
         /// False when SkiaSharp should draw it instead; nothing has been written then.
         /// </returns>
-        private static bool TryResizeBilinear<T>(T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer pinnedMemoryBuffer, SKRectI? roi, bool stretch, out SKSizeI size)
+        internal static bool TryResizeNormalized<T>(T img, SKSamplingOptions samplingOptions, float[] tensor,
+            int width, int height, SKRectI? roi, bool stretch, out SKSizeI size)
+            => TryResizeBilinear(img, samplingOptions, null, roi, stretch, out size, tensor, width, height);
+
+        /// <summary>
+        /// Half-precision (FP16) version of <see cref="TryResizeNormalized{T}(T, SKSamplingOptions, float[], int, int, SKRectI?, bool, out SKSizeI)"/>:
+        /// gives the same values as resizing and then normalizing with the FP16 lookup table.
+        /// </summary>
+        internal static bool TryResizeNormalized<T>(T img, SKSamplingOptions samplingOptions, ushort[] tensor,
+            int width, int height, SKRectI? roi, bool stretch, out SKSizeI size)
+            => TryResizeBilinear(img, samplingOptions, null, roi, stretch, out size, null, width, height, tensor);
+
+        private static bool TryResizeBilinear<T>(T img, SKSamplingOptions samplingOptions, PinnedMemoryBuffer? pinnedMemoryBuffer,
+            SKRectI? roi, bool stretch, out SKSizeI size, float[]? tensor = null, int tensorWidth = 0, int tensorHeight = 0,
+            ushort[]? halfTensor = null)
         {
             size = default;
 
@@ -224,14 +237,20 @@ namespace YoloDotNet.Extensions
             using (subset)
             {
                 var source = subset ?? opaque;
-                int modelWidth = pinnedMemoryBuffer.ImageInfo.Width;
-                int modelHeight = pinnedMemoryBuffer.ImageInfo.Height;
+                int modelWidth = pinnedMemoryBuffer?.ImageInfo.Width ?? tensorWidth;
+                int modelHeight = pinnedMemoryBuffer?.ImageInfo.Height ?? tensorHeight;
 
                 var destination = stretch
                     ? new SKRectI(0, 0, modelWidth, modelHeight)
                     : ProportionalDestination(source.Width, source.Height, modelWidth, modelHeight);
 
-                if (!Avx2BilinearImageResizer.TryResize(source, pinnedMemoryBuffer.Pointer, pinnedMemoryBuffer.ImageInfo.RowBytes, destination))
+                bool resized = tensor is not null
+                    ? Avx2BilinearImageResizer.TryResizeNormalized(source, tensor, modelWidth, modelHeight, destination)
+                    : halfTensor is not null
+                        ? Avx2BilinearImageResizer.TryResizeNormalizedHalf(source, halfTensor, modelWidth, modelHeight, destination, _byteToNormalizedHalf)
+                        : Avx2BilinearImageResizer.TryResize(source, pinnedMemoryBuffer!.Pointer, pinnedMemoryBuffer.ImageInfo.RowBytes, destination);
+
+                if (!resized)
                     return false;
 
                 // The input image dimensions (ROI dimensions if cropped), required to correctly scale bounding boxes

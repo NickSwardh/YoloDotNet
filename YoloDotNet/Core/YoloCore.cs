@@ -59,6 +59,51 @@ namespace YoloDotNet.Core
         /// <returns>InferenceResult()</returns>
         public InferenceResult Run<T>(T image, SKRectI? roi)
         {
+            var stretch = YoloOptions.ImageResize != ImageResize.Proportional;
+
+            if (OnnxModel.ModelDataType == ModelDataType.Float && _inputShape[0] == 1 && _inputShape[1] == 3)
+            {
+                var pixels = ArrayPool<float>.Shared.Rent(_inputShapeSize);
+                try
+                {
+                    if (ImageResizeExtension.TryResizeNormalized(image, YoloOptions.SamplingOptions, pixels,
+                        _modelInputWidth, _modelInputHeight, roi, stretch, out var size))
+                    {
+                        var result = YoloOptions.ExecutionProvider.Run(pixels);
+                        result.ImageOriginalSize = size;
+                        return result;
+                    }
+                }
+                finally
+                {
+                    ArrayPool<float>.Shared.Return(pixels);
+                }
+            }
+            else if (OnnxModel.ModelDataType == ModelDataType.Float16 && _inputShape[0] == 1 && _inputShape[1] == 3)
+            {
+                var pixels = ArrayPool<ushort>.Shared.Rent(_inputShapeSize);
+                try
+                {
+                    if (ImageResizeExtension.TryResizeNormalized(image, YoloOptions.SamplingOptions, pixels,
+                        _modelInputWidth, _modelInputHeight, roi, stretch, out var size))
+                    {
+                        var result = YoloOptions.ExecutionProvider.Run(pixels);
+                        result.ImageOriginalSize = size;
+                        return result;
+                    }
+                }
+                finally
+                {
+                    ArrayPool<ushort>.Shared.Return(pixels);
+                }
+            }
+
+            return RunWithImageBuffer(image, roi);
+        }
+
+        // Retain the existing path for other pixel layouts, sampling modes, and non-raster images.
+        private InferenceResult RunWithImageBuffer<T>(T image, SKRectI? roi)
+        {
             var pinnedBuffer = _pinnedMemoryPool.Rent();
 
             try

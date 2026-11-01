@@ -10,10 +10,10 @@ namespace YoloDotNet.Utils
     /// <remarks>
     /// A separable bilinear filter with pixel-centre sampling (<c>src = (dst + 0.5) * scale - 0.5</c>), clamped edges and
     /// 11-bit fixed-point weights that are rounded once, at the end. This is the same arithmetic as the bilinear resize
-    /// YOLO models are trained with, and it matches SkiaSharp's linear filter to within 1 in rare pixels.
+    /// YOLO models are trained with.
     /// <para>
     /// Each source row is filtered horizontally once and cached, then pairs of filtered rows are blended vertically and
-    /// packed straight into the destination. About 3x faster than drawing the image through an <see cref="SKCanvas"/>.
+    /// packed straight into the destination.
     /// </para>
     /// </remarks>
     internal static unsafe class Avx2BilinearImageResizer
@@ -30,6 +30,30 @@ namespace YoloDotNet.Utils
         /// </summary>
         /// <returns>False, without writing anything, for inputs this resizer does not handle. The caller then uses SkiaSharp.</returns>
         public static bool TryResize(SKPixmap source, IntPtr buffer, int bufferRowBytes, SKRectI destination)
+            => TryResizeCore(source, buffer, bufferRowBytes, destination, null, 0);
+
+        /// <summary>
+        /// Writes the same rounded pixels directly into normalized planar RGB, without an intermediate RGBX image.
+        /// </summary>
+        internal static bool TryResizeNormalized(SKPixmap source, float[] tensor, int width, int height, SKRectI destination)
+        {
+            fixed (float* output = tensor)
+                return TryResizeCore(source, IntPtr.Zero, width * sizeof(float), destination, output, height);
+        }
+
+        /// <summary>
+        /// Writes the same rounded pixels directly into normalized planar RGB half-precision floats, converting each
+        /// channel value with <paramref name="byteToHalf"/> (the normalized half for every byte value).
+        /// </summary>
+        internal static bool TryResizeNormalizedHalf(SKPixmap source, ushort[] tensor, int width, int height, SKRectI destination, ushort[] byteToHalf)
+        {
+            fixed (ushort* output = tensor)
+            fixed (ushort* table = byteToHalf)
+                return TryResizeCore(source, IntPtr.Zero, width * sizeof(ushort), destination, null, height, output, table);
+        }
+
+        private static bool TryResizeCore(SKPixmap source, IntPtr buffer, int bufferRowBytes, SKRectI destination,
+            float* tensor, int tensorHeight, ushort* halfTensor = null, ushort* byteToHalf = null)
         {
             if (!IsSupported)
                 return false;
@@ -53,13 +77,16 @@ namespace YoloDotNet.Utils
             if (srcWidth < 2 || srcHeight < 2 || dstWidth < 1 || dstHeight < 1)
                 return false;
 
+            if (tensor != null)
+                FillPadding(tensor, bufferRowBytes / sizeof(float), tensorHeight, destination);
+            else if (halfTensor != null)
+                FillPaddingHalf(halfTensor, bufferRowBytes / sizeof(ushort), tensorHeight, destination, byteToHalf);
+
             var pool = ArrayPool<int>.Shared;
             var xOffsets = pool.Rent(dstWidth);
             var xWeights = pool.Rent(dstWidth * 8);
             var yRows = pool.Rent(dstHeight);
             var yWeights = pool.Rent(dstHeight * 2);
-            var rowA = pool.Rent(dstWidth * 4);
-            var rowB = pool.Rent(dstWidth * 4);
 
             try
             {
@@ -90,14 +117,99 @@ namespace YoloDotNet.Utils
                 int srcRowBytes = source.RowBytes;
                 byte* dst = (byte*)buffer + destination.Top * bufferRowBytes + destination.Left * 4;
 
-                fixed (int* pXOffsets = xOffsets, pXWeights = xWeights, pRowA = rowA, pRowB = rowB)
+                fixed (int* pXOffsets = xOffsets, pXWeights = xWeights, pYRows = yRows, pYWeights = yWeights)
+                {
+                    var rows = new RowJob(src, srcRowBytes, pXOffsets, pXWeights, pYRows, pYWeights, dstWidth, isBgra,
+                        dst, bufferRowBytes, tensor, halfTensor, byteToHalf, tensorHeight, destination);
+
+                    // Large images are split into horizontal bands resized in parallel. Every row is computed exactly as
+                    // in one pass; a band only re-filters the source rows at its top edge. Parallel.For returns when all
+                    // bands are done, so the pinned arrays above stay valid for them.
+                    int bands = RowBands(dstWidth, dstHeight);
+
+                    if (bands == 1)
+                        ResizeRows(rows, 0, dstHeight);
+                    else
+                        Parallel.For(0, bands, band => ResizeRows(rows, dstHeight * band / bands, dstHeight * (band + 1) / bands));
+                }
+
+                return true;
+            }
+            finally
+            {
+                pool.Return(xOffsets);
+                pool.Return(xWeights);
+                pool.Return(yRows);
+                pool.Return(yWeights);
+            }
+        }
+
+        /// <summary>
+        /// The number of bands to resize in parallel: 1 for small images, where the threading overhead outweighs the work.
+        /// </summary>
+        private static int RowBands(int dstWidth, int dstHeight)
+        {
+            if ((long)dstWidth * dstHeight < MIN_PIXELS_PER_BAND * 2)
+                return 1;
+
+            int bands = Math.Min(MAX_BANDS, Environment.ProcessorCount / 2);
+            return (int)Math.Clamp(Math.Min(bands, (long)dstWidth * dstHeight / MIN_PIXELS_PER_BAND), 1, MAX_BANDS);
+        }
+
+        private const int MAX_BANDS = 4;
+        private const int MIN_PIXELS_PER_BAND = 64 * 1024;
+
+        /// <summary>Everything one band needs; pointers stay valid while <see cref="TryResizeCore"/> runs.</summary>
+        private readonly struct RowJob(byte* src, int srcRowBytes, int* xOffsets, int* xWeights, int* yRows, int* yWeights,
+            int dstWidth, bool isBgra, byte* dst, int bufferRowBytes, float* tensor, ushort* halfTensor, ushort* byteToHalf,
+            int tensorHeight, SKRectI destination)
+        {
+            public readonly byte* Src = src;
+            public readonly int SrcRowBytes = srcRowBytes;
+            public readonly int* XOffsets = xOffsets;
+            public readonly int* XWeights = xWeights;
+            public readonly int* YRows = yRows;
+            public readonly int* YWeights = yWeights;
+            public readonly int DstWidth = dstWidth;
+            public readonly bool IsBgra = isBgra;
+            public readonly byte* Dst = dst;
+            public readonly int BufferRowBytes = bufferRowBytes;
+            public readonly float* Tensor = tensor;
+            public readonly ushort* HalfTensor = halfTensor;
+            public readonly ushort* ByteToHalf = byteToHalf;
+            public readonly int TensorHeight = tensorHeight;
+            public readonly SKRectI Destination = destination;
+        }
+
+        /// <summary>
+        /// Resizes destination rows <paramref name="yStart"/> to <paramref name="yEnd"/> (exclusive) into the RGBX buffer or tensor.
+        /// </summary>
+        private static void ResizeRows(in RowJob job, int yStart, int yEnd)
+        {
+            var pool = ArrayPool<int>.Shared;
+            var rowA = pool.Rent(job.DstWidth * 4);
+            var rowB = pool.Rent(job.DstWidth * 4);
+
+            try
+            {
+                byte* src = job.Src;
+                int srcRowBytes = job.SrcRowBytes;
+                int* pXOffsets = job.XOffsets, pXWeights = job.XWeights, yRows = job.YRows, yWeights = job.YWeights;
+                int dstWidth = job.DstWidth, bufferRowBytes = job.BufferRowBytes, tensorHeight = job.TensorHeight;
+                bool isBgra = job.IsBgra;
+                byte* dst = job.Dst;
+                float* tensor = job.Tensor;
+                ushort* halfTensor = job.HalfTensor, byteToHalf = job.ByteToHalf;
+                var destination = job.Destination;
+
+                fixed (int* pRowA = rowA, pRowB = rowB)
                 {
                     // Two cached, horizontally filtered source rows. When upscaling, neighbouring destination rows share
                     // source rows, so most rows are filtered once.
                     int* cacheA = pRowA, cacheB = pRowB;
                     int rowInA = -1, rowInB = -1;
 
-                    for (int y = 0; y < dstHeight; y++)
+                    for (int y = yStart; y < yEnd; y++)
                     {
                         int upper = yRows[y];
                         int lower = upper + 1;
@@ -126,20 +238,125 @@ namespace YoloDotNet.Utils
                             rowInB = lower;
                         }
 
-                        BlendRows(cacheA, cacheB, yWeights[y * 2], yWeights[y * 2 + 1], dst + y * bufferRowBytes, dstWidth, isBgra);
+                        if (tensor != null)
+                        {
+                            int width = bufferRowBytes / sizeof(float);
+                            BlendNormalizedRows(cacheA, cacheB, yWeights[y * 2], yWeights[y * 2 + 1],
+                                tensor + (destination.Top + y) * width + destination.Left, width * tensorHeight, dstWidth, isBgra);
+                        }
+                        else if (halfTensor != null)
+                        {
+                            int width = bufferRowBytes / sizeof(ushort);
+                            BlendNormalizedHalfRows(cacheA, cacheB, yWeights[y * 2], yWeights[y * 2 + 1],
+                                halfTensor + (destination.Top + y) * width + destination.Left, width * tensorHeight, dstWidth, isBgra, byteToHalf);
+                        }
+                        else
+                            BlendRows(cacheA, cacheB, yWeights[y * 2], yWeights[y * 2 + 1], dst + y * bufferRowBytes, dstWidth, isBgra);
                     }
                 }
-
-                return true;
             }
             finally
             {
-                pool.Return(xOffsets);
-                pool.Return(xWeights);
-                pool.Return(yRows);
-                pool.Return(yWeights);
                 pool.Return(rowA);
                 pool.Return(rowB);
+            }
+        }
+
+        private static void FillPaddingHalf(ushort* tensor, int width, int height, SKRectI destination, ushort* byteToHalf)
+        {
+            var color = ImageConfig.LetterboxPaddingColor;
+            for (int channel = 0; channel < 3; channel++)
+            {
+                ushort value = byteToHalf[channel == 0 ? color.Red : channel == 1 ? color.Green : color.Blue];
+                ushort* plane = tensor + channel * width * height;
+                new Span<ushort>(plane, destination.Top * width).Fill(value);
+                new Span<ushort>(plane + destination.Bottom * width, (height - destination.Bottom) * width).Fill(value);
+                if (destination.Left == 0 && destination.Right == width)
+                    continue;
+
+                for (int y = destination.Top; y < destination.Bottom; y++)
+                {
+                    new Span<ushort>(plane + y * width, destination.Left).Fill(value);
+                    new Span<ushort>(plane + y * width + destination.Right, width - destination.Right).Fill(value);
+                }
+            }
+        }
+
+        private static void BlendNormalizedHalfRows(int* upper, int* lower, int upperWeight, int lowerWeight,
+            ushort* output, int planeSize, int count, bool isBgra, ushort* byteToHalf)
+        {
+            var w0 = Vector128.Create(upperWeight);
+            var w1 = Vector128.Create(lowerWeight);
+            var rounding = Vector128.Create(ROUNDING);
+            ushort* first = output + (isBgra ? planeSize * 2 : 0);
+            ushort* green = output + planeSize;
+            ushort* third = output + (isBgra ? 0 : planeSize * 2);
+
+            // Blend yields 0-255 (non-negative weights that sum to one), the same values BlendRows packs into bytes,
+            // so the table gives exactly what normalizing the RGBX image would. The byte cast only bounds the index.
+            for (int x = 0; x < count; x++)
+            {
+                var pixel = Blend(upper + x * 4, lower + x * 4, w0, w1, rounding);
+                first[x] = byteToHalf[(byte)pixel.GetElement(0)];
+                green[x] = byteToHalf[(byte)pixel.GetElement(1)];
+                third[x] = byteToHalf[(byte)pixel.GetElement(2)];
+            }
+        }
+
+        private static void FillPadding(float* tensor, int width, int height, SKRectI destination)
+        {
+            var color = ImageConfig.LetterboxPaddingColor;
+            for (int channel = 0; channel < 3; channel++)
+            {
+                float value = (channel == 0 ? color.Red : channel == 1 ? color.Green : color.Blue) * (1f / 255f);
+                float* plane = tensor + channel * width * height;
+                new Span<float>(plane, destination.Top * width).Fill(value);
+                new Span<float>(plane + destination.Bottom * width, (height - destination.Bottom) * width).Fill(value);
+                if (destination.Left == 0 && destination.Right == width)
+                    continue;
+
+                for (int y = destination.Top; y < destination.Bottom; y++)
+                {
+                    new Span<float>(plane + y * width, destination.Left).Fill(value);
+                    new Span<float>(plane + y * width + destination.Right, width - destination.Right).Fill(value);
+                }
+            }
+        }
+
+        private static void BlendNormalizedRows(int* upper, int* lower, int upperWeight, int lowerWeight,
+            float* output, int planeSize, int count, bool isBgra)
+        {
+            var w0 = Vector128.Create(upperWeight);
+            var w1 = Vector128.Create(lowerWeight);
+            var rounding = Vector128.Create(ROUNDING);
+            var scale = Vector128.Create(1f / 255f);
+            float* first = output + (isBgra ? planeSize * 2 : 0);
+            float* green = output + planeSize;
+            float* third = output + (isBgra ? 0 : planeSize * 2);
+
+            int x = 0;
+            for (; x <= count - 4; x += 4)
+            {
+                var p0 = Blend(upper + x * 4, lower + x * 4, w0, w1, rounding);
+                var p1 = Blend(upper + x * 4 + 4, lower + x * 4 + 4, w0, w1, rounding);
+                var p2 = Blend(upper + x * 4 + 8, lower + x * 4 + 8, w0, w1, rounding);
+                var p3 = Blend(upper + x * 4 + 12, lower + x * 4 + 12, w0, w1, rounding);
+                var low01 = Sse2.UnpackLow(p0, p1).AsInt64();
+                var low23 = Sse2.UnpackLow(p2, p3).AsInt64();
+                var c0 = Sse2.UnpackLow(low01, low23).AsInt32();
+                var c1 = Sse2.UnpackHigh(low01, low23).AsInt32();
+                var c2 = Sse2.UnpackLow(Sse2.UnpackHigh(p0, p1).AsInt64(), Sse2.UnpackHigh(p2, p3).AsInt64()).AsInt32();
+                Sse.Store(first + x, Sse.Multiply(Sse2.ConvertToVector128Single(c0), scale));
+                Sse.Store(green + x, Sse.Multiply(Sse2.ConvertToVector128Single(c1), scale));
+                Sse.Store(third + x, Sse.Multiply(Sse2.ConvertToVector128Single(c2), scale));
+            }
+
+            for (; x < count; x++)
+            {
+                var pixel = Blend(upper + x * 4, lower + x * 4, w0, w1, rounding);
+                first[x] = pixel.GetElement(0) * (1f / 255f);
+                green[x] = pixel.GetElement(1) * (1f / 255f);
+                third[x] = pixel.GetElement(2) * (1f / 255f);
             }
         }
 
