@@ -25,19 +25,15 @@ YoloDotNet intentionally avoids heavy computer vision frameworks such as OpenCV.
 Designed for low-latency inference and long-running workloads, YoloDotNet gives developers full control over execution, memory usage, and preprocessing — allowing you to choose the hardware, platform, and execution backend without unnecessary abstraction or overhead.
 		</Description>
 		<Authors>Niklas Swärd</Authors>
-		<Version>4.2</Version>
+		<Version>4.3</Version>
 		<Company />
 		<PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageReleaseNotes>YoloDotNet v4.2 focuses on usability, ROI support, and segmentation enhancements.
+		<PackageReleaseNotes>YoloDotNet v4.3 — the fastest YoloDotNet yet. Compared with v4.2: up to 2.5× faster video processing, 1.8× faster TensorRT detection and 2.4× faster segmentation drawing.
 
-This release adds Region of Interest (ROI) support, allowing inference on specific areas of an image or video stream — useful for surveillance, monitoring zones, and performance optimization.
+New: StartVideoProcessing&lt;T&gt; for faster video files, opt-in CUDA Graphs for CUDA and TensorRT, thread-safe parallel inference, trimming support, segmentation outlines (Contours, GetPixelMask), pose keypoints from JSON and improved tracking.
 
-New helper methods include ToJson() and SaveJson() for exporting results as JSON, ToYoloFormat() and SaveYoloFormat() for YOLO-annotated data export, and GetContourPoints() for extracting ordered contour points from segmented objects.
-
-Segmentation now supports drawing edges on segmented objects.
-
-Updated YOLOv26 inference execution to align with other tasks, improving consistency and overall execution efficiency.
+Breaking changes: requires the updated execution provider packages (v1.2), bilinear resize sampling by default, SortTracker confirms tracks after 3 hits, and pose drawing uses PoseDrawingOptions.PoseKeyPoints. See the full changelog: https://github.com/NickSwardh/YoloDotNet/blob/master/CHANGELOG.md
 
 Check out the demo projects on GitHub for hands-on examples: https://github.com/NickSwardh/YoloDotNet/tree/master/Demo</PackageReleaseNotes>
 		<Copyright>Copyright © Niklas Swärd</Copyright>

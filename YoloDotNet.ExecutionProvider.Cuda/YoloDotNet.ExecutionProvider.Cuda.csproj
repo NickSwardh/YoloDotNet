@@ -7,7 +7,7 @@
     <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Title>YoloDotNet CUDA &amp; TensorRT Execution Provider</Title>
-    <Version>1.1</Version>
+    <Version>1.2</Version>
     <Authors>Niklas Swärd</Authors>
     <Copyright>Copyright © Niklas Swärd</Copyright>
     <PackageIcon>icon.png</PackageIcon>
@@ -18,7 +18,7 @@ This execution provider supports CUDA for general GPU acceleration and optional 
 
 The provider is fully compatible with the YoloDotNet core library and follows the new modular, execution-provider-agnostic architecture introduced in YoloDotNet v4.0.</Description>
     <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
-    <PackageReleaseNotes>This release updates the internal execution provider architecture to align with YoloDotNet v4.1. Model parsing and validation are now handled exclusively by the YoloDotNet core library, simplifying execution provider implementations and ensuring consistent model handling across all backends. This execution provider requires YoloDotNet version 4.1.</PackageReleaseNotes>
+    <PackageReleaseNotes>Adds opt-in CUDA Graphs for CUDA and TensorRT (enableCudaGraph: true): faster inference with identical results. TensorRT sessions now register CUDA as a fallback, so operations TensorRT cannot run stay on the GPU. This release requires YoloDotNet version 4.3. Models are now loaded without reflection, so apps published with trimming (PublishTrimmed) work, and older YoloDotNet versions report a clear compatibility error.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/NickSwardh/YoloDotNet/tree/master/YoloDotNet.ExecutionProvider.Cuda</PackageProjectUrl>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>

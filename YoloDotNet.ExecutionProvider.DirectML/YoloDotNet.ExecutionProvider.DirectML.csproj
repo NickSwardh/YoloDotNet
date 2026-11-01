@@ -15,9 +15,9 @@
     <RepositoryUrl>https://github.com/NickSwardh/YoloDotNet</RepositoryUrl>
     <PackageTags>yolo;yolov5u;yolov8;yolov9;yolov10;yolov11;yolov12;yolov26;yolo8;yolo9;yolo10;yolo11;yolo26;yolo-world;yolo-e;onnx;onnx-runtime;execution-provider;modular;cross-platform;cpu;cuda;gpu;tensorrt;openvino;coreml;nvidia;intel;apple;openvino;coreml;directml;classification;object-detection;segmentation;pose-estimation;obb;oriented-bounding-box;image-processing;computer-vision;video-processing;media-processing;skiasharp;tracking;machine-learning;real-time;inference</PackageTags>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <Version>1.0</Version>
+    <Version>1.2</Version>
     <Title>YoloDotNet DirectML Execution Provider</Title>
-    <PackageReleaseNotes>Initial release. This execution provider requires YoloDotNet version 4.1.</PackageReleaseNotes>
+    <PackageReleaseNotes>This release requires YoloDotNet version 4.3. Models are now loaded without reflection, so apps published with trimming (PublishTrimmed) work, and older YoloDotNet versions report a clear compatibility error.</PackageReleaseNotes>
     <Description>YoloDotNet.ExecutionProvider.DirectML enables hardware-accelerated inference on Windows using Microsoft’s DirectML framework.
 
 This execution provider integrates ONNX Runtime’s DirectML backend and runs on top of DirectX 12, allowing inference to be accelerated on a wide range of GPUs using the Windows graphics driver stack. DirectML is a Windows-only technology and is supported on Windows 10 and Windows 11 with a DirectX 12–capable GPU.
