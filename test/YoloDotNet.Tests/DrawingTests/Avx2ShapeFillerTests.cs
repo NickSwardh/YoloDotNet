@@ -10,7 +10,7 @@ namespace YoloDotNet.Tests.DrawingTests
     /// </summary>
     public class Avx2ShapeFillerTests
     {
-        private static readonly SKColor Background = new(100, 150, 200);
+        private static readonly SKColor _background = new(100, 150, 200);
 
         // Edge pixels get the exact covered area, so they may differ from a SkiaSharp drawing of the same shape by a few levels
         private const int EDGE_TOLERANCE = 32;
@@ -71,14 +71,14 @@ namespace YoloDotNet.Tests.DrawingTests
             if (!Avx2ShapeFiller.IsSupported)
                 return;
 
-            using var image = CreateImage(40, 40, Background);
+            using var image = CreateImage(40, 40, _background);
 
             // Outer and inner outline wound the same way: the even-odd rule still leaves the inside empty
             SKPoint[][] ring = [Rectangle(4, 4, 36, 36), Rectangle(14, 14, 26, 26)];
 
             Assert.True(Avx2ShapeFiller.TryFillPolygons(image, ring, new SKColor(255, 0, 0, 128)));
-            Assert.Equal(Background, image.GetPixel(20, 20));
-            Assert.NotEqual(Background, image.GetPixel(8, 20));
+            Assert.Equal(_background, image.GetPixel(20, 20));
+            Assert.NotEqual(_background, image.GetPixel(8, 20));
         }
 
         [Theory]
@@ -122,7 +122,7 @@ namespace YoloDotNet.Tests.DrawingTests
             if (!Avx2ShapeFiller.IsSupported)
                 return;
 
-            using var image = CreateImage(20, 20, Background);
+            using var image = CreateImage(20, 20, _background);
 
             Assert.True(Avx2ShapeFiller.TryFillPolygons(image, [Rectangle(30, 30, 50, 50)], SKColors.Red));
             Assert.True(Avx2ShapeFiller.TryFillPolygons(image, [Rectangle(-30, 5, -10, 15)], SKColors.Red));
@@ -130,7 +130,7 @@ namespace YoloDotNet.Tests.DrawingTests
 
             for (int y = 0; y < 20; y++)
                 for (int x = 0; x < 20; x++)
-                    Assert.Equal(Background, image.GetPixel(x, y));
+                    Assert.Equal(_background, image.GetPixel(x, y));
         }
 
         [Fact]
@@ -139,7 +139,7 @@ namespace YoloDotNet.Tests.DrawingTests
             if (!Avx2ShapeFiller.IsSupported)
                 return;
 
-            using var image = CreateImage(20, 20, Background);
+            using var image = CreateImage(20, 20, _background);
             SKPoint[][] broken = [[new(2, 2), new(float.NaN, 5), new(15, 15)]];
 
             Assert.False(Avx2ShapeFiller.TryFillPolygons(image, broken, SKColors.Red));
@@ -147,7 +147,7 @@ namespace YoloDotNet.Tests.DrawingTests
 
             for (int y = 0; y < 20; y++)
                 for (int x = 0; x < 20; x++)
-                    Assert.Equal(Background, image.GetPixel(x, y));
+                    Assert.Equal(_background, image.GetPixel(x, y));
         }
 
         [Theory]
@@ -242,7 +242,7 @@ namespace YoloDotNet.Tests.DrawingTests
 
             byte[] Draw(SKPoint[][] contours)
             {
-                using var image = CreateImage(320, 240, Background);
+                using var image = CreateImage(320, 240, _background);
                 Avx2ShapeFiller.TryFillPolygons(image, contours, new SKColor(10, 220, 30, 140));
                 Avx2ShapeFiller.TryFillCircle(image, new SKPoint(100, 80), 9.5f, new SKColor(250, 220, 0, 128));
                 return image.GetPixelSpan().ToArray();
@@ -320,10 +320,10 @@ namespace YoloDotNet.Tests.DrawingTests
 
         private static int MaxDifferenceFromSkia(int width, int height, SKPoint[][] contours, SKColor color)
         {
-            using var avx2 = CreateImage(width, height, Background);
+            using var avx2 = CreateImage(width, height, _background);
             Assert.True(Avx2ShapeFiller.TryFillPolygons(avx2, contours, color));
 
-            using var skia = CreateImage(width, height, Background);
+            using var skia = CreateImage(width, height, _background);
             using (var canvas = new SKCanvas(skia))
             using (var path = MaskRasterizer.CreatePath(contours))
             using (var paint = new SKPaint { Color = color, IsAntialias = true })
