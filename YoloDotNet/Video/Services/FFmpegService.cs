@@ -631,7 +631,7 @@ namespace YoloDotNet.Video.Services
             _cts?.Dispose();
 
             _ffmpegDecode?.Dispose();
-            _ffmpegDecode?.Dispose();
+            _ffmpegEncode?.Dispose();
 
             _currentFrame?.Dispose();
 
