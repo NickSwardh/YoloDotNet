@@ -7,7 +7,6 @@ namespace YoloDotNet.Modules.V26
     internal class ObjectDetectionModuleV26 : IObjectDetectionModule
     {
         private readonly YoloCore _yoloCore;
-        private int _totalElements;
 
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
@@ -18,92 +17,77 @@ namespace YoloDotNet.Modules.V26
         public ObjectDetectionModuleV26(YoloCore yoloCore)
         {
             _yoloCore = yoloCore;
-
-            // Get output shape from ONNX model. Format: [Batch, Attributes, Predictions]
-            var outputShape = _yoloCore.OnnxModel.OutputShapes.ElementAt(0).Value;
-            var modelOutputChannels = outputShape[1];
-            var modelOutputElements = outputShape[2];
-            _totalElements = modelOutputChannels * modelOutputElements;
-
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this method better performance
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou = 0, SKRectI? roi = null)
         {
             using var inferenceResult = _yoloCore.Run(image, roi);
-            var detections = ObjectDetection(inferenceResult, confidence);
-
-            return YoloCore.InferenceResultsToType(detections, roi, r => (ObjectDetection)r);
+            return ObjectDetection(inferenceResult, confidence, roi);
         }
 
         #region Helper methods
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this method better performance
-        public Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold)
+        private List<ObjectDetection> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, SKRectI? roi)
         {
             var imageSize = inferenceResult.ImageOriginalSize;
             var ortSpan = inferenceResult.OrtSpan0;
 
             var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
 
-            int validBoxCount = 0;
-            var boxes = ArrayPool<ObjectResult>.Shared.Rent(_totalElements);
+            // Count first so the final list needs only one backing array, including for crowded scenes.
+            int count = 0;
+            for (int i = 4; i < ortSpan.Length; i += 6)
+                if (!(ortSpan[i] < confidenceThreshold))
+                    count++;
 
-            try
+            var boxes = new List<ObjectDetection>(count);
+            for (var i = 0; i < ortSpan.Length; i += 6)
             {
-                for (var i = 0; i < ortSpan.Length; i += 6)
+                var confidence = ortSpan[i + 4];
+
+                // Filter out low confidence boxes
+                if (confidence < confidenceThreshold)
+                    continue;
+
+                // Extract box data
+                var x = ortSpan[i];
+                var y = ortSpan[i + 1];
+                var w = ortSpan[i + 2];
+                var h = ortSpan[i + 3];
+                var labelIndex = ortSpan[i + 5];
+
+                int xMin, yMin, xMax, yMax;
+
+                if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                 {
-                    var confidence = ortSpan[i + 4];
-
-                    // Filter out low confidence boxes
-                    if (confidence < confidenceThreshold)
-                        continue;
-
-                    // Extract box data
-                    var x = ortSpan[i];
-                    var y = ortSpan[i + 1];
-                    var w = ortSpan[i + 2];
-                    var h = ortSpan[i + 3];
-                    var labelIndex = ortSpan[i + 5];
-
-                    int xMin, yMin, xMax, yMax;
-
-                    if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
-                    {
-                        // Undo padding and rescale boxes to original image size
-                        xMin = (int)MathF.Round((x - xPad) * xGain);
-                        yMin = (int)MathF.Round((y - yPad) * yGain);
-                        xMax = (int)MathF.Round((w - xPad) * xGain);
-                        yMax = (int)MathF.Round((h - yPad) * yGain);
-                    }
-                    else
-                    {
-                        // Rescale boxes to original image size
-                        xMin = (int)MathF.Round(x / xGain);
-                        yMin = (int)MathF.Round(y / yGain);
-                        xMax = (int)MathF.Round(w / xGain);
-                        yMax = (int)MathF.Round(h / yGain);
-                    }
-
-                    var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
-
-                    // Add box to results
-                    boxes[validBoxCount++] = new ObjectResult
-                    {
-                        Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
-                        Confidence = confidence,
-                        BoundingBox = boundingBox,
-                        BoundingBoxIndex = i
-                    };
+                    // Undo padding and rescale boxes to original image size
+                    xMin = (int)MathF.Round((x - xPad) * xGain);
+                    yMin = (int)MathF.Round((y - yPad) * yGain);
+                    xMax = (int)MathF.Round((w - xPad) * xGain);
+                    yMax = (int)MathF.Round((h - yPad) * yGain);
+                }
+                else
+                {
+                    // Rescale boxes to original image size
+                    xMin = (int)MathF.Round(x / xGain);
+                    yMin = (int)MathF.Round(y / yGain);
+                    xMax = (int)MathF.Round(w / xGain);
+                    yMax = (int)MathF.Round(h / yGain);
                 }
 
-                // Copy the results out: 'boxes' goes back to the shared ArrayPool in the finally block below,
-                // where any other inference call could rent and overwrite it.
-                return boxes.AsSpan(0, validBoxCount).ToArray();
+                var boundingBox = new SKRectI(xMin, yMin, xMax, yMax);
+
+                // Add box to results
+                boxes.Add(new ObjectDetection
+                {
+                    Label = _yoloCore.OnnxModel.Labels[(int)labelIndex],
+                    Confidence = confidence,
+                    BoundingBox = roi.HasValue ? YoloCore.TransformRoiBoundingBox(boundingBox, roi.Value) : boundingBox
+                });
             }
-            finally
-            {
-                ArrayPool<ObjectResult>.Shared.Return(boxes);
-            }
+
+            return boxes;
         }
 
         public void Dispose()
