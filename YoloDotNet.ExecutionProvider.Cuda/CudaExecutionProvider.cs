@@ -37,7 +37,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <param name="trtConfig">TensorRT settings. When set, the model runs on TensorRT with CUDA as fallback.</param>
         /// <param name="enableCudaGraph">
         /// Records the GPU work on the first inference and replays it on later calls, for CUDA and TensorRT alike.
-        /// Requires fixed input sizes, a GPU device ID of 0 or above, and a model that runs entirely on the GPU
+        /// Requires a GPU device ID of 0 or above and a model that runs entirely on the GPU
         /// (entirely on TensorRT when <paramref name="trtConfig"/> is set). Models that don't qualify fail when the
         /// provider is created.
         /// </param>

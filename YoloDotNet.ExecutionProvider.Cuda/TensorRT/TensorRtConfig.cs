@@ -70,7 +70,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda.TensorRT
 
                 { "trt_cuda_graph_enable", enableCudaGraph ? "1" : "0" }
                 // Capture the engine's GPU work as a CUDA graph on the first run and replay it on later runs.
-                // Requires fixed input sizes and a model that runs entirely on TensorRT.
+                // Requires a model that runs entirely on TensorRT.
             };
 
             switch (tensorRtModel.Precision)
