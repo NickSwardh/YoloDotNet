@@ -72,7 +72,8 @@ namespace YoloDotNet.Extensions
             {
                 if (dimension <= 0)
                     throw new YoloDotNetException(
-                        $"All shape dimensions must be positive. Found invalid value: {dimension}",
+                        $"The model has a dynamic input shape ({string.Join("x", shape)}), which is not supported. " +
+                        "Export the model with a fixed input size (dynamic=False, the default).",
                         nameof(shape));
 
                 shapeSize *= (int)dimension;
