@@ -2,9 +2,6 @@
 // SPDX-FileCopyrightText: 2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using System.Buffers;
-using System.Runtime.InteropServices;
-
 namespace YoloDotNet.ExecutionProvider.DirectML
 {
     public class DirectMLExecutionProvider : IExecutionProvider, IDisposable

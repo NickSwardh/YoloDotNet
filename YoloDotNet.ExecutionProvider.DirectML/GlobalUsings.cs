@@ -2,6 +2,9 @@
 // SPDX-FileCopyrightText: 2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
+global using System.Buffers;
+global using System.Runtime.InteropServices;
+
 global using YoloDotNet.Core;
 global using YoloDotNet.Enums;
 global using YoloDotNet.Models;

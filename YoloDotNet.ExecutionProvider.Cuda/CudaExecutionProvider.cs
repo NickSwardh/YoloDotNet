@@ -2,9 +2,6 @@
 // SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using System.Buffers;
-using System.Runtime.InteropServices;
-
 namespace YoloDotNet.ExecutionProvider.Cuda
 {
     public class CudaExecutionProvider : IExecutionProvider, IDisposable

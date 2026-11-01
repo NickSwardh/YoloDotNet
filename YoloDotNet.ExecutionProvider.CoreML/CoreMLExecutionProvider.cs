@@ -1,9 +1,6 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
-
-using System.Buffers;
-using System.Runtime.InteropServices;
 
 namespace YoloDotNet.ExecutionProvider.CoreML
 {
