@@ -17,6 +17,15 @@ namespace YoloDotNet
 
         #region Public Fields
         public OnnxModel OnnxModel => _detection.OnnxModel;
+        /// <summary>
+        /// Called for every decoded frame, with the frame and its zero-based index, after <see cref="StartVideoProcessing()"/>.
+        /// Run detection yourself in it; drawing on the frame is kept in the output video. Frames are handled one after the other.
+        /// </summary>
+        /// <remarks>
+        /// For faster processing, use <see cref="StartVideoProcessing{T}(Action{SKBitmap, List{T}, long}, double, double, SKRectI?, double, int, int)"/>
+        /// instead: it runs the loaded model itself and detects upcoming frames while your handler processes the current one.
+        /// Keep using this callback when each frame needs custom detection, such as a different ROI per frame, several models, or skipping frames.
+        /// </remarks>
         public Action<SKBitmap, long> OnVideoFrameReceived = default!;
         public Action OnVideoEnd = default!;
         #endregion
@@ -179,10 +188,82 @@ namespace YoloDotNet
                 "No video initialized. Please call InitializeVideo() before attempting to retrieve metadata.");
 
         /// <summary>
-        /// Starts decoding and processing video frames from the initialized video stream.
+        /// Starts decoding and processing video frames from the initialized video stream. Every frame is passed to
+        /// <see cref="OnVideoFrameReceived"/>, where you run detection yourself, one frame after the other.
         /// </summary>
+        /// <remarks>
+        /// For faster processing, use <see cref="StartVideoProcessing{T}(Action{SKBitmap, List{T}, long}, double, double, SKRectI?, double, int, int)"/>
+        /// instead: it runs the loaded model itself and detects upcoming frames while your handler processes the current one.
+        /// Use this method when each frame needs custom detection, such as a different ROI per frame, several models, or skipping frames.
+        /// </remarks>
         public void StartVideoProcessing()
             => _ffmpegService.Start();
+
+        /// <summary>
+        /// Starts decoding the initialized video and runs the loaded model on every frame, detecting upcoming frames while
+        /// <paramref name="onResult"/> handles the current one. Faster than <see cref="OnVideoFrameReceived"/> with
+        /// <see cref="StartVideoProcessing()"/> when frames are available faster than they are processed, such as video files.
+        /// </summary>
+        /// <remarks>
+        /// Alternative: assign <see cref="OnVideoFrameReceived"/>, run detection yourself in it, and call <see cref="StartVideoProcessing()"/>.
+        /// Each frame is then detected and handled one after the other. Use that when each frame needs custom detection,
+        /// such as a different ROI per frame, several models, or skipping frames.
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// yolo.InitializeVideo(videoOptions);
+        ///
+        /// yolo.StartVideoProcessing&lt;ObjectDetection&gt;((frame, result, frameIndex) =>
+        /// {
+        ///     result = result.Track(tracker);
+        ///     frame.Draw(result);
+        /// },
+        /// confidence: 0.25, iou: 0.7);
+        /// </code>
+        /// </example>
+        /// <typeparam name="T">The result type of the loaded model's task, for example <see cref="ObjectDetection"/> for a detection model.</typeparam>
+        /// <param name="onResult">
+        /// Called with every frame, its results and its index: on the calling thread, one frame at a time and in frame order,
+        /// so tracking and other per-frame state work as with <see cref="OnVideoFrameReceived"/>. Drawing on the frame is kept in the output video.
+        /// </param>
+        /// <param name="confidence">The confidence threshold for detected objects (default is 0.2). Not used for classification.</param>
+        /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7). Not used for classification.</param>
+        /// <param name="roi">Optional region of interest within each frame to focus detection on. Not used for classification.</param>
+        /// <param name="pixelConfidence">Segmentation only: the confidence threshold for mask pixels (default is 0.65).</param>
+        /// <param name="classes">Classification only: the number of classes to return (default is 1).</param>
+        /// <param name="framesInFlight">The maximum number of frames detected at once (default is 2).</param>
+        /// <exception cref="YoloDotNetVideoException">No video is initialized, or <typeparamref name="T"/> does not match the loaded model's task.</exception>
+        public void StartVideoProcessing<T>(Action<SKBitmap, List<T>, long> onResult,
+            double confidence = 0.2,
+            double iou = 0.7,
+            SKRectI? roi = null,
+            double pixelConfidence = 0.65,
+            int classes = 1,
+            int framesInFlight = 2)
+        {
+            ArgumentNullException.ThrowIfNull(onResult);
+            ArgumentOutOfRangeException.ThrowIfLessThan(framesInFlight, 1);
+
+            if (_ffmpegService is null)
+                throw new YoloDotNetVideoException("No video initialized. Please call InitializeVideo() before starting video processing.");
+
+            // The loaded model decides the task; T only states the result type that onResult is compiled against.
+            (Type ResultType, Func<SKBitmap, object> Detect) task = OnnxModel.ModelType switch
+            {
+                ModelType.Classification => (typeof(Classification), frame => RunClassification(frame, classes)),
+                ModelType.ObjectDetection => (typeof(ObjectDetection), frame => RunObjectDetection(frame, confidence, iou, roi)),
+                ModelType.ObbDetection => (typeof(OBBDetection), frame => RunObbDetection(frame, confidence, iou, roi)),
+                ModelType.Segmentation => (typeof(Segmentation), frame => RunSegmentation(frame, confidence, pixelConfidence, iou, roi)),
+                ModelType.PoseEstimation => (typeof(PoseEstimation), frame => RunPoseEstimation(frame, confidence, iou, roi)),
+                _ => throw new YoloDotNetVideoException($"Video processing does not support model type {OnnxModel.ModelType}.")
+            };
+
+            if (task.ResultType != typeof(T))
+                throw new YoloDotNetVideoException($"The loaded model ({ModelInfo}) returns {task.ResultType.Name} results, " +
+                    $"but video processing was started for {typeof(T).Name}. Use StartVideoProcessing<{task.ResultType.Name}>(...).");
+
+            _ffmpegService.Start(frame => (List<T>)task.Detect(frame), onResult, framesInFlight);
+        }
 
         /// <summary>
         /// Stops video frame processing and releases resources associated with the video stream.

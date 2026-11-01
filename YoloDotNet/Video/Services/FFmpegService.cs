@@ -325,108 +325,223 @@ namespace YoloDotNet.Video.Services
         public void Start()
         {
             _cts = new CancellationTokenSource();
-            Run(_cts.Token);
+            Run(_cts.Token, ProcessFrames);
+        }
+
+        /// <summary>
+        /// Starts processing with the detection of upcoming frames overlapping the handling of the current one.
+        /// <paramref name="detect"/> runs for up to <paramref name="framesInFlight"/> frames at once, while
+        /// <paramref name="onResult"/> runs on the calling thread, one frame at a time and in frame order.
+        /// </summary>
+        public void Start<TResult>(Func<SKBitmap, TResult> detect, Action<SKBitmap, TResult, long> onResult, int framesInFlight)
+        {
+            _cts = new CancellationTokenSource();
+            Run(_cts.Token, (inputStream, outputStream, frameSize, cancellationToken)
+                => ProcessFramesOverlapped(inputStream, outputStream, frameSize, detect, onResult, framesInFlight, cancellationToken));
         }
 
         public void Stop()
             => _cts.Cancel();
 
-        unsafe private void Run(CancellationToken cancellationToken)
+        private void Run(CancellationToken cancellationToken, Action<Stream, Stream?, int, CancellationToken> processFrames)
         {
             var frameSize = _videoTargetWidth * _videoTargetHeight * 4;
+
+            var shouldCreateVideo = string.IsNullOrEmpty(_videoOptions.VideoOutput) is false;
+
+            _ffmpegDecode.Start();
+            _ffmpegDecode.BeginErrorReadLine();
+
+            if (shouldCreateVideo)
+            {
+                _ffmpegEncode.Start();
+                _ffmpegEncode.BeginErrorReadLine();
+            }
+
+            using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
+            using Stream? outputStream = shouldCreateVideo
+                ? _ffmpegEncode.StandardInput.BaseStream
+                : default!;
+
+            try
+            {
+                processFrames(inputStream, outputStream, frameSize, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                // Service stopped by user. Exit gracefully...
+            }
+            catch (IOException ex)
+            {
+                ThrowPlatformSpecificError(ex);
+            }
+            finally
+            {
+                inputStream?.Flush();
+                inputStream?.Close();
+
+                outputStream?.Flush();
+                outputStream?.Close();
+
+                _ffmpegDecode.WaitForExit();
+                _ffmpegDecode.CancelErrorRead();
+
+                if (shouldCreateVideo)
+                {
+                    _ffmpegEncode.WaitForExit();
+                    _ffmpegEncode.CancelErrorRead();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Hands every frame to <see cref="OnFrameReady"/> and encodes it once the callback returns, one frame at a time.
+        /// </summary>
+        unsafe private void ProcessFrames(Stream inputStream, Stream? outputStream, int frameSize, CancellationToken cancellationToken)
+        {
             var buffer = ArrayPool<byte>.Shared.Rent(frameSize); // Rent from pool
 
             try
             {
                 int frameIndex = 0;
 
-                var shouldCreateVideo = string.IsNullOrEmpty(_videoOptions.VideoOutput) is false;
-
-                _ffmpegDecode.Start();
-                _ffmpegDecode.BeginErrorReadLine();
-
-                if (shouldCreateVideo)
-                {
-                    _ffmpegEncode.Start();
-                    _ffmpegEncode.BeginErrorReadLine();
-                }
-
-                using var inputStream = _ffmpegDecode.StandardOutput.BaseStream;
-                using Stream? outputStream = shouldCreateVideo
-                    ? _ffmpegEncode.StandardInput.BaseStream
-                    : default!;
-
                 _currentFrame.Erase(SKColors.Black);
 
-                try
+                while (cancellationToken.IsCancellationRequested is false)
                 {
-                    while (cancellationToken.IsCancellationRequested is false)
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    int bytesRead = 0;
+
+                    while (bytesRead < frameSize)
                     {
-                        cancellationToken.ThrowIfCancellationRequested();
+                        int read = inputStream.Read(buffer, bytesRead, frameSize - bytesRead);
 
-                        int bytesRead = 0;
-
-                        while (bytesRead < frameSize)
+                        // Exit if stream reached its end.
+                        if (read == 0)
                         {
-                            int read = inputStream.Read(buffer, bytesRead, frameSize - bytesRead);
-
-                            // Exit if stream reached its end.
-                            if (read == 0)
-                            {
-                                OnVideoEnd?.Invoke();
-                                return;
-                            }
-
-                            bytesRead += read;
+                            OnVideoEnd?.Invoke();
+                            return;
                         }
 
-                        // Fill frame with pixels from ffmpeg
-                        fixed (byte* ptr = buffer)
-                        {
-                            _currentFrame.SetPixels((nint)ptr);
-                        }
-
-                        // Let user process the frame...
-                        OnFrameReady?.Invoke(_currentFrame, frameIndex);
-
-                        // Encode frame back to video?
-                        if (shouldCreateVideo)
-                        {
-                            outputStream.Write(_currentFrame.GetPixelSpan());
-                        }
-
-                        frameIndex++;
+                        bytesRead += read;
                     }
-                }
-                catch (OperationCanceledException)
-                {
-                    // Service stopped by user. Exit gracefully...
-                }
-                catch (IOException ex)
-                {
-                    ThrowPlatformSpecificError(ex);
-                }
-                finally
-                {
-                    inputStream?.Flush();
-                    inputStream?.Close();
 
-                    outputStream?.Flush();
-                    outputStream?.Close();
-
-                    _ffmpegDecode.WaitForExit();
-                    _ffmpegDecode.CancelErrorRead();
-
-                    if (shouldCreateVideo)
+                    // Fill frame with pixels from ffmpeg
+                    fixed (byte* ptr = buffer)
                     {
-                        _ffmpegEncode.WaitForExit();
-                        _ffmpegEncode.CancelErrorRead();
+                        _currentFrame.SetPixels((nint)ptr);
                     }
+
+                    // Let user process the frame...
+                    OnFrameReady?.Invoke(_currentFrame, frameIndex);
+
+                    // Encode frame back to video?
+                    if (outputStream is not null)
+                    {
+                        outputStream.Write(_currentFrame.GetPixelSpan());
+                    }
+
+                    frameIndex++;
                 }
             }
             finally
             {
                 ArrayPool<byte>.Shared.Return(buffer, false); // Return to pool
+            }
+        }
+
+        /// <summary>
+        /// Reads frames on a background task and starts <paramref name="detect"/> for each as soon as it is read, while the
+        /// calling thread hands finished frames to <paramref name="onResult"/> and encodes them, in frame order. The GPU then
+        /// works on upcoming frames while the CPU prepares them and handles earlier ones, instead of waiting for each step.
+        /// </summary>
+        private void ProcessFramesOverlapped<TResult>(Stream inputStream, Stream? outputStream, int frameSize,
+            Func<SKBitmap, TResult> detect, Action<SKBitmap, TResult, long> onResult, int framesInFlight, CancellationToken cancellationToken)
+        {
+            // One frame is with onResult; the others are being read or detected. The number of frames therefore limits
+            // how many are detected at once. Each frame owns its pixels, unlike the shared buffer of the sequential loop.
+            var frames = Enumerable.Range(0, framesInFlight + 1)
+                .Select(_ => new SKBitmap(_videoTargetWidth, _videoTargetHeight, SKColorType.Bgra8888, SKAlphaType.Opaque))
+                .ToList();
+
+            using var freeFrames = new BlockingCollection<SKBitmap>();
+            frames.ForEach(freeFrames.Add);
+
+            using var pending = new BlockingCollection<(SKBitmap Frame, Task<TResult> Result)>();
+            using var stopReading = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+
+            var reader = Task.Run(() => ReadFrames(inputStream, frameSize, freeFrames, pending, detect, stopReading.Token));
+
+            try
+            {
+                long frameIndex = 0;
+
+                foreach (var (frame, result) in pending.GetConsumingEnumerable(cancellationToken))
+                {
+                    // Let user process the frame and its results...
+                    onResult(frame, result.GetAwaiter().GetResult(), frameIndex);
+
+                    // Encode frame back to video?
+                    if (outputStream is not null)
+                    {
+                        outputStream.Write(frame.GetPixelSpan());
+                    }
+
+                    freeFrames.Add(frame);
+                    frameIndex++;
+                }
+
+                // The reader completes the queue when the stream ends or reading fails; rethrow a read error.
+                reader.GetAwaiter().GetResult();
+                OnVideoEnd?.Invoke();
+            }
+            finally
+            {
+                // Stopped, or onResult or a detection failed: stop reading, and let detections that still use frames finish
+                // before the frames are disposed. Their exceptions are dropped; the one that ended processing propagates.
+                stopReading.Cancel();
+
+                try { reader.Wait(); } catch (AggregateException) { }
+
+                while (pending.TryTake(out var item))
+                {
+                    try { item.Result.Wait(); } catch (AggregateException) { }
+                }
+
+                frames.ForEach(frame => frame.Dispose());
+            }
+        }
+
+        unsafe private static void ReadFrames<TResult>(Stream inputStream, int frameSize, BlockingCollection<SKBitmap> freeFrames,
+            BlockingCollection<(SKBitmap Frame, Task<TResult> Result)> pending, Func<SKBitmap, TResult> detect, CancellationToken cancellationToken)
+        {
+            try
+            {
+                while (true)
+                {
+                    var frame = freeFrames.Take(cancellationToken);
+                    var pixels = new Span<byte>((void*)frame.GetPixels(), frameSize);
+
+                    for (int bytesRead = 0; bytesRead < frameSize;)
+                    {
+                        int read = inputStream.Read(pixels[bytesRead..]);
+
+                        // Exit if stream reached its end.
+                        if (read == 0)
+                            return;
+
+                        bytesRead += read;
+                    }
+
+                    // Checked before detection starts, so every started detection is queued and can be waited for on shutdown.
+                    cancellationToken.ThrowIfCancellationRequested();
+                    pending.Add((frame, Task.Run(() => detect(frame))));
+                }
+            }
+            finally
+            {
+                pending.CompleteAdding();
             }
         }
 
