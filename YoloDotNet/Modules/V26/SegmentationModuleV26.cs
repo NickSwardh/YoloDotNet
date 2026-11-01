@@ -26,7 +26,6 @@ namespace YoloDotNet.Modules.V26
         private readonly int _elements;
         private readonly int _predictions;
         private readonly int _outputShapeMaskChannels;
-        private MaskWeights32 _maskWeights32 = default;
 
         public OnnxModel OnnxModel => _yoloCore.OnnxModel;
 
@@ -87,6 +86,10 @@ namespace YoloDotNet.Modules.V26
             int validBoxCount = 0;
             var boxes = ArrayPool<ObjectResult>.Shared.Rent(_totalElements);
 
+            // Per call, on the stack: a module field would be shared by concurrent calls, which would then
+            // trace their masks with each other's weights.
+            MaskWeights32 maskWeights = default;
+
             try
             {
                 for (var i = 0; i < ortSpan.Length; i += _predictions)
@@ -110,7 +113,7 @@ namespace YoloDotNet.Modules.V26
                     // Read mask weights for this bounding box
                     for (int k = 0; k < 32; k++)
                     {
-                        _maskWeights32[k] = ortSpan[offset + k];
+                        maskWeights[k] = ortSpan[offset + k];
                     }
 
                     // Calculate bounding box coordinates adjusted for scaling and padding
@@ -144,7 +147,7 @@ namespace YoloDotNet.Modules.V26
                     // mask is rasterized from them when needed.
                     boxes[validBoxCount].Contours = SegmentationMaskProcessor.CreateContours(
                         ortSpan1,
-                        _maskWeights32,
+                        maskWeights,
                         _outputShapeMaskChannels,
                         _maskWidth,
                         _maskHeight,
@@ -162,9 +165,6 @@ namespace YoloDotNet.Modules.V26
             }
             finally
             {
-                // Clear mask weights for next run
-                _maskWeights32 = default;
-
                 // Return rented array
                 ArrayPool<ObjectResult>.Shared.Return(boxes);
             }

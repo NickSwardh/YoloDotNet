@@ -12,7 +12,6 @@ namespace YoloDotNet.Modules.V26
         private int _keypointDimension;
         private int _totalKeyPoints;
         private int _stride;
-        private KeyPoint[] _keyPoints = default!;
 
         public event EventHandler VideoProgressEvent = delegate { };
         public event EventHandler VideoCompleteEvent = delegate { };
@@ -37,9 +36,6 @@ namespace YoloDotNet.Modules.V26
             // Calculate total keypoints
             var keyPointsSize = modelOutputElements - _dimensions;
             _totalKeyPoints = keyPointsSize / _keypointDimension;
-
-            // Initialize reusable arrays
-            _keyPoints = new KeyPoint[_totalKeyPoints];
         }
 
         public List<PoseEstimation> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
@@ -80,6 +76,9 @@ namespace YoloDotNet.Modules.V26
                     int xMin, yMin, xMax, yMax, keyPointIndex = 0;
                     var offset = i + _dimensions;
 
+                    // Each pose gets its own array: a reused module field would be shared by concurrent calls.
+                    var keyPoints = new KeyPoint[_totalKeyPoints];
+
                     if (_yoloCore.YoloOptions.ImageResize == ImageResize.Proportional)
                     {
                         xMin = (int)MathF.Round((x - xPad) * xGain);
@@ -95,7 +94,7 @@ namespace YoloDotNet.Modules.V26
                             var keypointY = (int)MathF.Round((ortSpan[k + 1] - yPad) * yGain);
                             var keypointConf = ortSpan[k + 2];
 
-                            _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
+                            keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
                         }
                     }
                     else // Stretched
@@ -113,7 +112,7 @@ namespace YoloDotNet.Modules.V26
                             var keypointY = (int)MathF.Round(ortSpan[k + 1] / yGain);
                             var keypointConf = ortSpan[k + 2];
 
-                            _keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
+                            keyPoints[keyPointIndex++] = new KeyPoint(keypointX, keypointY, keypointConf);
                         }
                     }
 
@@ -125,7 +124,7 @@ namespace YoloDotNet.Modules.V26
                         Confidence = confidence,
                         BoundingBox = boundingBox,
                         BoundingBoxIndex = i,
-                        KeyPoints = [.. _keyPoints]
+                        KeyPoints = keyPoints
                     };
                 }
 
