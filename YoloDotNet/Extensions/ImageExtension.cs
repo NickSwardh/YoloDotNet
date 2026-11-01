@@ -259,7 +259,11 @@ namespace YoloDotNet.Extensions
                     var hexColor = options.BoundingBoxHexColors[segmentation.Label.Index % totalColors];
                     var color = HexToRgbaSkia(hexColor, options.PixelMaskOpacity);
 
-                    // Fill the mask outlines; anti-aliasing gives smooth mask edges with sub-pixel accuracy
+                    // Fill the mask outlines with smooth, sub-pixel accurate edges: with AVX2 when the CPU has it,
+                    // otherwise with SkiaSharp
+                    if (Avx2ShapeFiller.TryFillPolygons(image, segmentation.Contours, color))
+                        continue;
+
                     using var path = MaskRasterizer.CreatePath(segmentation.Contours);
                     using var paint = new SKPaint { Color = color, Style = SKPaintStyle.Fill, IsAntialias = true };
 
@@ -443,7 +447,7 @@ namespace YoloDotNet.Extensions
                             if (drawLines is false)
                             {
                                 paint.Color = poseKeyPoints.KeyPointColors[i] is { } keyPointColor ? keyPointColor.WithAlpha((byte)alpha) : defaultColor;
-                                canvas.DrawCircle(start, circleRadius, paint);
+                                FillKeyPoint(image, canvas, start, circleRadius, paint);
                                 continue;
                             }
 
@@ -460,7 +464,7 @@ namespace YoloDotNet.Extensions
                         {
                             // Keypoint without a definition
                             paint.Color = defaultColor;
-                            canvas.DrawCircle(start, circleRadius, paint);
+                            FillKeyPoint(image, canvas, start, circleRadius, paint);
                         }
                     }
                 }
@@ -485,6 +489,16 @@ namespace YoloDotNet.Extensions
 
             var trim = new SKPoint(direction.X / length * keyPointRadius, direction.Y / length * keyPointRadius);
             canvas.DrawLine(from + trim, to - trim, paint);
+        }
+
+        /// <summary>
+        /// Draws a keypoint as a filled circle: with AVX2 when the CPU has it, otherwise with SkiaSharp.
+        /// Lines are always drawn by SkiaSharp.
+        /// </summary>
+        private static void FillKeyPoint(SKBitmap image, SKCanvas canvas, SKPoint center, float radius, SKPaint paint)
+        {
+            if (!Avx2ShapeFiller.TryFillCircle(image, center, radius, paint.Color))
+                canvas.DrawCircle(center, radius, paint);
         }
 
         /// <summary>

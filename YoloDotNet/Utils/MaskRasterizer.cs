@@ -68,6 +68,11 @@ namespace YoloDotNet.Utils
         /// </summary>
         private static void Fill(byte* pixels, int width, int height, int rowBytes, SKPoint[][] contours, float left, float top, bool antiAlias)
         {
+            // With AVX2 the mask comes from the same code that draws masks, so a smooth mask matches the drawn one exactly;
+            // without AVX2 both come from SkiaSharp
+            if (Avx2ShapeFiller.TryRasterize(pixels, width, height, rowBytes, contours, left, top, antiAlias))
+                return;
+
             using var bitmap = new SKBitmap();
             bitmap.InstallPixels(new SKImageInfo(width, height, SKColorType.Alpha8, SKAlphaType.Premul), (IntPtr)pixels, rowBytes);
 
