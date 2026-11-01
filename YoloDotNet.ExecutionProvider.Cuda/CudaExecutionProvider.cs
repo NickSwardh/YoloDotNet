@@ -16,6 +16,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         private InferenceSession _session = default!;
         private OrtIoBinding _ortIoBinding = default!;
         private RunOptions _runOptions = default!;
+        private CudaGraphRunner? _cudaGraph;
         private readonly object _runLock = new();
 
         private long[] _inputShape = default!;
@@ -52,6 +53,21 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         {
             InitializeYolo(model, gpuId, trtConfig);
         }
+
+        /// <summary>
+        /// Creates a CUDA session with optional graph replay. Requires static tensor shapes and a model whose
+        /// operations can all execute on CUDA. The first inference captures the graph; subsequent calls replay it.
+        /// </summary>
+        public CudaExecutionProvider(string model, bool enableCudaGraph, int gpuId = 0)
+        {
+            InitializeYolo(model, gpuId, null, enableCudaGraph);
+        }
+
+        /// <inheritdoc cref="CudaExecutionProvider(string, bool, int)"/>
+        public CudaExecutionProvider(byte[] model, bool enableCudaGraph, int gpuId = 0)
+        {
+            InitializeYolo(model, gpuId, null, enableCudaGraph);
+        }
         #endregion
 
         #region Initialization
@@ -61,23 +77,39 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <param name="model"></param>
         /// <param name="gpuId"></param>
         /// <param name="trtConfig"></param>
-        private void InitializeYolo(object model, int gpuId, TensorRt? trtConfig)
+        private void InitializeYolo(object model, int gpuId, TensorRt? trtConfig, bool enableCudaGraph = false)
         {
+            if (enableCudaGraph && gpuId < 0)
+                throw new ArgumentException("CUDA Graphs require a GPU device ID of 0 or greater.", nameof(gpuId));
+
             ConfigureOrtEnv();
 
-            var options = CreateSessionOptions(gpuId, trtConfig);
+            using var options = CreateSessionOptions(gpuId, trtConfig, enableCudaGraph);
 
             // Create session using bytes if available; else load from file with selected provider.
             _session = (model is byte[] modelBytes)
                 ? new InferenceSession(modelBytes, options)
                 : new InferenceSession((string)model, options);
 
-            GetOnnxMetaData();
-            InitializeInferenceParameters();
+            try
+            {
+                GetOnnxMetaData();
+                InitializeInferenceParameters();
 
-            _runOptions = new RunOptions();
-            _ortIoBinding = _session.CreateIoBinding();
-            _gpuAllocPtr = _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _elementDataType);
+                _runOptions = new RunOptions();
+                if (enableCudaGraph)
+                    _cudaGraph = new CudaGraphRunner(_session, gpuId);
+                else
+                {
+                    _ortIoBinding = _session.CreateIoBinding();
+                    _gpuAllocPtr = _session.AllocateGpuMemory(_ortIoBinding, _runOptions, _elementDataType);
+                }
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
 
         }
 
@@ -114,6 +146,14 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <param name="normalizedPixels"></param>
         unsafe public InferenceResult Run<T>(T[] normalizedPixels) where T : unmanaged
         {
+            if (_cudaGraph is not null)
+            {
+                // Device addresses are shared by graph replays. Upload, inference and output snapshots must
+                // stay inside the same lock; the returned host buffers belong exclusively to this call.
+                lock (_runLock)
+                    return _cudaGraph.Run(normalizedPixels, _runOptions);
+            }
+
             // Pin the input pixel data in memory to prevent it from being moved by the garbage collector.
             fixed (T* pData = normalizedPixels)
             {
@@ -152,7 +192,7 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Creates and configures session options for the ONNX Runtime session.
         /// </summary>
-        private SessionOptions CreateSessionOptions(int gpuId, TensorRt? trtConfig)
+        private SessionOptions CreateSessionOptions(int gpuId, TensorRt? trtConfig, bool enableCudaGraph)
         {
             var options = new SessionOptions
             {
@@ -166,10 +206,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                 {
                     options.ConfigureTensorRT(gpuId, trtConfig);
                 }
-                else
-                {
-                    ConfigureCuda(gpuId, options);
-                }
+
+                // Keep operations TensorRT cannot execute on CUDA where possible, before falling back to CPU.
+                ConfigureCuda(gpuId, options, enableCudaGraph);
             }
             else if (gpuId == -1)
             {
@@ -210,9 +249,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
         /// <summary>
         /// Configures the session options to use the CUDA execution provider with specified options.
         /// </summary>
-        private static void ConfigureCuda(int gpuId, SessionOptions options)
+        private static void ConfigureCuda(int gpuId, SessionOptions options, bool enableCudaGraph)
         {
-            var cudaOptions = new OrtCUDAProviderOptions();
+            using var cudaOptions = new OrtCUDAProviderOptions();
 
             cudaOptions.UpdateOptions(new Dictionary<string, string>
             {
@@ -235,7 +274,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                 { "do_copy_in_default_stream", "1" },
 
                 // Allow cuDNN to use the maximum workspace (may increase memory usage but can improve kernel perf).
-                { "cudnn_conv_use_max_workspace", "1" }
+                { "cudnn_conv_use_max_workspace", "1" },
+
+                { "enable_cuda_graph", enableCudaGraph ? "1" : "0" }
 
             });
 
@@ -312,6 +353,8 @@ namespace YoloDotNet.ExecutionProvider.Cuda
 
         public void Dispose()
         {
+            _cudaGraph?.Dispose();
+            _cudaGraph = null;
             // Free unmanaged GPU allocation if it was allocated.
             if (_gpuAllocPtr != nint.Zero)
             {
@@ -326,9 +369,9 @@ namespace YoloDotNet.ExecutionProvider.Cuda
                 _gpuAllocPtr = nint.Zero;
             }
 
+            _ortIoBinding?.Dispose();
             _session?.Dispose();
             _runOptions?.Dispose();
-            _ortIoBinding?.Dispose();
 
             GC.SuppressFinalize(this);
         }
