@@ -84,7 +84,7 @@ namespace YoloDotNet.Benchmarks.Setup
             {
                 Precision = TrtPrecision.INT8,
                 EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
+                Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "Cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
             }),
             _ => throw new ArgumentException("Unknown execution provider")
         };
