@@ -40,7 +40,9 @@ LICENSE_NOTICE = f"""{YELLOW}
   The models have their own license, controlled by Ultralytics.
 
   - Do NOT use these models in commercial or closed-source software unless
-    you have a commercial license from Ultralytics.
+    you either comply with AGPL-3.0, which requires releasing your
+    application's source code under the same license, or have a commercial
+    license from Ultralytics.
   - AGPL-3.0 has strict requirements for distribution and network deployment.
   - You alone are responsible for complying with the model licenses.
 

@@ -35,7 +35,8 @@ The script:
 > **Model License Notice:**
 > The exported models are **not part of YoloDotNet**. They are owned by Ultralytics and licensed under **AGPL-3.0**,
 > and YoloDotNet's MIT license does **not** cover them. Do not use them in commercial or closed-source software
-> unless you have a commercial license from Ultralytics. The script asks you to accept this before it downloads anything.
+> unless you either comply with AGPL-3.0, which requires releasing your application's source code under the same license,
+> or have a commercial license from Ultralytics. The script asks you to accept this before it downloads anything.
 > See [Ultralytics Model Licensing](https://www.ultralytics.com/license/) for details.
 
 ### 2️⃣ Run a demo
@@ -121,5 +122,7 @@ see the [Accuracy & Configuration Guide](../AccuracyAndConfiguration.md).
 
 The demo source code is part of YoloDotNet and licensed under the [MIT License](../LICENSE.txt).
 The demos use models licensed by Ultralytics under **AGPL-3.0**, which are **not** part of the YoloDotNet MIT license.
-These models are intended for running the demos only and must **not** be used commercially without a commercial license from Ultralytics.
+These models are intended for running the demos only and must **not** be used in commercial or closed-source software
+unless you either comply with AGPL-3.0, which requires releasing your application's source code under the same license,
+or have a commercial license from Ultralytics.
 See [Ultralytics Licensing](https://www.ultralytics.com/license/).
