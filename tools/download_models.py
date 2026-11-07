@@ -1,9 +1,9 @@
 ﻿# SPDX-License-Identifier: MIT
-# SPDX-FileCopyrightText: 2024-2026 Niklas Swärd
+# SPDX-FileCopyrightText: 2026 Niklas Swärd
 # https://github.com/NickSwardh/YoloDotNet
 """
 Downloads the Ultralytics models used by the YoloDotNet tests and demos and
-exports them to ONNX with the settings YoloDotNet expects.
+exports them to ONNX with the correct opset version for best performance.
 
 The models are saved to test/assets/Models, where the tests find them automatically.
 Models that already exist are skipped; delete a file to export it again.
