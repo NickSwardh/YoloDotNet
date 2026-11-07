@@ -303,7 +303,7 @@ namespace YoloDotNet.Core
             using var cropped = new SKBitmap(roi.Width, roi.Height, image.ColorType, image.AlphaType);
             using var canvas = new SKCanvas(cropped);
 
-            canvas.DrawBitmap(image, roi, new SKRect(0, 0, roi.Width, roi.Height));
+            canvas.DrawBitmap(image, roi, new SKRect(0, 0, roi.Width, roi.Height), SKSamplingOptions.Default);
 
             return SKImage.FromBitmap(cropped);
         }

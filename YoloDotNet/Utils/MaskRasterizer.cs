@@ -89,12 +89,12 @@ namespace YoloDotNet.Utils
         /// </summary>
         public static SKPath CreatePath(SKPoint[][] contours)
         {
-            var path = new SKPath { FillType = SKPathFillType.EvenOdd };
+            using var pathBuilder = new SKPathBuilder { FillType = SKPathFillType.EvenOdd };
 
             foreach (var contour in contours)
-                path.AddPoly(contour, close: true);
+                pathBuilder.AddPoly(contour, close: true);
 
-            return path;
+            return pathBuilder.Detach();
         }
 
         /// <summary>

@@ -227,9 +227,9 @@ namespace YoloDotNet.Extensions
 
                 // Text shadow
                 if (options!.EnableFontShadow)
-                    canvas.DrawText(text, x + margin + ImageConfig.SHADOW_OFFSET, y + margin + ImageConfig.SHADOW_OFFSET, font, ImageConfig.TextShadowPaint);
+                    canvas.DrawText(text, x + margin + ImageConfig.SHADOW_OFFSET, y + margin + ImageConfig.SHADOW_OFFSET, SKTextAlign.Left, font, ImageConfig.TextShadowPaint);
 
-                canvas.DrawText(text, x + margin, y + margin, font, fontColor);
+                canvas.DrawText(text, x + margin, y + margin, SKTextAlign.Left, font, fontColor);
                 y += fontSize + margin;
             }
         }
@@ -616,9 +616,9 @@ namespace YoloDotNet.Extensions
 
                     // Text shadow
                     if (options.EnableFontShadow)
-                        canvas.DrawText(labelText, text_x + shadowOffset, text_y + shadowOffset, font, ImageConfig.TextShadowPaint);
+                        canvas.DrawText(labelText, text_x + shadowOffset,                         text_y + shadowOffset, SKTextAlign.Left, font, ImageConfig.TextShadowPaint);
 
-                    canvas.DrawText(labelText, text_x, text_y, font, fontColor);
+                                            canvas.DrawText(labelText, text_x, text_y, SKTextAlign.Left, font, fontColor);
                 }
 
                 // Draw tail if tracking is enabled
@@ -962,7 +962,7 @@ namespace YoloDotNet.Extensions
             if (tail is not null && tailLength is not null && tailLength > 2)
             {
                 // Start a new path
-                using var path = new SKPath();
+                using var pathBuilder = new SKPathBuilder();
 
                 using var shader = SKShader.CreateLinearGradient(
                     tail[^1],
@@ -973,17 +973,19 @@ namespace YoloDotNet.Extensions
                 );
 
                 // Move "pen" to first position
-                path.MoveTo(tail[0]);
+                pathBuilder.MoveTo(tail[0]);
 
                 // Move pen along the path with smooth corners
                 for (int i = 1; i < tailLength - 2; i++)
                 {
                     var midX = (tail[i].X + tail[i + 1].X) / 2;
                     var midY = (tail[i].Y + tail[i + 1].Y) / 2;
-                    path.QuadTo(tail[i].X, tail[i].Y, midX, midY);
+                    pathBuilder.QuadTo(tail[i].X, tail[i].Y, midX, midY);
                 }
 
-                path.QuadTo(tail[^2].X, tail[^2].Y, tail[^1].X, tail[^1].Y);
+                pathBuilder.QuadTo(tail[^2].X, tail[^2].Y, tail[^1].X, tail[^1].Y);
+
+                using var path = pathBuilder.Detach();
 
                 // Draw path with faded ends on canvas
                 tailPaint.Shader = shader;
@@ -1096,10 +1098,10 @@ namespace YoloDotNet.Extensions
                     // Draw text shadow
                     if (options.EnableFontShadow)
                     {
-                        canvas.DrawText(labelText, margin + position.X + shadowOffset, textOffset + position.Y + shadowOffset, font, ImageConfig.TextShadowPaint);
+                        canvas.DrawText(labelText, margin + position.X + shadowOffset, textOffset +                         position.Y + shadowOffset, SKTextAlign.Left, font, ImageConfig.TextShadowPaint);
                     }
 
-                    canvas.DrawText(labelText, margin + position.X, textOffset + position.Y, font, fontColor);
+                                            canvas.DrawText(labelText, margin + position.X, textOffset + position.Y, SKTextAlign.Left, font, fontColor);
                 }
             }
         }
