@@ -111,6 +111,7 @@ namespace YoloDotNet
         /// </summary>
         /// <param name="img">The SKBitmap to segmentate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
+        /// <param name="pixelConfedence">The confidence threshold for a pixel to belong to a segmentation mask (default: 0.65).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
@@ -122,6 +123,7 @@ namespace YoloDotNet
         /// </summary>
         /// <param name="img">The SKImage to segmentate.</param>
         /// <param name="confidence">The confidence threshold for detected objects (default is 0.2).</param>
+        /// <param name="pixelConfedence">The confidence threshold for a pixel to belong to a segmentation mask (default: 0.65).</param>
         /// <param name="iou">IoU (Intersection Over Union) overlap threshold value for removing overlapping bounding boxes (default: 0.7).</param>
         /// <param name="roi">Optional region of interest within the image to focus detection on.</param>
         /// <returns>A list of Segmentation results.</returns>
