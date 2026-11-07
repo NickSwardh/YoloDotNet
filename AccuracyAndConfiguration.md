@@ -69,4 +69,4 @@ Visualization does not affect inference accuracy, but YoloDotNet provides full c
 
 For advanced customization, see the extension methods in the main YoloDotNet repository — they provide a solid, production-ready foundation.
 
-[Practical drawing and rendering examples are available in the demo project source code](/Demo/).
+Every drawing option, with its default and an example, is documented in the README of each demo; start with the [Demo README](/Demo/README.md).

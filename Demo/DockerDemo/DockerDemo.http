@@ -1,6 +1,25 @@
+﻿# Requests for the DockerDemo API. Run them from Visual Studio or VS Code (REST Client).
+# http://localhost:5192 is the address when running with `dotnet run`; use http://localhost:8080 for the Docker container.
 @DockerDemo_HostAddress = http://localhost:5192
 
-GET {{DockerDemo_HostAddress}}/weatherforecast/
-Accept: application/json
+### Detect objects and return the results as JSON
+POST {{DockerDemo_HostAddress}}/detect
+Content-Type: multipart/form-data; boundary=YoloDotNetBoundary
 
-###
+--YoloDotNetBoundary
+Content-Disposition: form-data; name="image"; filename="street.jpg"
+Content-Type: image/jpeg
+
+< ../../test/assets/Media/street.jpg
+--YoloDotNetBoundary--
+
+### Detect objects and return the image with the results drawn on it
+POST {{DockerDemo_HostAddress}}/detect?download=true
+Content-Type: multipart/form-data; boundary=YoloDotNetBoundary
+
+--YoloDotNetBoundary
+Content-Disposition: form-data; name="image"; filename="street.jpg"
+Content-Type: image/jpeg
+
+< ../../test/assets/Media/street.jpg
+--YoloDotNetBoundary--

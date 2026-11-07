@@ -1,178 +1,212 @@
-﻿# YoloDotNet with TensorRT Execution Provider
+﻿# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> TensorRT Demo
+**GPU-accelerated object detection with NVIDIA TensorRT**
 
-TensorRT is NVIDIA’s high-performance deep learning inference optimizer and runtime library. It accelerates neural network inference by optimizing models and efficiently running them on NVIDIA GPUs. By leveraging TensorRT, applications can achieve significant speed-ups, reduced latency, and lower power consumption compared to standard GPU or CPU inference.
+TensorRT is NVIDIA's inference optimizer and runtime. It builds an engine tuned for your GPU and model,
+which gives lower latency and higher throughput than plain CUDA inference.
 
-In YoloDotNet, TensorRT can be used as an execution provider to perform GPU-accelerated inference of YOLO ONNX models. This is particularly beneficial for real-time or high-throughput object detection applications where inference speed is critical.
+This demo runs YOLO26 object detection with TensorRT in FP16 precision and CUDA Graph replay, prints what it found,
+and saves the image with bounding boxes, labels and confidence scores drawn on it.
 
-# Installation Steps
+## ▶️ Run the demo
 
-To use TensorRT with YoloDotNet, you need:
+Before you start:
 
-1. A compatible NVIDIA GPU with the appropriate CUDA Compute Capability.
-2. `CUDA Toolkit` installed on your system.
-3. `TensorRT` runtime libraries installed.
+- Export the models; see the [Demo README](../README.md#-quick-start).
+- Install CUDA, cuDNN and TensorRT; see [Installing CUDA and TensorRT](#-installing-cuda-and-tensorrt) below.
 
-## CUDA - Installation Steps
+From the repository root:
 
-If you already have CUDA installed, skip this step and jump to the [TensorRT Installation](#tensorrt---installation-steps) below.
+```bash
+dotnet run --project Demo/TensorRTDemo
+```
 
-1. Download and install the following from NVIDIA’s official sites:
-    - [CUDA v12.x](https://developer.nvidia.com/cuda-downloads)
-    - [cuDNN v9.x](https://developer.nvidia.com/cudnn-downloads)
+The first run builds the TensorRT engine, which can take several seconds to a few minutes; see [Engine cache](#-engine-cache).
+The demo then prints each detected object with its confidence, saves the result to `YoloDotNet_Results/TensorRT.jpg` on your desktop and opens that folder.
 
-2. Locate the folder containing the cuDNN DLL files, typically:
-    \
+## 🧩 How it works
+
+[`Program.cs`](./Program.cs) creates the engine cache folder (`YoloDotNet_Results/TensorRT_Engine_Cache` on your desktop) and then runs four steps:
+
+**1. Load the model with TensorRT.** The demo loads `yolo26s.onnx` from the repository's `test/assets/Models` folder.
+If the models are missing, run `python tools/download_models.py` from the repository root to download and export them into that folder.
+TensorRT is enabled by passing a `TensorRt` configuration to the CUDA execution provider:
+
+```csharp
+using var yolo = new Yolo(new YoloOptions
+{
+    ExecutionProvider = new CudaExecutionProvider(
+        model: SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
+        trtConfig: new TensorRt
+        {
+            Precision = TrtPrecision.FP16,
+            EngineCachePath = engineCacheFolder,
+            Int8CalibrationCacheFile = ...   // only used with TrtPrecision.INT8
+        },
+        enableCudaGraph: true)
+});
+```
+
+**2. Run inference.** `RunObjectDetection` returns a list of `ObjectDetection` results, each with a label, a confidence and a bounding box.
+
+```csharp
+using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.ObjectDetection));
+var results = yolo.RunObjectDetection(image, confidence: 0.15);
+```
+
+**3. Draw the results** on the image, using the default drawing options.
+
+```csharp
+image.Draw(results);
+```
+
+**4. Save the image** as a JPEG to the output folder.
+
+`SharedConfig` supplies the model and the test image (`test/assets/Media/street.jpg`), so the demo runs without any paths to set.
+In your own code, pass the path to your model and image instead.
+
+## ⚙️ Options
+
+### Execution provider
+
+```csharp
+new CudaExecutionProvider(model, gpuId: 0, trtConfig: null, enableCudaGraph: false)
+```
+
+| Parameter | Default | This demo | Description |
+|-----------|---------|-----------|-------------|
+| `model` | – | `yolo26s.onnx` | Path to the ONNX model, or the model as a `byte[]`. |
+| `gpuId` | `0` | `0` | The GPU to run on. |
+| `trtConfig` | `null` | see below | TensorRT settings. Without them, the provider runs plain CUDA. |
+| `enableCudaGraph` | `false` | `true` | Records the GPU work on the first inference and replays it in one launch afterwards: faster per inference, identical results. The whole model must run on TensorRT; models that don't qualify fail when the provider is created. See the [CUDA execution provider README](../../YoloDotNet.ExecutionProvider.Cuda/README.md). |
+
+### TensorRT settings (`TensorRt`)
+
+| Property | Default | This demo | Description |
+|----------|---------|-----------|-------------|
+| `Precision` | FP32 | `FP16` | `FP32`: full precision, highest accuracy. `FP16`: half precision, faster with minimal accuracy loss on supported GPUs. `INT8`: fastest, but needs a calibration cache; see [INT8 calibration cache](#-int8-calibration-cache). |
+| `BuilderOptimizationLevel` | `3` | `3` | How much effort TensorRT spends optimizing when it builds the engine, from 0 to 5. Higher levels build slower but can run faster; levels below 3 build faster but don't guarantee good performance. |
+| `EngineCachePath` | Not set | Engine cache folder | Folder where TensorRT stores and loads its engine. The folder must exist. If not set, the engine cache is disabled and the engine is rebuilt on every start. |
+| `EngineCachePrefix` | `YoloDotNet` | `YoloDotNet` | File name prefix for the engine cache files. Use different prefixes to keep engines for several models or configurations in the same folder. |
+| `Int8CalibrationCacheFile` | Not set | `test/assets/Cache/yolo26s.cache` | Path to the INT8 calibration cache for the model. Required with `INT8` (the file must exist); ignored otherwise. The repository doesn't include `yolo26s.cache`; to use INT8, generate it first; see [INT8 calibration cache](#-int8-calibration-cache). |
+
+### Detection (`RunObjectDetection`)
+
+| Parameter | Default | This demo | Description |
+|-----------|---------|-----------|-------------|
+| `confidence` | `0.2` | `0.15` | Minimum confidence for an object to be returned. |
+| `iou` | `0.7` | `0.7` | Overlap threshold for removing duplicate boxes (non-maximum suppression). |
+| `roi` | `null` | – | Optional region of interest (`SKRectI`); only objects inside it are detected. |
+
+### Drawing
+
+The demo draws with the default `DetectionDrawingOptions`. For all drawing options and their defaults,
+see [Drawing](../ObjectDetectionDemo/README.md#drawing-detectiondrawingoptions) in the ObjectDetectionDemo README.
+
+## 🧰 Installing CUDA and TensorRT
+
+You need:
+
+1. An NVIDIA GPU with a supported CUDA compute capability.
+2. CUDA 12 and cuDNN 9.
+3. The TensorRT 10 runtime libraries.
+
+### CUDA
+
+If you already have CUDA and cuDNN installed, skip to [TensorRT](#tensorrt).
+
+1. Download and install from NVIDIA:
+    - [CUDA 12.x](https://developer.nvidia.com/cuda-downloads)
+    - [cuDNN 9.x](https://developer.nvidia.com/cudnn-downloads)
+2. Locate the folder with the cuDNN DLL files, typically:
+
     ```
     C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v12.x
     ```
+
     *(Replace v9.x and v12.x with your installed versions.)*
+3. Copy the full path of that folder from the File Explorer address bar.
+4. Add it to the Windows `PATH`:
+    - Search for **Edit the system environment variables** in the Start menu and open it.
+    - Click **Environment Variables**.
+    - Under **System variables**, select `Path` and click **Edit**.
+    - Click **New** and paste the cuDNN folder path.
+    - Click **OK** to close all dialogs.
+5. Restart any open programs, or reboot, so Windows picks up the new `PATH`.
 
-3. Copy the full path of this folder from the File Explorer address bar.
+### TensorRT
 
-4. Add this path to your Windows system environment variables:
-    - Search for `Edit the system environment variables` in the Start menu and open it.
-    - Click on ```Environment Variables```
-    - Under ```System Variables``` find and select ```Path```, then click ```Edit```
-    - Click ```New``` and paste the copied `cuDNN` folder path.
-    - Click OK to save and close all dialogs.
-5. **Important:** Restart any open programs or reboot your computer to ensure Windows recognizes the 
-new environment variable.
+1. Go to [NVIDIA TensorRT](https://developer.nvidia.com/tensorrt) and click **Download Now** (you may need to sign in with an NVIDIA account).
+2. Select **TensorRT 10**, accept the terms and choose the latest TensorRT 10 release.
+3. Download the Windows **ZIP package** for **CUDA 12.x**.
+4. Unzip it to a folder on your system.
+5. Copy the full path of the `lib` folder inside the extracted TensorRT folder.
+6. Add it to the Windows `PATH`, the same way as for cuDNN (CUDA step 4).
+7. Restart any open programs, or reboot, so the new `PATH` takes effect.
 
-## TensorRT - Installation Steps
-1. Download TensorRT from NVIDIA’s official site:\
-    https://developer.nvidia.com/tensorrt
+## 📁 Engine cache
 
-2. Click the `Download Now` button (you may need to log in with your NVIDIA account).
+### First run: building the engine
 
-3. Select `TensorRT 10` and accept the terms and conditions.
+When there is no engine that matches the model and settings, TensorRT builds one. This happens on the first run,
+after changing the model or a setting (such as precision or optimization level), and after deleting the cache.
+Building includes layer fusion, kernel auto-tuning, precision calibration and saving the engine to disk.
 
-4. Choose the latest release of `TensorRT 10`.
+⏳ It takes from several seconds to a few minutes, depending on the GPU, the size of the model, the precision and `BuilderOptimizationLevel`.
+Later runs load the saved engine from `EngineCachePath` and start quickly.
 
-5. Download the Windows **ZIP package** for `CUDA 12.x`.
+### Managing cache files
 
-6. Once downloaded, unzip the TensorRT archive to a folder on your system.
+Neither YoloDotNet nor TensorRT deletes engine cache files. Each change of model or setting creates a new engine file,
+and the old ones stay. Remove outdated files yourself to save disk space and avoid confusion.
+Make sure `EngineCachePath` points to a writable folder that persists between runs, and keep useful engines for reuse in production.
 
-7. Locate the `lib` folder inside the extracted TensorRT directory.
+### 🚫 Don't share engine files between machines
 
-8. Copy the full path of this lib folder.
+An engine is built for one specific setup: the system architecture, the installed CUDA and TensorRT versions,
+the exact GPU model, and the `TensorRt` settings. It doesn't work elsewhere.
 
-9. Add this folder path to your system’s `PATH environment variable`, following the same process as with CUDA (see CUDA installation step #4).
+- Don't copy engine files to other machines unless the hardware and software are identical.
+- Let TensorRT build the engine on each target machine; it is then reused there.
+- Use `EngineCachePrefix` to keep engines for several models or configurations side by side.
 
-10. **Installation complete!** Restart any open programs or reboot your system to ensure the environment variables take effect.
+## 🔢 INT8 calibration cache
 
-# TensorRT Parameters in YoloDotNet
-YoloDotNet provides a dedicated `TensorRtExecutionProvider` class with configurable parameters that allow you to tailor the TensorRT execution environment to your hardware and performance needs.
-| Parameter                    | Description | Notes |
-|------------------------------|-------------|-------|
-| **GpuId**                    | The index of the NVIDIA GPU to use for inference. | `0` (default GPU) |
-| **Precision**                | Numeric precision mode for inference:<br>`FP32` Full 32-bit float (highest accuracy)<BR>`FP16` Half precision for faster inference with minimal accuracy loss<br>`INT8` Integer precision offering fastest inference but requires calibration cache file | `FP32` is default
-| **BuilderOptimizationLevel** | Controls the optimization effort when building the TensorRT engine cache. Higher values increase build time but may yield better runtime performance. Valid range: 0 to 5.| `3` is default
-| **EngineCachePath**          | Directory path where TensorRT stores serialized engine cache files to speed up startup. | Must be set to a writable folder
-| **EngineCachePrefix**        | Filename prefix for the engine cache files, helpful for distinguishing multiple model caches. | Optional. `YoloDotNet` is default
-| **Int8CalibrationCacheFile** | Path to the calibration cache file required when using INT8 precision mode. This file enables TensorRT to correctly quantize the model. | Leave empty if not using `INT8`
+INT8 precision needs a calibration cache. It holds the value ranges of the model's tensors,
+so TensorRT can quantize the layers that tolerate it without losing accuracy.
 
+> [!NOTE]
+> INT8 runs in mixed precision: TensorRT uses INT8 where it can and falls back to FP16 or FP32 for layers
+> that can't be quantized (unsupported operations, numerical stability or dynamic range).
 
-### Tips for Usage
-- Use `FP32` for maximum accuracy if speed is less critical.
-- `FP16` provides a great balance of speed and accuracy on supported GPUs.
-- `INT8` delivers the fastest inference but requires you to generate a calibration cache file beforehand. See the [INT8 Calibration Cache File](#int8-calibration-cache-file) section below.
-- The engine cache avoids rebuilding the optimized engine on every run, dramatically improving startup times.
-Always ensure your `EngineCachePath` is writable and managed (remove stale caches as needed).
+> [!WARNING]
+> YoloDotNet doesn't support INT8 for segmentation models. Using INT8 with a segmentation model throws a `YoloDotNetModelException`.
 
-### Engine Cache Files Management
-TensorRT engine cache files stored in the `EngineCachePath` directory are not automatically deleted by **YoloDotNet** or **TensorRT**.
-Whenever you update the model file or modify the TensorRT configuration (such as precision or optimization settings), a new engine cache file will be generated to reflect those changes.
-The old cache files remain in the directory and will not be cleaned up automatically.
-It is therefore the user’s responsibility to periodically review and remove outdated or unused cache files to avoid unnecessary disk usage and potential confusion.
+### Generating the calibration cache
 
-# Initial Startup Delay (Engine Build Time)
-When running YoloDotNet with TensorRT for the very first time, or after making changes to the inference configuration (e.g., precision, optimization level, model file, etc.), there is no existing engine cache that matches the new settings.
+1. Install [Ultralytics](https://docs.ultralytics.com/quickstart/).
+2. Export the model to a TensorRT engine with INT8 calibration, using a dataset that represents your data:
 
-In this case, TensorRT will build a new optimized engine, which includes:
-
-- Layer fusion
-- Kernel auto-tuning
-- Precision calibration
-- Serialization of the engine to disk
-
-⏳ This process can take anywhere from **several seconds to a few minutes**, depending on:
-
-- Your GPU model and its compute capability
-- The complexity and size of the ONNX model
-- The selected precision mode (`FP32`, `FP16`, or `INT8`)
-- The `BuilderOptimizationLevel` value
-
-Once the engine cache file has been built and saved in the specified `EngineCachePath`, subsequent runs will load the prebuilt engine immediately, resulting in normal and fast startup times.
-
-✅ **Tip:** This engine generation process only happens:
-
-- If no matching cache exists.
-- If the model or any relevant configuration changes.
-- If the cache file was manually deleted.
-
-📁 Always ensure that:
-- `EngineCachePath` points to a writable and persistent folder.
-- You preserve useful engine cache files for reuse in production environments.
-
-
-## 🚫 Engine Cache Distribution Warning
-The TensorRT engine cache file is hardware-specific. It is built and optimized based on:
-
-- Your system architecture
-- The installed CUDA and TensorRT version
-- The exact GPU model and its compute capabilities
-- Your `TensorRtExecutionProvider` configuration (e.g., precision, builder settings)
-
-⚠️ Because of this, engine cache files are not portable and should not be distributed between machines or environments unless they are identical in hardware and software configuration.
-
-Instead, it is recommended to allow TensorRT to build the engine cache at runtime on each target system. Once built, the engine will be reused on that specific machine for all future inferences.
-
-#### ✅ Summary:
-- Do not copy/share engine cache files across different machines.
-- Let TensorRT build a cache specific to each target system.
-- Use `EngineCachePrefix` if you want to support multiple engines side by side (e.g., for different models or configurations).
-
-# INT8 Calibration Cache File
-When using the INT8 precision mode in the `TensorRtExecutionProvider`, TensorRT requires a calibration cache file to accurately quantize your YOLO ONNX model. This cache contains important calibration data that enables TensorRT to perform `mixed precision` inference while maintaining model accuracy.
-
-> ⚙️ INT8 mode in TensorRT uses mixed precision execution. While it prioritizes INT8 for maximum performance, it will automatically fall back to FP16 or FP32 for layers that cannot be quantized due to unsupported operations, numerical stability concerns, or dynamic range limitations.<br>
-\
-🚫 **Limitation:** INT8 precision mode is **not supported for segmentation models** in YoloDotNet. Attempting to use INT8 with a segmentation model will result in a **YoloDotNetModelException** error.
-
-## Why is it needed?
-- `INT8` inference offers the fastest performance but requires calibration because not all operations and layers can be safely quantized without losing accuracy.
-
-- The calibration cache provides dynamic range information for tensors, allowing TensorRT to apply quantization selectively and reliably.
-
-## How to generate the calibration cache file
-You can create the calibration cache file using the `Ultralytics Python library` as follows:
-1. Install the [Ultralytics library](https://docs.ultralytics.com/quickstart/#__tabbed_1_2)
-2. Run the export command with INT8 calibration enabled:
+    ```bash
+    yolo export model=your_model.pt format=engine int8=true simplify=true data=your_dataset.yaml opset=17
     ```
-    yolo export model=your_model.pt format=engine int8=true optimize=true data=your_model_dataset.yaml opset=17
-    ```
-    Replace:
-    - `your_model.pt` with the path to your PyTorch YOLO model.
-    - `your_model_dataset.yaml` with your dataset YAML file.
 
-3. Output:
-    - `.engine` : The serialized TensorRT engine (can be ignored if not used).
-    - `.cache` : The generated calibration cache file.
+    Replace `your_model.pt` with your PyTorch YOLO model and `your_dataset.yaml` with your dataset YAML file.
+3. The export creates:
+    - a `.engine` file: the TensorRT engine (not needed by YoloDotNet)
+    - a `.cache` file: the calibration cache
+4. Point YoloDotNet to the cache:
 
-4. Use the cache in YoloDotNet
     ```csharp
-    Int8CalibrationCacheFile = @"C:\path\to\your_model.cache";
+    Int8CalibrationCacheFile = @"C:\path\to\your_model.cache"
     ```
 
-## ⚠️ Important: Regenerating the Cache
-TensorRT will not overwrite an existing calibration cache file.
-To generate a new one, you must manually delete the old .cache file before running the export command again.
+The calibration cache can be reused and shipped with your application.
 
-This ensures that calibration is performed from scratch using the new data or model configuration.
+> [!IMPORTANT]
+> TensorRT doesn't overwrite an existing calibration cache. To regenerate it, delete the old `.cache` file before exporting again.
 
-### ✅ Summary
-- Required for INT8 precision inference in YoloDotNet.
-- Created using the Ultralytics CLI and a calibration dataset.
-- Must be manually removed if you want to regenerate it.
-- Can be reused and shipped as part of your application.
-- YoloDotNet does not support segmentation in INT8 precision mode 
+## 📚 See also
+
+- [Demo README](../README.md): setup and the steps all demos share
+- [CUDA execution provider README](../../YoloDotNet.ExecutionProvider.Cuda/README.md): CUDA requirements and CUDA Graph replay
+- [ObjectDetectionDemo](../ObjectDetectionDemo/README.md): the same detection without TensorRT, and all drawing options

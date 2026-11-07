@@ -2,9 +2,9 @@
 // SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using SkiaSharp;
 using System.Diagnostics;
 using System.Globalization;
+using SkiaSharp;
 using YoloDotNet;
 using YoloDotNet.Enums;
 using YoloDotNet.ExecutionProvider.Cpu;
@@ -16,200 +16,61 @@ using YoloDotNet.Test.Common.Enums;
 namespace PoseEstimationDemo
 {
     /// <summary>
-    /// Demonstrates pose estimation on static images using the YoloDotNet library.
-    /// 
-    /// This demo loads a sample image, runs pose estimation inference to detect human keypoints and skeletal structure,
-    /// overlays the detected poses with keypoints, keypoint connections, bounding boxes, labels, and confidence scores,
-    /// and saves the annotated image to disk.
-    /// 
-    /// Features included:
-    /// - Model initialization with configurable hardware acceleration and image preprocessing options
-    /// - Static image inference returning detailed keypoints for detected persons
-    /// - Flexible drawing options for rendering keypoints, keypoint connections, bounding boxes, labels, and confidence
-    /// - Support for custom keypoint markers and adjustable confidence thresholds
-    /// - Saving output images with quality control and automated output folder management
-    /// - Console reporting of detected poses and their confidence scores
-    /// 
-    /// Execution providers:
-    /// - CpuExecutionProvider: runs inference entirely on the CPU. Universally supported but slower.
-    /// - CudaExecutionProvider: executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
-    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16, and INT8 precision modes.
-    /// 
-    /// Important notes:
-    /// - Choose the execution provider that matches your available hardware and performance requirements.
-    /// - PoseDrawingOptions allows customization of font, colors, opacity, keypoint visualization, and label styling.
-    /// - Tail visualization for tracking motion paths is supported but not enabled in this static image demo (see VideoStream demo).
-    /// - For setup instructions and best practices, see the README:  
-    ///   https://github.com/NickSwardh/YoloDotNet
+    /// Estimates the poses of the people in an image and saves the image with the keypoints and results drawn on it.
+    /// See Demo/README.md for how the demos work and how to customize them.
     /// </summary>
     internal class Program
     {
-        private static string _outputFolder = default!;
-        private static PoseDrawingOptions _drawingOptions = default!;
-
-        static void Main(string[] args)
+        private static void Main()
         {
-            CreateOutputFolder();
-            SetDrawingOptions();
-
-            // Initialize YoloDotNet.
-            // YoloOptions configures the model, hardware settings, and image processing behavior.
+            // 1. Load the model
             using var yolo = new Yolo(new YoloOptions
             {
-                // Select execution provider (determines how and where inference is executed).
-                // Available execution providers:
-                // 
-                //   - CpuExecutionProvider
-                //     Runs inference entirely on the CPU. Universally supported on all hardware.
-                //
-                //   - CudaExecutionProvider
-                //     Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
-                //     Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
-                //     and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
-                //     See the TensorRT demo and documentation for detailed configuration and best practices.
-                //
-                //   - OpenVinoExecutionProvider
-                //     Runs inference using Intel's OpenVINO toolkit for optimized performance on Intel hardware.
-                //
-                //   - CoreMLExecutionProvider
-                //     Executes inference using Apple's CoreML framework for efficient performance on macOS and iOS devices.
-                //
-                //   Important:  
-                //     - Choose the provider that matches your available hardware and performance requirements.  
-                //     - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
-                //     - For detailed setup instructions and examples, see the README:
-                //
-                //   More information about execution providers and setup instructions can be found in the README:
-                //   https://github.com/NickSwardh/YoloDotNet
-
-                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.PoseEstimation)),
-
-                // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
-                // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
-                // Set this accordingly, as it directly impacts the inference results.
-                ImageResize = ImageResize.Proportional,
-
-                // Sampling options for resizing; affects inference speed and quality.
-                // Bilinear matches the resize YOLO models are trained with, and takes YoloDotNet's fast AVX2 resize path for opaque images.
-                // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
-                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
+                ExecutionProvider = new CpuExecutionProvider(SharedConfig.GetTestModelV26(ModelType.PoseEstimation))
             });
 
-            // Print model type
-            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
+            Console.WriteLine($"Loaded model: {yolo.ModelInfo}");
 
-            // Load input image as SKBitmap (or SKImage)
-            // The image is sourced from SharedConfig for test/demo purposes.
+            // 2. Run inference
             using var image = SKBitmap.Decode(SharedConfig.GetTestImage(ImageType.PoseEstimation));
-
-            // Run inference
             var results = yolo.RunPoseEstimation(image, confidence: 0.25, iou: 0.7);
 
-            // Draw results (optional)
-            image.Draw(results, _drawingOptions);
-
-            // If using SKImage, the Draw method returns a new SKBitmap with the drawn results.
-            // Example:
-            // using var resultImage = image.Draw(results, _drawingOptions);
-
-            // Save image (optional)
-            var fileName = Path.Combine(_outputFolder, "PoseEstimation.jpg");
-            image.Save(fileName, SKEncodedImageFormat.Jpeg, 80);
-
             PrintResults(results);
-            DisplayOutputFolder();
-        }
 
-        private static void SetDrawingOptions()
-        {
-            // Set options for drawing
-            _drawingOptions = new PoseDrawingOptions
+            // 3. Draw the results on the image.
+            // PoseKeyPoints defines how the keypoints are colored and connected; the .csproj copies pose-keypoints.json to the output folder.
+            image.Draw(results, new PoseDrawingOptions
             {
-                DrawBoundingBoxes = true,
-                DrawConfidenceScore = true,
-                DrawLabels = true,
-                EnableFontShadow = true,
+                PoseKeyPoints = PoseKeyPoints.Load(Path.Combine(AppContext.BaseDirectory, "pose-keypoints.json"))
+            });
 
-                // SKTypeface defines the font used for text rendering.
-                // SKTypeface.Default uses the system default font.
-                // To load a custom font:
-                //   - Use SKTypeface.FromFamilyName("fontFamilyName", SKFontStyle) to load by font family name (if installed).
-                //   - Use SKTypeface.FromFile("path/to/font.ttf") to load a font directly from a file.
-                // Example:
-                //   Font = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal)
-                //   Font = SKTypeface.FromFile("C:\\Fonts\\CustomFont.ttf")
-                Font = SKTypeface.Default,
-
-                FontSize = 18,
-                FontColor = SKColors.White,
-                DrawLabelBackground = true,
-                EnableDynamicScaling = true,
-                BorderThickness = 2,
-
-                // By default, YoloDotNet automatically assigns colors to bounding boxes.
-                // To override these default colors, you can define your own array of hexadecimal color codes.
-                // Each element in the array corresponds to the class index in your model.
-                // Example:
-                //   BoundingBoxHexColors = ["#00ff00", "#547457", ...] // Color per class id
-
-                BoundingBoxOpacity = 128,
-
-                // Pose keypoints used to color and connect keypoints. pose-keypoints.json is copied to the output folder;
-                // copy and edit it to describe the keypoints of your own pose model. Load it once at startup.
-                PoseKeyPoints = PoseKeyPoints.Load(Path.Combine(AppContext.BaseDirectory, "pose-keypoints.json")),
-
-                // Minimum keypoint confidence required for drawing.
-                PoseConfidence = 0.65f
-
-                // The following options configure tracked object tails, which visualize 
-                // the movement path of detected objects across a sequence of frames or images.
-                // Drawing the tail only works when tracking is enabled (e.g., using SortTracker).
-                // This is demonstrated in the VideoStream demo.
-
-                // DrawTrackedTail = false,
-                // TailPaintColorEnd = new(),
-                // ailPaintColorStart = new(),
-                // TailThickness = 0,
-            };
+            // 4. Save the image
+            SaveAndShow(image, "PoseEstimation.jpg");
         }
 
         private static void PrintResults(List<PoseEstimation> results)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Inference Results: {results.Count} objects");
-            Console.WriteLine(new string('=', 80));
-
-            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"\nFound {results.Count} poses:");
 
             foreach (var result in results)
-            {
-                var label = result.Label.Name;
-                var confidence = (result.Confidence * 100).ToString("0.##", CultureInfo.InvariantCulture);
-                Console.WriteLine($"{label} ({confidence}%)");
-            }
-
-            Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine($"  {result.Label.Name} ({result.Confidence.ToString("0%", CultureInfo.InvariantCulture)})");
         }
 
-        private static void CreateOutputFolder()
+        private static void SaveAndShow(SKBitmap image, string fileName)
         {
-            _outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
+            var outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
+            Directory.CreateDirectory(outputFolder);
 
-            if (Directory.Exists(_outputFolder) is false)
-                Directory.CreateDirectory(_outputFolder);
-        }
+            var filePath = Path.Combine(outputFolder, fileName);
+            image.Save(filePath, SKEncodedImageFormat.Jpeg, 80);
+            Console.WriteLine($"\nSaved: {filePath}");
 
-        private static void DisplayOutputFolder()
-        {
-            var shell = OperatingSystem.IsWindows() ? "explorer"
-                     : OperatingSystem.IsLinux() ? "xdg-open"
-                     : OperatingSystem.IsMacOS() ? "open"
-                     : null;
+            // Open the output folder in the system's file browser
+            var fileBrowser = OperatingSystem.IsWindows() ? "explorer"
+                            : OperatingSystem.IsMacOS() ? "open"
+                            : "xdg-open";
 
-            if (shell is not null)
-                Process.Start(shell, _outputFolder);
-            else
-                Console.WriteLine($"Results saved to: {_outputFolder}");
+            Process.Start(fileBrowser, outputFolder);
         }
     }
 }

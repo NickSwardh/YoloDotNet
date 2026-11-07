@@ -2,7 +2,6 @@
 // SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
-using SkiaSharp;
 using System.Diagnostics;
 using YoloDotNet;
 using YoloDotNet.Enums;
@@ -17,397 +16,111 @@ using YoloDotNet.Video;
 namespace VideoStreamDemo
 {
     /// <summary>
-    /// Demonstrates object detection and tracking on videos or livestreams using the YoloDotNet library.
-    /// 
-    /// Requires FFmpeg and FFprobe to be installed and added to your system PATH:
-    /// https://ffmpeg.org/download.html
-    ///
-    /// This demo loads a video source (file, livestream, or webcam), runs object detection and optional tracking on each frame,
-    /// draws the results (bounding boxes, labels, confidence scores, and tracked tails), and optionally saves the output video.
-    ///
-    /// It showcases:
-    /// - Model initialization with configurable hardware and preprocessing options
-    /// - Real-time object detection using YoloDotNet on video streams
-    /// - Filtering detections by class labels
-    /// - Multi-object tracking across frames using the SORT tracker
-    /// - Rendering detection and tracking results directly on video frames
-    /// - Saving processed video output and optionally splitting into chunks
-    /// - Progress reporting and end-of-stream handling with customizable callbacks
-    ///
-    /// Example video source inputs:
-    /// - Local video file path:
-    ///     Example: @"C:\videos\test.mp4"
-    ///
-    /// - Livestream URL (RTMP, HTTP, etc.):
-    ///     Example: "rtmp://your.server/stream"
-    ///
-    /// - Video capture device (webcam) with explicit resolution and frame rate:
-    ///     Format: "device=<DeviceName>:<Width>:<Height>:<FPS>"
-    ///
-    ///     Windows example: "device=Logitech BRIO:1920:1080:30"
-    ///     Linux example:   "device=/dev/video0:1280:720:30"
-    ///
-    ///     Note: Width, Height, and FPS must match a capture mode supported by your device.
-    ///
-    /// Execution providers:
-    /// - CpuExecutionProvider: runs inference on CPU, universally supported but slower.
-    /// - CudaExecutionProvider: uses NVIDIA GPU via CUDA for accelerated performance.
-    ///   Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,
-    ///   and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.
-    ///
-    /// Important notes:
-    /// - Choose the execution provider based on your hardware and performance requirements.
-    /// - FFmpeg and FFprobe must be added to your system PATH variable. Download and install: https://ffmpeg.org/download.html
-    /// - The demo creates an output folder on the desktop to store processed results.
+    /// Detects and tracks objects in a video and saves the video with the results drawn on it.
+    /// Requires FFmpeg and FFprobe on the system PATH.
+    /// See Demo/README.md for how the demos work and how to customize them.
     /// </summary>
     internal class Program
     {
-        private static string _outputFolder = default!;
-        private static DetectionDrawingOptions _drawingOptions = default!;
-        private static SortTracker _sortTracker = default!;
-
-        static void Main(string[] args)
+        private static void Main()
         {
-            // (Optional) Create a new SortTracker instance with configurable parameters:
-            // - costThreshold: matching cost threshold for assigning detections to tracks (lower = stricter matching).
-            //   Cost = (1 - IoU) + center distance relative to the object's size.
-            // - maxAge: number of frames to keep unmatched tracks before removal (higher = survives longer occlusions).
-            // - tailLength: length of the track history for visualization or analysis.
-            // - highConfidenceThreshold: enables ByteTrack-style matching. Detections at or above this confidence start tracks,
-            //   weaker ones (inference confidence below, see RunObjectDetection) only keep existing tracks alive, e.g. partially occluded people.
-            // Note: There is no one-size-fits-all setting; these parameters often require some tinkering to find the best balance for your specific use case.
-            _sortTracker = new SortTracker(costThreshold: 0.7f, maxAge: 30, tailLength: 60, highConfidenceThreshold: 0.25f);
+            var outputFolder = CreateOutputFolder();
 
-            CreateOutputFolder();
-            SetDrawingOptions();
-            Console.CursorVisible = false;
-
-            // Initialize YoloDotNet.
-            // YoloOptions configures the model, hardware settings, and image processing behavior.
+            // 1. Load the model
             using var yolo = new Yolo(new YoloOptions
             {
-                // Select execution provider (determines how and where inference is executed).
-                // Available execution providers:
-                // 
-                //   - CpuExecutionProvider
-                //     Runs inference entirely on the CPU. Universally supported on all hardware.
-                //
-                //   - CudaExecutionProvider
-                //     Executes inference on an NVIDIA GPU using CUDA for accelerated performance.  
-                //     Optionally integrates with TensorRT for further optimization, supporting FP32, FP16,  
-                //     and INT8 precision modes. This delivers significant speed improvements on compatible GPUs.  
-                //     See the TensorRT demo and documentation for detailed configuration and best practices.
-                //
-                //   - OpenVinoExecutionProvider
-                //     Runs inference using Intel's OpenVINO toolkit for optimized performance on Intel hardware.
-                //
-                //   - CoreMLExecutionProvider
-                //     Executes inference using Apple's CoreML framework for efficient performance on macOS and iOS devices.
-                //
-                //   Important:  
-                //     - Choose the provider that matches your available hardware and performance requirements.  
-                //     - If using CUDA with TensorRT enabled, ensure your environment has a compatible CUDA, cuDNN, and TensorRT setup.
-                //     - For detailed setup instructions and examples, see the README:
-                //
-                //   More information about execution providers and setup instructions can be found in the README:
-                //   https://github.com/NickSwardh/YoloDotNet
-
-                ExecutionProvider = new CudaExecutionProvider(
-
-                    // Path or byte[] of the ONNX model to load.
-                    model: SharedConfig.GetTestModelV26(ModelType.ObjectDetection),
-
-                    // GPU device Id to use for inference. -1 = CPU, 0+ = GPU device Id.
-                    gpuId: 0),
-
-                // Resize mode applied before inference. Proportional maintains the aspect ratio (adds padding if needed),
-                // while Stretch resizes the image to fit the target size without preserving the aspect ratio.
-                // Set this accordingly, as it directly impacts the inference results.
-                ImageResize = ImageResize.Proportional,
-
-                // Sampling options for resizing; affects inference speed and quality.
-                // Bilinear matches the resize YOLO models are trained with, and takes YoloDotNet's fast AVX2 resize path for opaque images.
-                // For examples of other sampling options, see benchmarks: https://github.com/NickSwardh/YoloDotNet/tree/master/test/YoloDotNet.Benchmarks
-                SamplingOptions = new(SKFilterMode.Linear, SKMipmapMode.None) // YoloDotNet default
+                ExecutionProvider = new CudaExecutionProvider(SharedConfig.GetTestModelV26(ModelType.ObjectDetection))
             });
 
-            // Print model type
-            Console.WriteLine($"Loaded ONNX Model: {yolo.ModelInfo}");
+            Console.WriteLine($"Loaded model: {yolo.ModelInfo}");
+            PrintVideoDevices();
 
-            // List all available video input devices detected on the system.
-            var devices = Yolo.GetVideoDevices();
-            Console.WriteLine();
-            Console.WriteLine("Detected video input devices (usable with VideoOptions):");
-
-            if (devices.Count != 0)
-            {
-                foreach (string device in devices)
-                    Console.WriteLine($"  {device}");
-            }
-            else
-                Console.WriteLine("No input devices found");
-
-            // Set the video options.
+            // 2. Set up the video input and output
             yolo.InitializeVideo(new VideoOptions
             {
-                // 💡 Input video source. Accepted formats:
-                // 
-                // 1. Local video file:
-                //    Example: @"C:\videos\test.mp4"
-                //
-                // 2. Livestream URL (e.g., RTMP, HTTP):
-                //    Example: "rtmp://your.rtmp.server/stream"
-                //
-                // 3. Video capture device (e.g., webcam):
-                //    Format: "device=<DeviceName>:<Width>:<Height>:<FPS>"
-                //
-                //    ⮞ On Windows:
-                //       Example: "device=Logitech BRIO:1920:1080:30"
-                //
-                //    ⮞ On Linux:
-                //       Example: "device=/dev/video0:1280:720:30"
-                //
-                // 📌 The Width, Height, and FPS values must match a valid capture mode supported by your camera.
-                //
-                // 🔍 To discover available video devices:
-                //    Use `yolo.GetVideoDevices()` — this method lists the names of available video capture devices.
-                //    It does NOT list supported resolutions or framerates.
-                //
-                //    To determine valid width/height/fps combinations, refer to your device specifications
                 VideoInput = SharedConfig.GetTestVideo(VideoType.Default),
-
-                // 💡 Optional: Path to save the processed output video file.
-                // Leave unset (null or empty) if you do not want to save output.
-                VideoOutput = Path.Combine(_outputFolder, "video_output.mp4"),
-
-                // 💡 Encoder to use when writing output.
-                // Note: Make sure the selected encoder is compatible with:
-                //   - Your operating system and hardware
-                //   - FFmpeg is compiled with the selected encoder
-                //   - The output file format/container
-                VideoEncoder = VideoEncoder.H264Nvenc, // Use NVIDIA GPU encoder (h264_nvenc). See Encoder enum comments for alternatives.
-
-                // 💡 Frame rate for the output video.
-                // FrameRate.AUTO will attempt to match the input video’s frame rate.
-                FrameRate = FrameRate.AUTO,
-
-                // 💡 Output video width in pixels.
-                // Leave unset (0) to use the original width.
-                // Set to -2 to automatically calculate the width while maintaining the aspect ratio, based on the specified height.
-                // Note: Only one of Width or Height can be set to -2 at a time.
+                VideoOutput = Path.Combine(outputFolder, "video_output.mp4"),
+                VideoEncoder = VideoEncoder.H264Nvenc,  // NVIDIA GPU encoder
                 Width = 720,
-
-                // 💡 Output video height in pixels.
-                // Leave unset (0) to use the original height.
-                // Set to -2 to automatically calculate the height while maintaining the aspect ratio, based on the specified width.
-                // Note: Only one of Width or Height can be set to -2 at a time.
-                Height = -2,
-
-                // 💡 Compression quality for the output video (1-51).
-                // Lower values = better quality, larger file size.
-                // Higher values = stronger compression, smaller file size, lower quality.
-                // Recommended range: 20-35 for reasonable balance.
-                CompressionQuality = 30,
-
-                // 💡 Optional: Automatically split output video into chunks.
-                // Duration in seconds for each chunk.
-                // Example: 600 = split into 10-minute segments.
-                // 0 = do not split (generate a single file).
-                VideoChunkDuration = 0,
-
-                // 💡 Process every Nth frame.
-                // 0 = process all frames (default).
-                // Example: 30 = process every 30th frame (useful for surveillance where full-frame detection is unnecessary).
-                FrameInterval = 0,
-
-                // 💡 Optional: Define a specific segment of the video to process.
-                // Useful for testing or processing only a portion of the video.
-                // Note: Only applies to video files.
-                // 0 = start from the beginning.
-                StartTimeSeconds = 0,
-
-                // 💡 Optional: Duration of the video segment to process in seconds.
-                // Useful for testing or processing only a portion of the video.
-                // Note: Only applies to video files.
-                // 0 = process until the end of the video.
-                DurationSeconds = 0
+                Height = -2,                            // -2 keeps the aspect ratio
+                VideoChunkDuration = 0                  // 0 saves one file instead of 10-minute chunks
             });
 
-            // Display basic video metadata before processing begins.
             var metadata = yolo.GetVideoMetaData();
-            PrintMetaData(metadata);
+            PrintMetadata(metadata);
 
-            var listedDevices = devices.Count == 0 ? 1 : devices.Count;
+            // 3. Create a tracker that follows objects across frames
+            var tracker = new SortTracker(costThreshold: 0.7f, maxAge: 30, tailLength: 60, highConfidenceThreshold: 0.25f);
 
-            var progressStats = "Progress: ";
-            var progressStatsLength = progressStats.Length;
-            var textRow = 17 + listedDevices; // What row in the console window to draw progress
             var progress = 0;
 
-            Console.WriteLine();
-            Console.WriteLine("Running Object Detection on Video with YOLOv11");
-            Console.WriteLine(new string('=', 80));
-            Console.Write(progressStats);
-
-            // Assign a handler for incoming video frames.
-            // 💡 This Action is invoked *once per processed frame*.
-            // It provides:
-            //   - `frame`: The current video frame as an SKBitmap.
-            //   - `frameIndex`: The zero-based index of the frame in the sequence.
-            //
-            // You can assign either a method or a lambda expression.
-            yolo.OnVideoFrameReceived = (SKBitmap frame, long frameIndex) =>
-            {
-                // 💡 Run object detection on the current frame.
-                // Parameters:
-                //   - confidence: Minimum confidence threshold for detections (0.0 - 1.0).
-                //   - iou: Intersection-over-union threshold for non-maximum suppression.
-                //
-                // This will return a list of detected objects with bounding boxes and scores.
-                // Confidence is set below the tracker's highConfidenceThreshold (0.25) so weak detections can keep tracks alive.
-                var result = yolo.RunObjectDetection(frame, confidence: 0.1, iou: 0.5)
-
-                    // 💡 (Optional) Filter results to include only specified class labels.
-                    // In this case: keep only detections of "person".
-                    .FilterLabels(["person", "cat", "dog"])
-
-                    // 💡 (Optional) Apply object tracking to maintain object identities across frames.
-                    .Track(_sortTracker);
-
-                // 💡 (Optional) Draw detection and tracking results directly onto the current frame.
-                // `_drawingOptions` controls appearance (e.g., color, thickness, font).
-                // If not provided, default drawing settings will be applied.
-                frame.Draw(result, _drawingOptions);
-
-                // Additional processing logic here if needed...
-
-                // 💡 (Optional) Save the processed frame as an image file.
-                // Useful for debugging, auditing, or generating image datasets.
-                // Example:
-                // var framePath = Path.Combine(_outputFolder, $"frame_{frameIndex}.jpg");
-                // frame.Save(framePath, SKEncodedImageFormat.Jpeg, 80);
-
-                // Display progress.
-                progress = (int)((double)(frameIndex) / metadata.TargetTotalFrames * 100);
-                var str = $"{progress}% [frame {frameIndex} of {metadata.TargetTotalFrames}]";
-
-                Console.SetCursorPosition(progressStatsLength, textRow);
-                Console.Write(new string(' ', str.Length));
-                Console.SetCursorPosition(progressStatsLength, textRow);
-                Console.Write(str);
-            };
-
-            // Assign a handler for when video processing finishes.
-            // 💡 This Action is invoked *exactly once* at the end of video processing.
-            // It is useful for cleanup, reporting, logging, or triggering downstream actions.
-            //
-            // You can assign either a method or a lambda expression.
             yolo.OnVideoEnd = () =>
             {
                 Console.WriteLine();
-                Console.WriteLine();
-
-                if (progress == 100)
-                {
-                    Console.WriteLine("Video processing completed successfully.");
-                }
-                else
-                {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("Warning: Video processing did not complete successfully.");
-                }
-
-                Console.ForegroundColor = ConsoleColor.Gray;
+                Console.WriteLine(progress == 100
+                    ? "\nVideo processing completed successfully."
+                    : "\nWarning: video processing did not complete successfully.");
             };
 
-            // Start processing the video stream.
-            yolo.StartVideoProcessing();
+            // 4. Process the video: detect, filter, track and draw every frame
+            Console.WriteLine("\nProcessing video...");
+            Console.CursorVisible = false;
 
-            DisplayOutputFolder();
+            yolo.StartVideoProcessing<ObjectDetection>((frame, results, frameIndex) =>
+            {
+                results = results
+                    .FilterLabels(["person", "cat", "dog"])
+                    .Track(tracker);
+
+                frame.Draw(results);
+
+                progress = (int)((double)frameIndex / metadata.TargetTotalFrames * 100);
+                Console.Write($"\rProgress: {progress}% [frame {frameIndex} of {metadata.TargetTotalFrames}]");
+            },
+            confidence: 0.1,  // Below the tracker's highConfidenceThreshold, so weak detections can keep tracks alive
+            iou: 0.5);
 
             Console.CursorVisible = true;
+            OpenFolder(outputFolder);
         }
 
-        private static void SetDrawingOptions()
+        private static void PrintVideoDevices()
         {
-            // Set options for drawing
-            _drawingOptions = new DetectionDrawingOptions
-            {
-                DrawBoundingBoxes = true,
-                DrawConfidenceScore = true,
-                DrawLabels = true,
-                EnableFontShadow = true,
+            var devices = Yolo.GetVideoDevices();
 
-                // SKTypeface defines the font used for text rendering.
-                // SKTypeface.Default uses the system default font.
-                // To load a custom font:
-                //   - Use SKTypeface.FromFamilyName("fontFamilyName", SKFontStyle) to load by font family name (if installed).
-                //   - Use SKTypeface.FromFile("path/to/font.ttf") to load a font directly from a file.
-                // Example:
-                //   Font = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal)
-                //   Font = SKTypeface.FromFile("C:\\Fonts\\CustomFont.ttf")
-                Font = SKTypeface.Default,
+            Console.WriteLine("\nVideo input devices:");
 
-                FontSize = 18,
-                FontColor = SKColors.White,
-                DrawLabelBackground = true,
-                EnableDynamicScaling = true,
-                BorderThickness = 2,
+            if (devices.Count == 0)
+                Console.WriteLine("  None found");
 
-                // By default, YoloDotNet automatically assigns colors to bounding boxes.
-                // To override these default colors, you can define your own array of hexadecimal color codes.
-                // Each element in the array corresponds to the class index in your model.
-                // Example:
-                //   BoundingBoxHexColors = ["#00ff00", "#547457", ...] // Color per class id
-
-                BoundingBoxOpacity = 128,
-
-                // Properties for drawing tracked tail. Default values:
-                DrawTrackedTail = true,
-                TailPaintColorStart = new SKColor(255, 105, 180),   // #FF69B4 - Blazing Bubblegum Bomber Pink
-                TailPaintColorEnd = SKColor.Empty.WithAlpha(0),              // Fade end of tail.
-                TailThickness = 4,
-            };
+            foreach (var device in devices)
+                Console.WriteLine($"  {device}");
         }
 
-        private static void PrintMetaData(VideoMetadata metaData)
+        private static void PrintMetadata(VideoMetadata metadata)
         {
-            Console.WriteLine();
-            Console.WriteLine($"Video MetaData:");
-            Console.WriteLine(new string('=', 80));
-
-            Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine($"width           : {metaData.Width}");
-            Console.WriteLine($"height          : {metaData.Height}");
-            Console.WriteLine($"fps             : {metaData.FPS}");
-            Console.WriteLine($"duration        : {metaData.Duration}");
-            Console.WriteLine();
-            Console.WriteLine($"target width    : {metaData.TargetWidth}");
-            Console.WriteLine($"target height   : {metaData.TargetHeight}");
-            Console.WriteLine($"target fps      : {metaData.FPS}");
-
-            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine("\nVideo:");
+            Console.WriteLine($"  Input:  {metadata.Width}x{metadata.Height}, {metadata.FPS:0.##} fps, {metadata.Duration:0.#} s");
+            Console.WriteLine($"  Output: {metadata.TargetWidth}x{metadata.TargetHeight}, {metadata.TargetFPS:0.##} fps");
         }
 
-        private static void CreateOutputFolder()
+        private static string CreateOutputFolder()
         {
-            _outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
-
-            if (Directory.Exists(_outputFolder) is false)
-                Directory.CreateDirectory(_outputFolder);
+            var outputFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "YoloDotNet_Results");
+            Directory.CreateDirectory(outputFolder);
+            return outputFolder;
         }
 
-        private static void DisplayOutputFolder()
+        private static void OpenFolder(string folder)
         {
-            var shell = OperatingSystem.IsWindows() ? "explorer"
-                     : OperatingSystem.IsLinux() ? "xdg-open"
-                     : OperatingSystem.IsMacOS() ? "open"
-                     : null;
+            Console.WriteLine($"\nSaved to: {folder}");
 
-            if (shell is not null)
-                Process.Start(shell, _outputFolder);
-            else
-                Console.WriteLine($"Results saved to: {_outputFolder}");
+            // Open the output folder in the system's file browser
+            var fileBrowser = OperatingSystem.IsWindows() ? "explorer"
+                            : OperatingSystem.IsMacOS() ? "open"
+                            : "xdg-open";
+
+            Process.Start(fileBrowser, folder);
         }
     }
 }

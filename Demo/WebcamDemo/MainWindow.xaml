@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WebcamDemo"
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         mc:Ignorable="d"
-        Title="YoloDotNet | Webcam Demo EmguCV" Height="810" Width="1280"
+        Title="YoloDotNet | Webcam Demo" Height="810" Width="1280"
         Background="Black" Closing="WindowClosing" ResizeMode="NoResize">
     
     <Grid HorizontalAlignment="Center">
@@ -40,18 +40,18 @@
 
             <!-- Slider -->
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <Slider x:Name="ConfidenceTreshold"
+                <Slider x:Name="ConfidenceThreshold"
                         Minimum="0.20"
                         Maximum="0.99"
                         Width="120"
                         VerticalAlignment="Center"
                         Value="0.8"
-                        ValueChanged="ConfidenceTreshold_ValueChanged"/>
+                        ValueChanged="ConfidenceThreshold_ValueChanged"/>
 
                 <TextBlock VerticalAlignment="Center"
                            Margin="10,0,0,0"
                            Foreground="white"
-                           Text="{Binding ElementName=ConfidenceTreshold, Path=Value, StringFormat={}{0:F2}}" />
+                           Text="{Binding ElementName=ConfidenceThreshold, Path=Value, StringFormat={}{0:F2}}" />
             </StackPanel>
 
 
@@ -63,7 +63,7 @@
                       Margin="10,0,0,0" Checked="EnableTracking_Checked" Unchecked="EnableTracking_Unchecked"/>
 
             <CheckBox x:Name="EnableFiltering"
-                      Content="Enable Filtering ('person' only)"
+                      Content="Enable Filtering (person, cat, dog)"
                       Foreground="white"
                       VerticalAlignment="Center"
                       Margin="10,0,0,0" Checked="EnableFiltering_Checked" Unchecked="EnableFiltering_Unchecked"/>

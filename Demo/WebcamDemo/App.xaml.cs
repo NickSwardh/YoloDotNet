@@ -1,14 +1,11 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace WebcamDemo
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    /// The WPF application. Opens <see cref="MainWindow"/> at startup (StartupUri in App.xaml).
     /// </summary>
     public partial class App : Application
     {
     }
-
 }

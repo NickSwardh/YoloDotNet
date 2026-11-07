@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2026 Niklas Sw�rd
+﻿// SPDX-License-Identifier: MIT
+// SPDX-FileCopyrightText: 2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 using SkiaSharp;
@@ -11,160 +11,79 @@ using YoloDotNet.Models;
 namespace DockerDemo
 {
     /// <summary>
-    /// Demonstrates object detection using the YoloDotNet library inside a Dockerized
-    /// ASP.NET Core Web API, intentionally designed to be minimal, explicit, and easy to follow.
-    ///
-    /// This demo exposes a single HTTP endpoint that accepts image uploads, performs object detection
-    /// using a YOLOv11 ONNX model, and returns either structured detection results or an annotated
-    /// image with detections drawn on top.
-    ///
-    /// The implementation intentionally uses minimal code and runs inference exclusively on the CPU
-    /// to keep the demo simple, predictable, and universally compatible across platforms and
-    /// container environments.
-    ///
-    /// Features included:
-    /// - Minimal ASP.NET Core Web API for object detection
-    /// - CPU-only inference using the CpuExecutionProvider
-    /// - Automatic inclusion of the YOLOv11 ONNX model as part of the Release build output
-    /// - Image inference via multipart/form-data uploads
-    /// - JSON responses containing labels, confidence scores, and bounding box coordinates
-    /// - Optional image output with rendered detection overlays via a query parameter
-    ///
-    /// Execution providers:
-    /// - CpuExecutionProvider: runs inference entirely on the CPU.
-    ///   This is intentionally chosen to reduce complexity and avoid hardware-specific setup,
-    ///   making the demo easy to run in Docker without additional configuration.
-    ///
-    /// Important notes:
-    /// - This project is intended as a getting-started reference, not a production-ready service.
-    /// - The project must be built in Release mode, as the Docker image relies on the Release output.
-    /// - The API exposes a single endpoint to keep usage and integration straightforward.
-    /// - For setup instructions, Docker usage, and API examples, see the README:
-    ///   https://github.com/NickSwardh/YoloDotNet
+    /// A minimal ASP.NET Core Web API that runs YoloDotNet object detection on the CPU, inside a Docker container.
+    /// POST an image to /detect to get the detections as JSON, or add ?download=true to get the image with the results drawn on it.
+    /// See Demo/DockerDemo/README.md for how to build and run it.
     /// </summary>
-
     public class Program
     {
-
-        private static DetectionDrawingOptions _drawingOptions = default!;
-
-        // Load the YOLOv11s ONNX model from the "models" directory
-        private static string _modelSource = Path.Combine(AppContext.BaseDirectory, "models", "model.onnx");
+        // The model is copied to the "models" folder of the build output; see the README
+        private static readonly string _modelPath = Path.Combine(AppContext.BaseDirectory, "models", "model.onnx");
 
         public static void Main(string[] args)
         {
+            if (File.Exists(_modelPath) is false)
+                throw new FileNotFoundException($"Model file not found: {_modelPath}");
+
             var builder = WebApplication.CreateBuilder(args);
 
-            ConfigureServices(builder);
+            // Load the model once and share it between requests; inference on one Yolo instance is thread-safe
+            builder.Services.AddSingleton(_ => new Yolo(new YoloOptions
+            {
+                ExecutionProvider = new CpuExecutionProvider(_modelPath)
+            }));
 
             var app = builder.Build();
 
-            ConfigureApp(app);
-
-            ConfigureDrawingOptions();
+            app.UseHttpsRedirection();
+            app.MapPost("/detect", Detect);
 
             app.Run();
         }
 
-        /// <summary>
-        /// Configures application services
-        /// object detection.
-        /// </summary>
-        private static void ConfigureServices(WebApplicationBuilder builder)
+        private static async Task<IResult> Detect(HttpRequest request, Yolo yolo)
         {
-            builder.Services.AddControllers();
-
-            // Ensure the model file exists
-            if (!File.Exists(_modelSource))
-            {
-                throw new FileNotFoundException($"Model file not found: {_modelSource}");
-            }
-
-            // Register Yolo service with CPU execution provider
-            builder.Services.AddSingleton(sp =>
-            {
-                return new Yolo(new YoloOptions
-                {
-                    ExecutionProvider = new CpuExecutionProvider(_modelSource),
-                });
-            });
-        }
-
-        /// <summary>
-        /// Configures the request pipeline and endpoint mappings.
-        /// </summary>
-        private static void ConfigureApp(WebApplication app)
-        {
-            app.UseHttpsRedirection();
-            app.UseAuthorization();
-            app.MapControllers();
-
-            app.MapPost("/detect", async (HttpRequest req, Yolo yolo) => await HandleDetect(req, yolo));
-        }
-
-        /// <summary>
-        /// Processes an HTTP request containing an image and performs object detection using the specified Yolo model.
-        /// </summary>
-        /// <remarks>If the query parameter 'download' is set to 'true', the response will contain the
-        /// input image with detected objects drawn on it as a downloadable file. Otherwise, the response contains the
-        /// detection results in JSON format.</remarks>
-        private static async Task<IResult> HandleDetect(HttpRequest request, Yolo yolo)
-        {
-            SKBitmap? bitmap = null;
-
             try
             {
-                if (request.HasFormContentType)
-                {
-                    var form = await request.ReadFormAsync();
-                    var file = form.Files.GetFile("image");
+                // 1. Read the uploaded image from the "image" form field
+                if (request.HasFormContentType is false)
+                    return Results.BadRequest(new { error = "Send the image as multipart/form-data in the 'image' field." });
 
-                    if (file is null || file.Length == 0)
-                        return Results.BadRequest(new { error = "Form field 'image' is missing or empty." });
+                var form = await request.ReadFormAsync();
+                var file = form.Files.GetFile("image");
 
-                    await using var imageStream = file.OpenReadStream();
-                    bitmap = SKBitmap.Decode(imageStream);
-                }
+                if (file is null || file.Length == 0)
+                    return Results.BadRequest(new { error = "Form field 'image' is missing or empty." });
 
-                if (bitmap is null)
+                await using var stream = file.OpenReadStream();
+                using var image = SKBitmap.Decode(stream);
+
+                if (image is null)
                     return Results.BadRequest(new { error = "Invalid or unsupported image." });
 
-                var detections = yolo.RunObjectDetection(bitmap, confidence: 0.2, iou: 0.7);
+                // 2. Run inference
+                var detections = yolo.RunObjectDetection(image);
 
-                if (request.Query.TryGetValue("download", out var val) && string.Equals(val, "true", StringComparison.OrdinalIgnoreCase))
-                {
-                    bitmap.Draw(detections, _drawingOptions ?? default!);
-                    return GetImageResultForDownload(bitmap);
-                }
+                // 3. Return the image with the results drawn on it, or the results as JSON
+                var download = string.Equals(request.Query["download"], "true", StringComparison.OrdinalIgnoreCase);
 
-                return GetDetectionResults(detections);
+                return download ? DrawnImage(image, detections) : Json(detections);
             }
             catch (Exception ex)
             {
                 return Results.Problem(detail: ex.Message);
             }
-            finally
-            {
-                bitmap?.Dispose();
-            }
         }
 
-        /// <summary>
-        /// Creates a file result containing the specified bitmap image encoded as a JPEG for download.
-        /// </summary>
-        private static IResult GetImageResultForDownload(SKBitmap bitmap)
+        private static IResult DrawnImage(SKBitmap image, List<ObjectDetection> detections)
         {
-            using var img = SKImage.FromBitmap(bitmap);
-            using var data = img.Encode(SKEncodedImageFormat.Jpeg, 90);
+            image.Draw(detections);
 
-            return Results.File(data.ToArray(), "image/jpeg");
+            using var encoded = image.Encode(SKEncodedImageFormat.Jpeg, 90);
+            return Results.File(encoded.ToArray(), "image/jpeg");
         }
 
-        /// <summary>
-        /// Creates a JSON result containing the detection results with label, confidence, and bounding box information
-        /// for each detected object.
-        /// </summary>
-        private static IResult GetDetectionResults(List<ObjectDetection> detections)
+        private static IResult Json(List<ObjectDetection> detections)
             => Results.Json(detections.Select(d => new
             {
                 label = d.Label.Name,
@@ -177,54 +96,5 @@ namespace DockerDemo
                     height = d.BoundingBox.Height
                 }
             }));
-
-        /// <summary>
-        /// Optional. Configures the default drawing options for detection overlays.
-        /// </summary>
-        private static void ConfigureDrawingOptions()
-        {
-            _drawingOptions = new DetectionDrawingOptions
-            {
-                DrawBoundingBoxes = true,
-                DrawConfidenceScore = true,
-                DrawLabels = true,
-                EnableFontShadow = true,
-
-                // SKTypeface defines the font used for text rendering.
-                // SKTypeface.Default uses the system default font.
-                // To load a custom font:
-                //   - Use SKTypeface.FromFamilyName("fontFamilyName", SKFontStyle) to load by font family name (if installed).
-                //   - Use SKTypeface.FromFile("path/to/font.ttf") to load a font directly from a file.
-                // Example:
-                //   Font = SKTypeface.FromFamilyName("Arial", SKFontStyle.Normal)
-                //   Font = SKTypeface.FromFile("C:\\Fonts\\CustomFont.ttf")
-                Font = SKTypeface.Default,
-
-                FontSize = 18,
-                FontColor = SKColors.White,
-                DrawLabelBackground = true,
-                EnableDynamicScaling = true,
-                BorderThickness = 2,
-
-                // By default, YoloDotNet automatically assigns colors to bounding boxes.
-                // To override these default colors, you can define your own array of hexadecimal color codes.
-                // Each element in the array corresponds to the class index in your model.
-                // Example:
-                //   BoundingBoxHexColors = ["#00ff00", "#547457", ...] // Color per class id
-
-                BoundingBoxOpacity = 128,
-
-                // Option for video streams:
-                // The following options configure tracked object tails, which visualize 
-                // the movement path of detected objects across a sequence of frames or images.
-                // Drawing the tail only works when tracking is enabled (e.g., using SortTracker).
-                // This is demonstrated in the VideoStream demo.
-
-                // DrawTrackedTail = false,
-                // TailPaintColorEnd = new(),
-                // ailPaintColorStart = new(),
-                // TailThickness = 0,
-            };
-        }
     }
 }
