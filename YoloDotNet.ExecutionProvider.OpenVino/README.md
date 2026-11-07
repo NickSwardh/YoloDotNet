@@ -1,61 +1,75 @@
-﻿# Information
-YoloDotNet uses modular execution providers to run inference on different hardware backends.
-Each provider targets a specific platform or accelerator and may require additional system-level dependencies such as runtimes, drivers, or SDKs.
+﻿# YoloDotNet Execution Provider: OpenVINO
+**Optimized inference on Intel GPUs and NPUs with Intel® OpenVINO™**
 
-Installing the NuGet package alone is not always sufficient — proper setup depends on the selected provider and the target system.\
-This document describes the installation and usage of the **OpenVINO execution provider**.
+Execution providers are separate packages that decide where YoloDotNet runs inference.
+The OpenVINO execution provider runs inference on Intel GPUs and NPUs with Intel® OpenVINO™,
+which makes it well suited to Intel hardware and edge devices.
 
-# Core Library Requirement
+## 📋 Requirements
 
-All execution providers require the core **YoloDotNet** package.
+- An Intel GPU or NPU supported by OpenVINO
+- Windows or Linux (x64)
+- [Intel® OpenVINO™ Runtime](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/download.html)
 
-### NuGet Package
-```
-dotnet add package YoloDotNet
-```
+## 📦 Installation
 
-# Execution Provider - OpenVINO
+1. [Download and install Intel® OpenVINO™](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/download.html) for your platform.
+2. Add the NuGet packages:
 
-The OpenVINO execution provider enables optimized and hardware-accelerated inference on supported Intel® CPUs, GPUs, and NPUs using Intel® OpenVINO™.
-It is particularly well-suited for Intel hardware and edge deployments where efficient CPU and NPU utilization is critical.
+   ```bash
+   dotnet add package YoloDotNet
+   dotnet add package YoloDotNet.ExecutionProvider.OpenVino
+   ```
 
 > ⚠️ **Note**\
-> This execution provider depends on the Intel® OpenVINO™ Runtime.
+> Reference exactly one execution provider package in your project.\
+> `YoloDotNet.ExecutionProvider.OpenVino` 1.2 requires YoloDotNet 4.3.
 
-### Requirements
+## 🚀 Usage
 
-- Intel CPU, GPU, or NPU supported by OpenVINO
-- Windows or Linux (x64)
-- Intel® OpenVINO™ Runtime
-
-# Download and Install
-[Download and install Intel® OpenVINO™ for your platform](https://www.intel.com/content/www/us/en/developer/tools/openvino-toolkit/download.html).
-
-### NuGet Package
-```
-dotnet add package YoloDotNet.ExecutionProvider.OpenVino
-```
-
-> YoloDotNet.ExecutionProvider.OpenVino v1.1 requires YoloDotNet version 4.1.
-
-# Usage Example:
 ```csharp
+using YoloDotNet;
+using YoloDotNet.ExecutionProvider.OpenVino;
+
 using var yolo = new Yolo(new YoloOptions
 {
     ExecutionProvider = new OpenVinoExecutionProvider(
         model: "path/to/model.onnx",
-
-        // If no OpenVINO configuration is provided, the OpenVINO CPU device is used by default.
-        openVino: new OpenVino()
+        openVino: new OpenVino
         {
-            DeviceType = "GPU", // Device type: "CPU", "GPU", "MYRIAD", etc.
+            DeviceType = "GPU",
             Precision = Precision.FP16,
-            CachePath = Path.Combine("path/to/cache/folder"),
-            ModelPriority = ModelPriority.HIGH
-        }
-    ),
-
-    // ...other options
-
+            CachePath = "path/to/cache/folder"
+        })
 });
 ```
+
+## ⚙️ Options
+
+### `OpenVinoExecutionProvider`
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `model` | – | Path to the ONNX model, or the model as a `byte[]`. |
+| `openVino` | `null` | OpenVINO settings (see below). Without them, inference runs on the CPU. |
+
+### `OpenVino`
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `DeviceType` | Not set | `"GPU"` or `"NPU"` runs inference with OpenVINO on that device. Not set, or `"CPU"`, runs on the CPU (see the note below). |
+| `Precision` | `FP32` | `FP32`: full precision. `FP16`: faster, with minimal accuracy loss. |
+| `Threads` | `8` | Number of inference threads. |
+| `Streams` | `1` | Number of parallel inference streams. |
+| `CachePath` | Not set | Folder where OpenVINO caches compiled models, so later starts are faster. Required with `"GPU"` and `"NPU"`. |
+| `ModelPriority` | `DEFAULT` | Priority of this model when several models share the device: `DEFAULT`, `LOW`, `MEDIUM` or `HIGH`. |
+
+> ⚠️ **Note**\
+> The OpenVINO settings apply to `"GPU"` and `"NPU"` only. With `DeviceType` not set or set to `"CPU"`,
+> inference runs on ONNX Runtime's built-in CPU backend, the same as the CPU execution provider, and the other settings are ignored.
+
+## 📚 More information
+
+- [YoloDotNet README](https://github.com/NickSwardh/YoloDotNet): getting started, supported models and the other execution providers
+- [OpenVINO documentation](https://docs.openvino.ai/): supported devices and performance tuning
+- [Demos](https://github.com/NickSwardh/YoloDotNet/tree/master/Demo): ready-made examples for every task

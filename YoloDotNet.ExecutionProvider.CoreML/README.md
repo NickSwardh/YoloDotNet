@@ -1,58 +1,48 @@
-﻿# Information
-YoloDotNet uses modular execution providers to run inference on different hardware backends.
-Each provider targets a specific platform or accelerator and may require additional system-level dependencies such as runtimes, drivers, or SDKs.
+﻿# YoloDotNet Execution Provider: CoreML
+**Hardware-accelerated inference on Apple devices with Core ML**
 
-Installing the NuGet package alone is not always sufficient — proper setup depends on the selected provider and the target system.\
-This document describes the installation and usage of the **CoreML execution provider**.
+Execution providers are separate packages that decide where YoloDotNet runs inference.
+The CoreML execution provider runs inference with Apple's Core ML framework,
+which uses the Neural Engine, the GPU or the CPU, depending on the device and the model.
 
-# Core Library Requirement
+## 📋 Requirements
 
-All execution providers require the core **YoloDotNet** package.
+- macOS 10.15 or later
 
-### NuGet Package
-```
+Core ML is part of macOS, so there is nothing else to install.
+
+## 📦 Installation
+
+```bash
 dotnet add package YoloDotNet
-```
-
-# Execution Provider - CoreML
-
-The CoreML execution provider enables hardware-accelerated inference on Apple devices using Apple’s Core ML framework.\
-It automatically leverages Apple Silicon accelerators such as the Neural Engine, GPU, or CPU depending on device capabilities.
-
-> ⚠️ **Note**\
-> CoreML is only available on Apple platforms and is supported on macOS 10.15 or later.
-
-### Requirements
-
-- macOS 10.15 **or later**
-
-# Installation
-
-No additional installation or configuration is required.\
-CoreML is included with macOS and is automatically available at runtime on supported devices.
-
-> YoloDotNet.ExecutionProvider.CoreML v1.1 requires YoloDotNet version 4.1.
-
-### NuGet Package
-```
 dotnet add package YoloDotNet.ExecutionProvider.CoreML
 ```
 
-# Usage Example:
+> ⚠️ **Note**\
+> Reference exactly one execution provider package in your project.\
+> `YoloDotNet.ExecutionProvider.CoreML` 1.2 requires YoloDotNet 4.3.
+
+## 🚀 Usage
+
 ```csharp
 using YoloDotNet;
 using YoloDotNet.ExecutionProvider.CoreML;
 
 using var yolo = new Yolo(new YoloOptions
 {
-    ExecutionProvider = new CoreMLExecutionProvider(
-        model: "path/to/model.onnx",
-
-        // Automatically selects the best available CoreML compute units
-        // (Neural Engine, GPU, or CPU)
-        adaptive: true
-    ),
-
-    // ...other options
+    ExecutionProvider = new CoreMLExecutionProvider("path/to/model.onnx")
 });
 ```
+
+## ⚙️ Options
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `model` | – | Path to the ONNX model, or the model as a `byte[]`. |
+| `adaptive` | `true` | `true` runs inference with Core ML, which picks the Neural Engine, the GPU or the CPU. `false` doesn't use Core ML: inference runs on ONNX Runtime's built-in CPU backend. |
+
+## 📚 More information
+
+- [YoloDotNet README](https://github.com/NickSwardh/YoloDotNet): getting started, supported models and the other execution providers
+- [Accuracy & Configuration Guide](https://github.com/NickSwardh/YoloDotNet/blob/master/AccuracyAndConfiguration.md): resize mode, sampling and thresholds
+- [Demos](https://github.com/NickSwardh/YoloDotNet/tree/master/Demo): ready-made examples for every task

@@ -1,55 +1,54 @@
-﻿# Information
-YoloDotNet uses modular execution providers to run inference on different hardware backends.
-Each provider targets a specific platform or accelerator and may require additional system-level dependencies such as runtimes, drivers, or SDKs.
+﻿# YoloDotNet Execution Provider: CPU
+**Run YoloDotNet on any CPU, with no extra setup**
 
-Installing the NuGet package alone is not always sufficient — proper setup depends on the selected provider and the target system.\
-This document describes the installation, requirements, and usage of the **CPU execution provider**.
+Execution providers are separate packages that decide where YoloDotNet runs inference.
+The CPU execution provider uses ONNX Runtime's built-in CPU backend. It is the most portable execution provider:
+it works on every supported platform and needs nothing beyond the NuGet packages.
 
+## 📋 Requirements
 
-# Core Library Requirement
+- An x64 or ARM64 CPU
+- Windows, Linux or macOS (including Apple Silicon)
 
-All execution providers require the core **YoloDotNet** package, which contains the shared inference pipeline, models, and APIs.
+## 📦 Installation
 
-### NuGet Package
-```
+```bash
 dotnet add package YoloDotNet
-```
-
-# Execution Provider - CPU
-
-The CPU execution provider runs inference on the system CPU using ONNX Runtime’s built-in CPU backend.\
-It is the most portable execution provider and requires no additional dependencies.
-
-# Requirements:
-
-- Any x64-compatible CPU
-- Windows, Linux, or macOS
-
-**Notes**:
-- The CPU execution provider is always available and works on all supported platforms.
-- Performance is lower compared to hardware-accelerated providers, but it is ideal for development, testing, and environments without GPU or NPU support.
-
-# Installation
-
-No additional installation or configuration is required.\
-Install the NuGet package and run your application — that’s it.
-
-> YoloDotNet.ExecutionProvider.Cpu v1.1 requires YoloDotNet version 4.1.
-
-### NuGet Package
-```
 dotnet add package YoloDotNet.ExecutionProvider.Cpu
 ```
 
-# Usage Example:
+No other installation or configuration is needed.
+
+> ⚠️ **Note**\
+> Reference exactly one execution provider package in your project.\
+> `YoloDotNet.ExecutionProvider.Cpu` 1.2 requires YoloDotNet 4.3.
+
+## 🚀 Usage
+
 ```csharp
 using YoloDotNet;
 using YoloDotNet.ExecutionProvider.Cpu;
 
 using var yolo = new Yolo(new YoloOptions
 {
-    ExecutionProvider = new CpuExecutionProvider(model: "path/to/model.onnx"),
-
-    // ...other options
+    ExecutionProvider = new CpuExecutionProvider("path/to/model.onnx")
 });
 ```
+
+## ⚙️ Options
+
+| Parameter | Description |
+|-----------|-------------|
+| `model` | Path to the ONNX model, or the model as a `byte[]`. |
+
+## 💡 Notes
+
+- The CPU is slower than a GPU or NPU, but it is always available, which makes it a good choice for development, testing and machines without an accelerator.
+- To process many images, run them in parallel on one `Yolo` instance; inference is thread-safe.
+  See [Speed Tips](https://github.com/NickSwardh/YoloDotNet#-speed-tips) in the main README.
+
+## 📚 More information
+
+- [YoloDotNet README](https://github.com/NickSwardh/YoloDotNet): getting started, supported models and the other execution providers
+- [Accuracy & Configuration Guide](https://github.com/NickSwardh/YoloDotNet/blob/master/AccuracyAndConfiguration.md): resize mode, sampling and thresholds
+- [Demos](https://github.com/NickSwardh/YoloDotNet/tree/master/Demo): ready-made examples for every task
