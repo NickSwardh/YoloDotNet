@@ -26,7 +26,11 @@ namespace YoloDotNet.ExecutionProvider.CoreML
         /// <summary>
         /// Constructs a CoreMLExecutionProvider for running ONNX models using Apple's CoreML on macOS/iOS devices.
         /// </summary>
-        /// <param name="model"></param>
+        /// <param name="model">Path to the ONNX model.</param>
+        /// <param name="adaptive">
+        /// <see langword="true"/> runs inference with Core ML, which picks the Neural Engine, the GPU or the CPU.
+        /// <see langword="false"/> doesn't use Core ML: inference runs on ONNX Runtime's built-in CPU backend.
+        /// </param>
         public CoreMLExecutionProvider(string model, bool adaptive = true)
         {
             InitializeYolo(model, adaptive);
@@ -35,7 +39,11 @@ namespace YoloDotNet.ExecutionProvider.CoreML
         /// <summary>
         /// Constructs a CoreMLExecutionProvider for running ONNX models using Apple's CoreML on macOS/iOS devices.
         /// </summary>
-        /// <param name="model"></param>
+        /// <param name="model">The ONNX model as a byte array.</param>
+        /// <param name="adaptive">
+        /// <see langword="true"/> runs inference with Core ML, which picks the Neural Engine, the GPU or the CPU.
+        /// <see langword="false"/> doesn't use Core ML: inference runs on ONNX Runtime's built-in CPU backend.
+        /// </param>
         public CoreMLExecutionProvider(byte[] model, bool adaptive = true)
         {
             InitializeYolo(model, adaptive);

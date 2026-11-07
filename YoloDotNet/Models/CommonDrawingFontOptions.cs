@@ -40,6 +40,7 @@ namespace YoloDotNet.Models
         /// <summary>
         /// Specifies the preferred position for labels relative to bounding boxes.
         /// Default is <see cref="LabelPosition.Auto"/>, which automatically determines the best position.
+        /// Not used for classification results, whose labels are always drawn in the top-left corner.
         /// </summary>
         public LabelPosition LabelPosition { get; set; } = LabelPosition.Auto;
     }

@@ -151,7 +151,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                     // OpenVINO EP supports device_type, precision, num_threads, num_streams, model_priority
                     ["device_type"] = openVino.DeviceType.ToUpper(),
 
-                    // Precision mode: FP16 for speed, FP32 for accuracy. ACCURACY to use model-defined precision.
+                    // Precision mode: FP16 for speed, FP32 for accuracy.
                     ["precision"] = openVino.Precision.ToString().ToUpper(), 
 
                     // Threading and streams

@@ -5,7 +5,7 @@
 namespace YoloDotNet.ExecutionProvider.OpenVino
 {
     /// <summary>
-    /// OpenqqVINO model priority levels.
+    /// OpenVINO model priority levels.
     /// </summary>
     public enum ModelPriority
     {
