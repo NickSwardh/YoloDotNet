@@ -5,8 +5,7 @@
 namespace YoloDotNet.Test.Common.Enums
 {
     /// <summary>
-    /// Image types used by tests/benchmarks. Primary values are task-based names.
-    /// Backwards-compatible aliases map original image names to the corresponding task.
+    /// Image types used by the tests, benchmarks and demos, one per task.
     /// </summary>
     public enum ImageType
     {

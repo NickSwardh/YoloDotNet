@@ -364,3 +364,7 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# YOLO models - never commit; generate them with tools/download_models.py
+*.onnx
+*.pt

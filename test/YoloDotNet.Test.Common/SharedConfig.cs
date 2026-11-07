@@ -2,351 +2,160 @@
 // SPDX-FileCopyrightText: 2024-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
+using System;
+using System.IO;
+using YoloDotNet.Enums;
+using YoloDotNet.Test.Common.Enums;
+
 namespace YoloDotNet.Test.Common
 {
-    using System;
-    using System.IO;
-    using System.Text.Json;
-
-    using YoloDotNet.Enums;
-    using YoloDotNet.Test.Common.Enums;
-
+    /// <summary>
+    /// Paths to the models, media and other assets used by the tests, benchmarks and demos.
+    /// All assets live in the repository's test/assets folder. The models are created by tools/download_models.py.
+    /// </summary>
     public static class SharedConfig
     {
-        private const string EnvAssetsFolder = "YOLODOTNET_ASSETS_FOLDER";
-
-        private static string? s_assetsBaseOverride;
-        private static string? s_modelsFolderOverride;
-        private static string? s_imagesFolderOverride;
-
-        private static string? s_modelsFolder;
-        private static string? s_mediaFolder;
+        private static string _assetsFolder;
 
         /// <summary>
-        /// Programmatically set a single base assets folder. The code will use
-        /// {base}\Models and {base}\Images for models and images respectively.
+        /// The repository's test/assets folder.
         /// </summary>
-        public static void SetBaseFolder(string? assetsBaseFolder)
-        {
-            s_assetsBaseOverride = string.IsNullOrWhiteSpace(assetsBaseFolder) ? null : assetsBaseFolder;
-            s_modelsFolder = null;
-            s_mediaFolder = null;
-        }
+        public static string AbsoluteAssetsPath => _assetsFolder ??= FindAssetsFolder();
 
         /// <summary>
-        /// Backwards-compatible programmatic setter for explicit model/image folders.
-        /// </summary>
-        public static void SetFolders(string? modelsFolder, string? imagesFolder)
-        {
-            s_modelsFolderOverride = string.IsNullOrWhiteSpace(modelsFolder) ? null : modelsFolder;
-            s_imagesFolderOverride = string.IsNullOrWhiteSpace(imagesFolder) ? null : imagesFolder;
-            s_modelsFolder = null;
-            s_mediaFolder = null;
-        }
-
-        public static string ModelsFolder => s_modelsFolder ??= ResolveModelsFolder();
-        public static string MediaFolder => s_mediaFolder ??= ResolveImagesFolder();
-
-        /// <summary>
-        /// Path to the repository-level test assets folder (e.g. &lt;repo&gt;/test/assets).
-        /// Falls back to ModelsFolder parent when repo root cannot be found.
-        /// </summary>
-        public static string AbsoluteAssetsPath => ResolveAbsoluteAssetsPath();
-
-        /// <summary>
-        /// Path to the pose estimation keypoint file (&lt;assets&gt;/PoseKeyPoints/pose-keypoints.json).
+        /// The pose estimation keypoint definitions.
         /// </summary>
         public static string PoseKeyPointsFile => Path.Join(AbsoluteAssetsPath, "PoseKeyPoints", "pose-keypoints.json");
 
-        private static string ResolveModelsFolder()
-        {
-            // explicit per-folder override
-            if (!string.IsNullOrWhiteSpace(s_modelsFolderOverride))
-                return s_modelsFolderOverride!;
-
-            // if an assets base is provided, use Models subfolder
-            var baseFolder = ResolveAssetsBaseFolder();
-            if (!string.IsNullOrWhiteSpace(baseFolder))
-                return Path.Join(baseFolder, "Models");
-
-            // config per-folder
-            var cfg = TryLoadConfigFromRepoRoot();
-            if (!string.IsNullOrWhiteSpace(cfg?.ModelsFolder))
-                return cfg.ModelsFolder!;
-
-            // last resort: attempt to find repo assets folder
-            var repoAssets = TryGetRepoAssetsPath();
-            if (!string.IsNullOrWhiteSpace(repoAssets))
-                return Path.Join(repoAssets, "Models");
-
-            throw new InvalidOperationException($"Could not determine models folder. Provide it by calling SharedConfig.SetBaseFolder(baseFolder) or " +
-                $"SharedConfig.SetFolders(modelsFolder, imagesFolder), setting the environment variable {EnvAssetsFolder}, or adding " +
-                $"a 'yolodotnet.config.json' with a ModelsFolder property at the repository root.");
-        }
-
-        private static string ResolveImagesFolder()
-        {
-            // explicit per-folder override
-            if (!string.IsNullOrWhiteSpace(s_imagesFolderOverride))
-                return s_imagesFolderOverride!;
-
-            // if an assets base is provided, use Images subfolder
-            var baseFolder = ResolveAssetsBaseFolder();
-            if (!string.IsNullOrWhiteSpace(baseFolder))
-                return Path.Join(baseFolder, "Media");
-
-            // config per-folder
-            var cfg = TryLoadConfigFromRepoRoot();
-            if (!string.IsNullOrWhiteSpace(cfg?.ImagesFolder))
-                return cfg.ImagesFolder!;
-
-            // last resort: attempt to find repo assets folder
-            var repoAssets = TryGetRepoAssetsPath();
-            if (!string.IsNullOrWhiteSpace(repoAssets))
-                return Path.Join(repoAssets, "Media");
-
-            throw new InvalidOperationException($"Could not determine images folder. Provide it by calling SharedConfig.SetBaseFolder(baseFolder) or" +
-                $"SharedConfig.SetFolders(modelsFolder, imagesFolder), setting the environment variable {EnvAssetsFolder}, or adding " +
-                $"a 'yolodotnet.config.json' with an ImagesFolder property at the repository root.");
-        }
-
-        private static string? ResolveAssetsBaseFolder()
-        {
-            // programmatic override
-            if (!string.IsNullOrWhiteSpace(s_assetsBaseOverride))
-                return s_assetsBaseOverride;
-
-            // preferred single env var
-            var env = Environment.GetEnvironmentVariable(EnvAssetsFolder);
-            if (!string.IsNullOrWhiteSpace(env))
-                return env!;
-
-            // config: if config contains both ModelsFolder and ImagesFolder and they share a parent,
-            // return that parent.
-            var cfg = TryLoadConfigFromRepoRoot();
-            if (cfg != null)
-            {
-                if (!string.IsNullOrWhiteSpace(cfg.ModelsFolder) && !string.IsNullOrWhiteSpace(cfg.ImagesFolder))
-                {
-                    var parentModels = Path.GetDirectoryName(cfg.ModelsFolder!);
-                    var parentImages = Path.GetDirectoryName(cfg.ImagesFolder!);
-                    if (!string.IsNullOrWhiteSpace(parentModels) && string.Equals(parentModels, parentImages, StringComparison.OrdinalIgnoreCase))
-                        return parentModels;
-                }
-            }
-
-            // repo layout fallback handled in TryGetRepoAssetsPath by returning test/assets
-            return null;
-        }
-
-        private sealed class RepoConfig
-        {
-            public string? ModelsFolder { get; set; }
-            public string? ImagesFolder { get; set; }
-        }
-
-        private static RepoConfig? TryLoadConfigFromRepoRoot()
-        {
-            try
-            {
-                var dir = new DirectoryInfo(AppContext.BaseDirectory);
-                while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
-                {
-                    dir = dir.Parent;
-                }
-
-                if (dir == null)
-                    return null;
-
-                var cfgPath = Path.Join(dir.FullName, "yolodotnet.config.json");
-                if (!File.Exists(cfgPath))
-                    return null;
-
-                var json = File.ReadAllText(cfgPath);
-                return JsonSerializer.Deserialize<RepoConfig>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static string? TryGetRepoAssetsPath()
-        {
-            try
-            {
-                var dir = new DirectoryInfo(AppContext.BaseDirectory);
-                while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")))
-                {
-                    dir = dir.Parent;
-                }
-
-                if (dir == null)
-                    return null;
-
-                var assets = Path.Join(dir.FullName, "test", "assets");
-                return Directory.Exists(assets) ? assets : null;
-            }
-            catch
-            {
-                return null;
-            }
-        }
-
-        private static string ResolveAbsoluteAssetsPath()
-        {
-            var repo = TryGetRepoAssetsPath();
-            if (!string.IsNullOrWhiteSpace(repo))
-                return repo!;
-
-            // Fallback: return parent of ModelsFolder if available
-            try
-            {
-                var parent = Path.GetDirectoryName(ModelsFolder);
-                return parent ?? ModelsFolder;
-            }
-            catch
-            {
-                return ModelsFolder;
-            }
-        }
-
         /// <summary>
-        /// Test models for Yolo V5U
+        /// Test models for YOLOv5u.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV5U(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolov5su.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.ObjectDetection => Model("yolov5su.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo V8
+        /// Test models for YOLOv8.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV8(ModelType modelType) => modelType switch
         {
-            ModelType.Classification => Path.Join(ModelsFolder, "yolov8s-cls.onnx"),
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolov8s.onnx"),
-            ModelType.ObbDetection => Path.Join(ModelsFolder, "yolov8s-obb.onnx"),
-            ModelType.Segmentation => Path.Join(ModelsFolder, "yolov8s-seg.onnx"),
-            ModelType.PoseEstimation => Path.Join(ModelsFolder, "yolov8s-pose.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.Classification => Model("yolov8s-cls.onnx"),
+            ModelType.ObjectDetection => Model("yolov8s.onnx"),
+            ModelType.ObbDetection => Model("yolov8s-obb.onnx"),
+            ModelType.Segmentation => Model("yolov8s-seg.onnx"),
+            ModelType.PoseEstimation => Model("yolov8s-pose.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo V9
+        /// Test models for YOLOv9.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV9(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolov9s.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.ObjectDetection => Model("yolov9s.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo V10
+        /// Test models for YOLOv10.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV10(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolov10s.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.ObjectDetection => Model("yolov10s.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo V11
+        /// Test models for YOLO11.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV11(ModelType modelType) => modelType switch
         {
-            ModelType.Classification => Path.Join(ModelsFolder, "yolo11s-cls.onnx"),
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolo11s.onnx"),
-            ModelType.ObbDetection => Path.Join(ModelsFolder, "yolo11s-obb.onnx"),
-            ModelType.Segmentation => Path.Join(ModelsFolder, "yolo11s-seg.onnx"),
-            ModelType.PoseEstimation => Path.Join(ModelsFolder, "yolo11s-pose.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.Classification => Model("yolo11s-cls.onnx"),
+            ModelType.ObjectDetection => Model("yolo11s.onnx"),
+            ModelType.ObbDetection => Model("yolo11s-obb.onnx"),
+            ModelType.Segmentation => Model("yolo11s-seg.onnx"),
+            ModelType.PoseEstimation => Model("yolo11s-pose.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo V12
+        /// Test models for YOLO12.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV12(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolov12s.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.ObjectDetection => Model("yolo12s.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo V26
+        /// Test models for YOLO26.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelV26(ModelType modelType) => modelType switch
         {
-            ModelType.Classification => Path.Join(ModelsFolder, "yolo26s-cls.onnx"),
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "yolo26s.onnx"),
-            ModelType.ObbDetection => Path.Join(ModelsFolder, "yolo26s-obb.onnx"),
-            ModelType.Segmentation => Path.Join(ModelsFolder, "yolo26s-seg.onnx"),
-            ModelType.PoseEstimation => Path.Join(ModelsFolder, "yolo26s-pose.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.Classification => Model("yolo26s-cls.onnx"),
+            ModelType.ObjectDetection => Model("yolo26s.onnx"),
+            ModelType.ObbDetection => Model("yolo26s-obb.onnx"),
+            ModelType.Segmentation => Model("yolo26s-seg.onnx"),
+            ModelType.PoseEstimation => Model("yolo26s-pose.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test models for Yolo RT-DETR
+        /// Test models for RT-DETR.
         /// </summary>
-        /// <param name="modelType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestModelRTDETR(ModelType modelType) => modelType switch
         {
-            ModelType.ObjectDetection => Path.Join(ModelsFolder, "rtdetr-l.onnx"),
-            _ => throw new ArgumentException("Unknown modeltype.")
+            ModelType.ObjectDetection => Model("rtdetr-l.onnx"),
+            _ => throw UnknownModelType(modelType)
         };
 
         /// <summary>
-        /// Test images
+        /// Test image for each task.
         /// </summary>
-        /// <param name="imageType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestImage(ImageType imageType) => imageType switch
         {
-            ImageType.Classification => Path.Join(MediaFolder, "classification.jpg"),
-            ImageType.ObjectDetection => Path.Join(MediaFolder, "object_detection.jpg"),
-            ImageType.PoseEstimation => Path.Join(MediaFolder, "pose_estimation.jpg"),
-            ImageType.Segmentation => Path.Join(MediaFolder, "segmentation.jpg"),
-            ImageType.ObbDetection => Path.Join(MediaFolder, "obb_detection.jpg"),
-            _ => throw new ArgumentException("Unknown ImageType.")
+            ImageType.Classification => Media("hummingbird.jpg"),
+            ImageType.ObjectDetection => Media("street.jpg"),
+            ImageType.PoseEstimation => Media("crosswalk.jpg"),
+            ImageType.Segmentation => Media("people.jpg"),
+            ImageType.ObbDetection => Media("island.jpg"),
+            _ => throw new ArgumentException($"Unknown image type: {imageType}.", nameof(imageType))
         };
 
         /// <summary>
-        /// Test Videos
+        /// Test videos.
         /// </summary>
-        /// <param name="videoType"></param>
-        /// <returns></returns>
-        /// <exception cref="ArgumentException"></exception>
         public static string GetTestVideo(VideoType videoType) => videoType switch
         {
-            VideoType.Default => Path.Join(MediaFolder, "video.mp4"),
-            _ => throw new ArgumentException("Unknown VideoType.")
+            VideoType.Default => Media("walking.mp4"),
+            _ => throw new ArgumentException($"Unknown video type: {videoType}.", nameof(videoType))
         };
 
-        public static string GetTestImage(string imageName) => Path.Join(MediaFolder, imageName);
+        private static string Model(string fileName) => Path.Join(AbsoluteAssetsPath, "Models", fileName);
+
+        private static string Media(string fileName) => Path.Join(AbsoluteAssetsPath, "Media", fileName);
+
+        private static ArgumentException UnknownModelType(ModelType modelType)
+            => new($"No test model for model type: {modelType}.", nameof(modelType));
+
+        /// <summary>
+        /// Walks up from the build output folder (e.g. test/YoloDotNet.Tests/bin/Debug/net8.0)
+        /// until it finds the repository's test/assets folder.
+        /// </summary>
+        private static string FindAssetsFolder()
+        {
+            for (var folder = new DirectoryInfo(AppContext.BaseDirectory); folder is not null; folder = folder.Parent)
+            {
+                var assets = Path.Join(folder.FullName, "test", "assets");
+                if (Directory.Exists(assets))
+                    return assets;
+            }
+
+            throw new DirectoryNotFoundException(
+                $"Could not find the test/assets folder above '{AppContext.BaseDirectory}'. " +
+                "Run the tests, benchmarks and demos from inside the YoloDotNet repository.");
+        }
     }
 }
