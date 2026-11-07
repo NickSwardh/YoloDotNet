@@ -61,7 +61,7 @@ using var yolo = new Yolo(new YoloOptions
 | `Precision` | `FP32` | `FP32`: full precision. `FP16`: faster, with minimal accuracy loss. |
 | `Threads` | `8` | Number of inference threads. |
 | `Streams` | `1` | Number of parallel inference streams. |
-| `CachePath` | Not set | Folder where OpenVINO caches compiled models, so later starts are faster. Required with `"GPU"` and `"NPU"`. |
+| `CachePath` | Not set | Folder where OpenVINO caches compiled models, so later starts are faster. Optional but recommended: without it, OpenVINO compiles the model on every start. |
 | `ModelPriority` | `DEFAULT` | Priority of this model when several models share the device: `DEFAULT`, `LOW`, `MEDIUM` or `HIGH`. |
 
 > ⚠️ **Note**\

@@ -158,13 +158,14 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                     ["num_of_threads"] = openVino.Threads.ToString(), // Open Vino default to 8 threads.
                     ["num_streams"] = openVino.Streams.ToString(), // Open Vino default to 1 stream.
 
-                    // Cache directory for storing compiled models
-                    ["cache_dir"] = openVino.CachePath.ToString(),
-
                     // Performance tuning options
                     ["disable_dynamic_shapes"] = "True",
                     ["model_priority"] = openVino.ModelPriority.ToString().ToUpper()
                 };
+
+                // Cache directory for compiled models. Optional: without it, OpenVINO compiles the model on every start.
+                if (string.IsNullOrWhiteSpace(openVino.CachePath) is false)
+                    ovOptions["cache_dir"] = openVino.CachePath;
 
                 options.AppendExecutionProvider("OpenVINOExecutionProvider", ovOptions);
             }
