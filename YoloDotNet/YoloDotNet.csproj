@@ -63,7 +63,7 @@ Check out the demo projects on GitHub for hands-on examples: https://github.com/
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="SkiaSharp" Version="3.119.1" />
+		<PackageReference Include="SkiaSharp" Version="4.155.0" />
 	</ItemGroup>
 
 </Project>
