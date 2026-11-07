@@ -1,64 +1,42 @@
-# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v4.2 🚀
+# <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/994287a9-556c-495f-8acf-1acae8d64ac0" height=24> YoloDotNet v4.3 🚀
 **Blazing-fast, production-ready YOLO inference for .NET**
 
-**YoloDotNet** is a modular, lightweight C# library for real-time computer vision
-and YOLO-based inference in .NET.
+[![NuGet](https://img.shields.io/nuget/v/YoloDotNet?logo=nuget)](https://www.nuget.org/packages/YoloDotNet)
+[![NuGet downloads](https://img.shields.io/nuget/dt/YoloDotNet?logo=nuget)](https://www.nuget.org/packages/YoloDotNet)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](./LICENSE.txt)
 
-It provides high-performance inference for modern YOLO model families (`YOLOv5u` through `YOLOv26`, `YOLO-World`, `YOLO-E`, and `RT-DETR`), with explicit control over execution, memory, and preprocessing.
+> 🔥 **v4.3: up to 2.5× faster than v4.2** — see [What's New](#-whats-new-v43--yolodotnet-just-entered-beast-mode)
 
-Built on **.NET 8**, **ONNX Runtime**, and **SkiaSharp**, YoloDotNet intentionally
-avoids heavy computer vision frameworks such as OpenCV.  
-There is no Python runtime, no hidden preprocessing, and no implicit behavior —
-only the components required for fast, predictable inference on **Windows,
-Linux, and macOS**.
+**YoloDotNet** is a modular, lightweight C# library for real-time YOLO inference in .NET.
+It runs modern YOLO model families (`YOLOv5u` through `YOLOv26`, `YOLO-World`, `YOLO-E`, and `RT-DETR`) on **Windows, Linux, and macOS**,
+with explicit control over execution, memory, and preprocessing.
+
+Built on **.NET 8**, **ONNX Runtime**, and **SkiaSharp**, without heavy frameworks such as OpenCV and without hidden preprocessing.
 
 No Python. No magic. Just fast, deterministic YOLO — done properly for .NET.
 
 ## ⭐ Why YoloDotNet?
 
-![YOLOv5u](https://img.shields.io/badge/YOLOv5u-supported-2ea44f)
-![YOLOv8-v26](https://img.shields.io/badge/YOLOv8--v26-supported-2ea44f)
-![YOLO-RT-DETR](https://img.shields.io/badge/YOLO--RT--DETR-supported-2ea44f)
-![YOLO-World](https://img.shields.io/badge/YOLO--World-supported-2ea44f)
-![YOLO-E](https://img.shields.io/badge/YOLO--E-supported-2ea44f)
-
 YoloDotNet is designed for developers who need:
 
-- ✅ **Pure .NET** — no Python runtime, no scripts  
-- ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML, DirectML  
+- ✅ **Pure .NET** — no scripts, no external runtimes  
+- ✅ **Real performance** — CPU, CUDA / TensorRT, OpenVINO, CoreML, DirectML, with FP32 and FP16 models  
 - ✅ **Explicit configuration** — predictable accuracy and memory usage  
 - ✅ **Production readiness** — engine caching, long-running stability
 - ✅ **Multiple vision tasks** — detection, OBB, segmentation, pose, classification  
 
 Ideal for **desktop apps, backend services, and real-time vision pipelines** that require deterministic behavior and full control.
 
-## 🆕 What’s New v4.2
-
-- Added **Region of Interest (ROI)** support, allowing inference to run on selected areas of an image or video stream  
-  *(useful for surveillance, monitoring zones, and performance-focused pipelines)*
-- Added the option to **draw edges on segmented objects** for improved visual clarity
-- Added helper methods for **JSON export**:
-  - `ToJson()` — convert inference results to JSON
-  - `SaveJson()` — save inference results directly to a JSON file
-- Added helper methods for **YOLO-formatted annotations**:
-  - `ToYoloFormat()` — convert results to YOLO annotation format
-  - `SaveYoloFormat()` — save results as YOLO-compatible training data
-- Added `GetContourPoints()` helper for extracting **ordered contour points** from segmented objects
-- Updated **YOLOv26 inference execution** to align with other tasks, improving **consistency and overall execution efficiency**
-
-📖 Full release history: [CHANGELOG.md](./CHANGELOG.md)
-
-> [!TIP]
-> **See the demos**  
-> Practical, runnable examples showcasing YoloDotNet features are available in the demo projects:  
-> 👉 [Browse the demo folder](./Demo)
-
 ## 🚀 Quick Start
+
+**Requirements:** .NET 8 or later, plus the setup for your execution provider (for example CUDA and cuDNN for NVIDIA GPUs); see its README under [Execution Providers](#️-execution-providers).
+*Optional:* FFmpeg and FFprobe on `PATH`, only if you process video.
 
 ### 💡 ONNX Model Export Requirements
 
-- For **YOLOv26 models**, export with **opset=18**
+- For **YOLOv26 models**, export with **opset=18** and **nms=False**, so the model keeps its built-in post-processing (recent Ultralytics versions otherwise export a different output that YoloDotNet can't read)
 - For **YOLOv5u–YOLOv12**, export with **opset=17**
+- Models exported with `dynamic=True` are not supported.
 
 > [!IMPORTANT]
 > Using the correct opset ensures optimal compatibility and performance with ONNX Runtime.  
@@ -70,7 +48,7 @@ Ideal for **desktop apps, backend services, and real-time vision pipelines** tha
 yolo export model=yolov8n.pt format=onnx opset=17
 
 # For YOLOv26 (opset 18)
-yolo export model=yolo26n.pt format=onnx opset=18
+yolo export model=yolo26n.pt format=onnx opset=18 nms=False
 ```
 
 > [!WARNING]
@@ -92,14 +70,14 @@ dotnet add package YoloDotNet
 dotnet add package YoloDotNet.ExecutionProvider.Cpu
 
 # Hardware-accelerated execution (choose one)
-dotnet add package YoloDotNet.ExecutionProvider.Cuda
+dotnet add package YoloDotNet.ExecutionProvider.Cuda      # NVIDIA GPUs, optional TensorRT for even faster inference
 dotnet add package YoloDotNet.ExecutionProvider.OpenVino
 dotnet add package YoloDotNet.ExecutionProvider.CoreML
 dotnet add package YoloDotNet.ExecutionProvider.DirectML
 ```
 
-> 💡 **Note:** The CUDA execution provider includes optional **TensorRT** acceleration.  
-> No separate TensorRT package is required.
+> [!WARNING]
+> Mixing execution providers causes native ONNX Runtime conflicts.
 
 ### 3️⃣ Run object detection
 
@@ -108,7 +86,7 @@ using SkiaSharp;
 using YoloDotNet;
 using YoloDotNet.Models;
 using YoloDotNet.Extensions;
-using YoloDotNet.ExecutionProvider.Cpu;
+using YoloDotNet.ExecutionProvider.Cpu; // Other provider? Use its namespace, e.g. YoloDotNet.ExecutionProvider.Cuda
 
 using var yolo = new Yolo(new YoloOptions
 {
@@ -118,7 +96,7 @@ using var yolo = new Yolo(new YoloOptions
 using var image = SKBitmap.Decode("image.jpg");
 
 // Note: The IoU parameter is used for NMS-based models.
-// For YOLOv10 and YOLOv26, IoU is ignored since post-processing is handled internally by the model.
+// For YOLOv10, YOLOv26 and end-to-end RT-DETR exports, IoU is ignored since post-processing is handled internally by the model.
 var results = yolo.RunObjectDetection(image, confidence: 0.25, iou: 0.7);
 
 image.Draw(results);
@@ -127,25 +105,33 @@ image.Save("result.jpg");
 
 You’re now running YOLO inference in **pure C#**.
 
-## 💡 Important: Accuracy Depends on Configuration
+## 💡 Accuracy Depends on Configuration
 
-YOLO inference accuracy is **not automatic**.
-
-Preprocessing settings such as image resize mode, sampling method, and confidence/IoU thresholds **must match how the model was trained**.  
-These settings directly control the accuracy–performance tradeoff and should be treated as part of the model itself.
+The defaults match how YOLO models are normally trained (proportional/letterbox resize, bilinear sampling).
+If your model was trained with different settings, set the same resize mode and sampling here, and pick confidence/IoU thresholds that fit your use case.
+These settings control the accuracy–performance tradeoff and are part of the model itself.
 
 📖 **Before tuning models or comparing results, read:**  
 👉 [Accuracy & Configuration Guide](./AccuracyAndConfiguration.md)
 
-## Supported Tasks
+## 🧩 Supported Tasks and Models
 
 | Classification | Object Detection | OBB Detection | Segmentation | Pose Estimation |
 |---------------|------------------|---------------|--------------|-----------------|
 | <img src="https://user-images.githubusercontent.com/35733515/297393507-c8539bff-0a71-48be-b316-f2611c3836a3.jpg" width=300> | <img src="https://user-images.githubusercontent.com/35733515/273405301-626b3c97-fdc6-47b8-bfaf-c3a7701721da.jpg" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/d15c5b3e-18c7-4c2c-9a8d-1d03fb98dd3c" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/3ae97613-46f7-46de-8c5d-e9240f1078e6" width=300> | <img src="https://github.com/NickSwardh/YoloDotNet/assets/35733515/b7abeaed-5c00-4462-bd19-c2b77fe86260" width=300> |
 | <sub>[pexels.com](https://www.pexels.com/photo/hummingbird-drinking-nectar-from-blooming-flower-in-garden-5344570/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/men-s-brown-coat-842912/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/bird-s-eye-view-of-watercrafts-docked-on-harbor-8117665/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/man-riding-a-black-touring-motorcycle-903972/)</sub> | <sub>[pexels.com](https://www.pexels.com/photo/woman-doing-ballet-pose-2345293/)</sub> |
 
+![YOLOv5u](https://img.shields.io/badge/YOLOv5u-supported-2ea44f)
+![YOLOv8-v26](https://img.shields.io/badge/YOLOv8--v26-supported-2ea44f)
+![YOLO-RT-DETR](https://img.shields.io/badge/YOLO--RT--DETR-supported-2ea44f)
+![YOLO-World](https://img.shields.io/badge/YOLO--World-supported-2ea44f)
+![YOLO-E](https://img.shields.io/badge/YOLO--E-supported-2ea44f)
+![FP32](https://img.shields.io/badge/FP32-supported-2ea44f)
+![FP16 half](https://img.shields.io/badge/FP16_half-supported-2ea44f)
+![FP16 full](https://img.shields.io/badge/FP16_full-supported-2ea44f)
 
-## ✅ Verified YOLO Models
+Models can be **FP32**, **FP16 half** (FP16 input, FP32 outputs) or **FP16 full** (FP16 input and outputs).
+YoloDotNet detects the precision from the model, so there is nothing to configure.
 
 The following YOLO models have been **tested and verified** with YoloDotNet using
 official Ultralytics exports and default heads.
@@ -156,15 +142,62 @@ official Ultralytics exports and default heads.
 
 
 
+## 🔥 What’s New v4.3 — YoloDotNet Just Entered Beast Mode
+
+The fastest YoloDotNet yet, optimized for speed from start to finish: preprocessing, inference, post-processing and drawing are all faster and use less memory. The speed optimizations don't change the detections.
+
+**⚡ Performance compared with v4.2**
+
+| yolo26s, default settings | v4.2 | v4.3 | v4.3 + CUDA Graphs |
+|---|---|---|---|
+| Video, TensorRT FP16 | 290 fps | 455 fps | **714 fps (2.5× faster)** |
+| Video, CUDA | 157 fps | 197 fps | **268 fps (1.7× faster)** |
+| Detection, TensorRT FP16 | 2.47 ms | 2.11 ms | **1.40 ms (1.8× faster)** |
+| Detection, CUDA | 5.27 ms | 4.88 ms | **3.51 ms (1.5× faster)** |
+| Segmentation, CUDA | 7.55 ms | 6.48 ms | **4.91 ms (1.5× faster)** |
+| Drawing segmentation results (masks, boxes, labels) | 1.68 ms | **0.71 ms (2.4× faster)** | – |
+
+<sub>Measured on an RTX 5070 Ti, same machine and settings for both versions: ms per image, and frames per second for a video file with detection and drawing.
+v4.3 video uses `StartVideoProcessing<T>`. Gains vary by hardware and model.</sub>
+
+- **CUDA Graphs (opt-in), now for CUDA and TensorRT:** `enableCudaGraph: true` replays the recorded GPU work instead of launching it step by step
+- **Faster video file processing** with `StartVideoProcessing<T>`: detects the next frames while you handle the current one, in frame order
+- **Faster preprocessing:** single-pass AVX2 bilinear resize + normalize, multithreaded for large images
+- **Faster, leaner segmentation:** masks are traced as outlines, using less memory per mask
+- **Thread-safe parallel inference** on one `Yolo` instance, so you can process folders with many images using `Parallel.ForEach`
+- **Lower memory:** fewer allocations, and trimming support (`PublishTrimmed`) makes apps less than half the size
+- **Automatic AVX2 acceleration:** the new fast paths turn on by themselves on CPUs with AVX2; on other CPUs (including ARM) YoloDotNet automatically uses the regular code path, so no setup is needed
+
+**🎯 Accuracy & Features**
+- **Sharper segmentation:** masks are traced as smooth sub-pixel outlines and no longer shift or shrink. New `Contours` and `GetPixelMask()`
+- **Pixel-accurate results:** bounding boxes and keypoints no longer sit half a pixel off, and images are resized the way YOLO models are trained (bilinear by default)
+- **Pose & tracking:** define keypoints, colors and connections in a JSON file (`PoseKeyPoints.Load`), and steadier tracking of partly hidden objects (`highConfidenceThreshold`, `minHits`)
+- **FP16 models:** both FP16 half (FP16 input, FP32 outputs) and FP16 full (FP16 input and outputs) are supported, alongside FP32
+
+> [!IMPORTANT]
+> **Upgrading from 4.2:** update your execution provider package to v1.2 too, because old providers stop at model load.
+> The default sampling is now bilinear, `SortTracker` assigns Ids after 3 hits (`minHits: 1` for the old behaviour), and pose colors and
+> connections now come from `PoseDrawingOptions.PoseKeyPoints`. See [CHANGELOG.md](./CHANGELOG.md) for all breaking changes and the full release history.
+
 ## 📁 Demos
 
-Hands-on examples are available in the demo folder:
+Ready-to-run examples for every task. See the [Demo README](./Demo/README.md) for how to export the models and run the demos.
 
-👉 [Browse the demo projects](./Demo)
+| Demo | Shows |
+|------|-------|
+| [ObjectDetectionDemo](./Demo/ObjectDetectionDemo) | Object detection on an image |
+| [OBBDetectionDemo](./Demo/OBBDetectionDemo) | Oriented bounding boxes |
+| [SegmentationDemo](./Demo/SegmentationDemo) | Segmentation masks and outlines |
+| [PoseEstimationDemo](./Demo/PoseEstimationDemo) | Pose estimation with keypoints from JSON |
+| [ClassificationDemo](./Demo/ClassificationDemo) | Image classification |
+| [YoloE_SegmentationDemo](./Demo/YoloE_SegmentationDemo) | YOLO-E zero-shot detection with text or visual prompts |
+| [VideoStreamDemo](./Demo/VideoStreamDemo) | Video files, livestreams and webcams, with tracking |
+| [BatchDemo](./Demo/BatchDemo) | Processing folders with many images in parallel |
+| [WebcamDemo](./Demo/WebcamDemo) | Real-time webcam detection in a WPF app |
+| [TensorRTDemo](./Demo/TensorRTDemo) | GPU inference with TensorRT |
+| [DockerDemo](./Demo/DockerDemo) | ASP.NET Core Web API in a Docker container |
 
-Includes image inference, video streams, GPU acceleration, segmentation, and large-image workflows.
-
-## Execution Providers
+## 🖥️ Execution Providers
 
 | Provider           | Windows | Linux | macOS | Documentation |
 |--------------------|---------|-------|-------|---------------|
@@ -174,29 +207,24 @@ Includes image inference, video streams, GPU acceleration, segmentation, and lar
 | CoreML             | ❌      | ❌    | ✅    | [CoreML README](./YoloDotNet.ExecutionProvider.CoreML/README.md) |
 | DirectML           | ✅      | ❌    | ❌    | [DirectML README](./YoloDotNet.ExecutionProvider.DirectML/README.md) |
 
-> ℹ️ Only **one** execution provider package may be referenced.  
-> Mixing providers will cause native runtime conflicts.
+> ℹ️ Reference only one provider package (see Quick Start, step 2).
 
-## ⚡ Performance Characteristics
+**Why separate packages:** the core package is provider-agnostic and each provider brings its own native ONNX Runtime, so there are fewer conflicts and deployment is predictable.
 
-YoloDotNet focuses on stable, low-overhead inference where runtime cost is dominated by the execution provider and model.
+## ⚡ Speed Tips
 
 📊 Benchmarks: [/test/YoloDotNet.Benchmarks](./test/YoloDotNet.Benchmarks/README.md)
 
-- Stable latency after warm-up  
-- Clean scaling from CPU → GPU → TensorRT  
-- Predictable allocation behavior  
-- Suitable for real-time and long-running services  
+- **Video files:** `StartVideoProcessing<T>` detects the next frames while you handle the current one, in frame order. Up to 2.5× faster than v4.2.
+  See the [VideoStreamDemo](./Demo/VideoStreamDemo).
+- **Image folders:** inference on one `Yolo` instance is thread-safe, so you can process many images in parallel with `Parallel.ForEach`.
+  About 4.5× faster than one image at a time. See the [BatchDemo](./Demo/BatchDemo).
+- **NVIDIA GPUs:** `enableCudaGraph: true` makes every inference faster, including single images and live streams: 14–33% on CUDA and 23–38% on TensorRT.
+  See [CUDA Graphs](./YoloDotNet.ExecutionProvider.Cuda/README.md#-cuda-graphs) in the CUDA README.
 
-## 🚀 Modular Execution Providers
+The first two help with bulk work only; single images and live streams arrive one at a time.
 
-- Core package is provider-agnostic  
-- Execution providers are separate NuGet packages  
-- Native ONNX Runtime dependencies are isolated  
-
-**Why this matters:** fewer conflicts, predictable deployment, and production-safe behavior.
-
-## Support YoloDotNet
+## 💖 Support YoloDotNet
 
 ⭐ Star the repo  
 💬 Share feedback  
@@ -205,44 +233,32 @@ YoloDotNet focuses on stable, low-overhead inference where runtime cost is domin
 [GitHub Sponsors](https://github.com/sponsors/NickSwardh)  
 [PayPal](https://paypal.me/nickswardh)
 
-## License
+## 📜 License
 
-MIT License
-
-Copyright (c) Niklas Swärd
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+YoloDotNet is licensed under the [MIT License](./LICENSE.txt). Copyright (c) Niklas Swärd.
 
 ---
 
 ### Model Licensing & Responsibility
 
-* YoloDotNet is licensed under the [MIT License](./LICENSE.txt) and provides an ONNX inference
+* YoloDotNet provides an ONNX inference
 engine for YOLO models exported using Ultralytics YOLO tooling.
 
-* This project does **not** include, distribute, download, or bundle any
-pretrained models.
+* YoloDotNet does **not** include, bundle, or redistribute any pretrained
+models. Users must supply their own ONNX models.
 
-* Users must supply their own ONNX models.
+* The demo projects and unit tests in this repository are meant to be run
+locally, to help developers learn how to integrate YoloDotNet into their own
+applications. To run them, the included script `tools/download_models.py`
+downloads models directly from Ultralytics and exports them to ONNX on your
+machine.
 
-* YOLO ONNX models produced using Ultralytics tooling are typically licensed
-under **AGPL-3.0** or a separate commercial license from Ultralytics.
+* These models are **not** part of YoloDotNet and are **not** covered by its
+MIT license. The models remain the property of Ultralytics and are licensed
+under **AGPL-3.0**. They must **not** be used in commercial or closed-source
+software unless you either comply with AGPL-3.0, which requires releasing your
+application's source code under the same license, or have a commercial license
+from Ultralytics; see [Ultralytics Licensing](https://www.ultralytics.com/license/).
 
 * YoloDotNet does **not** impose, modify, or transfer any license terms related
 to user-supplied models.
