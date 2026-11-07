@@ -43,8 +43,6 @@ namespace YoloDotNet.Core
             _imageInfo = new SKImageInfo(_modelInputWidth, _modelInputHeight, format, SKAlphaType.Opaque);
 
             _pinnedMemoryPool = new PinnedMemoryBufferPool(_imageInfo);
-
-            FrameSaveService.Start();
         }
 
         /// <summary>
