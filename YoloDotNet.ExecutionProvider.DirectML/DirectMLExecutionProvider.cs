@@ -18,8 +18,6 @@ namespace YoloDotNet.ExecutionProvider.DirectML
         private string[] _inputNames = default!;
         private int _inputShapeSize;
         private List<string> _outputNames = default!;
-        private int _dataTypeSize;
-        private TensorElementType _elementDataType = default!;
         #endregion
 
         #region Constructors
@@ -52,7 +50,7 @@ namespace YoloDotNet.ExecutionProvider.DirectML
             var options = new SessionOptions
             {
                 GraphOptimizationLevel = GraphOptimizationLevel.ORT_ENABLE_ALL,
-                
+
                 // DirectML requires sequential execution mode (parallel execution is not supported)
                 ExecutionMode = ExecutionMode.ORT_SEQUENTIAL,
 
@@ -91,17 +89,6 @@ namespace YoloDotNet.ExecutionProvider.DirectML
             _inputShape = firstInput.Value;
             _inputShapeSize = OnnxData.InputShapeSize;
             _outputNames = [.. OnnxData.OutputShapes.Select(x => x.Key)];
-
-            if (OnnxData.ModelDataType == ModelDataType.Float)
-            {
-                _elementDataType = TensorElementType.Float;
-                _dataTypeSize = sizeof(float);
-            }
-            else
-            {
-                _elementDataType = TensorElementType.Float16;
-                _dataTypeSize = sizeof(ushort);
-            }
         }
         #endregion
 

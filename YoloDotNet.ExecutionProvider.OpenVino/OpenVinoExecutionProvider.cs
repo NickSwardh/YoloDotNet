@@ -152,7 +152,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                     ["device_type"] = openVino.DeviceType.ToUpper(),
 
                     // Precision mode: FP16 for speed, FP32 for accuracy.
-                    ["precision"] = openVino.Precision.ToString().ToUpper(), 
+                    ["precision"] = openVino.Precision.ToString().ToUpper(),
 
                     // Threading and streams
                     ["num_of_threads"] = openVino.Threads.ToString(), // Open Vino default to 8 threads.

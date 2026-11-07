@@ -133,7 +133,18 @@ namespace YoloDotNet.Test.Common
             _ => throw new ArgumentException($"Unknown video type: {videoType}.", nameof(videoType))
         };
 
-        private static string Model(string fileName) => Path.Join(AbsoluteAssetsPath, "Models", fileName);
+        private static string Model(string fileName)
+        {
+            var path = Path.Join(AbsoluteAssetsPath, "Models", fileName);
+
+            if (File.Exists(path) is false)
+            {
+                throw new FileNotFoundException($"Model not found: '{path}'. Run 'python tools/download_models.py' " +
+                    "from the repository root to download and export the models.", path);
+            }
+
+            return path;
+        }
 
         private static string Media(string fileName) => Path.Join(AbsoluteAssetsPath, "Media", fileName);
 

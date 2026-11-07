@@ -17,8 +17,6 @@ namespace YoloDotNet.ExecutionProvider.Cpu
         private long[] _inputShape = default!;
         private int _inputShapeSize;
         private List<string> _outputNames = default!;
-        private int _dataTypeSize;
-        private TensorElementType _elementDataType = default!;
         #endregion
 
         #region Constructors
@@ -75,17 +73,6 @@ namespace YoloDotNet.ExecutionProvider.Cpu
             _inputShape = firstInput.Value;
             _inputShapeSize = OnnxData.InputShapeSize;
             _outputNames = [.. OnnxData.OutputShapes.Select(x => x.Key)];
-
-            if (OnnxData.ModelDataType == ModelDataType.Float)
-            {
-                _elementDataType = TensorElementType.Float;
-                _dataTypeSize = sizeof(float);
-            }
-            else
-            {
-                _elementDataType = TensorElementType.Float16;
-                _dataTypeSize = sizeof(ushort);
-            }
         }
         #endregion
 

@@ -261,8 +261,10 @@ namespace YoloDotNet
             };
 
             if (task.ResultType != typeof(T))
+            {
                 throw new YoloDotNetVideoException($"The loaded model ({ModelInfo}) returns {task.ResultType.Name} results, " +
                     $"but video processing was started for {typeof(T).Name}. Use StartVideoProcessing<{task.ResultType.Name}>(...).");
+            }
 
             _ffmpegService.Start(frame => (List<T>)task.Detect(frame), onResult, framesInFlight);
         }
