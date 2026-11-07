@@ -22,6 +22,9 @@ namespace YoloDotNet.Modules.RTDETR
         private readonly int _modelInputHeight;
         private readonly int _totalLabels;
         private readonly int _classOffset;
+
+        // End-to-end exports output [Batch, Predictions, 6] with normalized [cx, cy, w, h, confidence, classId]
+        private const int END_TO_END_ATTRIBUTES = 6;
         #endregion
 
         public ObjectDetectionModuleRtdetr(YoloCore yoloCore)
@@ -42,17 +45,79 @@ namespace YoloDotNet.Modules.RTDETR
             _totalLabels = OnnxModel.Labels.Length;
             _classOffset = 4;  // Offset to skip the first 4 bounding box parameters (x, y, width, height)
 
+            // Guard against label metadata that doesn't match the number of class scores in the output tensor
+            _totalLabels = Math.Min(_totalLabels, _attributes - _classOffset);
+
         }
 
         public List<ObjectDetection> ProcessImage<T>(T image, double confidence, double pixelConfidence, double iou, SKRectI? roi = null)
         {
             using var inferenceResult = _yoloCore.Run(image, roi);
-            var detections = ObjectDetection(inferenceResult, confidence, iou);
+
+            var detections = _attributes == END_TO_END_ATTRIBUTES
+                ? EndToEndObjectDetection(inferenceResult, confidence)
+                : ObjectDetection(inferenceResult, confidence, iou);
 
             return YoloCore.InferenceResultsToType(detections, roi, r => (ObjectDetection)r);
         }
 
         #region Helper methods
+        private Span<ObjectResult> EndToEndObjectDetection(InferenceResult inferenceResult, double confidenceThreshold)
+        {
+            var imageSize = inferenceResult.ImageOriginalSize;
+            var ortSpan = inferenceResult.OrtSpan0;
+
+            var (xPad, yPad, xGain, yGain) = _yoloCore.CalculateGain(imageSize);
+            var proportional = _yoloCore.YoloOptions.ImageResize == ImageResize.Proportional;
+            var labels = _yoloCore.OnnxModel.Labels;
+
+            var boxes = new List<ObjectResult>();
+
+            for (int i = 0; i + END_TO_END_ATTRIBUTES <= ortSpan.Length; i += END_TO_END_ATTRIBUTES)
+            {
+                var confidence = ortSpan[i + 4];
+                var labelIndex = (int)ortSpan[i + 5];
+
+                if (confidence < confidenceThreshold || labelIndex < 0 || labelIndex >= labels.Length)
+                    continue;
+
+                float cx = ortSpan[i] * _modelInputWidth, cy = ortSpan[i + 1] * _modelInputHeight;
+                float halfW = ortSpan[i + 2] * _modelInputWidth * 0.5f, halfH = ortSpan[i + 3] * _modelInputHeight * 0.5f;
+                float x1 = cx - halfW, y1 = cy - halfH, x2 = cx + halfW, y2 = cy + halfH;
+
+                int xMin, yMin, xMax, yMax;
+
+                if (proportional)
+                {
+                    xMin = (int)MathF.Round((x1 - xPad) * xGain);
+                    yMin = (int)MathF.Round((y1 - yPad) * yGain);
+                    xMax = (int)MathF.Round((x2 - xPad) * xGain);
+                    yMax = (int)MathF.Round((y2 - yPad) * yGain);
+                }
+                else
+                {
+                    xMin = (int)MathF.Round(x1 / xGain);
+                    yMin = (int)MathF.Round(y1 / yGain);
+                    xMax = (int)MathF.Round(x2 / xGain);
+                    yMax = (int)MathF.Round(y2 / yGain);
+                }
+
+                boxes.Add(new ObjectResult
+                {
+                    Label = labels[labelIndex],
+                    Confidence = confidence,
+                    BoundingBox = new SKRectI(
+                        Math.Clamp(xMin, 0, imageSize.Width - 1),
+                        Math.Clamp(yMin, 0, imageSize.Height - 1),
+                        Math.Clamp(xMax, 0, imageSize.Width - 1),
+                        Math.Clamp(yMax, 0, imageSize.Height - 1)),
+                    BoundingBoxIndex = i
+                });
+            }
+
+            return boxes.ToArray();
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)] // Inline this small method better performance
         private Span<ObjectResult> ObjectDetection(InferenceResult inferenceResult, double confidenceThreshold, double overlapThreshold)
         {
