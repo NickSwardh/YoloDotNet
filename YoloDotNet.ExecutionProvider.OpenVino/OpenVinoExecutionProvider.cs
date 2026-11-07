@@ -124,7 +124,7 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
                         _outputNames);
                 }
 
-                return CreateInferenceResult(outputs, _elementDataType);
+                return CreateInferenceResult(outputs);
             }
         }
         #endregion
@@ -177,49 +177,61 @@ namespace YoloDotNet.ExecutionProvider.OpenVino
         /// Wraps the output tensors of one inference call in an <see cref="InferenceResult"/> that owns them.
         /// </summary>
         /// <remarks>
+        /// Each output is read by its own tensor type, not the input's: an FP16 model can return FP32 outputs.
         /// Float outputs are handed over as they are; the caller releases them by disposing the result.
         /// Float16 outputs are converted into float buffers rented for this call only, sized from the actual
-        /// tensors, and the ONNX Runtime output is released right away. Either way no two calls share output
-        /// memory, so concurrent calls cannot read or free each other's tensors.
+        /// tensors. When no span points into the ONNX Runtime outputs, they are released right away.
+        /// Either way no two calls share output memory, so concurrent calls cannot read or free each other's tensors.
         /// </remarks>
-        private static InferenceResult CreateInferenceResult(IDisposableReadOnlyCollection<OrtValue> outputs, TensorElementType elementType)
+        private static InferenceResult CreateInferenceResult(IDisposableReadOnlyCollection<OrtValue> outputs)
         {
-            if (elementType == TensorElementType.Float)
-            {
-                try
-                {
-                    var tensorData0 = outputs[0].GetTensorDataAsSpan<float>();
-                    var tensorData1 = outputs.Count == 2 ? outputs[1].GetTensorDataAsSpan<float>() : ReadOnlySpan<float>.Empty;
+            float[]? buffer0 = null;
+            float[]? buffer1 = null;
+            ReadOnlySpan<float> tensorData0;
+            ReadOnlySpan<float> tensorData1;
 
-                    return new InferenceResult(outputs, tensorData0, tensorData1);
-                }
-                catch
-                {
-                    outputs.Dispose();
-                    throw;
-                }
+            try
+            {
+                tensorData0 = ReadOutput(outputs[0], out buffer0);
+                tensorData1 = outputs.Count == 2 ? ReadOutput(outputs[1], out buffer1) : ReadOnlySpan<float>.Empty;
             }
-
-            using (outputs)
+            catch
             {
-                var halfData0 = outputs[0].GetTensorDataAsSpan<Float16>();
-                var halfData1 = outputs.Count == 2 ? outputs[1].GetTensorDataAsSpan<Float16>() : ReadOnlySpan<Float16>.Empty;
+                outputs.Dispose();
 
-                var buffer0 = ArrayPool<float>.Shared.Rent(halfData0.Length);
-                var buffer1 = halfData1.IsEmpty ? null : ArrayPool<float>.Shared.Rent(halfData1.Length);
-
-                ConvertFloat16ToFloat(halfData0, buffer0);
+                if (buffer0 is not null)
+                    ArrayPool<float>.Shared.Return(buffer0);
 
                 if (buffer1 is not null)
-                    ConvertFloat16ToFloat(halfData1, buffer1);
+                    ArrayPool<float>.Shared.Return(buffer1);
 
-                return new InferenceResult(
-                    null,
-                    buffer0.AsSpan(0, halfData0.Length),
-                    buffer1 is null ? ReadOnlySpan<float>.Empty : buffer1.AsSpan(0, halfData1.Length),
-                    buffer0,
-                    buffer1);
+                throw;
             }
+
+            var keepOutputs = buffer0 is null || (outputs.Count == 2 && buffer1 is null);
+
+            if (keepOutputs is false)
+                outputs.Dispose();
+
+            return new InferenceResult(keepOutputs ? outputs : null, tensorData0, tensorData1, buffer0, buffer1);
+        }
+
+        /// <summary>
+        /// Returns the output as floats. Float16 output is converted into a buffer rented from <see cref="ArrayPool{T}.Shared"/>.
+        /// </summary>
+        private static ReadOnlySpan<float> ReadOutput(OrtValue output, out float[]? rentedBuffer)
+        {
+            if (output.GetTensorTypeAndShape().ElementDataType == TensorElementType.Float)
+            {
+                rentedBuffer = null;
+                return output.GetTensorDataAsSpan<float>();
+            }
+
+            var halfData = output.GetTensorDataAsSpan<Float16>();
+            rentedBuffer = ArrayPool<float>.Shared.Rent(halfData.Length);
+            ConvertFloat16ToFloat(halfData, rentedBuffer);
+
+            return rentedBuffer.AsSpan(0, halfData.Length);
         }
 
         /// <summary>
