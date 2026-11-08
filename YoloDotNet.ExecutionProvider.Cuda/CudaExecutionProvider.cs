@@ -72,9 +72,19 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             using var options = CreateSessionOptions(gpuId, trtConfig, enableCudaGraph);
 
             // Create session using bytes if available; else load from file with selected provider.
-            _session = (model is byte[] modelBytes)
-                ? new InferenceSession(modelBytes, options)
-                : new InferenceSession((string)model, options);
+            try
+            {
+                _session = (model is byte[] modelBytes)
+                    ? new InferenceSession(modelBytes, options)
+                    : new InferenceSession((string)model, options);
+            }
+            catch (OnnxRuntimeException ex) when (enableCudaGraph)
+            {
+                throw new YoloDotNetExecutionProviderException(
+                    "This model does not support CUDA Graphs. All of the model's operators must run on the GPU " +
+                    "and it can't contain control-flow operators such as If, Loop or Scan. " +
+                    $"Set enableCudaGraph to false to run it without CUDA Graphs. ONNX Runtime said: {ex.Message}", ex);
+            }
 
             try
             {

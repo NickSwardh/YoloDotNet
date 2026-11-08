@@ -93,7 +93,16 @@ namespace YoloDotNet.ExecutionProvider.Cuda
             fixed (T* source = pixels)
                 CudaRuntime.Copy(_input!.DangerousGetHandle(), (nint)source, _inputBytes, true, _copyStream);
 
-            _session.RunWithBinding(options, _binding!);
+            try
+            {
+                _session.RunWithBinding(options, _binding!);
+            }
+            catch (OnnxRuntimeException ex)
+            {
+                throw new YoloDotNetExecutionProviderException(
+                    "This model does not support CUDA Graphs: inference failed while the graph was captured or replayed. " +
+                    $"Set enableCudaGraph to false to run it without CUDA Graphs. ONNX Runtime said: {ex.Message}", ex);
+            }
             _binding!.SynchronizeBoundOutputs();
 
             float[]? first = null;
