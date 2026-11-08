@@ -13,8 +13,13 @@ namespace YoloDotNet.Benchmarks.Setup
             var modelKey = part[0] + "_" + part[1];
             var providerKey = part[2];
 
+            // A "Graph" suffix on the provider key (e.g. GPUGraph, TRT16Graph) enables CUDA Graphs.
+            var enableCudaGraph = providerKey.EndsWith("Graph");
+            if (enableCudaGraph)
+                providerKey = providerKey[..^"Graph".Length];
+
             var model = GetModel(modelKey);
-            var provider = GetExecutionProvider(providerKey, model);
+            var provider = GetExecutionProvider(providerKey, model, enableCudaGraph);
 
             return new Yolo(new YoloOptions { ExecutionProvider = provider });
         }
@@ -66,26 +71,26 @@ namespace YoloDotNet.Benchmarks.Setup
             _ => throw new ArgumentException("Unknown model")
         };
 
-        private static IExecutionProvider GetExecutionProvider(string provider, string model) => provider switch
+        private static IExecutionProvider GetExecutionProvider(string provider, string model, bool enableCudaGraph) => provider switch
         {
             "CPU" => new CudaExecutionProvider(model, -1), // Sentinel value -1 = CPU execution in CudaExecutionProvider.
-            "GPU" => new CudaExecutionProvider(model),
+            "GPU" => new CudaExecutionProvider(model, enableCudaGraph: enableCudaGraph),
             "TRT32" => new CudaExecutionProvider(model, 0, new TensorRt
             {
                 Precision = TrtPrecision.FP32,
                 EngineCachePath = Path.GetDirectoryName(model)!,
-            }),
+            }, enableCudaGraph),
             "TRT16" => new CudaExecutionProvider(model, 0, new TensorRt
             {
                 Precision = TrtPrecision.FP16,
                 EngineCachePath = Path.GetDirectoryName(model)!,
-            }),
+            }, enableCudaGraph),
             "TRT8" => new CudaExecutionProvider(model, 0, new TensorRt
             {
                 Precision = TrtPrecision.INT8,
                 EngineCachePath = Path.GetDirectoryName(model)!,
                 Int8CalibrationCacheFile = Path.ChangeExtension(model, ".cache"),
-            }),
+            }, enableCudaGraph),
             _ => throw new ArgumentException("Unknown execution provider")
         };
 

@@ -235,5 +235,78 @@ namespace YoloDotNet.Benchmarks.Setup
         RTDETR_Obj_TRT32,
         RTDETR_Obj_TRT16,
         RTDETR_Obj_TRT8,
+
+        // GPU with CUDA Graphs enabled
+
+        V5u_Obj_GPUGraph,
+
+        V8_Cls_GPUGraph,
+        V8_Obj_GPUGraph,
+        V8_Obb_GPUGraph,
+        V8_Pos_GPUGraph,
+        V8_Seg_GPUGraph,
+
+        V9_Obj_GPUGraph,
+        V10_Obj_GPUGraph,
+
+        V11_Cls_GPUGraph,
+        V11_Obj_GPUGraph,
+        V11_Obb_GPUGraph,
+        V11_Pos_GPUGraph,
+        V11_Seg_GPUGraph,
+
+        V12_Obj_GPUGraph,
+
+        V26_Cls_GPUGraph,
+        V26_Obj_GPUGraph,
+        V26_Obb_GPUGraph,
+        V26_Pos_GPUGraph,
+        V26_Seg_GPUGraph,
+
+        // TensorRT with CUDA Graphs enabled
+
+        V5u_Obj_TRT32Graph,
+        V5u_Obj_TRT16Graph,
+
+        V8_Cls_TRT32Graph,
+        V8_Cls_TRT16Graph,
+        V8_Obj_TRT32Graph,
+        V8_Obj_TRT16Graph,
+        V8_Obb_TRT32Graph,
+        V8_Obb_TRT16Graph,
+        V8_Pos_TRT32Graph,
+        V8_Pos_TRT16Graph,
+        V8_Seg_TRT32Graph,
+        V8_Seg_TRT16Graph,
+
+        V9_Obj_TRT32Graph,
+        V9_Obj_TRT16Graph,
+        V10_Obj_TRT32Graph,
+        V10_Obj_TRT16Graph,
+
+        V11_Cls_TRT32Graph,
+        V11_Cls_TRT16Graph,
+        V11_Obj_TRT32Graph,
+        V11_Obj_TRT16Graph,
+        V11_Obb_TRT32Graph,
+        V11_Obb_TRT16Graph,
+        V11_Pos_TRT32Graph,
+        V11_Pos_TRT16Graph,
+        V11_Seg_TRT32Graph,
+        V11_Seg_TRT16Graph,
+
+        V12_Obj_TRT32Graph,
+        V12_Obj_TRT16Graph,
+
+        V26_Cls_TRT32Graph,
+        V26_Cls_TRT16Graph,
+        V26_Obj_TRT32Graph,
+        V26_Obj_TRT16Graph,
+        V26_Obb_TRT32Graph,
+        V26_Obb_TRT16Graph,
+        V26_Pos_TRT32Graph,
+        V26_Pos_TRT16Graph,
+        V26_Seg_TRT32Graph,
+        V26_Seg_TRT16Graph,
     }
 }

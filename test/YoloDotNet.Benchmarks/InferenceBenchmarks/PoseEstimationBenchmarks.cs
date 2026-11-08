@@ -4,13 +4,13 @@
 
 namespace YoloDotNet.Benchmarks.PoseEstimation
 {
-    namespace YoloDotNet.Benchmarks.ClassificationTests
+    namespace YoloDotNet.Benchmarks.PoseEstimationTests
     {
         //[CPUUsageDiagnoser]
         [MemoryDiagnoser]
         public class PoseEstimationBenchmarks
         {
-            private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.Classification);
+            private static readonly string _testImage = SharedConfig.GetTestImage(ImageType.PoseEstimation);
 
             private Yolo _yolo;
             private SKBitmap _image;
@@ -30,29 +30,38 @@ namespace YoloDotNet.Benchmarks.PoseEstimation
                 _image?.Dispose();
             }
 
-            [Params(YoloType.V8_Cls_CPU,
-                YoloType.V8_Cls_GPU,
-                //YoloType.V8_Cls_TRT32,
-                //YoloType.V8_Cls_TRT16,
-                //YoloType.V8_Cls_TRT8,
+            [Params(YoloType.V8_Pos_CPU,
+                YoloType.V8_Pos_GPU,
+                YoloType.V8_Pos_GPUGraph,
+                YoloType.V8_Pos_TRT32,
+                YoloType.V8_Pos_TRT16,
+                YoloType.V8_Pos_TRT32Graph,
+                YoloType.V8_Pos_TRT16Graph,
+                //YoloType.V8_Pos_TRT8,
 
-                YoloType.V11_Cls_CPU,
-                YoloType.V11_Cls_GPU,
-                //YoloType.V11_Cls_TRT32,
-                //YoloType.V11_Cls_TRT16,
-                //YoloType.V11_Cls_TRT8,
+                YoloType.V11_Pos_CPU,
+                YoloType.V11_Pos_GPU,
+                YoloType.V11_Pos_GPUGraph,
+                YoloType.V11_Pos_TRT32,
+                YoloType.V11_Pos_TRT16,
+                YoloType.V11_Pos_TRT32Graph,
+                YoloType.V11_Pos_TRT16Graph,
+                //YoloType.V11_Pos_TRT8,
 
-                YoloType.V26_Cls_CPU,
-                YoloType.V26_Cls_GPU
-                //YoloType.V26_Cls_TRT32,
-                //YoloType.V26_Cls_TRT16,
-                //YoloType.V26_Cls_TRT8,
+                YoloType.V26_Pos_CPU,
+                YoloType.V26_Pos_GPU,
+                YoloType.V26_Pos_GPUGraph,
+                YoloType.V26_Pos_TRT32,
+                YoloType.V26_Pos_TRT16,
+                YoloType.V26_Pos_TRT32Graph,
+                YoloType.V26_Pos_TRT16Graph
+                //YoloType.V26_Pos_TRT8,
                 )]
             public YoloType YoloParam { get; set; }
 
             [Benchmark]
-            public void Classification()
-                => _yolo.RunClassification(_image);
+            public void PoseEstimation()
+                => _yolo.RunPoseEstimation(_image);
         }
     }
 }

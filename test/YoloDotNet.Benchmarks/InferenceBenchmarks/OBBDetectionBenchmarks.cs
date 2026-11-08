@@ -29,20 +29,29 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
         [Params(
             YoloType.V8_Obb_CPU,
             YoloType.V8_Obb_GPU,
-            //YoloType.V8_Obb_TRT32,
-            //YoloType.V8_Obb_TRT16,
+            YoloType.V8_Obb_GPUGraph,
+            YoloType.V8_Obb_TRT32,
+            YoloType.V8_Obb_TRT16,
+            YoloType.V8_Obb_TRT32Graph,
+            YoloType.V8_Obb_TRT16Graph,
             //YoloType.V8_Obb_TRT8,
 
             YoloType.V11_Obb_CPU,
             YoloType.V11_Obb_GPU,
-            //YoloType.V11_Obb_TRT32,
-            //YoloType.V11_Obb_TRT16,
+            YoloType.V11_Obb_GPUGraph,
+            YoloType.V11_Obb_TRT32,
+            YoloType.V11_Obb_TRT16,
+            YoloType.V11_Obb_TRT32Graph,
+            YoloType.V11_Obb_TRT16Graph,
             //YoloType.V11_Obb_TRT8
 
             YoloType.V26_Obb_CPU,
-            YoloType.V26_Obb_GPU
-            //YoloType.V26_Obb_TRT32,
-            //YoloType.V26_Obb_TRT16,
+            YoloType.V26_Obb_GPU,
+            YoloType.V26_Obb_GPUGraph,
+            YoloType.V26_Obb_TRT32,
+            YoloType.V26_Obb_TRT16,
+            YoloType.V26_Obb_TRT32Graph,
+            YoloType.V26_Obb_TRT16Graph
             //YoloType.V26_Obb_TRT8
             )]
         public YoloType YoloParam { get; set; }
