@@ -10,9 +10,9 @@ With TensorRT, operations that TensorRT can't run fall back to CUDA, so they sta
 
 - An NVIDIA GPU
 - Windows or Linux (x64). CUDA and TensorRT are not available on macOS.
-- [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-toolkit-archive)
+- [CUDA Toolkit 13.x](https://developer.nvidia.com/cuda-toolkit-archive)
 - [cuDNN 9.x](https://developer.nvidia.com/cudnn-archive)
-- Optional: [TensorRT 10.13.3](https://developer.nvidia.com/tensorrt) for CUDA 12.x
+- Optional: [TensorRT 10.13.3](https://developer.nvidia.com/tensorrt) for CUDA 13.x
 
 > ⚠️ **Important**\
 > This execution provider depends on native CUDA and cuDNN libraries.\
@@ -33,9 +33,9 @@ dotnet add package YoloDotNet.ExecutionProvider.Cuda
 
 ### 2. CUDA and cuDNN on Windows
 
-1. Install the [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-toolkit-archive) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-archive).
+1. Install the [CUDA Toolkit 13.x](https://developer.nvidia.com/cuda-toolkit-archive) and [cuDNN 9.x](https://developer.nvidia.com/cudnn-archive).
 2. Find the folder that contains the cuDNN DLL files, typically
-   `C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v12.x` (replace `v9.x` and `v12.x` with your installed versions).
+   `C:\Program Files\NVIDIA\CUDNN\v9.x\bin\v13.x` (replace `v9.x` and `v13.x` with your installed versions).
 3. Add that folder to the system `PATH`:
    1. Search for **Edit the system environment variables** in Windows and open it.
    2. Click **Environment Variables**.
@@ -45,7 +45,7 @@ dotnet add package YoloDotNet.ExecutionProvider.Cuda
 
 ### 3. CUDA and cuDNN on Linux
 
-1. Install the [CUDA Toolkit 12.x](https://developer.nvidia.com/cuda-toolkit-archive) for your distribution.
+1. Install the [CUDA Toolkit 13.x](https://developer.nvidia.com/cuda-toolkit-archive) for your distribution.
 2. Install [cuDNN 9.x](https://developer.nvidia.com/cudnn-archive) for your distribution.
 3. Restart your computer.
 
@@ -53,7 +53,7 @@ dotnet add package YoloDotNet.ExecutionProvider.Cuda
 
 TensorRT can significantly speed up inference by optimizing the model for your specific GPU.
 
-1. [Download](https://developer.nvidia.com/tensorrt) the TensorRT 10.13.3 release for CUDA 12.x.
+1. [Download](https://developer.nvidia.com/tensorrt) the TensorRT 10.13.3 release for CUDA 13.x.
 2. **Windows:** extract the archive, then add its `lib` folder to the system `PATH` (same steps as for cuDNN) and restart your computer.\
    **Linux:** follow NVIDIA's [TensorRT installation instructions](https://docs.nvidia.com/deeplearning/tensorrt/latest/installing-tensorrt/installing.html).
 
@@ -139,13 +139,8 @@ Calls on one provider run one at a time, including the transfers, so you can pro
 - The model has one input and one or two outputs, in Float32 or Float16.
 - The whole model must run on the GPU: on CUDA, or on TensorRT when `trtConfig` is set.
   If it doesn't, creating the provider fails; it never returns wrong results.
-  Export models as described in [ONNX Model Export Requirements](https://github.com/NickSwardh/YoloDotNet#-onnx-model-export-requirements) (YOLO26: opset 18, `nms=False`).
-  For example, a yolo26s-pose model exported with opset 19 ran a few operations on the CPU and couldn't use CUDA Graphs on CUDA; exported with opset 18, it works.
-- The CUDA 12 runtime libraries must be found on the system (`cudart64_12.dll` on Windows, `libcudart.so.12` on Linux).
-- Don't run the provider's `Session` directly when CUDA Graphs are enabled; use the provider's `Run` method, which keeps the bindings and synchronization correct.
-
-See ONNX Runtime's CUDA Graph requirements for [CUDA](https://onnxruntime.ai/docs/execution-providers/CUDA-ExecutionProvider.html#using-cuda-graphs-preview)
-and [TensorRT](https://onnxruntime.ai/docs/execution-providers/TensorRT-ExecutionProvider.html).
+  Export models as described in [ONNX Model Export Requirements](https://github.com/NickSwardh/YoloDotNet#-onnx-model-export-requirements).
+- The CUDA 13 runtime libraries must be found on the system (`cudart64_13.dll` on Windows, `libcudart.so.13` on Linux).
 
 ## 💡 Choosing a setup
 
@@ -155,9 +150,9 @@ and [TensorRT](https://onnxruntime.ai/docs/execution-providers/TensorRT-Executio
 
 ## 🛠️ Troubleshooting
 
-- **The provider fails to load CUDA or cuDNN:** check that CUDA 12.x and cuDNN 9.x are installed and that the cuDNN folder is on the system `PATH`, then restart.
+- **The provider fails to load CUDA or cuDNN:** check that CUDA 13.x and cuDNN 9.x are installed and that the cuDNN folder is on the system `PATH`, then restart.
 - **TensorRT fails to start:** check that the TensorRT `lib` folder is on the `PATH` (Windows) and that `EngineCachePath` points to an existing, writable folder.
-- **Creating the provider with CUDA Graphs fails because some operations run on the CPU:** export the model as described in the main README (YOLO26: opset 18).
+- **Creating the provider with CUDA Graphs fails because some operations run on the CPU:** export the model as described in the main README.
   Otherwise use the model with TensorRT, which runs it fully on the GPU, or turn CUDA Graphs off.
 
 ## 📚 More information

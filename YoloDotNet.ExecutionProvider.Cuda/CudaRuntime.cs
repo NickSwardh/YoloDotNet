@@ -4,12 +4,28 @@
 
 namespace YoloDotNet.ExecutionProvider.Cuda
 {
-    /// <summary>CUDA runtime functions used only by the opt-in graph path, matching ORT's CUDA 12 dependency.</summary>
+    /// <summary>CUDA runtime functions used only by the opt-in graph path, matching ORT's CUDA dependency.</summary>
     internal static class CudaRuntime
     {
         // Keep the module loaded for the lifetime of these delegates.
-        private static readonly nint _library = NativeLibrary.Load(
-            OperatingSystem.IsWindows() ? "cudart64_12.dll" : "libcudart.so.12");
+        // ORT 1.31 targets CUDA 13; fall back to the CUDA 12 runtime for older installs.
+        private static readonly nint _library = LoadCudaRuntime();
+
+        private static nint LoadCudaRuntime()
+        {
+            string[] names = OperatingSystem.IsWindows()
+                ? ["cudart64_13.dll", "cudart64_12.dll"]
+                : ["libcudart.so.13", "libcudart.so.12"];
+
+            foreach (var name in names)
+            {
+                if (NativeLibrary.TryLoad(name, out nint library))
+                    return library;
+            }
+
+            throw new YoloDotNetExecutionProviderException(
+                $"Could not load the CUDA runtime ({string.Join(" or ", names)}). Install CUDA Toolkit 13.x and make sure its libraries are on the system path.");
+        }
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate int SetDeviceDelegate(int device);
