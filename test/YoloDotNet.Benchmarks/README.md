@@ -1,4 +1,4 @@
-﻿# Benchmarks
+# Benchmarks
 This project includes a benchmarking suite to measure performance improvements and identify bottlenecks.
 
 ## Benchmark Models and Images
@@ -12,168 +12,203 @@ The benchmarks performed in this project use the same [models](../assets/Models/
 primarily for stepping through and diagnosing the benchmark code.
 
 ### Benchmark Results
-- Benchmark results are presented as **baseline (previous version)** and **current version** to facilitate easy comparison of performance improvements.
+- Benchmark outcomes depend heavily on hardware and environmental factors. To obtain meaningful and consistent results, it is recommended to run benchmarks on the same hardware configuration whenever possible.
 
-- Please note that benchmark outcomes depend heavily on hardware and environmental factors. To obtain meaningful and consistent results, it is recommended to run benchmarks on the same hardware configuration whenever possible.
+- The results below were produced on a **different computer** than the results published for earlier versions (YoloDotNet 3.0 and 3.1.1). Numbers from earlier versions are therefore **not directly comparable** and have been removed.
+
+- These results include **CUDA Graph** benchmarks in addition to the regular CPU, GPU (CUDA) and TensorRT (FP32/FP16) runs.
 
 Keep in mind that differences in hardware, system load, driver versions, and other factors can influence benchmark performance. Use these results as a general guide rather than absolute metrics.
 
-### Hardware Used for Benchmarks
-`NVIDIA GeForce RTX 4070 Ti GPU`
+### Model Column Legend
+| Label                   | Meaning                                              |
+|-------------------------|------------------------------------------------------|
+| `CPU`                   | Ran on the CPU                                       |
+| `GPU`                   | Ran on the GPU using the CUDA execution provider     |
+| `GPU TensorRT FP32`     | Ran on the GPU using TensorRT, FP32 precision        |
+| `GPU TensorRT FP16`     | Ran on the GPU using TensorRT, FP16 precision        |
+| `+ CUDA Graph`          | Same as above, with CUDA Graph enabled               |
 
-# YoloDotNet 3.0 Benchmark Results (Baseline)
+# YoloDotNet 4.3 Benchmark Results
 
 ```
-BenchmarkDotNet v0.15.2, Windows 11 (10.0.26100.4652/24H2/2024Update/HudsonValley)
-Intel Core i7-14700KF 3.40GHz, 1 CPU, 28 logical and 20 physical cores
-.NET SDK 9.0.301
-  [Host]     : .NET 8.0.17 (8.0.1725.26602), X64 RyuJIT AVX2
-  DefaultJob : .NET 8.0.17 (8.0.1725.26602), X64 RyuJIT AVX2
+BenchmarkDotNet v0.15.8, Windows 11 (10.0.26300.9711)
+AMD Ryzen 7 9800X3D 4.70GHz, 1 CPU, 16 logical and 8 physical cores
+.NET SDK 10.0.403
+  [Host]     : .NET 8.0.33 (8.0.33, 8.0.3326.52219), X64 RyuJIT x86-64-v4
+  DefaultJob : .NET 8.0.33 (8.0.33, 8.0.3326.52219), X64 RyuJIT x86-64-v4
 ```
+
+## Results Overview
+Select a task below to jump directly to its benchmark results.
+
+| Task                                                                       | Models                                                              | Test image                                           |
+|----------------------------------------------------------------------------|---------------------------------------------------------------------|------------------------------------------------------|
+| [Classification](#classification-input-image-size-1280x844)                | YOLOv8, YOLO11, YOLO26                                              | [hummingbird.jpg](../assets/Media/hummingbird.jpg)   |
+| [Object Detection](#object-detection-input-image-size-1280x851)            | YOLOv5u, YOLOv8, YOLOv9, YOLOv10, YOLO11, YOLO12, YOLO26            | [street.jpg](../assets/Media/street.jpg)             |
+| [Oriented Object Detection (OBB)](#oriented-object-detection-obb-input-image-size-1280x720) | YOLOv8, YOLO11, YOLO26                             | [island.jpg](../assets/Media/island.jpg)             |
+| [Pose Estimation](#pose-estimation-input-image-size-1280x720)              | YOLOv8, YOLO11, YOLO26                                              | [crosswalk.jpg](../assets/Media/crosswalk.jpg)       |
+| [Segmentation](#segmentation-input-image-size-1280x853)                    | YOLOv8, YOLO11, YOLO26                                              | [people.jpg](../assets/Media/people.jpg)             |
 
 ##### CLASSIFICATION (Input image size: 1280x844)
-| Method         | YoloParam   | Mean       | Error    | StdDev   | Gen0   | Allocated |
-|--------------- |------------ |-----------:|---------:|---------:|-------:|----------:|
-| Classification | V8_Cls_CPU  | 2,703.9 us | 51.32 us | 50.41 us |      - |  32.32 KB |
-| Classification | V8_Cls_GPU  |   826.8 us | 15.40 us | 14.40 us | 0.9766 |  32.32 KB |
-| Classification | V11_Cls_CPU | 3,075.7 us | 61.02 us | 65.29 us |      - |  32.32 KB |
-| Classification | V11_Cls_GPU | 1,007.8 us |  4.72 us |  4.41 us |      - |  32.32 KB |
+Image: [hummingbird.jpg](../assets/Media/hummingbird.jpg)
+
+| Model                                       | Mean       | Error    | StdDev   | Allocated |
+|-------------------------------------------- |-----------:|---------:|---------:|----------:|
+| YOLOv8 - CPU                                | 1,256.4 us | 25.06 us | 65.58 us |    1120 B |
+| YOLOv8 - GPU                                | 1,010.1 us |  3.50 us |  2.92 us |    1120 B |
+| YOLOv8 - GPU TensorRT FP32                  |   639.5 us |  2.34 us |  2.19 us |    1120 B |
+| YOLOv8 - GPU TensorRT FP16                  |   474.0 us |  0.99 us |  0.93 us |    1120 B |
+| YOLO11 - CPU                                | 1,205.4 us | 24.08 us | 32.96 us |    1120 B |
+| YOLO11 - GPU                                | 1,282.3 us |  3.47 us |  3.08 us |    1120 B |
+| YOLO11 - GPU TensorRT FP32                  |   779.8 us |  4.16 us |  3.89 us |    1120 B |
+| YOLO11 - GPU TensorRT FP16                  |   598.1 us |  7.00 us |  6.55 us |    1120 B |
+| YOLO26 - CPU                                | 1,176.8 us | 16.97 us | 15.04 us |    1120 B |
+| YOLO26 - GPU                                | 1,296.8 us | 10.15 us |  9.49 us |    1120 B |
+| YOLO26 - GPU TensorRT FP32                  |   777.1 us |  3.50 us |  3.27 us |    1120 B |
+| YOLO26 - GPU TensorRT FP16                  |   593.3 us |  4.67 us |  4.37 us |    1120 B |
+| YOLOv8 - GPU + CUDA Graph                   |   690.5 us |  1.78 us |  1.67 us |     528 B |
+| YOLO11 - GPU + CUDA Graph                   |   844.6 us |  2.37 us |  2.22 us |     528 B |
+| YOLO26 - GPU + CUDA Graph                   |   832.0 us |  1.60 us |  1.50 us |     528 B |
+| YOLOv8 - GPU TensorRT FP32 + CUDA Graph     |   475.8 us |  5.04 us |  4.72 us |     528 B |
+| YOLOv8 - GPU TensorRT FP16 + CUDA Graph     |   301.0 us |  1.47 us |  1.31 us |     528 B |
+| YOLO11 - GPU TensorRT FP32 + CUDA Graph     |   513.3 us |  2.35 us |  2.20 us |     528 B |
+| YOLO11 - GPU TensorRT FP16 + CUDA Graph     |   342.3 us |  1.38 us |  1.29 us |     528 B |
+| YOLO26 - GPU TensorRT FP32 + CUDA Graph     |   514.7 us |  2.98 us |  2.78 us |     528 B |
+| YOLO26 - GPU TensorRT FP16 + CUDA Graph     |   347.1 us |  0.73 us |  0.61 us |     528 B |
 
 ##### OBJECT DETECTION (input image size: 1280x851)
-| Method          | YoloParam   | Mean      | Error     | StdDev    | Allocated |
-|---------------- |------------ |----------:|----------:|----------:|----------:|
-| ObjectDetection | V5u_Obj_CPU | 29.169 ms | 0.5444 ms | 0.8791 ms |  31.85 KB |
-| ObjectDetection | V5u_Obj_GPU |  4.659 ms | 0.0313 ms | 0.0293 ms |  31.85 KB |
-| ObjectDetection | V8_Obj_CPU  | 33.040 ms | 0.5668 ms | 0.4733 ms |  34.18 KB |
-| ObjectDetection | V8_Obj_GPU  |  5.001 ms | 0.0321 ms | 0.0285 ms |  34.18 KB |
-| ObjectDetection | V9_Obj_CPU  | 38.676 ms | 0.7520 ms | 1.2769 ms |  25.66 KB |
-| ObjectDetection | V9_Obj_GPU  |  6.711 ms | 0.0330 ms | 0.0309 ms |  25.44 KB |
-| ObjectDetection | V10_Obj_CPU | 30.650 ms | 0.2735 ms | 0.2558 ms |  19.33 KB |
-| ObjectDetection | V10_Obj_GPU |  5.206 ms | 0.0458 ms | 0.0428 ms |  19.19 KB |
-| ObjectDetection | V11_Obj_CPU | 30.662 ms | 0.3778 ms | 0.3534 ms |  30.84 KB |
-| ObjectDetection | V11_Obj_GPU |  4.948 ms | 0.0214 ms | 0.0190 ms |   30.7 KB |
-| ObjectDetection | V12_Obj_CPU | 30.601 ms | 0.3743 ms | 0.3501 ms |  30.84 KB |
-| ObjectDetection | V12_Obj_GPU |  5.050 ms | 0.0319 ms | 0.0266 ms |   30.7 KB |
+Image: [street.jpg](../assets/Media/street.jpg)
+
+| Model                                       | Mean      | Error     | StdDev    | Allocated |
+|-------------------------------------------- |----------:|----------:|----------:|----------:|
+| YOLOv5u - CPU                               | 15.226 ms | 0.2911 ms | 0.6011 ms |  29.07 KB |
+| YOLOv5u - GPU                               |  4.002 ms | 0.0085 ms | 0.0079 ms |  29.09 KB |
+| YOLOv5u - GPU TensorRT FP32                 |  2.784 ms | 0.0040 ms | 0.0037 ms |  29.07 KB |
+| YOLOv5u - GPU TensorRT FP16                 |  1.870 ms | 0.0088 ms | 0.0082 ms |  28.93 KB |
+| YOLOv8 - CPU                                | 17.294 ms | 0.3395 ms | 0.8264 ms |  30.62 KB |
+| YOLOv8 - GPU                                |  3.993 ms | 0.0059 ms | 0.0053 ms |   30.7 KB |
+| YOLOv8 - GPU TensorRT FP32                  |  2.833 ms | 0.0096 ms | 0.0090 ms |  30.59 KB |
+| YOLOv8 - GPU TensorRT FP16                  |  1.916 ms | 0.0072 ms | 0.0067 ms |  30.56 KB |
+| YOLOv9 - CPU                                | 17.970 ms | 0.3290 ms | 0.6339 ms |  26.83 KB |
+| YOLOv9 - GPU                                |  7.247 ms | 0.0209 ms | 0.0195 ms |  26.86 KB |
+| YOLOv9 - GPU TensorRT FP32                  |  4.113 ms | 0.0220 ms | 0.0206 ms |   26.9 KB |
+| YOLOv9 - GPU TensorRT FP16                  |  2.881 ms | 0.0149 ms | 0.0139 ms |  26.95 KB |
+| YOLOv10 - CPU                               | 14.741 ms | 0.2929 ms | 0.4894 ms |  10.39 KB |
+| YOLOv10 - GPU                               |  4.002 ms | 0.0054 ms | 0.0051 ms |  10.41 KB |
+| YOLOv10 - GPU TensorRT FP32                 |  2.639 ms | 0.0051 ms | 0.0048 ms |  10.38 KB |
+| YOLOv10 - GPU TensorRT FP16                 |  1.814 ms | 0.0089 ms | 0.0083 ms |   10.4 KB |
+| YOLO11 - CPU                                | 14.576 ms | 0.2816 ms | 0.3759 ms |  28.76 KB |
+| YOLO11 - GPU                                |  4.384 ms | 0.0087 ms | 0.0077 ms |  28.62 KB |
+| YOLO11 - GPU TensorRT FP32                  |  3.051 ms | 0.0104 ms | 0.0093 ms |  28.62 KB |
+| YOLO11 - GPU TensorRT FP16                  |  2.109 ms | 0.0092 ms | 0.0081 ms |  28.61 KB |
+| YOLO12 - CPU                                | 17.132 ms | 0.3406 ms | 0.6312 ms |  28.25 KB |
+| YOLO12 - GPU                                |  5.350 ms | 0.0103 ms | 0.0096 ms |  28.23 KB |
+| YOLO12 - GPU TensorRT FP32                  |  3.732 ms | 0.0196 ms | 0.0164 ms |  28.06 KB |
+| YOLO12 - GPU TensorRT FP16                  |  2.764 ms | 0.0096 ms | 0.0085 ms |  28.12 KB |
+| YOLO26 - CPU                                | 13.555 ms | 0.2701 ms | 0.5268 ms |   7.15 KB |
+| YOLO26 - GPU                                |  4.551 ms | 0.0123 ms | 0.0115 ms |   7.16 KB |
+| YOLO26 - GPU TensorRT FP32                  |  3.004 ms | 0.0044 ms | 0.0039 ms |    7.2 KB |
+| YOLO26 - GPU TensorRT FP16                  |  1.986 ms | 0.0138 ms | 0.0130 ms |   7.15 KB |
+| YOLOv5u - GPU + CUDA Graph                  |  3.104 ms | 0.0028 ms | 0.0027 ms |  28.49 KB |
+| YOLOv8 - GPU + CUDA Graph                   |  3.134 ms | 0.0175 ms | 0.0164 ms |  30.14 KB |
+| YOLOv9 - GPU + CUDA Graph                   |  4.689 ms | 0.0102 ms | 0.0096 ms |   26.3 KB |
+| YOLOv10 - GPU + CUDA Graph                  |  3.004 ms | 0.0141 ms | 0.0132 ms |    9.9 KB |
+| YOLO11 - GPU + CUDA Graph                   |  3.321 ms | 0.0129 ms | 0.0120 ms |  28.07 KB |
+| YOLO12 - GPU + CUDA Graph                   |  4.012 ms | 0.0087 ms | 0.0081 ms |  27.68 KB |
+| YOLO26 - GPU + CUDA Graph                   |  3.351 ms | 0.0105 ms | 0.0098 ms |   6.62 KB |
+| YOLOv5u - GPU TensorRT FP32 + CUDA Graph    |  2.239 ms | 0.0432 ms | 0.0404 ms |  28.47 KB |
+| YOLOv5u - GPU TensorRT FP16 + CUDA Graph    |  1.375 ms | 0.0206 ms | 0.0193 ms |  28.34 KB |
+| YOLOv8 - GPU TensorRT FP32 + CUDA Graph     |  2.464 ms | 0.0060 ms | 0.0057 ms |     30 KB |
+| YOLOv8 - GPU TensorRT FP16 + CUDA Graph     |  1.489 ms | 0.0092 ms | 0.0086 ms |  29.98 KB |
+| YOLOv9 - GPU TensorRT FP32 + CUDA Graph     |  3.231 ms | 0.0099 ms | 0.0092 ms |  26.36 KB |
+| YOLOv9 - GPU TensorRT FP16 + CUDA Graph     |  1.916 ms | 0.0048 ms | 0.0045 ms |  26.32 KB |
+| YOLOv10 - GPU TensorRT FP32 + CUDA Graph    |  2.041 ms | 0.0046 ms | 0.0043 ms |   9.84 KB |
+| YOLOv10 - GPU TensorRT FP16 + CUDA Graph    |  1.204 ms | 0.0223 ms | 0.0209 ms |   9.74 KB |
+| YOLO11 - GPU TensorRT FP32 + CUDA Graph     |  2.443 ms | 0.0074 ms | 0.0069 ms |  28.05 KB |
+| YOLO11 - GPU TensorRT FP16 + CUDA Graph     |  1.519 ms | 0.0110 ms | 0.0103 ms |  28.01 KB |
+| YOLO12 - GPU TensorRT FP32 + CUDA Graph     |  2.850 ms | 0.0088 ms | 0.0082 ms |  27.49 KB |
+| YOLO12 - GPU TensorRT FP16 + CUDA Graph     |  1.909 ms | 0.0043 ms | 0.0040 ms |   27.6 KB |
+| YOLO26 - GPU TensorRT FP32 + CUDA Graph     |  2.323 ms | 0.0100 ms | 0.0093 ms |   6.59 KB |
+| YOLO26 - GPU TensorRT FP16 + CUDA Graph     |  1.309 ms | 0.0159 ms | 0.0149 ms |   6.56 KB |
 
 ##### ORIENTED OBJECT DETECTION (OBB) (input image size: 1280x720)
-| Method       | YoloParam   | Mean      | Error     | StdDev    | Allocated |
-|------------- |------------ |----------:|----------:|----------:|----------:|
-| ObbDetection | V8_Obb_CPU  | 89.218 ms | 0.9932 ms | 0.9291 ms |   8.15 KB |
-| ObbDetection | V8_Obb_GPU  |  9.492 ms | 0.0575 ms | 0.0538 ms |   8.15 KB |
-| ObbDetection | V11_Obb_CPU | 81.068 ms | 0.5582 ms | 0.4948 ms |    7.9 KB |
-| ObbDetection | V11_Obb_GPU |  9.622 ms | 0.0508 ms | 0.0475 ms |    7.9 KB |
+Image: [island.jpg](../assets/Media/island.jpg)
+
+| Model                                       | Mean      | Error     | StdDev    | Allocated |
+|-------------------------------------------- |----------:|----------:|----------:|----------:|
+| YOLOv8 - CPU                                | 49.309 ms | 0.9628 ms | 1.7362 ms |   9.07 KB |
+| YOLOv8 - GPU                                |  6.308 ms | 0.0116 ms | 0.0097 ms |   9.08 KB |
+| YOLOv8 - GPU TensorRT FP32                  |  4.513 ms | 0.0098 ms | 0.0092 ms |   9.08 KB |
+| YOLOv8 - GPU TensorRT FP16                  |  2.774 ms | 0.0032 ms | 0.0029 ms |   9.07 KB |
+| YOLO11 - CPU                                | 43.759 ms | 0.8012 ms | 1.5244 ms |   9.06 KB |
+| YOLO11 - GPU                                |  6.630 ms | 0.0100 ms | 0.0093 ms |   9.09 KB |
+| YOLO11 - GPU TensorRT FP32                  |  4.635 ms | 0.0093 ms | 0.0087 ms |   9.08 KB |
+| YOLO11 - GPU TensorRT FP16                  |  3.105 ms | 0.0163 ms | 0.0152 ms |   9.08 KB |
+| YOLO26 - CPU                                | 43.360 ms | 0.8621 ms | 1.6403 ms |   4.54 KB |
+| YOLO26 - GPU                                |  6.971 ms | 0.0109 ms | 0.0096 ms |   4.53 KB |
+| YOLO26 - GPU TensorRT FP32                  |  4.631 ms | 0.0076 ms | 0.0071 ms |   4.55 KB |
+| YOLO26 - GPU TensorRT FP16                  |  2.953 ms | 0.0096 ms | 0.0090 ms |   4.52 KB |
+| YOLOv8 - GPU + CUDA Graph                   |  5.290 ms | 0.0086 ms | 0.0081 ms |   8.63 KB |
+| YOLO11 - GPU + CUDA Graph                   |  5.548 ms | 0.0077 ms | 0.0072 ms |   8.48 KB |
+| YOLO26 - GPU + CUDA Graph                   |  5.574 ms | 0.0158 ms | 0.0148 ms |   3.96 KB |
+| YOLOv8 - GPU TensorRT FP32 + CUDA Graph     |  4.097 ms | 0.0075 ms | 0.0071 ms |    8.5 KB |
+| YOLOv8 - GPU TensorRT FP16 + CUDA Graph     |  2.337 ms | 0.0056 ms | 0.0052 ms |   8.48 KB |
+| YOLO11 - GPU TensorRT FP32 + CUDA Graph     |  4.026 ms | 0.0069 ms | 0.0061 ms |   8.49 KB |
+| YOLO11 - GPU TensorRT FP16 + CUDA Graph     |  2.411 ms | 0.0069 ms | 0.0061 ms |   8.47 KB |
+| YOLO26 - GPU TensorRT FP32 + CUDA Graph     |  4.033 ms | 0.0063 ms | 0.0049 ms |   3.95 KB |
+| YOLO26 - GPU TensorRT FP16 + CUDA Graph     |  2.294 ms | 0.0114 ms | 0.0106 ms |   3.98 KB |
 
 ##### POSE ESTIMATION (input image size: 1280x720)
-| Method         | YoloParam   | Mean      | Error     | StdDev    | Allocated |
-|--------------- |------------ |----------:|----------:|----------:|----------:|
-| PoseEstimation | V8_Pos_CPU  | 34.846 ms | 0.2279 ms | 0.2132 ms |  23.81 KB |
-| PoseEstimation | V8_Pos_GPU  |  4.793 ms | 0.0258 ms | 0.0215 ms |  23.81 KB |
-| PoseEstimation | V11_Pos_CPU | 31.511 ms | 0.3839 ms | 0.3591 ms |  23.69 KB |
-| PoseEstimation | V11_Pos_GPU |  5.662 ms | 0.1122 ms | 0.1049 ms |  23.69 KB |
+Image: [crosswalk.jpg](../assets/Media/crosswalk.jpg)
+
+| Model                                       | Mean      | Error     | StdDev    | Allocated |
+|-------------------------------------------- |----------:|----------:|----------:|----------:|
+| YOLOv8 - CPU                                | 19.751 ms | 0.4472 ms | 1.2902 ms |  23.48 KB |
+| YOLOv8 - GPU                                |  4.183 ms | 0.0109 ms | 0.0102 ms |  23.43 KB |
+| YOLOv8 - GPU TensorRT FP32                  |  2.761 ms | 0.0051 ms | 0.0047 ms |  23.43 KB |
+| YOLOv8 - GPU TensorRT FP16                  |  1.772 ms | 0.0113 ms | 0.0101 ms |  23.43 KB |
+| YOLO11 - CPU                                | 15.475 ms | 0.3058 ms | 0.4386 ms |  22.47 KB |
+| YOLO11 - GPU                                |  4.547 ms | 0.0110 ms | 0.0092 ms |  22.44 KB |
+| YOLO11 - GPU TensorRT FP32                  |  2.901 ms | 0.0137 ms | 0.0128 ms |  22.43 KB |
+| YOLO11 - GPU TensorRT FP16                  |  2.024 ms | 0.0099 ms | 0.0093 ms |  22.42 KB |
+| YOLO26 - CPU                                | 15.809 ms | 0.3140 ms | 0.7341 ms |  11.35 KB |
+| YOLO26 - GPU                                |  4.947 ms | 0.0438 ms | 0.0410 ms |  11.32 KB |
+| YOLO26 - GPU TensorRT FP32                  |  2.997 ms | 0.0127 ms | 0.0106 ms |  11.35 KB |
+| YOLO26 - GPU TensorRT FP16                  |  1.981 ms | 0.0132 ms | 0.0117 ms |  11.32 KB |
+| YOLOv8 - GPU + CUDA Graph                   |  3.183 ms | 0.0443 ms | 0.0414 ms |  22.89 KB |
+| YOLO11 - GPU + CUDA Graph                   |  3.353 ms | 0.0501 ms | 0.0469 ms |  21.86 KB |
+| YOLO26 - GPU + CUDA Graph                   |  3.614 ms | 0.0535 ms | 0.0475 ms |  10.73 KB |
+| YOLOv8 - GPU TensorRT FP32 + CUDA Graph     |  2.266 ms | 0.0284 ms | 0.0266 ms |  22.87 KB |
+| YOLOv8 - GPU TensorRT FP16 + CUDA Graph     |  1.251 ms | 0.0022 ms | 0.0019 ms |  22.84 KB |
+| YOLO11 - GPU TensorRT FP32 + CUDA Graph     |  2.211 ms | 0.0126 ms | 0.0112 ms |  21.85 KB |
+| YOLO11 - GPU TensorRT FP16 + CUDA Graph     |  1.295 ms | 0.0054 ms | 0.0050 ms |  21.83 KB |
+| YOLO26 - GPU TensorRT FP32 + CUDA Graph     |  2.246 ms | 0.0322 ms | 0.0302 ms |  10.74 KB |
+| YOLO26 - GPU TensorRT FP16 + CUDA Graph     |  1.253 ms | 0.0027 ms | 0.0025 ms |  10.72 KB |
 
 ##### SEGMENTATION (input image size: 1280x853)
-| Method       | YoloParam   | Mean     | Error    | StdDev   | Median   | Gen0    | Allocated |
-|------------- |------------ |---------:|---------:|---------:|---------:|--------:|----------:|
-| Segmentation | V8_Seg_CPU  | 52.52 ms | 1.015 ms | 0.949 ms | 52.43 ms |       - | 547.73 KB |
-| Segmentation | V8_Seg_GPU  | 10.21 ms | 0.020 ms | 0.017 ms | 10.21 ms | 31.2500 | 547.73 KB |
-| Segmentation | V11_Seg_CPU | 50.20 ms | 1.088 ms | 3.207 ms | 49.11 ms |       - | 533.65 KB |
-| Segmentation | V11_Seg_GPU | 10.53 ms | 0.213 ms | 0.306 ms | 10.69 ms | 31.2500 | 533.65 KB |
+Image: [people.jpg](../assets/Media/people.jpg)
 
-
-# YoloDotNet 3.1.1 Benchmark Results (Current version)
-```
-BenchmarkDotNet v0.15.2, Windows 11 (10.0.26100.4652/24H2/2024Update/HudsonValley)
-Intel Core i7-14700KF 3.40GHz, 1 CPU, 28 logical and 20 physical cores
-.NET SDK 9.0.301
-  [Host]     : .NET 8.0.17 (8.0.1725.26602), X64 RyuJIT AVX2
-  DefaultJob : .NET 8.0.17 (8.0.1725.26602), X64 RyuJIT AVX2
-```
-
-##### CLASSIFICATION (Input image size: 1280x844)
-| Method         | YoloParam     | Mean       | Error    | StdDev    | Gen0   | Allocated |
-|--------------- |-------------- |-----------:|---------:|----------:|-------:|----------:|
-| Classification | V8_Cls_CPU    | 2,662.5 us | 37.55 us |  35.12 us |      - |  32.32 KB |
-| Classification | V8_Cls_GPU    |   831.4 us | 14.87 us |  17.13 us | 0.9766 |  32.32 KB |
-| Classification | V8_Cls_TRT32  |   653.0 us | 10.85 us |  10.15 us | 0.9766 |  32.32 KB |
-| Classification | V8_Cls_TRT16  |   459.6 us |  3.97 us |   3.31 us | 1.4648 |  32.32 KB |
-| Classification | V8_Cls_TRT8   |   411.7 us |  3.54 us |   3.31 us | 1.4648 |  32.32 KB |
-| Classification | V11_Cls_CPU   | 3,062.4 us | 56.81 us |  53.14 us |      - |  32.32 KB |
-| Classification | V11_Cls_GPU   | 1,173.4 us | 41.59 us | 122.62 us |      - |  32.32 KB |
-| Classification | V11_Cls_TRT32 |   765.1 us | 14.64 us |  16.86 us | 0.9766 |  32.32 KB |
-| Classification | V11_Cls_TRT16 |   547.5 us |  4.97 us |   4.65 us | 0.9766 |  32.32 KB |
-| Classification | V11_Cls_TRT8  |   485.3 us |  6.96 us |   6.17 us | 1.4648 |  32.32 KB |
-
-##### OBJECT DETECTION (input image size: 1280x851)
-| Method          | YoloParam     | Mean      | Error     | StdDev    | Median    | Allocated |
-|---------------- |-------------- |----------:|----------:|----------:|----------:|----------:|
-| ObjectDetection | V5u_Obj_CPU   | 29.441 ms | 0.5508 ms | 0.5152 ms | 29.324 ms |  31.85 KB |
-| ObjectDetection | V5u_Obj_GPU   |  4.696 ms | 0.0214 ms | 0.0189 ms |  4.690 ms |  31.85 KB |
-| ObjectDetection | V5u_Obj_TRT32 |  3.899 ms | 0.0762 ms | 0.0712 ms |  3.931 ms |  31.85 KB |
-| ObjectDetection | V5u_Obj_TRT16 |  3.130 ms | 0.0126 ms | 0.0111 ms |  3.131 ms |  31.73 KB |
-| ObjectDetection | V5u_Obj_TRT8  |  2.776 ms | 0.0104 ms | 0.0097 ms |  2.775 ms |  29.82 KB |
-| ObjectDetection | V8_Obj_CPU    | 33.898 ms | 0.2453 ms | 0.2294 ms | 33.935 ms |  34.18 KB |
-| ObjectDetection | V8_Obj_GPU    |  5.350 ms | 0.0133 ms | 0.0118 ms |  5.349 ms |  34.18 KB |
-| ObjectDetection | V8_Obj_TRT32  |  4.061 ms | 0.0086 ms | 0.0072 ms |  4.061 ms |  34.08 KB |
-| ObjectDetection | V8_Obj_TRT16  |  2.965 ms | 0.0138 ms | 0.0115 ms |  2.964 ms |  34.08 KB |
-| ObjectDetection | V8_Obj_TRT8   |  2.739 ms | 0.0150 ms | 0.0141 ms |  2.742 ms |  35.28 KB |
-| ObjectDetection | V9_Obj_CPU    | 38.662 ms | 0.5644 ms | 0.5003 ms | 38.689 ms |  25.66 KB |
-| ObjectDetection | V9_Obj_GPU    |  8.705 ms | 0.1611 ms | 0.1507 ms |  8.765 ms |  25.44 KB |
-| ObjectDetection | V9_Obj_TRT32  |  5.594 ms | 0.0333 ms | 0.0312 ms |  5.592 ms |  25.44 KB |
-| ObjectDetection | V9_Obj_TRT16  |  4.195 ms | 0.0388 ms | 0.0344 ms |  4.198 ms |  25.89 KB |
-| ObjectDetection | V9_Obj_TRT8   |  3.947 ms | 0.0390 ms | 0.0365 ms |  3.946 ms |  24.01 KB |
-| ObjectDetection | V10_Obj_CPU   | 31.415 ms | 0.2898 ms | 0.2710 ms | 31.383 ms |  23.16 KB |
-| ObjectDetection | V10_Obj_GPU   |  4.586 ms | 0.0534 ms | 0.0525 ms |  4.581 ms |  23.16 KB |
-| ObjectDetection | V10_Obj_TRT32 |  3.233 ms | 0.0109 ms | 0.0102 ms |  3.232 ms |  23.16 KB |
-| ObjectDetection | V10_Obj_TRT16 |  2.766 ms | 0.0414 ms | 0.0387 ms |  2.774 ms |  23.16 KB |
-| ObjectDetection | V10_Obj_TRT8  |  2.551 ms | 0.0147 ms | 0.0130 ms |  2.547 ms |  23.51 KB |
-| ObjectDetection | V11_Obj_CPU   | 31.552 ms | 0.6212 ms | 0.9106 ms | 31.419 ms |   30.7 KB |
-| ObjectDetection | V11_Obj_GPU   |  5.827 ms | 0.0214 ms | 0.0179 ms |  5.831 ms |   30.7 KB |
-| ObjectDetection | V11_Obj_TRT32 |  4.200 ms | 0.0710 ms | 0.0664 ms |  4.216 ms |   30.7 KB |
-| ObjectDetection | V11_Obj_TRT16 |  3.264 ms | 0.0276 ms | 0.0258 ms |  3.272 ms |  30.57 KB |
-| ObjectDetection | V11_Obj_TRT8  |  3.125 ms | 0.0623 ms | 0.1154 ms |  3.179 ms |  30.32 KB |
-| ObjectDetection | V12_Obj_CPU   | 36.709 ms | 0.6856 ms | 0.8914 ms | 36.489 ms |  32.82 KB |
-| ObjectDetection | V12_Obj_GPU   |  7.021 ms | 0.0500 ms | 0.0467 ms |  7.028 ms |  32.51 KB |
-| ObjectDetection | V12_Obj_TRT32 |  4.864 ms | 0.0159 ms | 0.0149 ms |  4.862 ms |  32.51 KB |
-| ObjectDetection | V12_Obj_TRT16 |  3.618 ms | 0.0454 ms | 0.0379 ms |  3.610 ms |  32.26 KB |
-| ObjectDetection | V12_Obj_TRT8  |  3.644 ms | 0.0262 ms | 0.0219 ms |  3.639 ms |   31.1 KB |
-
-##### ORIENTED OBJECT DETECTION (OBB) (input image size: 1280x720)
-| Method       | YoloParam     | Mean      | Error     | StdDev    | Allocated |
-|------------- |-------------- |----------:|----------:|----------:|----------:|
-| ObbDetection | V8_Obb_CPU    | 92.457 ms | 1.7035 ms | 2.7019 ms |   8.15 KB |
-| ObbDetection | V8_Obb_GPU    |  9.655 ms | 0.0450 ms | 0.0376 ms |   8.15 KB |
-| ObbDetection | V8_Obb_TRT32  |  7.643 ms | 0.0151 ms | 0.0126 ms |   8.15 KB |
-| ObbDetection | V8_Obb_TRT16  |  5.520 ms | 0.0370 ms | 0.0346 ms |   8.15 KB |
-| ObbDetection | V8_Obb_TRT8   |  5.041 ms | 0.0191 ms | 0.0169 ms |   8.27 KB |
-| ObbDetection | V11_Obb_CPU   | 86.191 ms | 1.7069 ms | 2.4479 ms |    7.9 KB |
-| ObbDetection | V11_Obb_GPU   |  9.537 ms | 0.0300 ms | 0.0266 ms |    7.9 KB |
-| ObbDetection | V11_Obb_TRT32 |  7.934 ms | 0.0429 ms | 0.0401 ms |    7.9 KB |
-| ObbDetection | V11_Obb_TRT16 |  5.736 ms | 0.0166 ms | 0.0147 ms |    7.9 KB |
-| ObbDetection | V11_Obb_TRT8  |  5.027 ms | 0.0161 ms | 0.0142 ms |   8.26 KB |
-
-##### POSE ESTIMATION (input image size: 1280x720)
-| Method         | YoloParam     | Mean      | Error     | StdDev    | Allocated |
-|--------------- |-------------- |----------:|----------:|----------:|----------:|
-| PoseEstimation | V8_Pos_CPU    | 35.362 ms | 0.7067 ms | 0.9434 ms |  23.81 KB |
-| PoseEstimation | V8_Pos_GPU    |  5.246 ms | 0.0200 ms | 0.0167 ms |  23.81 KB |
-| PoseEstimation | V8_Pos_TRT32  |  3.511 ms | 0.0535 ms | 0.0446 ms |  23.81 KB |
-| PoseEstimation | V8_Pos_TRT16  |  2.424 ms | 0.0152 ms | 0.0135 ms |  23.81 KB |
-| PoseEstimation | V8_Pos_TRT8   |  2.145 ms | 0.0215 ms | 0.0201 ms |  21.84 KB |
-| PoseEstimation | V11_Pos_CPU   | 31.776 ms | 0.6348 ms | 0.7796 ms |  23.69 KB |
-| PoseEstimation | V11_Pos_GPU   |  4.860 ms | 0.0147 ms | 0.0137 ms |  23.69 KB |
-| PoseEstimation | V11_Pos_TRT32 |  3.540 ms | 0.0148 ms | 0.0138 ms |  23.69 KB |
-| PoseEstimation | V11_Pos_TRT16 |  2.853 ms | 0.0260 ms | 0.0230 ms |  23.81 KB |
-| PoseEstimation | V11_Pos_TRT8  |  2.259 ms | 0.0115 ms | 0.0204 ms |  24.44 KB |
-
-##### SEGMENTATION (input image size: 1280x853)
-| Method       | YoloParam     | Mean      | Error     | StdDev    | Allocated |
-|------------- |-------------- |----------:|----------:|----------:|----------:|
-| Segmentation | V8_Seg_CPU    | 47.793 ms | 0.7903 ms | 0.7392 ms |  84.92 KB |
-| Segmentation | V8_Seg_GPU    |  7.373 ms | 0.1047 ms | 0.0979 ms |  84.92 KB |
-| Segmentation | V8_Seg_TRT32  |  6.259 ms | 0.0937 ms | 0.0876 ms |  84.92 KB |
-| Segmentation | V8_Seg_TRT16  |  4.886 ms | 0.0505 ms | 0.0519 ms |  84.89 KB |
-| Segmentation | V11_Seg_CPU   | 44.502 ms | 0.8490 ms | 0.7941 ms |  79.53 KB |
-| Segmentation | V11_Seg_GPU   |  7.805 ms | 0.1083 ms | 0.0904 ms |  79.53 KB |
-| Segmentation | V11_Seg_TRT32 |  6.363 ms | 0.0287 ms | 0.0255 ms |  79.53 KB |
-| Segmentation | V11_Seg_TRT16 |  5.315 ms | 0.1049 ms | 0.1571 ms |  79.58 KB |
->Note: Segmentation running on TensorRT with INT8 precision is not supported.
+| Model                                       | Mean      | Error     | StdDev    | Gen0   | Allocated |
+|-------------------------------------------- |----------:|----------:|----------:|-------:|----------:|
+| YOLOv8 - CPU                                | 43.840 ms | 0.2639 ms | 0.2468 ms |      - | 489.38 KB |
+| YOLOv8 - GPU                                |  5.480 ms | 0.0156 ms | 0.0139 ms | 7.8125 | 489.47 KB |
+| YOLOv8 - GPU TensorRT FP32                  |  3.987 ms | 0.0111 ms | 0.0104 ms | 7.8125 |  489.3 KB |
+| YOLOv8 - GPU TensorRT FP16                  |  2.888 ms | 0.0180 ms | 0.0168 ms | 7.8125 | 491.73 KB |
+| YOLO11 - CPU                                | 37.819 ms | 0.1777 ms | 0.1576 ms |      - | 458.21 KB |
+| YOLO11 - GPU                                |  5.825 ms | 0.0146 ms | 0.0129 ms | 7.8125 | 457.08 KB |
+| YOLO11 - GPU TensorRT FP32                  |  4.091 ms | 0.0258 ms | 0.0242 ms | 7.8125 | 457.12 KB |
+| YOLO11 - GPU TensorRT FP16                  |  3.050 ms | 0.0158 ms | 0.0148 ms | 7.8125 | 456.62 KB |
+| YOLO26 - CPU                                | 38.847 ms | 0.2369 ms | 0.2216 ms |      - | 523.96 KB |
+| YOLO26 - GPU                                |  6.182 ms | 0.0168 ms | 0.0157 ms |      - | 527.99 KB |
+| YOLO26 - GPU TensorRT FP32                  |  4.102 ms | 0.0208 ms | 0.0174 ms | 7.8125 | 528.21 KB |
+| YOLO26 - GPU TensorRT FP16                  |  2.972 ms | 0.0173 ms | 0.0162 ms | 7.8125 | 527.69 KB |
+| YOLOv8 - GPU + CUDA Graph                   |  4.455 ms | 0.0108 ms | 0.0101 ms | 7.8125 | 488.73 KB |
+| YOLO11 - GPU + CUDA Graph                   |  4.580 ms | 0.0084 ms | 0.0075 ms | 7.8125 | 456.37 KB |
+| YOLO26 - GPU + CUDA Graph                   |  4.790 ms | 0.0290 ms | 0.0271 ms | 7.8125 | 527.28 KB |
+| YOLOv8 - GPU TensorRT FP32 + CUDA Graph     |  3.509 ms | 0.0119 ms | 0.0105 ms | 7.8125 | 488.54 KB |
+| YOLOv8 - GPU TensorRT FP16 + CUDA Graph     |  2.428 ms | 0.0205 ms | 0.0192 ms | 7.8125 |    491 KB |
+| YOLO11 - GPU TensorRT FP32 + CUDA Graph     |  3.512 ms | 0.0430 ms | 0.0381 ms | 7.8125 | 456.37 KB |
+| YOLO11 - GPU TensorRT FP16 + CUDA Graph     |  2.336 ms | 0.0084 ms | 0.0079 ms | 7.8125 | 455.87 KB |
+| YOLO26 - GPU TensorRT FP32 + CUDA Graph     |  3.417 ms | 0.0127 ms | 0.0119 ms | 7.8125 | 527.60 KB |
+| YOLO26 - GPU TensorRT FP16 + CUDA Graph     |  2.139 ms | 0.0138 ms | 0.0129 ms | 7.8125 | 526.97 KB |
