@@ -10,7 +10,7 @@ and runs on the CPU so it works in any container without GPU setup.
 ## ▶️ Run the demo
 
 You need [Docker](https://www.docker.com/) and the exported models; see the [Demo README](../README.md#-quick-start).
-Run these steps from this demo's folder (`Demo/DockerDemo`).
+Step 1 is run from this demo's folder (`Demo/DockerDemo`); the Docker steps are run from the **repository root**.
 
 ### 1. Build the project in Release mode
 
@@ -21,22 +21,22 @@ dotnet build -c Release
 > [!IMPORTANT]
 > The project **must** be built in **Release** mode: the Docker image copies the Release build output (`bin/Release/net8.0`).
 
-### 2. Add the model
+### 2. The model
 
-The API loads `models/model.onnx` from the build output. Copy an object detection model there under that name,
-for example `yolo26s.onnx` from the repository's `test/assets/Models` folder:
+The Dockerfile copies `yolo26s.onnx` (object detection) from the repository's `test/assets/Models` folder
+into the image as `models/model.onnx`, which is what the API loads at startup.
 
-```bash
-mkdir bin/Release/net8.0/models
-cp ../../test/assets/Models/yolo26s.onnx bin/Release/net8.0/models/model.onnx
-```
-
-If the models are missing, run `python tools/download_models.py` from the repository root to download and export them into that folder.
+> [!IMPORTANT]
+> Make sure `test/assets/Models/yolo26s.onnx` exists **before** building the image — the models are not committed
+> to the repo. If they are missing, run `python tools/download_models.py` from the repository root to download
+> and export them into that folder.
 
 ### 3. Build the Docker image
 
+Run from the **repository root** (the build context must include both the demo's build output and the models folder):
+
 ```bash
-docker build -t yolodotnet:demo .
+docker build -f Demo/DockerDemo/Dockerfile -t yolodotnet:demo .
 ```
 
 ### 4. Run the container
@@ -72,7 +72,7 @@ var detections = yolo.RunObjectDetection(image);
 **3. Returns the results** as JSON, or, with `?download=true`, the image with the results drawn on it as a JPEG.
 
 The [`Dockerfile`](./Dockerfile) starts from the .NET 8 ASP.NET runtime image, installs the native libraries SkiaSharp needs on Linux,
-copies the Release build output and listens on port 8080.
+copies the Release build output along with `yolo26s.onnx` from `test/assets/Models` (as `models/model.onnx`), and listens on port 8080.
 
 ## 🌐 API
 
