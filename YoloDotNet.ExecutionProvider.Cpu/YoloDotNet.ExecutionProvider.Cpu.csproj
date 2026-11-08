@@ -33,7 +33,7 @@ The CPU provider integrates seamlessly with YoloDotNet’s modular execution pro
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.23.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.1" />
   </ItemGroup>
 
   <Import Project="..\YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems" Label="Shared" />

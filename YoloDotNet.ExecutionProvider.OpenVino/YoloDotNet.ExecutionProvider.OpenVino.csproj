@@ -33,7 +33,7 @@ The provider is fully modular and designed to work with the execution-provider-a
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Intel.ML.OnnxRuntime.OpenVino" Version="1.22.0" />
+    <PackageReference Include="Intel.ML.OnnxRuntime.OpenVino" Version="1.24.1" />
   </ItemGroup>
 
   <Import Project="..\YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems" Label="Shared" />

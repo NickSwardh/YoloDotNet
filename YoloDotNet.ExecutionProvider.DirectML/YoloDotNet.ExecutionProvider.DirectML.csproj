@@ -35,7 +35,7 @@ Designed for YoloDotNet’s modular, execution-provider-agnostic architecture, t
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.23.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.24.4" />
   </ItemGroup>
 
   <Import Project="..\YoloDotNet.ExecutionProvider.Shared\YoloDotNet.ExecutionProvider.Shared.projitems" Label="Shared" />
