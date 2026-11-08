@@ -73,18 +73,18 @@ namespace YoloDotNet.Benchmarks.Setup
             "TRT32" => new CudaExecutionProvider(model, 0, new TensorRt
             {
                 Precision = TrtPrecision.FP32,
-                EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+                EngineCachePath = Path.GetDirectoryName(model)!,
             }),
             "TRT16" => new CudaExecutionProvider(model, 0, new TensorRt
             {
                 Precision = TrtPrecision.FP16,
-                EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
+                EngineCachePath = Path.GetDirectoryName(model)!,
             }),
             "TRT8" => new CudaExecutionProvider(model, 0, new TensorRt
             {
                 Precision = TrtPrecision.INT8,
-                EngineCachePath = TensorRtConfig.TRT_ENGINE_CACHE_PATH,
-                Int8CalibrationCacheFile = Path.Join(SharedConfig.AbsoluteAssetsPath, "Cache", $"{Path.GetFileNameWithoutExtension(model)}.cache"),
+                EngineCachePath = Path.GetDirectoryName(model)!,
+                Int8CalibrationCacheFile = Path.ChangeExtension(model, ".cache"),
             }),
             _ => throw new ArgumentException("Unknown execution provider")
         };

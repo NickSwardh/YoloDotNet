@@ -1,5 +1,5 @@
 ﻿// SPDX-License-Identifier: MIT
-// SPDX-FileCopyrightText: 2025 Niklas Swärd
+// SPDX-FileCopyrightText: 2025-2026 Niklas Swärd
 // https://github.com/NickSwardh/YoloDotNet
 
 global using System;
@@ -24,6 +24,5 @@ global using YoloDotNet.Benchmarks.Setup;
 global using YoloDotNet.Test.Common.Enums;
 global using YoloDotNet.Models.Interfaces;
 global using YoloDotNet.ExecutionProvider.Cuda;
-global using YoloDotNet.Benchmarks.Configuration;
 global using YoloDotNet.Benchmarks.InferenceBenchmarks;
 global using YoloDotNet.ExecutionProvider.Cuda.TensorRT;

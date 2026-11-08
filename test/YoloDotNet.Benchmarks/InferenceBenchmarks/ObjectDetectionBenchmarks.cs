@@ -30,8 +30,7 @@ namespace YoloDotNet.Benchmarks.InferenceBenchmarks
         /// Specifies which YoloDotNet configuration to benchmark. Each entry represents a distinct combination 
         /// of YOLO version, model type, and execution backend (e.g., CPU, CUDA, or TensorRT with FP32/FP16/INT8 precision).
         ///
-        /// ⚠️ For TensorRT benchmarks (e.g., TRT32, TRT16, TRT8), ensure that <see cref="TensorRtConfig"/> is properly configured 
-        /// to define the directory path used for storing and loading TensorRT engine cache files. 
+        /// ⚠️ For TensorRT benchmarks (e.g., TRT32, TRT16, TRT8), engine cache files are created next to the model file in the Assets/Models folder.
         /// Engine caching significantly improves performance by avoiding runtime engine re-compilation.
         ///
         /// This parameter will be used by BenchmarkDotNet to generate individual benchmark cases 
